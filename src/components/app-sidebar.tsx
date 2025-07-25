@@ -1,0 +1,231 @@
+"use client";
+
+import * as React from "react"
+import { GalleryVerticalEnd } from "lucide-react"
+import Link from "next/link"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+import { hasPermission, WorkOSRole } from '@/lib/permissions';
+
+interface Props {
+  userRole: WorkOSRole;
+  // ... other props
+}
+
+// Permission mapping for each menu item
+const ITEM_PERMISSIONS = {
+  // Home items
+  "CemTem Chat": 'cemtemChat' as const,
+  "Download Reports": 'downloadReports' as const,
+
+  // Dashboard items  
+  "Users": 'users' as const,
+  "Salesman Attendance": 'salesmanAttendance' as const,
+  "Salesman Leaves": 'salesmanLeaves' as const,
+  "Salesman Geotracking": 'salesmanGeotracking' as const,
+  "Daily Visit Reports": 'dailyVisitReports' as const,
+  "Permanent Journey Plan": 'permanentJourneyPlan' as const,
+  "Client Reports": 'clientReports' as const,
+  "Dealer Reports": 'dealerReports' as const,
+  "Technical Visit Reports": 'technicalVisitReports' as const,
+  "Competition Reports": 'competitionReports' as const,
+
+  // Account items
+  "Settings": 'settings' as const,
+  "Raise A Querry": 'raiseAQuery' as const,
+  "Logout": null, // Everyone can logout
+};
+
+const data = {
+  navMain: [
+    {
+      title: "Home",
+      url: "/home",
+      items: [
+        {
+          title: "CemTem Chat",
+          url: "/home/cemtemChat",
+          isActive: true,
+        },
+        {
+          title: "Download Reports",
+          url: "/home/downloadReport",
+        },
+      ],
+    },
+    {
+      title: "Business Dashboard",
+      url: "/dashboard",
+      items: [
+        {
+          title: "Users",
+          url: "/dashboard/users",
+        },
+        {
+          title: "Salesman Attendance",
+          url: "/dashboard/slmAttendance",
+        },
+        {
+          title: "Salesman Leaves",
+          url: "/dashboard/slmLeaves",
+        },
+        {
+          title: "Salesman Geotracking",
+          url: "/dashboard/slmGeotracking",
+        },
+        {
+          title: "Daily Visit Reports",
+          url: "/dashboard/dailyVisitReports",
+        },
+        {
+          title: "Permanent Journey Plan",
+          url: "/dashboard/permanentJourneyPlan",
+        },
+        {
+          title: "Client Reports",
+          url: "/dashboard/clientReports",
+        },
+        {
+          title: "Dealer Reports",
+          url: "/dashboard/dealerReports",
+        },
+        {
+          title: "Technical Visit Reports",
+          url: "/dashboard/technicalVisitReports",
+        },
+        {
+          title: "Competition Reports",
+          url: "/dashboard/competitionReports",
+        },
+      ],
+    },
+    {
+      title: "Account",
+      url: "/account",
+      items: [
+        {
+          title: "Settings",
+          url: "/account/settings",
+        },
+        {
+          title: "Raise A Querry",
+          url: "/account/querry",
+        },
+        {
+          title: "Logout",
+          url: "/account/logout",
+        },
+      ],
+    },
+  ],
+}
+
+export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<typeof Sidebar>) {
+
+  // Function to check if user has permission for an item
+  const hasItemPermission = (itemTitle: string): boolean => {
+    const permission = ITEM_PERMISSIONS[itemTitle as keyof typeof ITEM_PERMISSIONS];
+
+    // If no permission is needed (like Logout), allow access
+    if (permission === null) return true;
+
+    // If permission is defined, check it
+    if (permission) {
+      return hasPermission(userRole, permission);
+    }
+
+    // Default to false if permission not found
+    return false;
+  };
+
+  // Function to check if a section should be shown (has at least one visible item)
+  const shouldShowSection = (section: typeof data.navMain[0]): boolean => {
+    return section.items?.some(item => hasItemPermission(item.title)) || false;
+  };
+
+  return (
+    <Sidebar {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <a href="#">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <GalleryVerticalEnd className="size-4" />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-medium">My Company</span>
+                  <span className="">v1.0.0</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarMenu>
+            {data.navMain.map((item) => {
+              // Only show sections that have at least one visible item
+              if (!shouldShowSection(item)) {
+                return null;
+              }
+
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a href={item.url} className="font-medium">
+                      {item.title}
+                    </a>
+                  </SidebarMenuButton>
+                  {item.items?.length ? (
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => {
+                        // Check if user has permission for this specific item
+                        if (!hasItemPermission(subItem.title)) {
+                          return null;
+                        }
+
+                        return (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={subItem.isActive}>
+                              {/* Conditional rendering for Logout */}
+                              {subItem.title === "Logout" ? (
+                                // IMPORTANT CHANGE: Use a form for the Logout button
+                                <form action="/account/logout" method="post" className="w-full">
+                                  <button type="submit"
+                                    className="hidden sm:flex bg-red-600/65 text-white w-full h-full justify-start items-center px-4 py-2 rounded-md">
+                                    {subItem.title}
+                                  </button>
+                                </form>
+                              ) : (
+                                // For all other menu items, use a standard <a> tag
+                                <a href={subItem.url}>{subItem.title}</a>
+                              )}
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  ) : null}
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  )
+}

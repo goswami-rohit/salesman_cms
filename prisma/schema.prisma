@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PRISMA_DATABASE_URL")
+}
+
+model Company {
+  id                   Int       @id @default(autoincrement())
+  companyName          String    @map("company_name") @db.VarChar(255)
+  officeAddress        String    @map("office_address")
+  isHeadOffice         Boolean   @default(true) @map("is_head_office")
+  phoneNumber          String    @map("phone_number") @db.VarChar(50)
+  adminUserId          String    @unique @map("admin_user_id")
+  createdAt            DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  workosOrganizationId String?   @unique @map("workos_organization_id")
+  users                User[]
+
+  @@index([adminUserId], map: "idx_admin_user_id")
+  @@map("companies")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  workosUserId String    @unique @map("workos_user_id")
+  companyId    Int       @map("company_id")
+  email        String    @map("email")
+  firstName    String?   @map("first_name")
+  lastName     String?   @map("last_name")
+  role         String    @map("role")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  phoneNumber  String?   @map("phone_number") @db.VarChar(50)
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inviteToken  String?   @unique
+  status       String    @default("active")  // "pending", "active", "inactive"
+  
+  @@unique([companyId, email])
+  @@index([companyId], map: "idx_user_company_id")
+  @@index([workosUserId], map: "idx_workos_user_id")
+  @@map("users")
+}
