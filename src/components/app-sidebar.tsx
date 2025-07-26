@@ -130,7 +130,7 @@ const data = {
         },
         {
           title: "Raise A Querry",
-          url: "/account/querry",
+          url: "/account/query",
         },
         {
           title: "Logout",
