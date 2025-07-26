@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react"
-import { GalleryVerticalEnd } from "lucide-react"
+import { useEffect, useState } from "react";
+import { GalleryVerticalEnd, Building2, ChevronLeft, ChevronRight, } from "lucide-react"
 import Link from "next/link"
 import {
   Sidebar,
@@ -23,13 +24,21 @@ interface Props {
   // ... other props
 }
 
+interface CompanyInfo {
+  companyName: string;
+  adminName: string;
+  totalUsers: number;
+}
+
 // Permission mapping for each menu item
 const ITEM_PERMISSIONS = {
   // Home items
+  "Home": 'home' as const,
   "CemTem Chat": 'cemtemChat' as const,
   "Download Reports": 'downloadReports' as const,
 
-  // Dashboard items  
+  // Dashboard items
+  "Business Dashboard": 'dashboard' as const,
   "Users": 'users' as const,
   "Salesman Attendance": 'salesmanAttendance' as const,
   "Salesman Leaves": 'salesmanLeaves' as const,
@@ -42,6 +51,7 @@ const ITEM_PERMISSIONS = {
   "Competition Reports": 'competitionReports' as const,
 
   // Account items
+  "Account": 'account' as const,
   "Settings": 'settings' as const,
   "Raise A Querry": 'raiseAQuery' as const,
   "Logout": null, // Everyone can logout
@@ -133,6 +143,27 @@ const data = {
 
 export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<typeof Sidebar>) {
 
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Fetch company information
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      try {
+        const response = await fetch('/api/company');
+        if (response.ok) {
+          const data = await response.json();
+          setCompanyInfo(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch company info:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCompanyInfo();
+  }, []);
+
   // Function to check if user has permission for an item
   const hasItemPermission = (itemTitle: string): boolean => {
     const permission = ITEM_PERMISSIONS[itemTitle as keyof typeof ITEM_PERMISSIONS];
@@ -155,76 +186,97 @@ export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<
   };
 
   return (
-    <Sidebar {...props}>
+    // Apply `is-collapsed` class conditionally to the Sidebar component
+    <Sidebar {...props} className={isCollapsed ? 'is-collapsed' : ''}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <GalleryVerticalEnd className="size-4" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">My Company</span>
-                  <span className="">v1.0.0</span>
-                </div>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
+        {/* Sidebar rendering--commented out for now */}
+        {/* {!isCollapsed && ( */}
           <SidebarMenu>
-            {data.navMain.map((item) => {
-              // Only show sections that have at least one visible item
-              if (!shouldShowSection(item)) {
-                return null;
-              }
-
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url} className="font-medium">
-                      {item.title}
-                    </a>
-                  </SidebarMenuButton>
-                  {item.items?.length ? (
-                    <SidebarMenuSub>
-                      {item.items.map((subItem) => {
-                        // Check if user has permission for this specific item
-                        if (!hasItemPermission(subItem.title)) {
-                          return null;
-                        }
-
-                        return (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                              {/* Conditional rendering for Logout */}
-                              {subItem.title === "Logout" ? (
-                                // IMPORTANT CHANGE: Use a form for the Logout button
-                                <form action="/account/logout" method="post" className="w-full">
-                                  <button type="submit"
-                                    className="hidden sm:flex bg-red-600/65 text-white w-full h-full justify-start items-center px-4 py-2 rounded-md">
-                                    {subItem.title}
-                                  </button>
-                                </form>
-                              ) : (
-                                // For all other menu items, use a standard <a> tag
-                                <a href={subItem.url}>{subItem.title}</a>
-                              )}
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  ) : null}
-                </SidebarMenuItem>
-              );
-            })}
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/dashboard">
+                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <Building2 className="size-4" />
+                  </div>
+                  <div className="flex flex-col gap-0.5 leading-none">
+                    <span className="font-medium">
+                      {loading ? 'Loading...' : companyInfo?.companyName || 'My Company'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {companyInfo && `${companyInfo.totalUsers} users`}
+                    </span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
+        {/* )} */}
+
+        {/* Collapse Toggle - move to the right using flexbox and ml-auto */}
+        {/* <button
+          onClick={() => setIsCollapsed(prev => !prev)}
+          className={`p-1 text-muted-foreground hover:text-foreground ${!isCollapsed ? 'ml-auto' : 'w-full' // Add ml-auto when expanded, full width when collapsed
+            }`}
+        >
+          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+        </button> */}
+      </SidebarHeader>
+
+      {/* Sidebar rendering--commented out for now */}
+      {/* {!isCollapsed && ( */}
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarMenu>
+              {data.navMain.map((item) => {
+                // Only show sections that have at least one visible item
+                if (!shouldShowSection(item)) {
+                  return null;
+                }
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <a href={item.url} className="font-medium">
+                        {item.title}
+                      </a>
+                    </SidebarMenuButton>
+                    {item.items?.length ? (
+                      <SidebarMenuSub>
+                        {item.items.map((subItem) => {
+                          // Check if user has permission for this specific item
+                          if (!hasItemPermission(subItem.title)) {
+                            return null;
+                          }
+
+                          return (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton asChild isActive={subItem.isActive}>
+                                {/* Conditional rendering for Logout */}
+                                {subItem.title === "Logout" ? (
+                                  // IMPORTANT CHANGE: Use a form for the Logout button
+                                  <form action="/account/logout" method="post" className="w-full">
+                                    <button type="submit"
+                                      className="hidden sm:flex bg-red-600/65 text-white w-full h-full justify-start items-center px-4 py-2 rounded-md">
+                                      {subItem.title}
+                                    </button>
+                                  </form>
+                                ) : (
+                                  // For all other menu items, use a standard <a> tag
+                                  <a href={subItem.url}>{subItem.title}</a>
+                                )}
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    ) : null}
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+      {/* )} */}
       <SidebarRail />
     </Sidebar>
   )

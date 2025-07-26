@@ -148,7 +148,7 @@ export default function UsersManagement({ adminUser }: Props) {
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
-    
+
     setLoading(true);
     setError('');
 
@@ -210,12 +210,12 @@ export default function UsersManagement({ adminUser }: Props) {
   };
 
   const resetForm = () => {
-    setFormData({ 
-      email: '', 
-      firstName: '', 
-      lastName: '', 
-      phoneNumber: '', 
-      role: 'staff' 
+    setFormData({
+      email: '',
+      firstName: '',
+      lastName: '',
+      phoneNumber: '',
+      role: 'staff'
     });
     setEditingUser(null);
     setError('');
@@ -258,7 +258,7 @@ export default function UsersManagement({ adminUser }: Props) {
               Manage users for {adminUser.company.companyName}
             </p>
           </div>
-          
+
           <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
             <DialogTrigger asChild>
               <Button>
@@ -282,7 +282,7 @@ export default function UsersManagement({ adminUser }: Props) {
                     required
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
@@ -294,7 +294,7 @@ export default function UsersManagement({ adminUser }: Props) {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
@@ -306,7 +306,7 @@ export default function UsersManagement({ adminUser }: Props) {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Phone Number</Label>
                   <Input
@@ -317,7 +317,7 @@ export default function UsersManagement({ adminUser }: Props) {
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
                   <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
@@ -331,7 +331,7 @@ export default function UsersManagement({ adminUser }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="flex space-x-2 pt-4">
                   <Button type="submit" disabled={loading} className="flex-1">
                     <Mail className="w-4 h-4 mr-2" />
@@ -348,7 +348,7 @@ export default function UsersManagement({ adminUser }: Props) {
 
         {/* Success Message */}
         {success && (
-          <Alert className="border-green-200 bg-green-50 text-green-800">
+          <Alert className="border-green-200 bg-green-800 text-blue-200">
             <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
@@ -408,52 +408,138 @@ export default function UsersManagement({ adminUser }: Props) {
                         )}
                       </div>
                     </TableCell>
+
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        {/* Edit Dialog stays the same... */}
+                        {/* Edit Dialog */}
                         <Dialog open={editingUser?.id === user.id} onOpenChange={(open) => !open && setEditingUser(null)}>
                           <DialogTrigger asChild>
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => startEdit(user)}
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
-                          {/* ... existing edit dialog content */}
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit User</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleUpdateUser} className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-email">Email Address</Label>
+                                <Input
+                                  id="edit-email"
+                                  type="email"
+                                  value={formData.email}
+                                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                  placeholder="user@example.com"
+                                  required
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-firstName">First Name</Label>
+                                  <Input
+                                    id="edit-firstName"
+                                    value={formData.firstName}
+                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                    placeholder="John"
+                                    required
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-lastName">Last Name</Label>
+                                  <Input
+                                    id="edit-lastName"
+                                    value={formData.lastName}
+                                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                    placeholder="Doe"
+                                    required
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-phoneNumber">Phone Number</Label>
+                                <Input
+                                  id="edit-phoneNumber"
+                                  type="tel"
+                                  value={formData.phoneNumber}
+                                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                  placeholder="+1 (555) 123-4567"
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-role">Role</Label>
+                                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="staff">Staff</SelectItem>
+                                    <SelectItem value="manager">Manager</SelectItem>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="flex space-x-2 pt-4">
+                                <Button type="submit" disabled={loading} className="flex-1">
+                                  {loading ? 'Updating...' : 'Update User'}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingUser(null);
+                                    resetForm();
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </form>
+                          </DialogContent>
                         </Dialog>
 
-                        {user.id !== adminUser.id && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete the user account.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
+                        {/* Delete Dialog */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete User</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete {user.firstName} {user.lastName}?
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            
+
             {users.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No users found. Create your first user!</p>

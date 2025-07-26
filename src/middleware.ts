@@ -6,7 +6,6 @@ export default authkitMiddleware({
     enabled: true,
     unauthenticatedPaths: [
       '/',
-      '/home',
       '/login',
       '/login/signup',
       '/login/reset-password',

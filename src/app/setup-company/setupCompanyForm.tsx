@@ -48,7 +48,7 @@ export default function SetupCompanyForm() {
         throw new Error(errorData.error || 'Failed to set up company. Please try again.');
       }
 
-      router.push('/dashboard');
+      router.push('/home');
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred during setup.');
       console.error('Company setup submission error:', err);
@@ -109,7 +109,7 @@ export default function SetupCompanyForm() {
               className="h-4 w-4 text-primary focus:ring-ring border-border rounded"
             />
             <label htmlFor="isHeadOffice" className="ml-2 block text-sm text-foreground">
-              Is this a Head Office?
+              Check If Head Office
             </label>
           </div>
           <div>

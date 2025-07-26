@@ -3,10 +3,12 @@ export type WorkOSRole = 'admin' | 'manager' | 'staff';
 
 export interface DashboardPermissions {
   // Home section
+  home: boolean;
   cemtemChat: boolean;
   downloadReports: boolean;
   
   // Business Dashboard section
+  dashboard: boolean;
   users: boolean;
   salesmanAttendance: boolean;
   salesmanLeaves: boolean;
@@ -19,6 +21,7 @@ export interface DashboardPermissions {
   competitionReports: boolean;
   
   // Account section
+  account: boolean;
   settings: boolean;
   raiseAQuery: boolean;
 }
@@ -26,10 +29,12 @@ export interface DashboardPermissions {
 export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> = {
   admin: {
     // Home - full access
+    home: true,
     cemtemChat: true,
     downloadReports: true,
     
     // Business Dashboard - full access
+    dashboard: true,
     users: true,
     salesmanAttendance: true,
     salesmanLeaves: true,
@@ -42,15 +47,18 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     competitionReports: true,
     
     // Account - full access
+    account: true,
     settings: true,
     raiseAQuery: true,
   },
   manager: {
     // Home - full access
+    home: true,
     cemtemChat: true,
     downloadReports: true,
     
     // Business Dashboard - all except users
+    dashboard: true,
     users: false,
     salesmanAttendance: true,
     salesmanLeaves: true,
@@ -63,15 +71,18 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     competitionReports: true,
     
     // Account - full access
+    account: true,
     settings: true,
     raiseAQuery: true,
   },
   staff: {
     // Home - no download reports
+    home: true,
     cemtemChat: true,
     downloadReports: false,
     
     // Business Dashboard - limited access
+    dashboard: true,
     users: false,
     salesmanAttendance: true,
     salesmanLeaves: true,
@@ -84,6 +95,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     competitionReports: false,  // No access
     
     // Account - full access
+    account: true,
     settings: true,
     raiseAQuery: true,
   },

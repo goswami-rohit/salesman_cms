@@ -235,7 +235,7 @@ export async function POST(request: Request) {
             console.error('❌ WorkOS invitation error:', workosError);
             console.error('❌ WorkOS error message:', workosError.message);
             console.error('❌ WorkOS error response:', workosError.response?.data);
-            
+
             // Add more detailed error logging
             if (workosError.response?.data) {
                 console.error('❌ Full error response:', JSON.stringify(workosError.response.data, null, 2));
@@ -288,21 +288,43 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const adminUser = await prisma.user.findUnique({
+        const currentUser = await prisma.user.findUnique({
             where: { workosUserId: claims.sub },
             include: { company: true }
         });
+        if (!currentUser) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
 
-        if (!adminUser || adminUser.role !== 'admin') {
+        // Check if requesting current user info only
+        const url = new URL(request.url);
+        if (url.searchParams.get('current') === 'true') {
+            return NextResponse.json({
+                currentUser: {
+                    role: currentUser.role,
+                    firstName: currentUser.firstName,
+                    lastName: currentUser.lastName,
+                    companyName: currentUser.company?.companyName
+                }
+            });
+        }
+        // Original logic for admin users list
+        if (currentUser.role !== 'admin') {
             return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
         }
 
         const users = await prisma.user.findMany({
-            where: { companyId: adminUser.companyId },
+            where: { companyId: currentUser.companyId },
             orderBy: { createdAt: 'desc' }
         });
 
-        return NextResponse.json({ users });
+        return NextResponse.json({
+            users,
+            currentUser: {
+                role: currentUser.role,
+                companyName: currentUser.company?.companyName
+            }
+        });
     } catch (error: any) {
         console.error('Error fetching users:', error);
         return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
