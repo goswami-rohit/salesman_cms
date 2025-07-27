@@ -59,6 +59,7 @@ interface User {
   workosUserId: string;
   createdAt: string;
   updatedAt: string;
+  salesmanLoginId?: string | null; // Add salesmanLoginId to interface
 }
 
 interface Company {
@@ -133,7 +134,12 @@ export default function UsersManagement({ adminUser }: Props) {
         await fetchUsers();
         setShowCreateModal(false);
         resetForm();
-        setSuccess(`User created and invitation sent to ${formData.email}`);
+        // UPDATED Success Message
+        let successMsg = `User created and invitation sent to ${formData.email}.`;
+        if (data.user && data.user.salesmanLoginId) {
+          successMsg += ` Employee ID for mobile app: ${data.user.salesmanLoginId}. Temporary password sent via email.`;
+        }
+        setSuccess(successMsg);
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to create user');
@@ -231,7 +237,8 @@ export default function UsersManagement({ adminUser }: Props) {
   };
 
   const isUserActive = (workosUserId: string) => {
-    return workosUserId && !workosUserId.startsWith('pending_');
+    // Check for "pending_" or "temp_" prefixes
+    return workosUserId && !workosUserId.startsWith('pending_') && !workosUserId.startsWith('temp_');
   };
 
   if (loading && users.length === 0) {
@@ -325,7 +332,7 @@ export default function UsersManagement({ adminUser }: Props) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="employee">Staff</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem> {/* Changed 'employee' to 'staff' here for consistency */}
                       <SelectItem value="manager">Manager</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>

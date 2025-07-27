@@ -82,7 +82,7 @@ export default async function SignedInHomePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {/* CemTem Chat Card */}
           <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 cursor-pointer">
-            <Link href="/cemtemChat" className="block h-full">
+            <Link href="/home/cemtemChat" className="block h-full">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary to-chart-2 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                   <MessageCircle className="w-8 h-8 text-white" />

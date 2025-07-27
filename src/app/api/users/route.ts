@@ -4,6 +4,8 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
 import nodemailer from 'nodemailer';
+import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique IDs
+import bcrypt from 'bcryptjs'; // Import bcryptjs
 
 // Create Gmail transporter
 const createEmailTransporter = () => {
@@ -16,7 +18,7 @@ const createEmailTransporter = () => {
     });
 };
 
-// Gmail email sending function - MOVED OUTSIDE POST function
+// Gmail email sending function - UPDATED
 async function sendInvitationEmailGmail({
     to,
     firstName,
@@ -25,7 +27,9 @@ async function sendInvitationEmailGmail({
     adminName,
     inviteUrl,
     role,
-    fromEmail
+    fromEmail,
+    salesmanLoginId, // NEW: Pass salesmanLoginId
+    tempPassword // NEW: Pass temporary password
 }: {
     to: string;
     firstName: string;
@@ -35,8 +39,28 @@ async function sendInvitationEmailGmail({
     inviteUrl: string;
     role: string;
     fromEmail: string;
+    salesmanLoginId?: string | null; // Make optional as it's for staff only
+    tempPassword?: string | null; // Make optional
 }) {
     const transporter = createEmailTransporter();
+
+    // Conditional content for salesman details
+    const salesmanDetailsHtml = salesmanLoginId && tempPassword ? `
+            <p>For your **Sales Team Mobile App** login:</p>
+            <ul>
+                <li><strong>Employee ID (Login ID):</strong> <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${salesmanLoginId}</span></li>
+                <li><strong>Temporary Password:</strong> <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${tempPassword}</span></li>
+            </ul>
+            <p style="color: #d9534f; font-weight: bold;">Please change this temporary password immediately after your first login to the mobile app.</p>
+        ` : '';
+
+    const salesmanDetailsText = salesmanLoginId && tempPassword ? `
+For your Sales Team Mobile App login:
+Employee ID (Login ID): ${salesmanLoginId}
+Temporary Password: ${tempPassword}
+Please change this temporary password immediately after your first login to the mobile app.
+        ` : '';
+
 
     const htmlContent = `
     <!DOCTYPE html>
@@ -66,24 +90,26 @@ async function sendInvitationEmailGmail({
             
             <p>${adminName} has invited you to join <strong>${companyName}</strong> as a <strong>${role}</strong>.</p>
             
-            <p>To accept this invitation and set up your account, please click the button below:</p>
+            <p>To accept this invitation and set up your account for the web application, please click the button below:</p>
             
             <div style="text-align: center;">
-                <a href="${inviteUrl}" class="button">Accept Invitation & Join Team</a>
+                <a href="${inviteUrl}" class="button">Accept Web App Invitation & Join Team</a>
             </div>
             
             <p>Or copy and paste this link into your browser:</p>
             <div class="invite-code">${inviteUrl}</div>
             
+            ${salesmanDetailsHtml} {/* NEW: Include salesman details */}
+            
             <p><strong>What happens next?</strong></p>
             <ul>
-                <li>Click the invitation link above</li>
-                <li>Create your account password</li>
-                <li>Access your team dashboard</li>
+                <li>Click the invitation link above to set up your web app account.</li>
+                <li>Access your team dashboard.</li>
+                <li>${salesmanLoginId ? 'Use your Employee ID and Temporary Password above to log in to the Sales Team Mobile App.' : ''}</li>
                 <li>Start collaborating with your team!</li>
             </ul>
             
-            <p><em>This invitation will expire in 7 days for security reasons.</em></p>
+            <p><em>This web app invitation will expire in 7 days for security reasons.</em></p>
             
             <p>Welcome to the team!</p>
             <p><strong>The ${companyName} Team</strong></p>
@@ -104,10 +130,12 @@ Hi ${firstName},
 
 ${adminName} has invited you to join ${companyName} as a ${role}.
 
-To accept this invitation and set up your account, please visit:
+To accept this invitation and set up your account for the web application, please visit:
 ${inviteUrl}
 
-This invitation will expire in 7 days.
+${salesmanDetailsText}
+
+This web app invitation will expire in 7 days.
 
 Welcome to the team!
 The ${companyName} Team
@@ -126,12 +154,21 @@ The ${companyName} Team
     return result;
 }
 
+// Function to generate a random password
+function generateRandomPassword(length: number = 10): string {
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+}
+
+
 // POST - Create a new user and send invitation
 export async function POST(request: Request) {
     try {
-        // Initialize WorkOS inside the function
         const workos = new WorkOS(process.env.WORKOS_API_KEY!);
-
         const claims = await getTokenClaims();
 
         if (!claims || !claims.sub) {
@@ -139,7 +176,6 @@ export async function POST(request: Request) {
         }
 
         const userId = claims.sub;
-        // Get organization ID from claims
         const organizationId = claims.org_id as string;
 
         console.log('🔍 Claims:', { userId, organizationId, role: claims.role });
@@ -165,13 +201,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Map frontend roles to WorkOS roles (if needed)
         let workosRole = role.toLowerCase();
         if (role === 'employee') {
-            workosRole = 'staff'; // Map employee to staff
+            workosRole = 'staff';
         }
 
-        // Check if user already exists
         const existingUser = await prisma.user.findFirst({
             where: {
                 email,
@@ -183,31 +217,54 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
         }
 
-        // Generate invitation token
         const inviteToken = `invite_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        const tempWorkosUserId = `temp_${uuidv4()}`; // Use uuid for better uniqueness
 
-        // Generate temporary workosUserId for database
-        const tempWorkosUserId = `temp_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        let salesmanLoginId: string | null = null;
+        let tempPasswordPlaintext: string | null = null;
+        let hashedPassword = null;
 
-        // Create user in database first
+        // Generate salesmanLoginId and temporary password ONLY for 'staff' role
+        if (workosRole === 'staff') { // Use the mapped WorkOS role
+            // Generate unique salesmanLoginId
+            let isUnique = false;
+            while (!isUnique) {
+                const generatedId = `EMP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                const existingSalesman = await prisma.user.findUnique({ where: { salesmanLoginId: generatedId } });
+                if (existingSalesman) {
+                    // Collision, generate again
+                } else {
+                    salesmanLoginId = generatedId;
+                    isUnique = true;
+                }
+            }
+
+            // Generate temporary password and hash it
+            tempPasswordPlaintext = generateRandomPassword();
+            const salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(tempPasswordPlaintext, salt);
+        }
+
+        // Create user in database
         const newUser = await prisma.user.create({
             data: {
                 email,
                 firstName,
                 lastName,
                 phoneNumber,
-                role: workosRole, // Use mapped role
-                workosUserId: tempWorkosUserId, // Temporary ID that will be updated
+                role: workosRole,
+                workosUserId: tempWorkosUserId,
                 companyId: adminUser.companyId,
                 inviteToken: inviteToken,
                 status: 'pending',
+                salesmanLoginId, // Now correctly assigned
+                hashedPassword, // Now correctly assigned (if staff)
             },
         });
 
         console.log('✅ Created database user:', newUser.id);
 
-        // SEND INVITATION IN WORKOS
-        let invitationData = null;
+        let workosInvitationData = null;
         try {
             console.log('🔄 Sending WorkOS invitation with data:', {
                 email,
@@ -228,15 +285,13 @@ export async function POST(request: Request) {
                 organizationId: invitation.organizationId,
                 state: invitation.state
             });
-
-            invitationData = invitation;
+            workosInvitationData = invitation;
 
         } catch (workosError: any) {
             console.error('❌ WorkOS invitation error:', workosError);
             console.error('❌ WorkOS error message:', workosError.message);
             console.error('❌ WorkOS error response:', workosError.response?.data);
 
-            // Add more detailed error logging
             if (workosError.response?.data) {
                 console.error('❌ Full error response:', JSON.stringify(workosError.response.data, null, 2));
             }
@@ -257,8 +312,10 @@ export async function POST(request: Request) {
                 companyName: adminUser.company.companyName,
                 adminName: `${adminUser.firstName} ${adminUser.lastName}`,
                 inviteUrl,
-                role: workosRole, // Use mapped role in email
-                fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com'
+                role: workosRole,
+                fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
+                salesmanLoginId: salesmanLoginId, // Pass generated ID
+                tempPassword: tempPasswordPlaintext // Pass temporary password
             });
 
             console.log(`✅ Invitation email sent to ${email} via Gmail`);
@@ -268,9 +325,15 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             message: 'Invitation sent and email delivered successfully',
-            user: newUser,
-            inviteToken,
-            workosInvitation: invitationData
+            user: {
+                id: newUser.id,
+                email: newUser.email,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                role: newUser.role,
+                salesmanLoginId: newUser.salesmanLoginId, // Return salesmanLoginId
+            },
+            workosInvitation: workosInvitationData
         }, { status: 201 });
 
     } catch (error: any) {
@@ -279,7 +342,10 @@ export async function POST(request: Request) {
     }
 }
 
-// GET function - Fetch all users
+// ... (GET function for /api/users remains unchanged below this)
+// src/app/api/users/route.ts
+// ... (GET function - Fetch all users remains the same as before)
+// ... (GET function for /api/users remains unchanged below this)
 export async function GET(request: Request) {
     try {
         const claims = await getTokenClaims();
