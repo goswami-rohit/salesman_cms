@@ -18,25 +18,27 @@ import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
 import { DataTableReusable } from '@/components/data-table-reusable';
 
 // --- 1. Define Zod Schema for Technical Visit Report Data ---
-// This schema matches the fields observed in your "Technical Visit" screenshot
 const technicalVisitReportSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>, // Unique ID for the report entry
-  salesmanName: z.string(), // Assuming we'll link this to a salesman
-  visitType: z.string(), // From "Select type of visit"
-  siteNameConcernedPerson: z.string(), // From "Name of the site/concerned person"
-  phoneNo: z.string(), // From "Phone No"
-  date: z.string(), // From "Date" (Or z.date() if stored as Date objects)
-  emailId: z.string().email().or(z.literal('')), // From "Email-id", optional and can be empty string
-  clientsRemarks: z.string(), // From "Clients Remarks"
-  salespersonRemarks: z.string(), // From "Sale's person remarks"
-  checkInTime: z.string(), // Assuming a timestamp for check-in
-  checkOutTime: z.string(), // Assuming a timestamp for check-out
+  id: z.string() as z.ZodType<UniqueIdentifier>,
+  salesmanName: z.string(),
+  visitType: z.string(),
+  siteNameConcernedPerson: z.string(),
+  phoneNo: z.string(),
+  date: z.string(),
+  emailId: z.string().email().or(z.literal('')),
+  clientsRemarks: z.string(),
+  salespersonRemarks: z.string(),
+  checkInTime: z.string(),
+  checkOutTime: z.string(),
 });
 
 // Infer the TypeScript type from the Zod schema
 type TechnicalVisitReport = z.infer<typeof technicalVisitReportSchema>;
 
 export default function TechnicalVisitReportsPage() {
+  const [technicalReports, setTechnicalReports] = React.useState<TechnicalVisitReport[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
   React.useEffect(() => {
     async function checkAuth() {
       const claims = await getTokenClaims();
@@ -50,48 +52,30 @@ export default function TechnicalVisitReportsPage() {
     checkAuth();
   }, []);
 
-  // --- 2. Placeholder Data for Technical Visit Reports ---
-  const technicalVisitReportData: TechnicalVisitReport[] = [
-    {
-      id: "tech_visit_1",
-      salesmanName: "John Doe",
-      visitType: "Installation Support",
-      siteNameConcernedPerson: "Tech Solutions Pvt Ltd / Mr. Kumar",
-      phoneNo: "9988776655",
-      date: "2025-07-26",
-      emailId: "kumar@techsolutions.com",
-      clientsRemarks: "Issue with new setup, needs expert help.",
-      salespersonRemarks: "Resolved configuration error. Client satisfied.",
-      checkInTime: "2025-07-26 10:00 AM",
-      checkOutTime: "2025-07-26 11:30 AM",
-    },
-    {
-      id: "tech_visit_2",
-      salesmanName: "Jane Smith",
-      visitType: "Troubleshooting",
-      siteNameConcernedPerson: "Industrial Fab / Ms. Devi",
-      phoneNo: "9123456789",
-      date: "2025-07-25",
-      emailId: "", // Empty email
-      clientsRemarks: "Machine not starting after power fluctuation.",
-      salespersonRemarks: "Identified minor wiring issue, fixed on spot. Advised on surge protector.",
-      checkInTime: "2025-07-25 14:00 PM",
-      checkOutTime: "2025-07-25 15:15 PM",
-    },
-    {
-      id: "tech_visit_3",
-      salesmanName: "John Doe",
-      visitType: "Routine Maintenance",
-      siteNameConcernedPerson: "Green Energy Co. / Mr. Singh",
-      phoneNo: "9876123450",
-      date: "2025-07-24",
-      emailId: "singh@greenenergy.com",
-      clientsRemarks: "Just a routine check, no issues reported.",
-      salespersonRemarks: "All systems nominal. Performed standard checks.",
-      checkInTime: "2025-07-24 09:30 AM",
-      checkOutTime: "2025-07-24 10:45 AM",
-    },
-  ];
+  // --- Data Fetching Function ---
+  const fetchTechnicalReports = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Fetch from the API path
+      const response = await fetch('/api/dashboardPagesAPI/technical-visit-reports');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: TechnicalVisitReport[] = await response.json();
+      setTechnicalReports(data);
+      toast.success("Technical visit reports loaded successfully!");
+    } catch (error: any) {
+      console.error("Failed to fetch technical visit reports:", error);
+      toast.error(`Failed to fetch technical visit reports: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchTechnicalReports();
+  }, [fetchTechnicalReports]);
+
 
   // --- 3. Define Columns for Technical Visit Report DataTable ---
   const technicalVisitReportColumns: ColumnDef<TechnicalVisitReport>[] = [
@@ -161,12 +145,13 @@ export default function TechnicalVisitReportsPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <DataTableReusable
             columns={technicalVisitReportColumns}
-            data={technicalVisitReportData}
+            data={technicalReports} // Use fetched data
             reportTitle="Technical Visit Reports"
             filterColumnAccessorKey="siteNameConcernedPerson" // Filter by site name
             onDownloadAll={handleDownloadAllTechnicalVisitReports}
             enableRowDragging={false} // Technical visit reports typically don't need reordering
             onRowOrderChange={handleTechnicalVisitReportOrderChange}
+            // isLoading={isLoading} // Removed this line to resolve the TypeScript error
           />
         </div>
       </div>

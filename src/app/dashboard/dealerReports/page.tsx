@@ -12,35 +12,76 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical } from '@tabler/icons-react'; // Only need IconDotsVertical for individual row actions
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // Import Tabs components
+import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationLink,
+  PaginationNext,
+} from "@/components/ui/pagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 
 // --- 1. Define Zod Schema for Dealer/Sub-Dealer Report Data ---
-// This schema combines fields from both "New Dealer Name" and "New Sub Dealer Name"
 const dealerReportSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>, // Unique ID for the dealer/sub-dealer entry
-  salesmanName: z.string(), // Assuming we'll link this to a salesman
-  type: z.enum(["Dealer", "Sub Dealer"]), // To distinguish between tabs
-  dealerName: z.string().optional().nullable(), // Optional for sub-dealers
-  subDealerName: z.string().optional().nullable(), // Optional for dealers
+  id: z.string() as z.ZodType<UniqueIdentifier>,
+  salesmanName: z.string(),
+  type: z.enum(["Dealer", "Sub Dealer"]),
+  dealerName: z.string().optional().nullable(),
+  subDealerName: z.string().optional().nullable(),
   region: z.string(),
   area: z.string(),
   phoneNo: z.string(),
-  address: z.string(), // Assuming this is the "Dealer Address" field
+  address: z.string(),
   dealerTotalPotential: z.number(),
   dealerBestPotential: z.number(),
-  brandSelling: z.array(z.string()), // Array for checkboxes
+  brandSelling: z.array(z.string()),
   feedbacks: z.string(),
-  remarks: z.string().optional().nullable(), // From "Remarks"
+  remarks: z.string().optional().nullable(),
 });
 
 // Infer the TypeScript type from the Zod schema
 type DealerReport = z.infer<typeof dealerReportSchema>;
 
+const ITEMS_PER_PAGE = 10; // Define items per page for pagination
+
 export default function DealerReportsPage() {
+  const [allReports, setAllReports] = React.useState<DealerReport[]>([]);
+  const [dealers, setDealers] = React.useState<DealerReport[]>([]);
+  const [subDealers, setSubDealers] = React.useState<DealerReport[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [activeTab, setActiveTab] = React.useState<"dealers" | "sub-dealers">("dealers");
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
+  const [selectedReport, setSelectedReport] = React.useState<DealerReport | null>(null);
+
+
   React.useEffect(() => {
     async function checkAuth() {
       const claims = await getTokenClaims();
@@ -54,76 +95,83 @@ export default function DealerReportsPage() {
     checkAuth();
   }, []);
 
-  // --- 2. Placeholder Data for Dealers and Sub-Dealers ---
-  const dealerData: DealerReport[] = [
-    {
-      id: "dealer_1",
-      salesmanName: "John Doe",
-      type: "Dealer",
-      dealerName: "Maa Manisha Hardware",
-      region: "Guwahati",
-      area: "6R2P+X5",
-      phoneNo: "9954202174",
-      address: "6R2P+X5, Guwahati, Assam",
-      dealerTotalPotential: 100000,
-      dealerBestPotential: 80000,
-      brandSelling: ["Star", "Dalmia"],
-      feedbacks: "Very reliable, consistent orders.",
-      remarks: null,
-    },
-    {
-      id: "dealer_2",
-      salesmanName: "Jane Smith",
-      type: "Dealer",
-      dealerName: "Sunil Hardware",
-      region: "Guwahati",
-      area: "8690729544",
-      phoneNo: "8690729544",
-      address: "5RQR+RVJ, Birkuchi, Guwahati, Assam",
-      dealerTotalPotential: 75000,
-      dealerBestPotential: 60000,
-      brandSelling: ["Amrit", "SuryaGold"],
-      feedbacks: "Good potential, needs more promotional support.",
-      remarks: "Discussed new scheme for next quarter.",
-    },
-    // Add more dummy dealer data
-  ];
+  // --- Data Fetching Logic ---
+  const fetchReports = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/dashboardPagesAPI/dealer-reports");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: DealerReport[] = await response.json();
+      const validatedData = data.map((item) => {
+        try {
+          return dealerReportSchema.parse(item);
+        } catch (e) {
+          console.error("Validation error for item:", item, e);
+          toast.error("Invalid dealer report data received from server.");
+          return null;
+        }
+      }).filter(Boolean) as DealerReport[];
 
-  const subDealerData: DealerReport[] = [
-    {
-      id: "sub_dealer_1",
-      salesmanName: "John Doe",
-      type: "Sub Dealer",
-      subDealerName: "Maa Kali Enterprise",
-      dealerName: "Maa Manisha Hardware", // Linked to a main dealer
-      region: "Guwahati",
-      area: "5RQR+RW",
-      phoneNo: "8638589422",
-      address: "5RQR+RW, Narengi, Guwahati, Assam",
-      dealerTotalPotential: 20000,
-      dealerBestPotential: 15000,
-      brandSelling: ["BlackTiger"],
-      feedbacks: "Small but frequent orders, good relationship.",
-      remarks: null,
-    },
-    {
-      id: "sub_dealer_2",
-      salesmanName: "Jane Smith",
-      type: "Sub Dealer",
-      subDealerName: "Homeswar Kalita",
-      dealerName: "Sunil Hardware", // Linked to a main dealer
-      region: "Guwahati",
-      area: "73/1",
-      phoneNo: "9864780479",
-      address: "73/1, Kalitakuchi, Guwahati, Assam",
-      dealerTotalPotential: 10000,
-      dealerBestPotential: 8000,
-      brandSelling: ["Taj"],
-      feedbacks: "New sub-dealer, still building trust.",
-      remarks: "Provided initial stock and marketing materials.",
-    },
-    // Add more dummy sub-dealer data
-  ];
+      setAllReports(validatedData);
+      setDealers(validatedData.filter(report => report.type === 'Dealer'));
+      setSubDealers(validatedData.filter(report => report.type === 'Sub Dealer'));
+      toast.success("Dealer reports loaded successfully!");
+    } catch (e: any) {
+      console.error("Failed to fetch dealer reports:", e);
+      setError(e.message || "Failed to fetch reports.");
+      toast.error(e.message || "Failed to load dealer reports.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  // --- Filtering and Pagination Logic ---
+  const currentData = activeTab === "dealers" ? dealers : subDealers;
+
+  const filteredReports = currentData.filter((report) => {
+    const nameToSearch = report.type === "Dealer" ? report.dealerName : report.subDealerName;
+    const matchesSearch =
+      report.salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (nameToSearch && nameToSearch.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      report.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.phoneNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.brandSelling.some(brand => brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      report.feedbacks.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (report.remarks && report.remarks.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSearch;
+  });
+
+  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedReports = filteredReports.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  React.useEffect(() => {
+    // Reset page to 1 when tab changes or search query changes
+    setCurrentPage(1);
+  }, [activeTab, searchQuery]);
+
+  const handleViewReport = (report: DealerReport) => {
+    setSelectedReport(report);
+    setIsViewModalOpen(true);
+  };
 
   // --- 3. Define Columns for Dealer/Sub-Dealer Report DataTable ---
   const dealerReportColumns: ColumnDef<DealerReport>[] = [
@@ -131,7 +179,7 @@ export default function DealerReportsPage() {
     // Conditionally display Dealer Name or Sub-Dealer Name
     {
       id: "name",
-      header: "Name",
+      header: activeTab === "dealers" ? "Dealer Name" : "Sub-Dealer Name",
       cell: ({ row }) => (
         <span className="font-medium">
           {row.original.type === "Dealer" ? row.original.dealerName : row.original.subDealerName}
@@ -168,6 +216,7 @@ export default function DealerReportsPage() {
           const name = row.original.type === "Dealer" ? row.original.dealerName : row.original.subDealerName;
           toast.info(`Downloading report for ${name} as ${format.toUpperCase()}...`);
           console.log(`Simulating individual download for ${row.original.id} in ${format}`);
+          // In a real scenario, you'd call an API endpoint here to generate and download the file.
         };
 
         return (
@@ -184,6 +233,9 @@ export default function DealerReportsPage() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
                 Download XLSX
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleViewReport(row.original)}>
+                View Details
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -207,6 +259,23 @@ export default function DealerReportsPage() {
     console.log("New dealer report order:", newOrder.map(r => r.id));
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Loading dealer reports...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500 min-h-screen pt-10">
+        Error: {error}
+        <Button onClick={fetchReports} className="ml-4">Retry</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <div className="flex-1 space-y-8 p-8 pt-6">
@@ -216,39 +285,195 @@ export default function DealerReportsPage() {
         </div>
 
         {/* Tabs for Dealers and Sub-Dealers */}
-        <Tabs defaultValue="dealers" className="w-full">
-          <TabsList className="grid w-fit grid-cols-2 bg-muted text-muted-foreground border-border">
-            <TabsTrigger value="dealers" className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm">Dealers</TabsTrigger>
-            <TabsTrigger value="sub-dealers" className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm">Sub-Dealers</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="dealers" className="w-full" onValueChange={(value: any) => setActiveTab(value)}>
+          <div className="flex justify-between items-center mb-4">
+            <TabsList className="grid w-fit grid-cols-2 bg-muted text-muted-foreground border-border">
+              <TabsTrigger value="dealers" className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm">Dealers</TabsTrigger>
+              <TabsTrigger value="sub-dealers" className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm">Sub-Dealers</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search reports..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-sm"
+              />
+              <Button onClick={() => (activeTab === 'dealers' ? handleDownloadAllDealers('xlsx') : handleDownloadAllSubDealers('xlsx'))} className="flex items-center gap-2">
+                <IconDownload size={20} /> Download All
+              </Button>
+            </div>
+          </div>
+
 
           {/* Content for Dealers Tab */}
           <TabsContent value="dealers" className="mt-4 bg-card p-6 rounded-lg border border-border">
-            <DataTableReusable
-              columns={dealerReportColumns}
-              data={dealerData}
-              reportTitle="Dealer Reports"
-              filterColumnAccessorKey="dealerName" // Filter by dealer name
-              onDownloadAll={handleDownloadAllDealers}
-              enableRowDragging={false}
-              onRowOrderChange={handleDealerReportOrderChange}
-            />
+            {paginatedReports.length === 0 && !loading && !error ? (
+              <div className="text-center text-gray-500 py-8">No dealer reports found.</div>
+            ) : (
+              <>
+                <DataTableReusable
+                  columns={dealerReportColumns}
+                  data={paginatedReports}
+                  reportTitle="Dealer Reports"
+                  filterColumnAccessorKey="dealerName"
+                  onDownloadAll={handleDownloadAllDealers}
+                  enableRowDragging={false}
+                  onRowOrderChange={handleDealerReportOrderChange}
+                  // Removed: hideToolbar={true}
+                />
+                <Pagination className="mt-6">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        aria-disabled={currentPage === 1}
+                        tabIndex={currentPage === 1 ? -1 : undefined}
+                      />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, index) => (
+                      <PaginationItem key={index}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(index + 1)}
+                          isActive={currentPage === index + 1}
+                        >
+                          {index + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        aria-disabled={currentPage === totalPages}
+                        tabIndex={currentPage === totalPages ? -1 : undefined}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </>
+            )}
           </TabsContent>
 
           {/* Content for Sub-Dealers Tab */}
           <TabsContent value="sub-dealers" className="mt-4 bg-card p-6 rounded-lg border border-border">
-            <DataTableReusable
-              columns={dealerReportColumns} // Reusing the same column definitions
-              data={subDealerData}
-              reportTitle="Sub-Dealer Reports"
-              filterColumnAccessorKey="subDealerName" // Filter by sub-dealer name
-              onDownloadAll={handleDownloadAllSubDealers}
-              enableRowDragging={false}
-              onRowOrderChange={handleDealerReportOrderChange}
-            />
+            {paginatedReports.length === 0 && !loading && !error ? (
+              <div className="text-center text-gray-500 py-8">No sub-dealer reports found.</div>
+            ) : (
+              <>
+                <DataTableReusable
+                  columns={dealerReportColumns}
+                  data={paginatedReports}
+                  reportTitle="Sub-Dealer Reports"
+                  filterColumnAccessorKey="subDealerName"
+                  onDownloadAll={handleDownloadAllSubDealers}
+                  enableRowDragging={false}
+                  onRowOrderChange={handleDealerReportOrderChange}
+                  // Removed: hideToolbar={true}
+                />
+                <Pagination className="mt-6">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        aria-disabled={currentPage === 1}
+                        tabIndex={currentPage === 1 ? -1 : undefined}
+                      />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, index) => (
+                      <PaginationItem key={index}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(index + 1)}
+                          isActive={currentPage === index + 1}
+                        >
+                          {index + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        aria-disabled={currentPage === totalPages}
+                        tabIndex={currentPage === totalPages ? -1 : undefined}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedReport && (
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedReport.type} Report Details</DialogTitle>
+              <DialogDescription>
+                Detailed information about the {selectedReport.type.toLowerCase()}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 gap-4 py-4">
+              <div>
+                <Label htmlFor="salesmanName">Salesman Name</Label>
+                <Input id="salesmanName" value={selectedReport.salesmanName} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="name">{selectedReport.type === 'Dealer' ? 'Dealer Name' : 'Sub-Dealer Name'}</Label>
+                <Input id="name" value={selectedReport.type === 'Dealer' ? selectedReport.dealerName || '' : selectedReport.subDealerName || ''} readOnly />
+              </div>
+              {selectedReport.type === 'Sub Dealer' && selectedReport.dealerName && (
+                <div>
+                  <Label htmlFor="parentDealerName">Parent Dealer</Label>
+                  <Input id="parentDealerName" value={selectedReport.dealerName} readOnly />
+                </div>
+              )}
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Input id="type" value={selectedReport.type} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="region">Region</Label>
+                <Input id="region" value={selectedReport.region} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="area">Area</Label>
+                <Input id="area" value={selectedReport.area} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="phoneNo">Phone No.</Label>
+                <Input id="phoneNo" value={selectedReport.phoneNo} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <Textarea id="address" value={selectedReport.address} readOnly className="h-16" />
+              </div>
+              <div>
+                <Label htmlFor="totalPotential">Total Potential (₹)</Label>
+                <Input id="totalPotential" value={selectedReport.dealerTotalPotential.toFixed(2)} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="bestPotential">Best Potential (₹)</Label>
+                <Input id="bestPotential" value={selectedReport.dealerBestPotential.toFixed(2)} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="brandSelling">Brands Selling</Label>
+                <Input id="brandSelling" value={selectedReport.brandSelling.join(', ')} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="feedbacks">Feedbacks</Label>
+                <Textarea id="feedbacks" value={selectedReport.feedbacks} readOnly className="h-24" />
+              </div>
+              <div>
+                <Label htmlFor="remarks">Remarks</Label>
+                <Textarea id="remarks" value={selectedReport.remarks || 'N/A'} readOnly className="h-24" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setIsViewModalOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
