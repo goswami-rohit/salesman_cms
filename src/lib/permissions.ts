@@ -10,6 +10,7 @@ export interface DashboardPermissions {
   // Business Dashboard section
   dashboard: boolean;
   users: boolean;
+  assignTasks: boolean;
   salesmanAttendance: boolean;
   salesmanLeaves: boolean;
   salesmanGeotracking: boolean;
@@ -36,6 +37,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     // Business Dashboard - full access
     dashboard: true,
     users: true,
+    assignTasks: true,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
@@ -57,9 +59,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     downloadReports: true,
     
-    // Business Dashboard - all except users
+    // Business Dashboard - all except users and tasks
     dashboard: true,
     users: false,
+    assignTasks: false,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
@@ -84,6 +87,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     // Business Dashboard - limited access
     dashboard: true,
     users: false,
+    assignTasks: false,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: false,  // No access

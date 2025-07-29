@@ -26,23 +26,23 @@ model Company {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  workosUserId String    @unique @map("workos_user_id")
-  companyId    Int       @map("company_id")
-  email        String    @map("email")
-  firstName    String?   @map("first_name")
-  lastName     String?   @map("last_name")
-  role         String    @map("role") // "admin", "manager", "staff" (for salesmen)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  phoneNumber  String?   @map("phone_number") @db.VarChar(50)
-  company      Company   @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  inviteToken  String?   @unique
-  status       String    @default("active") // "pending", "active", "inactive"
+  id                        Int       @id @default(autoincrement())
+  workosUserId              String    @unique @map("workos_user_id")
+  companyId                 Int       @map("company_id")
+  email                     String    @map("email")
+  firstName                 String?   @map("first_name")
+  lastName                  String?   @map("last_name")
+  role                      String    @map("role") // "admin", "manager", "staff" (for salesmen)
+  createdAt                 DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  phoneNumber               String?   @map("phone_number") @db.VarChar(50)
+  company                   Company   @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inviteToken               String?   @unique
+  status                    String    @default("active") // "pending", "active", "inactive"
 
   // Fields for salesman app specific login (empID and emp_password)
-  salesmanLoginId String? @unique @map("salesman_login_id")
-  hashedPassword  String? @map("hashed_password") // Stores securely hashed passwords
+  salesmanLoginId           String?   @unique @map("salesman_login_id")
+  hashedPassword            String?   @map("hashed_password") // Stores securely hashed passwords
 
   // Relationships to new tables
   dailyVisitReports         DailyVisitReport[]
@@ -53,6 +53,10 @@ model User {
   salesmanLeaveApplications SalesmanLeaveApplication[]
   clientReports             ClientReport[]
   competitionReports        CompetitionReport[]
+  geoTrackingRecords        GeoTracking[] @relation("UserGeoTracking") // Relationship for GeoTracking records
+  assignedTasks             DailyTask[]  @relation("AssignedTasks") // Tasks assigned to this user (salesman)
+  createdTasks              DailyTask[]  @relation("CreatedTasks") // Tasks created by this user (admin)
+
 
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -126,13 +130,14 @@ model PermanentJourneyPlan {
   planDate        DateTime @map("plan_date") @db.Date
   areaToBeVisited String   @map("area_to_be_visited") @db.VarChar(500)
   description     String?  @db.VarChar(500)
-  status          String   @db.VarChar(50) // "Planned", "Visited", "Not Visited"
+  status          String   @db.VarChar(50) // "Planned", "Visited", "Not Visited", etc.
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyTasks DailyTask[] @relation("PJPTasks") // NEW: A Permanent Journey Plan can have multiple daily tasks
 
-  @@index([userId], map: "idx_permanent_journey_plans_user_id")
+  @@index([userId], map: "idx_permanent_journey_plans_user_id") // Unique index name
   @@map("permanent_journey_plans")
 }
 
@@ -158,8 +163,9 @@ model Dealer {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   parentDealer Dealer?  @relation("SubDealers", fields: [parentDealerId], references: [id], onDelete: SetNull)
   subDealers   Dealer[] @relation("SubDealers")
+  dailyTasks   DailyTask[] @relation("DealerDailyTasks") // NEW: Tasks related to this dealer (Named relation)
 
-  @@index([userId], map: "idx_dealers_user_id")
+  @@index([userId], map: "idx_dealers_user_id") // Corrected duplicate index name
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
   @@map("dealers")
 }
@@ -216,6 +222,7 @@ model SalesmanLeaveApplication {
   @@map("salesman_leave_applications")
 }
 
+// 7. Client Report
 model ClientReport {
   id                        String   @id @default(cuid()) // Unique ID for each report
   dealerType                String
@@ -234,9 +241,8 @@ model ClientReport {
   anyRemarks                String
   checkOutTime              DateTime @map("check_out_time")
 
-  // Relationship to the User (salesman) who created this report.
-  userId Int // <--- CHANGED FROM String TO Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade) // <--- ADDED onDelete: Cascade
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -244,6 +250,7 @@ model ClientReport {
   @@map("client_reports")
 }
 
+// 8. Competition Report
 model CompetitionReport {
   id                    String    @id @default(cuid()) // Unique ID for each report
   userId                Int       @map("user_id") // Foreign Key to User.id (salesman who created report)
@@ -263,4 +270,67 @@ model CompetitionReport {
 
   @@map("competition_reports") // Table name in DB
   @@index([userId]) // Index for faster lookups by user
+}
+
+// 9. Geo Tracking
+model GeoTracking {
+  id                      String    @id @default(uuid()) // Unique ID for each geo-tracking record
+  userId                  Int       @map("user_id") // Foreign Key to User.id
+  latitude                Decimal   @db.Decimal(10, 7)
+  longitude               Decimal   @db.Decimal(10, 7)
+  recordedAt              DateTime  @default(now()) @map("recorded_at") @db.Timestamptz(6) // Timestamp of the recording
+  accuracy                Decimal?  @db.Decimal(10, 2) // Optional: GPS accuracy in meters
+  speed                   Decimal?  @db.Decimal(10, 2) // Optional: Speed in m/s
+  heading                 Decimal?  @db.Decimal(10, 2) // Optional: Direction of travel in degrees
+  altitude                Decimal?  @db.Decimal(10, 2) // Optional: Altitude in meters
+  locationType            String?   @map("location_type") @db.VarChar(50) // Optional: e.g., 'GPS', 'Network', 'Fused'
+  activityType            String?   @map("activity_type") @db.VarChar(50) // Optional: e.g., 'still', 'in_vehicle', 'walking'
+  appState                String?   @map("app_state") @db.VarChar(50) // Optional: 'foreground', 'background'
+  batteryLevel            Decimal?  @map("battery_level") @db.Decimal(5, 2) // Optional: Battery percentage (0-100)
+  isCharging              Boolean?  @map("is_charging") // Optional: Is device charging?
+  networkStatus           String?   @map("network_status") @db.VarChar(50) // Optional: 'wifi', 'mobile', 'none'
+  ipAddress               String?   @map("ip_address") @db.VarChar(45) // Optional: IPv4 or IPv6
+  siteName                String?   @map("site_name") @db.VarChar(255) // Optional: Name of a specific site if visited
+  checkInTime             DateTime? @map("check_in_time") @db.Timestamptz(6) // Optional: Timestamp of check-in
+  checkOutTime            DateTime? @map("check_out_time") @db.Timestamptz(6) // Optional: Timestamp of check-out
+  totalDistanceTravelled Decimal? @map("total_distance_travelled") @db.Decimal(10, 3) // NEW FIELD! Total distance in KM or M
+
+  // Relationship to the User (staff/employee)
+  user User @relation("UserGeoTracking", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId], map: "idx_geo_tracking_user_id")
+  @@index([recordedAt], map: "idx_geo_tracking_recorded_at") // Useful for time-based queries
+  @@map("geo_tracking") // Table name in DB
+}
+
+
+// 10. DailyTask model for admin to salesman task assignment
+model DailyTask {
+  id                String    @id @default(uuid()) @db.VarChar(255)
+  userId            Int       @map("user_id") // Salesman to whom the task is assigned
+  assignedByUserId  Int       @map("assigned_by_user_id") // Admin/Manager who assigned the task
+  taskDate          DateTime  @map("task_date") @db.Date
+  visitType         String    @map("visit_type") @db.VarChar(50) // "Client Visit", "Technical Visit"
+  relatedDealerId   String?   @map("related_dealer_id") @db.VarChar(255) // Optional: For Client Visits (FK to Dealer.id)
+  siteName          String?   @map("site_name") @db.VarChar(255) // Optional: For Technical Visits
+  description       String?   @db.VarChar(500)
+  status            String    @default("Assigned") @db.VarChar(50) // "Assigned", "Accepted", "Completed", "Rejected", "In Progress"
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  pjpId             String?   @map("pjp_id") @db.VarChar(255) // Foreign Key to PermanentJourneyPlan
+
+  user              User      @relation("AssignedTasks", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy        User      @relation("CreatedTasks", fields: [assignedByUserId], references: [id], onDelete: NoAction) // NoAction to keep admin record if deleted
+  relatedDealer     Dealer?   @relation("DealerDailyTasks", fields: [relatedDealerId], references: [id], onDelete: SetNull) // Named relation
+  permanentJourneyPlan PermanentJourneyPlan? @relation("PJPTasks", fields: [pjpId], references: [id], onDelete: SetNull) // Named relation
+
+  @@index([userId], map: "idx_daily_tasks_user_id")
+  @@index([assignedByUserId], map: "idx_daily_tasks_assigned_by_user_id")
+  @@index([taskDate], map: "idx_daily_tasks_task_date")
+  @@index([pjpId], map: "idx_daily_tasks_pjp_id")
+  @@map("daily_tasks")
 }
