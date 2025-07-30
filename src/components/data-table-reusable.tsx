@@ -53,7 +53,7 @@ import {
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+//import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -81,7 +81,7 @@ import {
 
 // --- Reusable Drag Handle Component ---
 // This is specific to drag-and-drop functionality, kept as provided
-function DragHandle<TData extends { id: UniqueIdentifier }>({ id }: { id: TData['id'] }) {
+export function DragHandle<TData extends { id: UniqueIdentifier }>({ id }: { id: TData['id'] }) {
   const { attributes, listeners } = useSortable({ id });
 
   return (

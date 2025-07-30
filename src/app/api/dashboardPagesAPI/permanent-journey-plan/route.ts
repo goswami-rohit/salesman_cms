@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const claims = await getTokenClaims();
 

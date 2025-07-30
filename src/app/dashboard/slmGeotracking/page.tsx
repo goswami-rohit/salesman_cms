@@ -1,8 +1,8 @@
 // src/app/dashboard/slmGeotracking/page.tsx
 "use client";
 
-import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import { redirect } from 'next/navigation';
+// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+// import { redirect } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Table,
@@ -40,7 +40,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Although GeoTracking doesn't have textareas, keeping for consistency
+//import { Textarea } from "@/components/ui/textarea"; // Although GeoTracking doesn't have textareas, keeping for consistency
 
 // Zod schema for GeoTracking data based on API response
 const geoTrackingSchema = z.object({
@@ -87,18 +87,18 @@ export default function SlmGeoTrackingPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<GeoTrackingRecord | null>(null);
 
-  React.useEffect(() => {
-      async function checkAuth() {
-        const claims = await getTokenClaims();
-        if (!claims || !claims.sub) {
-          redirect('/login');
-        }
-        if (!claims.org_id) {
-          redirect('/dashboard');
-        }
-      }
-      checkAuth();
-    }, []);
+  // React.useEffect(() => {
+  //     async function checkAuth() {
+  //       const claims = await getTokenClaims();
+  //       if (!claims || !claims.sub) {
+  //         redirect('/login');
+  //       }
+  //       if (!claims.org_id) {
+  //         redirect('/dashboard');
+  //       }
+  //     }
+  //     checkAuth();
+  //   }, []);
     
   const fetchGeoTrackingRecords = useCallback(async () => {
     setLoading(true);

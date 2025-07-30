@@ -2,11 +2,11 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function JoinPage() {
+function JoinPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const token = searchParams.get('token');
@@ -48,5 +48,27 @@ export default function JoinPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function JoinPage() {
+    return (
+        // Wrap the component that uses useSearchParams with Suspense
+        <Suspense fallback={
+            <div className="min-h-screen bg-background flex items-center justify-center p-6">
+                <Card className="max-w-md w-full">
+                    <CardHeader>
+                        <CardTitle>Loading Invitation...</CardTitle>
+                        <CardDescription>Please wait while we process your invitation.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {/* You can add a spinner or more elaborate loading UI here */}
+                        <div className="flex justify-center items-center py-8">Loading...</div> 
+                    </CardContent>
+                </Card>
+            </div>
+        }>
+            <JoinPageContent />
+        </Suspense>
     );
 }

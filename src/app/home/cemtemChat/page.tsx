@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+//import Link from 'next/link';
 import {
     Send,
     Bot,
@@ -16,7 +16,7 @@ import {
     MoreVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+//import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import {
     Sheet,
     SheetContent,
-    SheetTrigger,
+    //SheetTrigger,
 } from '@/components/ui/sheet';
 import {
     DropdownMenu,

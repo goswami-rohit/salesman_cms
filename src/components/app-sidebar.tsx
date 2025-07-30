@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react";
-import { GalleryVerticalEnd, Building2, ChevronLeft, ChevronRight, } from "lucide-react"
+import { Building2 } from "lucide-react"
 import Link from "next/link"
 import {
   Sidebar,
@@ -150,7 +150,7 @@ export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<
 
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed] = useState(false);
   // Fetch company information
   useEffect(() => {
     const fetchCompanyInfo = async () => {

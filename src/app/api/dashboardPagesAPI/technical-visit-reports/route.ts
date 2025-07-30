@@ -1,12 +1,12 @@
 // src/app/api/dashboardPagesAPI/technical-visit-reports/route.ts
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 // GET /api/dashboardPagesAPI/technical-reports
 // Fetches all technical visit reports from the database
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const technicalReports = await prisma.technicalVisitReport.findMany({
       include: {

@@ -13,6 +13,6 @@ export async function GET() {
             sub: claims?.sub
         });
     } catch (error) {
-        return NextResponse.json({ error: error.message });
+        return NextResponse.json({ error: error });
     }
 }

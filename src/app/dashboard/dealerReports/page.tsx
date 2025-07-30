@@ -2,8 +2,8 @@
 'use client';
 
 import * as React from 'react';
-import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import { redirect } from 'next/navigation';
+// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -15,14 +15,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+// import {
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableHead,
+//   TableHeader,
+//   TableRow,
+// } from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -82,18 +82,18 @@ export default function DealerReportsPage() {
   const [selectedReport, setSelectedReport] = React.useState<DealerReport | null>(null);
 
 
-  React.useEffect(() => {
-    async function checkAuth() {
-      const claims = await getTokenClaims();
-      if (!claims || !claims.sub) {
-        redirect('/login');
-      }
-      if (!claims.org_id) {
-        redirect('/dashboard');
-      }
-    }
-    checkAuth();
-  }, []);
+  // React.useEffect(() => {
+  //   async function checkAuth() {
+  //     const claims = await getTokenClaims();
+  //     if (!claims || !claims.sub) {
+  //       redirect('/login');
+  //     }
+  //     if (!claims.org_id) {
+  //       redirect('/dashboard');
+  //     }
+  //   }
+  //   checkAuth();
+  // }, []);
 
   // --- Data Fetching Logic ---
   const fetchReports = React.useCallback(async () => {

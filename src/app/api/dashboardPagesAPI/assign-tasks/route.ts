@@ -16,7 +16,7 @@ const assignTaskSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const claims = await getTokenClaims();
 

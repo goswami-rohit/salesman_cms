@@ -2,8 +2,8 @@
 'use client';
 
 import * as React from 'react';
-import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import { redirect } from 'next/navigation';
+// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
+import { IconDotsVertical } from '@tabler/icons-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
@@ -39,18 +39,18 @@ export default function TechnicalVisitReportsPage() {
   const [technicalReports, setTechnicalReports] = React.useState<TechnicalVisitReport[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    async function checkAuth() {
-      const claims = await getTokenClaims();
-      if (!claims || !claims.sub) {
-        redirect('/login');
-      }
-      if (!claims.org_id) {
-        redirect('/dashboard');
-      }
-    }
-    checkAuth();
-  }, []);
+  // React.useEffect(() => {
+  //   async function checkAuth() {
+  //     const claims = await getTokenClaims();
+  //     if (!claims || !claims.sub) {
+  //       redirect('/login');
+  //     }
+  //     if (!claims.org_id) {
+  //       redirect('/dashboard');
+  //     }
+  //   }
+  //   checkAuth();
+  // }, []);
 
   // --- Data Fetching Function ---
   const fetchTechnicalReports = React.useCallback(async () => {

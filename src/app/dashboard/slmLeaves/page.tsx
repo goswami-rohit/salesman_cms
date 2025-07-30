@@ -2,8 +2,8 @@
 'use client';
 
 import * as React from 'react';
-import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import { redirect } from 'next/navigation';
+// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -52,18 +52,18 @@ export default function SlmLeavesPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
 
   // Auth check remains the same
-  React.useEffect(() => {
-    async function checkAuth() {
-      const claims = await getTokenClaims();
-      if (!claims || !claims.sub) {
-        redirect('/login');
-      }
-      if (!claims.org_id) {
-        redirect('/dashboard');
-      }
-    }
-    checkAuth();
-  }, []);
+  // React.useEffect(() => {
+  //   async function checkAuth() {
+  //     const claims = await getTokenClaims();
+  //     if (!claims || !claims.sub) {
+  //       redirect('/login');
+  //     }
+  //     if (!claims.org_id) {
+  //       redirect('/dashboard');
+  //     }
+  //   }
+  //   checkAuth();
+  // }, []);
 
   // --- Data Fetching Logic ---
   const fetchLeaveApplications = React.useCallback(async () => {

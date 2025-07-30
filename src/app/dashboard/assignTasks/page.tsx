@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import { redirect } from 'next/navigation';
+//import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+//import { redirect } from 'next/navigation';
 import { z } from "zod";
 import { toast } from "sonner";
 
@@ -102,7 +102,7 @@ const assignTaskFormSchema = z.object({
   }
 });
 
-type AssignTaskFormData = z.infer<typeof assignTaskFormSchema>;
+//type AssignTaskFormData = z.infer<typeof assignTaskFormSchema>;
 
 export default function AssignTasksPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -121,19 +121,19 @@ export default function AssignTasksPage() {
   const [description, setDescription] = useState<string>("");
 
   // --- Authentication Check ---
-  useEffect(() => {
-    async function checkAuth() {
-      const claims = await getTokenClaims();
-      if (!claims || !claims.sub) {
-        redirect('/login'); 
-      }    
-      if (!claims.org_id) {
-        redirect('/dashboard'); 
-      }
+  // useEffect(() => {
+  //   async function checkAuth() {
+  //     const claims = await getTokenClaims();
+  //     if (!claims || !claims.sub) {
+  //       redirect('/login'); 
+  //     }    
+  //     if (!claims.org_id) {
+  //       redirect('/dashboard'); 
+  //     }
     
-    }
-    checkAuth();
-  }, []);
+  //   }
+  //   checkAuth();
+  // }, []);
 
   // --- Fetch Salesmen and Dealers for the Form ---
   const fetchFormData = useCallback(async () => {

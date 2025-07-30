@@ -1,5 +1,5 @@
 // src/middleware.ts
-import { authkitMiddleware, withAuth } from '@workos-inc/authkit-nextjs';
+import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
 
 export default authkitMiddleware({
   middlewareAuth: {
