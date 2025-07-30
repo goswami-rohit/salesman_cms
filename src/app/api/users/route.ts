@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique IDs
-import bcrypt from 'bcryptjs'; // Import bcryptjs
+//import bcrypt from 'bcryptjs'; // Import bcryptjs
 
 // Create Gmail transporter
 const createEmailTransporter = () => {
@@ -241,8 +241,9 @@ export async function POST(request: Request) {
 
             // Generate temporary password and hash it
             tempPasswordPlaintext = generateRandomPassword();
-            const salt = await bcrypt.genSalt(10);
-            hashedPassword = await bcrypt.hash(tempPasswordPlaintext, salt);
+            //const salt = await bcrypt.genSalt(10);
+            //hashedPassword = await bcrypt.hash(tempPasswordPlaintext, salt);
+            hashedPassword = tempPasswordPlaintext;
         }
 
         // Create user in database
