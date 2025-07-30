@@ -13,11 +13,29 @@ export const GET = async (request: NextRequest) => { // Ensure GET is async
   console.log('Request Headers X-Forwarded-Host:', request.headers.get('x-forwarded-host'));
   console.log('--- End Auth Callback Debugging ---');
 
-  // IMPORTANT: Ensure your WorkOS_CLIENT_ID and WORKOS_API_KEY are also set correctly as ENV vars on Render.
-  // The handleAuth function uses these internally.
+  // Determine the correct public host from headers
+  const publicHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const protocol = request.headers.get('x-forwarded-proto') || 'http'; // Render uses HTTPS
 
+  // Construct the correct public origin
+  const correctOrigin = `${protocol}://${publicHost}`;
+
+  // Reconstruct the request URL with the correct origin
+  // This creates a new URL object based on the correct origin and the original pathname/search
+  const correctUrl = new URL(request.url + request.url.search, correctOrigin);
+
+  // Create a new NextRequest with the corrected URL
+  const correctedRequest = new NextRequest(correctUrl.toString(), {
+    headers: request.headers,
+    method: request.method,
+    body: request.body,
+    // Add other properties if necessary, though headers/method/body are usually sufficient
+  });
+
+  console.log('Corrected Request URL Origin:', correctedRequest.url); // Log the corrected URL
+
+  // Pass the corrected request to handleAuth
   return handleAuth({
-    returnPathname: '/home', // This is correct for the internal app path
-    // No 'authkit' property here, as per the TypeScript error.
-  })(request);
+    returnPathname: '/home',
+  })(correctedRequest); // Pass the correctedRequest here
 };
