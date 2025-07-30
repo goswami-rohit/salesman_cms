@@ -13,29 +13,34 @@ export const GET = async (request: NextRequest) => { // Ensure GET is async
   console.log('Request Headers X-Forwarded-Host:', request.headers.get('x-forwarded-host'));
   console.log('--- End Auth Callback Debugging ---');
 
-  // Determine the correct public host from headers
+  // Determine the correct public host from headers provided by Render
   const publicHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
-  const protocol = request.headers.get('x-forwarded-proto') || 'http'; // Render uses HTTPS
+  // Render always serves over HTTPS, so ensure the protocol is set correctly
+  const protocol = request.headers.get('x-forwarded-proto') || 'https';
 
-  // Construct the correct public origin
-  const correctOrigin = `${protocol}://${publicHost}`;
+  // Construct the correct public origin (e.g., "https://salesmancms-dashboard.onrender.com")
+  const correctBaseUrl = `${protocol}://${publicHost}`;
 
-  // Reconstruct the request URL with the correct origin
-  // This creates a new URL object based on the correct origin and the original pathname/search
-  const correctUrl = new URL(request.url + request.url.search, correctOrigin);
+  // Combine the pathname and search query from the original request URL
+  // This ensures no accidental global variables or functions are concatenated.
+  const correctedPathAndQuery = '/auth/callback' + request.url.search;
 
-  // Create a new NextRequest with the corrected URL
-  const correctedRequest = new NextRequest(correctUrl.toString(), {
-    headers: request.headers,
-    method: request.method,
-    body: request.body,
-    // Add other properties if necessary, though headers/method/body are usually sufficient
+  // Create a new URL object with the corrected public origin
+  // This effectively overrides the 'localhost:10000' origin seen by Next.js internally
+  const correctedUrlObject = new URL(correctedPathAndQuery, correctBaseUrl);
+
+  // Create a new NextRequest instance using the correctly formed public-facing URL
+  const correctedRequest = new NextRequest(correctedUrlObject.toString(), {
+    headers: request.headers, // Important: Preserve all original headers
+    method: request.method,   // Preserve the original method (GET for this route)
+    body: request.body, 
   });
 
-  console.log('Corrected Request URL Origin:', correctedRequest.url); // Log the corrected URL
+  // Log the string representation of the corrected URL to verify its format
+  console.log('Corrected Request URL toString():', correctedRequest.url.toString());
 
-  // Pass the corrected request to handleAuth
+  // Pass the corrected request to the handleAuth function
   return handleAuth({
-    returnPathname: '/home',
-  })(correctedRequest); // Pass the correctedRequest here
+    returnPathname: '/home', // Still redirect to /home within your application
+  })(correctedRequest); // Use the corrected request object here
 };
