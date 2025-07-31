@@ -3,7 +3,6 @@ import { withAuth, getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import DashboardShell from './dashboardShell';
-//import { WorkOS } from '@workos-inc/node';
 
 async function refreshUserJWTIfNeeded(user: any, claims: any) {
   if (!claims?.org_id) {
@@ -22,118 +21,81 @@ async function refreshUserJWTIfNeeded(user: any, claims: any) {
   return { needsRefresh: false };
 }
 
-// THIS IS THE NEW ACTIVATION LOGIC BLOCK
-async function activateUser(user: any, claims: any) {
-  if (!user || !claims || !claims.email || !claims.sub) {
-    console.log('User or claims are missing, cannot activate.');
-    return; // Do nothing if there's no user to activate
-  }
-  
-  try {
-    const localUser = await prisma.user.findFirst({
-        where: {
-            email: claims.email,
-        },
-    });
-
-    // If the user exists in our DB but doesn't have a workosUserId, activate them.
-    if (localUser && !localUser.workosUserId) {
-      console.log('🔄 Activating user account on first sign-in for:', localUser.email);
-      const workosRole = claims.role as string;
-      
-      await prisma.user.update({
-          where: { id: localUser.id },
-          data: {
-              workosUserId: claims.sub,
-              status: 'active',
-              inviteToken: null,
-              role: workosRole || localUser.role,
-          },
-      });
-      console.log('✅ User account activated and linked successfully');
-    }
-
-  } catch (error) {
-    console.error('❌ Error during database activation in layout:', error);
-    // Continue with the layout, but log the error
-  }
-}
-
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // 1. Get the authenticated user and claims from WorkOS
   const { user } = await withAuth();
   const claims = await getTokenClaims();
 
-  // 2. If no user is authenticated, redirect to login
   if (!user) {
     redirect('/login');
   }
 
-  // 3. Perform the CRITICAL activation step here!
-  await activateUser(user, claims);
-  
-  // 4. Proceed with existing logic
+  // Ensure the user is in the local database before proceeding.
+  let dbUser = await prisma.user.findUnique({
+    where: { workosUserId: user.id },
+    include: { company: true }
+  });
+
+  // If the user doesn't exist in the database by workosUserId,
+  // try to find them by email and link their account.
+  if (!dbUser) {
+    const userByEmail = await prisma.user.findFirst({
+        where: { email: user.email },
+    });
+    if (userByEmail) {
+        console.log(`🔗 Linking existing user account ${userByEmail.email} with WorkOS ID ${user.id}`);
+        dbUser = await prisma.user.update({
+            where: { id: userByEmail.id },
+            data: {
+                workosUserId: user.id,
+                status: 'active',
+                inviteToken: null,
+                role: claims?.role as string || userByEmail.role,
+            },
+            include: { company: true }
+        });
+    } else {
+        // If they are not in the DB at all, this is a critical issue.
+        console.error('❌ User exists in WorkOS but not in the local database.');
+        redirect('/setup-company');
+    }
+  }
+
+  // All subsequent logic now assumes `dbUser` is valid.
   const workosRole = claims?.role as string | undefined;
   const permissions = (claims?.permissions as string[]) || [];
-  const organizationId = claims?.org_id as string | undefined;
-
-  console.log('🔍 WorkOS Claims:', {
-    role: workosRole,
-    permissions,
-    organizationId,
-    userEmail: user.email
-  });
 
   const refreshCheck = await refreshUserJWTIfNeeded(user, claims);
   if (refreshCheck.needsRefresh) {
     redirect('/auth/refresh?returnTo=/dashboard');
   }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { workosUserId: user.id },
-    include: { company: true }
-  });
-
-  if (!dbUser) {
-    console.error('❌ User not found by WorkOS ID after activation attempt. Redirecting to home.');
-    redirect('/');
-  }
-
+  
+  // Check if the user's role is out of sync and update it
   if (workosRole && dbUser.role !== workosRole) {
     console.log(`🔄 Updating user role from ${dbUser.role} to ${workosRole}`);
-    await prisma.user.update({
+    dbUser = await prisma.user.update({
       where: { id: dbUser.id },
       data: { role: workosRole },
+      include: { company: true }
     });
   }
-  
-  const updatedDbUser = await prisma.user.findUnique({
-    where: { workosUserId: user.id },
-    include: { company: true }
-  });
 
-  if (!updatedDbUser) {
-    console.error('User not found after update.');
-    redirect('/');
-  }
-
-  const company = updatedDbUser.company;
-
+  // Check for company access
+  const company = dbUser.company;
   if (!company) {
     console.error('User has no company access');
     redirect('/setup-company');
   }
 
-  const finalRole = updatedDbUser.role || 'admin';
+  const finalRole = dbUser.role || 'admin';
   console.log('🎯 Final role being used:', finalRole);
 
   return (
     <DashboardShell
-      user={updatedDbUser}
+      user={dbUser}
       company={company}
       workosRole={finalRole}
       permissions={permissions}
