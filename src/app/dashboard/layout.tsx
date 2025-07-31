@@ -3,7 +3,7 @@ import { withAuth, getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import DashboardShell from './dashboardShell';
-import { WorkOS } from '@workos-inc/node';
+//import { WorkOS } from '@workos-inc/node';
 
 async function refreshUserJWTIfNeeded(user: any, claims: any) {
   // Check if JWT needs refresh (missing org data but user should have it)
@@ -57,87 +57,56 @@ export default async function DashboardLayout({
     redirect('/auth/refresh?returnTo=/dashboard');
   }
 
-  // 5. Try to find user in database by WorkOS ID
-  let dbUser = await prisma.user.findUnique({
+  // 5. Find user in database by WorkOS ID
+  const dbUser = await prisma.user.findUnique({
     where: { workosUserId: user.id },
     include: { company: true }
   });
 
-  // 6. If user not found, check if they have a pending invitation
+  // 6. If user is not in database after WorkOS authentication, something is wrong
+  // This case should be handled by the /auth/callback route.
   if (!dbUser) {
-    console.log('🔍 User not found by WorkOS ID, checking for pending invitation...');
-
-    const pendingUser = await prisma.user.findFirst({
-      where: {
-        email: user.email,
-        status: 'pending'
-      },
-      include: { company: true }
-    });
-
-    if (pendingUser) {
-      console.log('✅ Found pending user, activating...');
-
-      // Check if they need to be added to WorkOS organization (backup check)
-      if (!workosRole && organizationId) {
-        console.log('🔄 No role found, trying to add to WorkOS organization...');
-        try {
-          const workos = new WorkOS(process.env.WORKOS_API_KEY!);
-          await workos.userManagement.createOrganizationMembership({
-            userId: user.id,
-            organizationId: organizationId,
-            roleSlug: pendingUser.role.toLowerCase(),
-          });
-          console.log('✅ Added user to WorkOS organization');
-        } catch (error) {
-          console.error('❌ Error adding to WorkOS org:', error);
-        }
-      }
-
-      // Activate the invited user
-      dbUser = await prisma.user.update({
-        where: { id: pendingUser.id },
-        data: {
-          workosUserId: user.id,
-          status: 'active',
-          inviteToken: null,
-          role: workosRole || pendingUser.role,
-        },
-        include: { company: true }
-      });
-
-      console.log('🎉 Invited user activated successfully');
-    } else {
-      console.log('❌ No pending invitation found - new user needs company setup');
-      redirect('/setup-company');
-    }
+    console.log('❌ User not found by WorkOS ID. This should have been handled by the callback route.');
+    // A user with a WorkOS ID should always have a local record.
+    // Redirect to a landing page or an error page.
+    redirect('/');
   }
 
-  // 7. Fallback to database role if WorkOS role is not available
-  const finalRole = workosRole || dbUser.role || 'admin';
-
-  console.log('🎯 Final role being used:', finalRole);
-
-  // 8. Update user role if it changed in WorkOS
-  if (dbUser && workosRole && dbUser.role !== workosRole) {
+  // 7. Update user role if it changed in WorkOS
+  if (workosRole && dbUser.role !== workosRole) {
     console.log(`🔄 Updating user role from ${dbUser.role} to ${workosRole}`);
-    dbUser = await prisma.user.update({
+    await prisma.user.update({
       where: { id: dbUser.id },
       data: { role: workosRole },
-      include: { company: true }
     });
   }
+  
+  // 8. Re-fetch the user to get the updated role for the layout
+  const updatedDbUser = await prisma.user.findUnique({
+    where: { workosUserId: user.id },
+    include: { company: true }
+  });
 
-  const company = dbUser.company;
+  if (!updatedDbUser) {
+    console.error('User not found after update.');
+    redirect('/');
+  }
+
+  const company = updatedDbUser.company;
 
   if (!company) {
     console.error('User has no company access');
     redirect('/');
   }
 
+  // 9. Use the updated role from the database
+  const finalRole = updatedDbUser.role || 'admin';
+
+  console.log('🎯 Final role being used:', finalRole);
+
   return (
     <DashboardShell
-      user={dbUser}
+      user={updatedDbUser}
       company={company}
       workosRole={finalRole}
       permissions={permissions}
