@@ -25,11 +25,11 @@ async function sendInvitationEmailGmail({
     lastName,
     companyName,
     adminName,
-    inviteUrl,
+    inviteUrl, // This will be the WorkOS accept_invitation_url
     role,
     fromEmail,
-    salesmanLoginId, // NEW: Pass salesmanLoginId
-    tempPassword // NEW: Pass temporary password
+    salesmanLoginId,
+    tempPassword
 }: {
     to: string;
     firstName: string;
@@ -39,8 +39,8 @@ async function sendInvitationEmailGmail({
     inviteUrl: string;
     role: string;
     fromEmail: string;
-    salesmanLoginId?: string | null; // Make optional as it's for staff only
-    tempPassword?: string | null; // Make optional
+    salesmanLoginId?: string | null;
+    tempPassword?: string | null;
 }) {
     const transporter = createEmailTransporter();
 
@@ -57,10 +57,8 @@ async function sendInvitationEmailGmail({
     const salesmanDetailsText = salesmanLoginId && tempPassword ? `
 For your Sales Team Mobile App login:
 Employee ID (Login ID): ${salesmanLoginId}
-Temporary Password: ${tempPassword}
-Please change this temporary password immediately after your first login to the mobile app.
+Password: ${tempPassword}
         ` : '';
-
 
     const htmlContent = `
     <!DOCTYPE html>
@@ -99,7 +97,7 @@ Please change this temporary password immediately after your first login to the 
             <p>Or copy and paste this link into your browser:</p>
             <div class="invite-code">${inviteUrl}</div>
             
-            ${salesmanDetailsHtml} {/* NEW: Include salesman details */}
+            ${salesmanDetailsHtml} {/* Include salesman details */}
             
             <p><strong>What happens next?</strong></p>
             <ul>
@@ -156,12 +154,12 @@ The ${companyName} Team
 
 // Function to generate a random password
 function generateRandomPassword(length: number = 10): string {
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  return password;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
 }
 
 
@@ -206,27 +204,32 @@ export async function POST(request: Request) {
             workosRole = 'staff';
         }
 
-        const existingUser = await prisma.user.findFirst({
+        const existingUser = await prisma.user.findUnique({
             where: {
-                email,
-                companyId: adminUser.companyId
-            }
+                companyId_email: {
+                    companyId: adminUser.companyId,
+                    email: email,
+                },
+            },
         });
 
         if (existingUser) {
-            return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
+            // Check if the existing user is already active in WorkOS
+            if (existingUser.workosUserId) {
+                return NextResponse.json({ error: 'User with this email already exists and is active' }, { status: 409 });
+            }
+            // If they have an existing invite, we can't create another
+            if (existingUser.inviteToken) {
+                return NextResponse.json({ error: 'User with this email already has a pending invitation' }, { status: 409 });
+            }
         }
-
-        const inviteToken = `invite_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-        const tempWorkosUserId = `temp_${uuidv4()}`; // Use uuid for better uniqueness
 
         let salesmanLoginId: string | null = null;
         let tempPasswordPlaintext: string | null = null;
         let hashedPassword = null;
 
         // Generate salesmanLoginId and temporary password ONLY for 'staff' role
-        if (workosRole === 'staff') { // Use the mapped WorkOS role
-            // Generate unique salesmanLoginId
+        if (workosRole === 'staff') {
             let isUnique = false;
             while (!isUnique) {
                 const generatedId = `EMP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -238,87 +241,99 @@ export async function POST(request: Request) {
                     isUnique = true;
                 }
             }
-
-            // Generate temporary password and hash it
             tempPasswordPlaintext = generateRandomPassword();
-            //const salt = await bcrypt.genSalt(10);
-            //hashedPassword = await bcrypt.hash(tempPasswordPlaintext, salt);
+            // In a production environment, uncomment the bcrypt lines below
+            // const salt = await bcrypt.genSalt(10);
+            // hashedPassword = await bcrypt.hash(tempPasswordPlaintext, salt);
             hashedPassword = tempPasswordPlaintext;
         }
 
-        // Create user in database
-        const newUser = await prisma.user.create({
-            data: {
-                email,
-                firstName,
-                lastName,
-                phoneNumber,
-                role: workosRole,
-                workosUserId: tempWorkosUserId,
-                companyId: adminUser.companyId,
-                inviteToken: inviteToken,
-                status: 'pending',
-                salesmanLoginId, // Now correctly assigned
-                hashedPassword, // Now correctly assigned (if staff)
-            },
-        });
-
-        console.log('✅ Created database user:', newUser.id);
-
-        let workosInvitationData = null;
+        // --- CORE LOGIC: Create WorkOS invitation and get the URL ---
+        let workosInvitation;
         try {
-            console.log('🔄 Sending WorkOS invitation with data:', {
+            console.log('🔄 Creating WorkOS invitation with data:', {
                 email,
                 organizationId: organizationId,
                 roleSlug: workosRole
             });
 
-            // Send invitation with mapped role
-            const invitation = await workos.userManagement.sendInvitation({
+            // Send invitation with mapped role. This API call returns the invitation object.
+            // Remember to disable the default invitation email in the WorkOS dashboard!
+            workosInvitation = await workos.userManagement.sendInvitation({
                 email: email,
                 organizationId: organizationId,
                 roleSlug: workosRole
             });
 
-            console.log('✅ Sent WorkOS invitation:', {
-                id: invitation.id,
-                email: invitation.email,
-                organizationId: invitation.organizationId,
-                state: invitation.state
+            console.log('✅ Created WorkOS invitation:', {
+                id: workosInvitation.id,
+                email: workosInvitation.email,
+                organizationId: workosInvitation.organizationId,
+                state: workosInvitation.state,
+                acceptInvitationUrl: workosInvitation.acceptInvitationUrl // This is the key URL!
             });
-            workosInvitationData = invitation;
 
         } catch (workosError: any) {
             console.error('❌ WorkOS invitation error:', workosError);
-            console.error('❌ WorkOS error message:', workosError.message);
-            console.error('❌ WorkOS error response:', workosError.response?.data);
-
-            if (workosError.response?.data) {
-                console.error('❌ Full error response:', JSON.stringify(workosError.response.data, null, 2));
-            }
-
             return NextResponse.json({
-                error: `Failed to send invitation in WorkOS: ${workosError.message}`
+                error: `Failed to create invitation in WorkOS: ${workosError.message}`
             }, { status: 500 });
         }
 
-        // Send invitation email using Gmail
-        try {
-            const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/joinNewUser?token=${inviteToken}`;
+        // Use the existing user record if it's a new invitation
+        let newUser;
+        if (existingUser) {
+            // Update the existing user's record with the new invitation details
+            // This is useful if an invite expired and a new one is sent
+            newUser = await prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                    firstName,
+                    lastName,
+                    phoneNumber,
+                    role: workosRole,
+                    // The workosUserId remains null until they log in
+                    status: 'pending',
+                    inviteToken: workosInvitation.id, // Use inviteToken for the workosInvitation ID
+                    salesmanLoginId,
+                    hashedPassword,
+                },
+            });
+        } else {
+            // Create a new user in your local database with a pending status.
+            newUser = await prisma.user.create({
+                data: {
+                    email,
+                    firstName,
+                    lastName,
+                    phoneNumber,
+                    role: workosRole,
+                    workosUserId: null, // The user ID is not yet available
+                    inviteToken: workosInvitation.id, // Store the invitation ID
+                    companyId: adminUser.companyId,
+                    status: 'pending',
+                    salesmanLoginId,
+                    hashedPassword,
+                },
+            });
+        }
 
+        console.log('✅ Created/Updated database user with WorkOS Invitation ID:', newUser.id);
+
+        // Send invitation email using Gmail, including the WorkOS URL
+        try {
             await sendInvitationEmailGmail({
                 to: email,
                 firstName,
                 lastName,
                 companyName: adminUser.company.companyName,
                 adminName: `${adminUser.firstName} ${adminUser.lastName}`,
-                inviteUrl,
+                inviteUrl: workosInvitation.acceptInvitationUrl, // Pass the WorkOS URL here
                 role: workosRole,
                 fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
-                salesmanLoginId: salesmanLoginId, // Pass generated ID
-                tempPassword: tempPasswordPlaintext // Pass temporary password
+                salesmanLoginId: salesmanLoginId,
+                tempPassword: tempPasswordPlaintext
             });
-
             console.log(`✅ Invitation email sent to ${email} via Gmail`);
         } catch (emailError) {
             console.error('❌ Failed to send invitation email:', emailError);
@@ -332,9 +347,9 @@ export async function POST(request: Request) {
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 role: newUser.role,
-                salesmanLoginId: newUser.salesmanLoginId, // Return salesmanLoginId
+                salesmanLoginId: newUser.salesmanLoginId,
             },
-            workosInvitation: workosInvitationData
+            workosInvitation: workosInvitation
         }, { status: 201 });
 
     } catch (error: any) {

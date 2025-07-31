@@ -33,11 +33,11 @@ interface Props {
 }
 
 export default function DashboardShell({ 
-  user, 
-  company, 
+  //user, 
+  //company, 
   children, 
   workosRole,
-  permissions 
+  //permissions 
 }: Props) {
   return (
     <SidebarProvider

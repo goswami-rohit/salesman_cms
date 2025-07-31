@@ -7,10 +7,10 @@ export default authkitMiddleware({
     unauthenticatedPaths: [
       '/',
       '/login',
-      '/login/signup',
-      '/login/reset-password',
+      //'/login/signup',
+      //'/login/reset-password',
       '/auth/callback',
-      '/joinNewUser',
+      //'/joinNewUser',
       //'/setup-company', // Keep this path as unauthenticated, as a new user without a company needs to access it.
     ],
   },

@@ -27,7 +27,7 @@ model Company {
 
 model User {
   id                        Int       @id @default(autoincrement())
-  workosUserId              String    @unique @map("workos_user_id")
+  workosUserId              String?    @unique @map("workos_user_id")
   companyId                 Int       @map("company_id")
   email                     String    @map("email")
   firstName                 String?   @map("first_name")
