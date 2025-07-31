@@ -74,7 +74,7 @@ interface AdminUser {
   lastName: string | null;
   role: string;
   company: Company;
-  workosUserId: string; // Add workosUserId to AdminUser
+  workosUserId: string | null;
 }
 
 interface Props {
