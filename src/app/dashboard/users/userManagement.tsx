@@ -56,10 +56,10 @@ interface User {
   lastName: string | null;
   phoneNumber: string | null;
   role: string;
-  workosUserId: string;
+  workosUserId: string | null; // Make workosUserId nullable here too
   createdAt: string;
   updatedAt: string;
-  salesmanLoginId?: string | null; // Add salesmanLoginId to interface
+  salesmanLoginId?: string | null;
 }
 
 interface Company {
@@ -74,6 +74,7 @@ interface AdminUser {
   lastName: string | null;
   role: string;
   company: Company;
+  workosUserId: string; // Add workosUserId to AdminUser
 }
 
 interface Props {
@@ -134,7 +135,6 @@ export default function UsersManagement({ adminUser }: Props) {
         await fetchUsers();
         setShowCreateModal(false);
         resetForm();
-        // UPDATED Success Message
         let successMsg = `User created and invitation sent to ${formData.email}.`;
         if (data.user && data.user.salesmanLoginId) {
           successMsg += ` Employee ID for mobile app: ${data.user.salesmanLoginId}. Temporary password sent via email.`;
@@ -181,21 +181,43 @@ export default function UsersManagement({ adminUser }: Props) {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  // MODIFIED: handleDeleteUser to call WorkOS API
+  const handleDeleteUser = async (userId: number, workosUserId: string | null) => {
     setLoading(true);
     setError('');
+    setSuccess(''); // Clear previous success messages
 
     try {
+      // First, delete from your database
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
-        await fetchUsers();
-        setSuccess('User deleted successfully');
+        // If local deletion is successful, attempt to delete from WorkOS
+        if (workosUserId) {
+          console.log(`Attempting to delete WorkOS user: ${workosUserId}`);
+          const workosDeleteResponse = await fetch('/api/delete-user', { // Create a new API route for this
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workosUserId: workosUserId })
+          });
+
+          if (workosDeleteResponse.ok) {
+            console.log(`✅ WorkOS user ${workosUserId} deleted successfully.`);
+            setSuccess('User deleted from local database and WorkOS successfully.');
+          } else {
+            const errorData = await workosDeleteResponse.json();
+            console.error('❌ Failed to delete user from WorkOS:', errorData.error);
+            setError(`User deleted locally, but failed to delete from WorkOS: ${errorData.error}`);
+          }
+        } else {
+          setSuccess('User deleted from local database successfully (no WorkOS ID found).');
+        }
+        await fetchUsers(); // Refresh the user list
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to delete user');
+        setError(errorData.error || 'Failed to delete user locally');
       }
     } catch (err) {
       setError('Error deleting user');
@@ -236,8 +258,7 @@ export default function UsersManagement({ adminUser }: Props) {
     }
   };
 
-  const isUserActive = (workosUserId: string) => {
-    // Check for "pending_" or "temp_" prefixes
+  const isUserActive = (workosUserId: string | null) => { // Updated to accept null
     return workosUserId && !workosUserId.startsWith('pending_') && !workosUserId.startsWith('temp_');
   };
 
@@ -332,7 +353,7 @@ export default function UsersManagement({ adminUser }: Props) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="staff">Staff</SelectItem> {/* Changed 'employee' to 'staff' here for consistency */}
+                      <SelectItem value="staff">Staff</SelectItem>
                       <SelectItem value="manager">Manager</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
@@ -514,32 +535,34 @@ export default function UsersManagement({ adminUser }: Props) {
                           </DialogContent>
                         </Dialog>
 
-                        {/* Delete Dialog */}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete User</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete {user.firstName} {user.lastName}?
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        {/* Delete Dialog - Conditional Rendering */}
+                        {user.id !== adminUser.id && ( // Only show delete button if not the current admin
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {user.firstName} {user.lastName}?
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteUser(user.id, user.workosUserId)} // Pass workosUserId
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
