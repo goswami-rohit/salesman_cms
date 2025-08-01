@@ -69,10 +69,10 @@ const data = {
           url: "/home/cemtemChat",
           isActive: false,
         },
-        // {
-        //   title: "Download Reports",
-        //   url: "/home/downloadReport",
-        // },
+        {
+          title: "Download Reports",
+          url: "/home/downloadReport",
+        },
       ],
     },
     {
@@ -255,8 +255,8 @@ export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<
 
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
-                              {/* <SidebarMenuSubButton asChild isActive={subItem.isActive}> */}
-                              <SidebarMenuSubButton asChild >
+                              <SidebarMenuSubButton asChild isActive={subItem.isActive}>
+                              {/* <SidebarMenuSubButton asChild > */}
                                 {/* Conditional rendering for Logout */}
                                 {subItem.title === "Logout" ? (
                                   // IMPORTANT CHANGE: Use a form for the Logout button
