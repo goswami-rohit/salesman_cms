@@ -95,7 +95,7 @@ export default async function SignedInHomePage() {
               <CardContent className="text-center pt-0">
                 <Button >
                   Start Chatting
-                  <ArrowRight  />
+                  <ArrowRight/>
                 </Button>
               </CardContent>
             </Link>
@@ -116,7 +116,7 @@ export default async function SignedInHomePage() {
               <CardContent className="text-center pt-0">
                 <Button >
                   View Dashboard
-                  <ArrowRight  />
+                  <ArrowRight />
                 </Button>
               </CardContent>
             </Link>
