@@ -2,8 +2,6 @@
 'use client';
 
 import * as React from 'react';
-// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,7 +10,7 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical } from '@tabler/icons-react';
+import { IconDotsVertical, IconDownload, IconLoader2 } from '@tabler/icons-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
@@ -38,25 +36,14 @@ type TechnicalVisitReport = z.infer<typeof technicalVisitReportSchema>;
 export default function TechnicalVisitReportsPage() {
   const [technicalReports, setTechnicalReports] = React.useState<TechnicalVisitReport[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-
-  // React.useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login');
-  //     }
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard');
-  //     }
-  //   }
-  //   checkAuth();
-  // }, []);
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   // --- Data Fetching Function ---
   const fetchTechnicalReports = React.useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      // Fetch from the API path
       const response = await fetch('/api/dashboardPagesAPI/technical-visit-reports');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -64,9 +51,10 @@ export default function TechnicalVisitReportsPage() {
       const data: TechnicalVisitReport[] = await response.json();
       setTechnicalReports(data);
       toast.success("Technical visit reports loaded successfully!");
-    } catch (error: any) {
-      console.error("Failed to fetch technical visit reports:", error);
-      toast.error(`Failed to fetch technical visit reports: ${error.message}`);
+    } catch (e: any) {
+      console.error("Failed to fetch technical visit reports:", e);
+      setError(e.message || "Failed to fetch technical visit reports.");
+      toast.error(e.message || "Failed to load technical visit reports.");
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +64,42 @@ export default function TechnicalVisitReportsPage() {
     fetchTechnicalReports();
   }, [fetchTechnicalReports]);
 
+
+  // --- Download Handlers ---
+  const handleDownload = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleIndividualDownload = async (reportId: UniqueIdentifier, format: 'csv' | 'xlsx'): Promise<void> => {
+    if (format === 'xlsx') {
+      toast.info("XLSX downloading is not yet implemented.");
+      return;
+    }
+    setIsDownloading(true);
+    toast.info(`Downloading report ${reportId} as ${format.toUpperCase()}...`);
+    const filename = `technical-report-${reportId}.csv`;
+    const downloadUrl = `/api/dashboardPagesAPI/technical-visit-reports?format=${format}&ids=${reportId}`;
+    handleDownload(downloadUrl, filename);
+    setIsDownloading(false);
+  };
+
+  const handleDownloadAllTechnicalVisitReports = async (format: 'csv' | 'xlsx'): Promise<void> => {
+    if (format === 'xlsx') {
+      toast.info("XLSX downloading is not yet implemented.");
+      return;
+    }
+    setIsDownloading(true);
+    toast.info(`Downloading all Technical Visit Reports as ${format.toUpperCase()}...`);
+    const filename = `all-technical-visit-reports-${Date.now()}.csv`;
+    const downloadUrl = `/api/dashboardPagesAPI/technical-visit-reports?format=${format}`;
+    handleDownload(downloadUrl, filename);
+    setIsDownloading(false);
+  };
 
   // --- 3. Define Columns for Technical Visit Report DataTable ---
   const technicalVisitReportColumns: ColumnDef<TechnicalVisitReport>[] = [
@@ -96,11 +120,6 @@ export default function TechnicalVisitReportsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-          toast.info(`Downloading report for ${row.original.siteNameConcernedPerson} as ${format.toUpperCase()}...`);
-          console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-        };
-
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -110,10 +129,10 @@ export default function TechnicalVisitReportsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
+              <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'csv')}>
                 Download CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
+              <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'xlsx')}>
                 Download XLSX
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -123,15 +142,23 @@ export default function TechnicalVisitReportsPage() {
     },
   ];
 
-  // --- 4. Master Download Function for Technical Visit Reports ---
-  const handleDownloadAllTechnicalVisitReports = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Technical Visit Reports as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Technical Visit Reports in ${format}`);
-  };
+  // --- Loading and Error States ---
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Loading technical visit reports...
+      </div>
+    );
+  }
 
-  const handleTechnicalVisitReportOrderChange = (newOrder: TechnicalVisitReport[]) => {
-    console.log("New technical visit report order:", newOrder.map(r => r.id));
-  };
+  if (error) {
+    return (
+      <div className="text-center text-red-500 min-h-screen pt-10">
+        Error: {error}
+        <Button onClick={fetchTechnicalReports} className="ml-4">Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -139,19 +166,25 @@ export default function TechnicalVisitReportsPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Technical Visit Reports</h2>
+          <Button
+            onClick={() => handleDownloadAllTechnicalVisitReports('csv')}
+            className="h-8"
+            disabled={isDownloading}
+          >
+            {isDownloading ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconDownload className="mr-2 h-4 w-4" />}
+            Download All
+          </Button>
         </div>
 
         {/* Data Table Section */}
         <div className="bg-card p-6 rounded-lg border border-border">
           <DataTableReusable
             columns={technicalVisitReportColumns}
-            data={technicalReports} // Use fetched data
+            data={technicalReports}
             reportTitle="Technical Visit Reports"
-            filterColumnAccessorKey="siteNameConcernedPerson" // Filter by site name
+            filterColumnAccessorKey="siteNameConcernedPerson"
             onDownloadAll={handleDownloadAllTechnicalVisitReports}
-            enableRowDragging={false} // Technical visit reports typically don't need reordering
-            onRowOrderChange={handleTechnicalVisitReportOrderChange}
-            // isLoading={isLoading} // Removed this line to resolve the TypeScript error
+            enableRowDragging={false}
           />
         </div>
       </div>

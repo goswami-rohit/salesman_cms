@@ -2,8 +2,6 @@
 'use client';
 
 import * as React from 'react';
-// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,25 +10,9 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
+import { IconDotsVertical, IconDownload, IconLoader2 } from '@tabler/icons-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from "@/components/ui/pagination";
 import {
   Dialog,
   DialogContent,
@@ -57,8 +39,8 @@ const dealerReportSchema = z.object({
   area: z.string(),
   phoneNo: z.string(),
   address: z.string(),
-  dealerTotalPotential: z.number(),
-  dealerBestPotential: z.number(),
+  dealerTotalPotential: z.number().nullable(),
+  dealerBestPotential: z.number().nullable(),
   brandSelling: z.array(z.string()),
   feedbacks: z.string(),
   remarks: z.string().optional().nullable(),
@@ -67,33 +49,14 @@ const dealerReportSchema = z.object({
 // Infer the TypeScript type from the Zod schema
 type DealerReport = z.infer<typeof dealerReportSchema>;
 
-const ITEMS_PER_PAGE = 10; // Define items per page for pagination
-
 export default function DealerReportsPage() {
   const [allReports, setAllReports] = React.useState<DealerReport[]>([]);
-  const [dealers, setDealers] = React.useState<DealerReport[]>([]);
-  const [subDealers, setSubDealers] = React.useState<DealerReport[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [isDownloading, setIsDownloading] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<"dealers" | "sub-dealers">("dealers");
-  const [currentPage, setCurrentPage] = React.useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedReport, setSelectedReport] = React.useState<DealerReport | null>(null);
-
-
-  // React.useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login');
-  //     }
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard');
-  //     }
-  //   }
-  //   checkAuth();
-  // }, []);
 
   // --- Data Fetching Logic ---
   const fetchReports = React.useCallback(async () => {
@@ -107,17 +70,20 @@ export default function DealerReportsPage() {
       const data: DealerReport[] = await response.json();
       const validatedData = data.map((item) => {
         try {
-          return dealerReportSchema.parse(item);
+          // Coerce nulls from DB to match the schema
+          const validatedItem = dealerReportSchema.parse({
+            ...item,
+            dealerTotalPotential: item.dealerTotalPotential ?? null,
+            dealerBestPotential: item.dealerBestPotential ?? null,
+          });
+          return validatedItem;
         } catch (e) {
           console.error("Validation error for item:", item, e);
           toast.error("Invalid dealer report data received from server.");
           return null;
         }
       }).filter(Boolean) as DealerReport[];
-
       setAllReports(validatedData);
-      setDealers(validatedData.filter(report => report.type === 'Dealer'));
-      setSubDealers(validatedData.filter(report => report.type === 'Sub Dealer'));
       toast.success("Dealer reports loaded successfully!");
     } catch (e: any) {
       console.error("Failed to fetch dealer reports:", e);
@@ -132,48 +98,65 @@ export default function DealerReportsPage() {
     fetchReports();
   }, [fetchReports]);
 
-  // --- Filtering and Pagination Logic ---
-  const currentData = activeTab === "dealers" ? dealers : subDealers;
+  // --- Filtering based on active tab ---
+  const currentData = activeTab === "dealers"
+    ? allReports.filter(report => report.type === 'Dealer')
+    : allReports.filter(report => report.type === 'Sub Dealer');
 
-  const filteredReports = currentData.filter((report) => {
-    const nameToSearch = report.type === "Dealer" ? report.dealerName : report.subDealerName;
-    const matchesSearch =
-      report.salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (nameToSearch && nameToSearch.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      report.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.phoneNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.brandSelling.some(brand => brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      report.feedbacks.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (report.remarks && report.remarks.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
-  });
+  // --- Download Handlers ---
+  const handleDownload = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedReports = filteredReports.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+  const handleIndividualDownload = async (reportId: UniqueIdentifier, format: 'csv' | 'xlsx'): Promise<void> => {
+    if (format === 'xlsx') {
+      toast.info("XLSX downloading is not yet implemented.");
+      return;
+    }
+    setIsDownloading(true);
+    toast.info(`Downloading report ${reportId} as ${format.toUpperCase()}...`);
+    try {
+      const filename = `${activeTab === 'dealers' ? 'dealer' : 'sub-dealer'}-report-${reportId}.csv`;
+      const downloadUrl = `/api/dashboardPagesAPI/dealer-reports?format=${format}&ids=${reportId}`;
+      handleDownload(downloadUrl, filename);
+      toast.success("Download started successfully!");
+    } catch (e) {
+      toast.error("Failed to start download.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
-  React.useEffect(() => {
-    // Reset page to 1 when tab changes or search query changes
-    setCurrentPage(1);
-  }, [activeTab, searchQuery]);
-
+  const handleDownloadAll = async (format: 'csv' | 'xlsx'): Promise<void> => {
+    if (format === 'xlsx') {
+      toast.info("XLSX downloading is not yet implemented.");
+      return;
+    }
+    setIsDownloading(true);
+    toast.info(`Downloading all ${activeTab === 'dealers' ? 'Dealer' : 'Sub-Dealer'} Reports as ${format.toUpperCase()}...`);
+    try {
+      const filename = `all-${activeTab === 'dealers' ? 'dealer' : 'sub-dealer'}-reports-${Date.now()}.csv`;
+      const downloadUrl = `/api/dashboardPagesAPI/dealer-reports?format=${format}`;
+      handleDownload(downloadUrl, filename);
+      toast.success("Download started successfully!");
+    } catch (e) {
+      toast.error("Failed to start download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+  
   const handleViewReport = (report: DealerReport) => {
     setSelectedReport(report);
     setIsViewModalOpen(true);
   };
 
-  // --- 3. Define Columns for Dealer/Sub-Dealer Report DataTable ---
+  // --- 2. Define Columns for Dealer/Sub-Dealer Report DataTable ---
   const dealerReportColumns: ColumnDef<DealerReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
     // Conditionally display Dealer Name or Sub-Dealer Name
@@ -212,13 +195,6 @@ export default function DealerReportsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-          const name = row.original.type === "Dealer" ? row.original.dealerName : row.original.subDealerName;
-          toast.info(`Downloading report for ${name} as ${format.toUpperCase()}...`);
-          console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-          // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        };
-
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -228,10 +204,10 @@ export default function DealerReportsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
+              <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'csv')}>
                 Download CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
+              <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'xlsx')}>
                 Download XLSX
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleViewReport(row.original)}>
@@ -243,21 +219,6 @@ export default function DealerReportsPage() {
       },
     },
   ];
-
-  // --- 4. Master Download Functions for Each Tab ---
-  const handleDownloadAllDealers = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Dealer Reports as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Dealers in ${format}`);
-  };
-
-  const handleDownloadAllSubDealers = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Sub-Dealer Reports as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Sub-Dealers in ${format}`);
-  };
-
-  const handleDealerReportOrderChange = (newOrder: DealerReport[]) => {
-    console.log("New dealer report order:", newOrder.map(r => r.id));
-  };
 
   if (loading) {
     return (
@@ -285,120 +246,58 @@ export default function DealerReportsPage() {
         </div>
 
         {/* Tabs for Dealers and Sub-Dealers */}
-        <Tabs defaultValue="dealers" className="w-full" onValueChange={(value: any) => setActiveTab(value)}>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "dealers" | "sub-dealers")}>
           <div className="flex justify-between items-center mb-4">
             <TabsList className="grid w-fit grid-cols-2 bg-muted text-muted-foreground border-border">
               <TabsTrigger value="dealers" className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm">Dealers</TabsTrigger>
               <TabsTrigger value="sub-dealers" className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm">Sub-Dealers</TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2">
-              <Input
-                placeholder="Search reports..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-sm"
-              />
-              <Button onClick={() => (activeTab === 'dealers' ? handleDownloadAllDealers('xlsx') : handleDownloadAllSubDealers('xlsx'))} className="flex items-center gap-2">
-                <IconDownload size={20} /> Download All
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button disabled={isDownloading}>
+                    {isDownloading ? (
+                      <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <IconDownload className="mr-2 h-4 w-4" />
+                    )}
+                    Download All
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleDownloadAll('csv')}>Download CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownloadAll('xlsx')}>Download XLSX</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-
           {/* Content for Dealers Tab */}
-          <TabsContent value="dealers" className="mt-4 bg-card p-6 rounded-lg border border-border">
-            {paginatedReports.length === 0 && !loading && !error ? (
-              <div className="text-center text-gray-500 py-8">No dealer reports found.</div>
-            ) : (
-              <>
-                <DataTableReusable
-                  columns={dealerReportColumns}
-                  data={paginatedReports}
-                  reportTitle="Dealer Reports"
-                  filterColumnAccessorKey="dealerName"
-                  onDownloadAll={handleDownloadAllDealers}
-                  enableRowDragging={false}
-                  onRowOrderChange={handleDealerReportOrderChange}
-                  // Removed: hideToolbar={true}
-                />
-                <Pagination className="mt-6">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        aria-disabled={currentPage === 1}
-                        tabIndex={currentPage === 1 ? -1 : undefined}
-                      />
-                    </PaginationItem>
-                    {[...Array(totalPages)].map((_, index) => (
-                      <PaginationItem key={index}>
-                        <PaginationLink
-                          onClick={() => handlePageChange(index + 1)}
-                          isActive={currentPage === index + 1}
-                        >
-                          {index + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        aria-disabled={currentPage === totalPages}
-                        tabIndex={currentPage === totalPages ? -1 : undefined}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </>
-            )}
+          <TabsContent value="dealers">
+            <div className="mt-4 bg-card p-6 rounded-lg border border-border">
+              <DataTableReusable
+                columns={dealerReportColumns}
+                data={currentData}
+                reportTitle="Dealer Reports"
+                filterColumnAccessorKey="dealerName"
+                onDownloadAll={handleDownloadAll}
+                enableRowDragging={false}
+              />
+            </div>
           </TabsContent>
 
           {/* Content for Sub-Dealers Tab */}
-          <TabsContent value="sub-dealers" className="mt-4 bg-card p-6 rounded-lg border border-border">
-            {paginatedReports.length === 0 && !loading && !error ? (
-              <div className="text-center text-gray-500 py-8">No sub-dealer reports found.</div>
-            ) : (
-              <>
-                <DataTableReusable
-                  columns={dealerReportColumns}
-                  data={paginatedReports}
-                  reportTitle="Sub-Dealer Reports"
-                  filterColumnAccessorKey="subDealerName"
-                  onDownloadAll={handleDownloadAllSubDealers}
-                  enableRowDragging={false}
-                  onRowOrderChange={handleDealerReportOrderChange}
-                  // Removed: hideToolbar={true}
-                />
-                <Pagination className="mt-6">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        aria-disabled={currentPage === 1}
-                        tabIndex={currentPage === 1 ? -1 : undefined}
-                      />
-                    </PaginationItem>
-                    {[...Array(totalPages)].map((_, index) => (
-                      <PaginationItem key={index}>
-                        <PaginationLink
-                          onClick={() => handlePageChange(index + 1)}
-                          isActive={currentPage === index + 1}
-                        >
-                          {index + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        aria-disabled={currentPage === totalPages}
-                        tabIndex={currentPage === totalPages ? -1 : undefined}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </>
-            )}
+          <TabsContent value="sub-dealers">
+            <div className="mt-4 bg-card p-6 rounded-lg border border-border">
+              <DataTableReusable
+                columns={dealerReportColumns}
+                data={currentData}
+                reportTitle="Sub-Dealer Reports"
+                filterColumnAccessorKey="subDealerName"
+                onDownloadAll={() => handleDownloadAll('csv')}
+                enableRowDragging={false}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
@@ -449,11 +348,11 @@ export default function DealerReportsPage() {
               </div>
               <div>
                 <Label htmlFor="totalPotential">Total Potential (₹)</Label>
-                <Input id="totalPotential" value={selectedReport.dealerTotalPotential.toFixed(2)} readOnly />
+                <Input id="totalPotential" value={selectedReport.dealerTotalPotential?.toFixed(2) || 'N/A'} readOnly />
               </div>
               <div>
                 <Label htmlFor="bestPotential">Best Potential (₹)</Label>
-                <Input id="bestPotential" value={selectedReport.dealerBestPotential.toFixed(2)} readOnly />
+                <Input id="bestPotential" value={selectedReport.dealerBestPotential?.toFixed(2) || 'N/A'} readOnly />
               </div>
               <div>
                 <Label htmlFor="brandSelling">Brands Selling</Label>

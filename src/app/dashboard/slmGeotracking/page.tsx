@@ -1,9 +1,11 @@
 // src/app/dashboard/slmGeotracking/page.tsx
 "use client";
 
-// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-// import { redirect } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { UniqueIdentifier } from "@dnd-kit/core";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -29,8 +31,6 @@ import {
   PaginationLink,
   PaginationNext,
 } from "@/components/ui/pagination";
-import { z } from "zod";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -40,11 +40,20 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-//import { Textarea } from "@/components/ui/textarea"; // Although GeoTracking doesn't have textareas, keeping for consistency
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { IconDotsVertical, IconDownload, IconLoader2 } from "@tabler/icons-react";
+
+// Assuming this component exists from previous conversations
+import { DataTableReusable } from '@/components/data-table-reusable';
 
 // Zod schema for GeoTracking data based on API response
 const geoTrackingSchema = z.object({
-  id: z.string(), // UUID string
+  id: z.string() as z.ZodType<UniqueIdentifier>, // UUID string
   salesmanName: z.string(),
   employeeId: z.string(),
   workosOrganizationId: z.string(), // WorkOS User ID from route.ts
@@ -75,31 +84,14 @@ const geoTrackingSchema = z.object({
 
 type GeoTrackingRecord = z.infer<typeof geoTrackingSchema>;
 
-const ITEMS_PER_PAGE = 10; // Number of items to display per page
-
 export default function SlmGeoTrackingPage() {
   const [records, setRecords] = useState<GeoTrackingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterActivityType, setFilterActivityType] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<GeoTrackingRecord | null>(null);
 
-  // React.useEffect(() => {
-  //     async function checkAuth() {
-  //       const claims = await getTokenClaims();
-  //       if (!claims || !claims.sub) {
-  //         redirect('/login');
-  //       }
-  //       if (!claims.org_id) {
-  //         redirect('/dashboard');
-  //       }
-  //     }
-  //     checkAuth();
-  //   }, []);
-    
   const fetchGeoTrackingRecords = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -110,16 +102,15 @@ export default function SlmGeoTrackingPage() {
       }
       const data: GeoTrackingRecord[] = await response.json();
       
-      // Validate each item against the schema for robust client-side data handling
       const validatedData = data.map((item) => {
         try {
           return geoTrackingSchema.parse(item);
         } catch (e) {
           console.error("Validation error for geo-tracking item:", item, e);
           toast.error("Invalid geo-tracking data received from server.");
-          return null; // Filter out invalid items or handle them
+          return null;
         }
-      }).filter(Boolean) as GeoTrackingRecord[]; // Remove any nulls resulting from validation failures
+      }).filter(Boolean) as GeoTrackingRecord[];
       
       setRecords(validatedData);
       toast.success("Geo-tracking records loaded successfully!");
@@ -136,38 +127,104 @@ export default function SlmGeoTrackingPage() {
     fetchGeoTrackingRecords();
   }, [fetchGeoTrackingRecords]);
 
-  const filteredRecords = records.filter((record) => {
-    const matchesSearch =
-      record.salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.employeeId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.locationType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.siteName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.ipAddress?.toLowerCase().includes(searchQuery.toLowerCase());
+  // --- Download Handlers ---
+  const handleDownload = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-    const matchesFilter =
-      filterActivityType === "all" || 
-      (record.activityType && record.activityType.toLowerCase() === filterActivityType);
-
-    return matchesSearch && matchesFilter;
-  });
-
-  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentRecords = filteredRecords.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+  const handleIndividualDownload = async (recordId: UniqueIdentifier, format: 'csv' | 'xlsx'): Promise<void> => {
+    if (format === 'xlsx') {
+      toast.info("XLSX downloading is not yet implemented.");
+      return;
     }
+    setIsDownloading(true);
+    toast.info(`Downloading record ${recordId} as ${format.toUpperCase()}...`);
+    const filename = `geo-tracking-record-${recordId}.csv`;
+    const downloadUrl = `/api/dashboardPagesAPI/slm-geotracking?format=${format}&ids=${recordId}`;
+    handleDownload(downloadUrl, filename);
+    setIsDownloading(false);
+  };
+
+  const handleDownloadAllGeoTrackingRecords = async (format: 'csv' | 'xlsx'): Promise<void> => {
+    if (format === 'xlsx') {
+      toast.info("XLSX downloading is not yet implemented.");
+      return;
+    }
+    setIsDownloading(true);
+    toast.info(`Downloading all Geo-Tracking Records as ${format.toUpperCase()}...`);
+    const filename = `all-geo-tracking-records-${Date.now()}.csv`;
+    const downloadUrl = `/api/dashboardPagesAPI/slm-geotracking?format=${format}`;
+    handleDownload(downloadUrl, filename);
+    setIsDownloading(false);
   };
 
   const handleViewRecord = (record: GeoTrackingRecord) => {
     setSelectedRecord(record);
     setIsViewModalOpen(true);
   };
+
+  // --- Column Definitions for DataTableReusable ---
+  const geoTrackingColumns: ColumnDef<GeoTrackingRecord>[] = [
+    { accessorKey: "salesmanName", header: "Salesman" },
+    { accessorKey: "employeeId", header: "Employee ID" },
+    {
+      accessorKey: "recordedAt",
+      header: "Recorded At",
+      cell: ({ row }) => new Date(row.original.recordedAt).toLocaleString(),
+    },
+    {
+      accessorKey: "latitude",
+      header: "Latitude",
+      cell: ({ row }) => row.original.latitude.toFixed(5),
+    },
+    {
+      accessorKey: "longitude",
+      header: "Longitude",
+      cell: ({ row }) => row.original.longitude.toFixed(5),
+    },
+    {
+      accessorKey: "totalDistanceTravelled",
+      header: "Total Distance (KM)",
+      cell: ({ row }) => row.original.totalDistanceTravelled.toFixed(3),
+    },
+    { accessorKey: "activityType", header: "Activity Type" },
+    { accessorKey: "locationType", header: "Location Type" },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const record = row.original;
+        return (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={() => handleViewRecord(record)}>
+              View
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <IconDotsVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
+                <DropdownMenuItem onClick={() => handleIndividualDownload(record.id, 'csv')}>
+                  Download CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleIndividualDownload(record.id, 'xlsx')}>
+                  Download XLSX
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
+  ];
 
   if (loading) {
     return (
@@ -187,104 +244,34 @@ export default function SlmGeoTrackingPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Salesman Geo-Tracking</h1>
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <div className="flex-1 space-y-8 p-8 pt-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Salesman Geo-Tracking</h2>
+          <Button
+            onClick={() => handleDownloadAllGeoTrackingRecords('csv')}
+            className="h-8"
+            disabled={isDownloading}
+          >
+            {isDownloading ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconDownload className="mr-2 h-4 w-4" />}
+            Download All
+          </Button>
+        </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <Input
-          placeholder="Search by salesman name, employee ID, location type, site name, IP address..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-grow"
-        />
-        <Select value={filterActivityType} onValueChange={setFilterActivityType}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by Activity Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Activities</SelectItem>
-            <SelectItem value="still">Still</SelectItem>
-            <SelectItem value="in_vehicle">In Vehicle</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Data Table Section */}
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <DataTableReusable
+            columns={geoTrackingColumns}
+            data={records}
+            reportTitle="Salesman Geo-Tracking"
+            filterColumnAccessorKey="salesmanName"
+            onDownloadAll={handleDownloadAllGeoTrackingRecords}
+            enableRowDragging={false}
+          />
+        </div>
       </div>
-
-      {filteredRecords.length === 0 ? (
-        <div className="text-center text-gray-500">No geo-tracking records found matching your criteria.</div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Salesman</TableHead>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Recorded At</TableHead>
-                  <TableHead>Latitude</TableHead>
-                  <TableHead>Longitude</TableHead>
-                  <TableHead>Total Distance (KM)</TableHead>
-                  <TableHead>Activity Type</TableHead>
-                  <TableHead>Location Type</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentRecords.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-medium">
-                      {record.salesmanName}
-                    </TableCell>
-                    <TableCell>{record.employeeId}</TableCell>
-                    <TableCell>
-                      {new Date(record.recordedAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell>{record.latitude.toFixed(5)}</TableCell>
-                    <TableCell>{record.longitude.toFixed(5)}</TableCell>
-                    <TableCell>{record.totalDistanceTravelled.toFixed(3)}</TableCell>
-                    <TableCell>{record.activityType || 'N/A'}</TableCell>
-                    <TableCell>{record.locationType || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => handleViewRecord(record)}>
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <Pagination className="mt-6">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  aria-disabled={currentPage === 1}
-                  tabIndex={currentPage === 1 ? -1 : undefined}
-                />
-              </PaginationItem>
-              {[...Array(totalPages)].map((_, index) => (
-                <PaginationItem key={index}>
-                  <PaginationLink
-                    onClick={() => handlePageChange(index + 1)}
-                    isActive={currentPage === index + 1}
-                  >
-                    {index + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  aria-disabled={currentPage === totalPages}
-                  tabIndex={currentPage === totalPages ? -1 : undefined}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </>
-      )}
-
+      
       {selectedRecord && (
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
           <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">

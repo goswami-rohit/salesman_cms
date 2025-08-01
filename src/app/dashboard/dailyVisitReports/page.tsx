@@ -3,21 +3,29 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
-import { ColumnDef, createColumnHelper, CellContext } from '@tanstack/react-table'; // Keep createColumnHelper
+import { ColumnDef } from '@tanstack/react-table';
 import { toast } from "sonner";
 import { z } from "zod";
 import { UniqueIdentifier } from '@dnd-kit/core';
 
-// Import your Shadcn UI components for the table
+// Import Shadcn UI components
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { IconDotsVertical, IconDownload, IconLoader2 } from '@tabler/icons-react';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button"; // Only needed for retry button on error
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+// Import the reusable DataTable
+import { DataTableReusable } from '@/components/data-table-reusable';
 
 // --- 1. Define Zod Schema for Daily Visit Report Data (matches API output) ---
 const dailyVisitReportSchema = z.object({
@@ -31,13 +39,13 @@ const dailyVisitReportSchema = z.object({
     latitude: z.number(),
     longitude: z.number(),
     visitType: z.string(),
-    dealerTotalPotential: z.number(),
-    dealerBestPotential: z.number(),
+    dealerTotalPotential: z.number().nullable(),
+    dealerBestPotential: z.number().nullable(),
     brandSelling: z.array(z.string()),
     contactPerson: z.string().nullable(),
     contactPersonPhoneNo: z.string().nullable(),
-    todayOrderMt: z.number(),
-    todayCollectionRupees: z.number(),
+    todayOrderMt: z.number().nullable(),
+    todayCollectionRupees: z.number().nullable(),
     feedbacks: z.string(),
     solutionBySalesperson: z.string().nullable(),
     anyRemarks: z.string().nullable(),
@@ -50,14 +58,14 @@ const dailyVisitReportSchema = z.object({
 // Infer the TypeScript type from the Zod schema
 type DailyVisitReport = z.infer<typeof dailyVisitReportSchema>;
 
-// Create a column helper for type safety and easier column definition
-const columnHelper = createColumnHelper<DailyVisitReport>();
-
 export default function DailyVisitReportsPage() {
     const [reports, setReports] = useState<DailyVisitReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const router = useRouter(); // Initialize useRouter
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [selectedReport, setSelectedReport] = useState<DailyVisitReport | null>(null);
+    const router = useRouter();
 
     // --- Data Fetching Logic ---
     const fetchReports = useCallback(async () => {
@@ -106,58 +114,98 @@ export default function DailyVisitReportsPage() {
     useEffect(() => {
         fetchReports();
     }, [fetchReports]);
+    
+    // --- Download Handlers ---
+    const handleDownload = (url: string, filename: string) => {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
 
-    // --- 3. Define Columns for Daily Visit Report DataTable ---
-    // Using columnHelper for better type safety and proper ColumnDef structure
-    // Explicitly typing the array with `any` for the value type to resolve the type compatibility issue.
-    const dailyVisitReportColumns: Array<ColumnDef<DailyVisitReport, any>> = [
-        columnHelper.accessor('salesmanName', {
-            id: 'salesmanName',
-            header: 'Salesman',
-        }),
-        columnHelper.accessor('reportDate', {
-            id: 'reportDate',
-            header: 'Date',
-        }),
-        columnHelper.accessor('dealerType', {
-            id: 'dealerType',
-            header: 'Dealer Type',
-        }),
-        columnHelper.accessor('dealerName', {
-            id: 'dealerName',
-            header: 'Dealer Name',
-            cell: info => info.getValue() || 'N/A',
-        }),
-        columnHelper.accessor('subDealerName', {
-            id: 'subDealerName',
-            header: 'Sub Dealer Name',
-            cell: info => info.getValue() || 'N/A',
-        }),
-        columnHelper.accessor('location', {
-            id: 'location',
-            header: 'Location',
-        }),
-        columnHelper.accessor('visitType', {
-            id: 'visitType',
-            header: 'Visit Type',
-        }),
-        columnHelper.accessor('todayOrderMt', {
-            id: 'todayOrderMt',
-            header: 'Order (MT)',
-            cell: info => info.getValue().toFixed(2),
-        }),
-        columnHelper.accessor('todayCollectionRupees', {
-            id: 'todayCollectionRupees',
-            header: 'Collection (₹)',
-            cell: info => info.getValue().toFixed(2),
-        }),
-        columnHelper.accessor('feedbacks', {
-            id: 'feedbacks',
-            header: 'Feedbacks',
-            cell: info => <span className="max-w-[200px] truncate block">{info.getValue()}</span>,
-        }),
+    const handleIndividualDownload = async (reportId: UniqueIdentifier, format: 'csv' | 'xlsx'): Promise<void> => {
+      if (format === 'xlsx') {
+        toast.info("XLSX downloading is not yet implemented.");
+        return;
+      }
+      setIsDownloading(true);
+      toast.info(`Downloading report ${reportId} as ${format.toUpperCase()}...`);
+      try {
+        const filename = `daily-visit-report-${reportId}.csv`;
+        const downloadUrl = `/api/dashboardPagesAPI/daily-visit-reports?format=${format}&ids=${reportId}`;
+        handleDownload(downloadUrl, filename);
+        toast.success("Download started successfully!");
+      } catch (e) {
+        toast.error("Failed to start download.");
+      } finally {
+        setIsDownloading(false);
+      }
+    };
+
+    const handleDownloadAll = async (format: 'csv' | 'xlsx'): Promise<void> => {
+      if (format === 'xlsx') {
+        toast.info("XLSX downloading is not yet implemented.");
+        return;
+      }
+      setIsDownloading(true);
+      toast.info(`Downloading all Daily Visit Reports as ${format.toUpperCase()}...`);
+      try {
+        const filename = `all-daily-visit-reports-${Date.now()}.csv`;
+        const downloadUrl = `/api/dashboardPagesAPI/daily-visit-reports?format=${format}`;
+        handleDownload(downloadUrl, filename);
+        toast.success("Download started successfully!");
+      } catch (e) {
+        toast.error("Failed to start download.");
+      } finally {
+        setIsDownloading(false);
+      }
+    };
+    
+    const handleViewReport = (report: DailyVisitReport) => {
+        setSelectedReport(report);
+        setIsViewModalOpen(true);
+    };
+
+    // --- 2. Define Columns for Daily Visit Report DataTable ---
+    const dailyVisitReportColumns: ColumnDef<DailyVisitReport>[] = [
+        { accessorKey: "salesmanName", header: "Salesman" },
+        { accessorKey: "reportDate", header: "Date" },
+        { accessorKey: "dealerType", header: "Dealer Type" },
+        { accessorKey: "dealerName", header: "Dealer Name", cell: ({ row }) => row.original.dealerName || 'N/A' },
+        { accessorKey: "subDealerName", header: "Sub Dealer Name", cell: ({ row }) => row.original.subDealerName || 'N/A' },
+        { accessorKey: "location", header: "Location" },
+        { accessorKey: "visitType", header: "Visit Type" },
+        { accessorKey: "todayOrderMt", header: "Order (MT)", cell: ({ row }) => row.original.todayOrderMt?.toFixed(2) || 'N/A' },
+        { accessorKey: "todayCollectionRupees", header: "Collection (₹)", cell: ({ row }) => row.original.todayCollectionRupees?.toFixed(2) || 'N/A' },
+        { accessorKey: "feedbacks", header: "Feedbacks", cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.feedbacks}</span> },
+        {
+            id: "actions",
+            header: "Actions",
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <IconDotsVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
+                        <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'csv')}>
+                            Download CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'xlsx')}>
+                            Download XLSX
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewReport(row.original)}>
+                            View Details
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        },
     ];
-
 
     if (loading) {
         return (
@@ -182,6 +230,22 @@ export default function DailyVisitReportsPage() {
                 {/* Header Section */}
                 <div className="flex items-center justify-between space-y-2">
                     <h2 className="text-3xl font-bold tracking-tight">Daily Visit Reports</h2>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button disabled={isDownloading}>
+                                {isDownloading ? (
+                                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <IconDownload className="mr-2 h-4 w-4" />
+                                )}
+                                Download All
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleDownloadAll('csv')}>Download CSV</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadAll('xlsx')}>Download XLSX</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
 
                 {/* Data Table Section */}
@@ -189,76 +253,68 @@ export default function DailyVisitReportsPage() {
                     {reports.length === 0 ? (
                         <div className="text-center text-gray-500 py-8">No daily visit reports found.</div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        {dailyVisitReportColumns.map((column) => (
-                                            <TableHead key={column.id || column.header as string}>
-                                                {column.header as React.ReactNode}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {reports.map((report) => (
-                                        <TableRow key={report.id}>
-                                            {dailyVisitReportColumns.map((column) => {
-                                                let cellContent: React.ReactNode;
-
-                                                // Create a mock CellContext object.
-                                                // For simple rendering within TableBody, we primarily need 'row.original' and 'getValue'.
-                                                // The 'getValue' function should correctly retrieve the data based on the column's accessor.
-                                                const mockCellContext: CellContext<DailyVisitReport, any> = {
-                                                    row: { original: report } as any, // Cast to any to satisfy type, as we only need original
-                                                    column: column as any, // Cast to any
-                                                    table: {} as any, // Dummy table object, not typically used here
-                                                    getValue: () => {
-                                                        // This is the crucial part: how to get the value for the cell.
-                                                        // If it's an accessor column, get the value from the report object.
-                                                        if ('accessorKey' in column && column.accessorKey) {
-                                                            return (report as any)[column.accessorKey];
-                                                        }
-                                                        // If it's an accessor function, call it.
-                                                        if ('accessorFn' in column && typeof column.accessorFn === 'function') {
-                                                            return column.accessorFn(report, 0); // Pass index as second argument if required by accessorFn
-                                                        }
-                                                        // For 'display' columns or others without direct accessor, the cell function should handle it.
-                                                        return undefined;
-                                                    },
-                                                    // --- ADD THESE TWO PROPERTIES ---
-                                                    cell: {} as any, // Provide a dummy object for the 'cell' property
-                                                    renderValue: () => mockCellContext.getValue(), // A simple passthrough or dummy function
-                                                    // --- END ADDITION ---
-                                                };
-
-                                                if (column.cell) {
-                                                    // If a custom cell renderer is provided and it's a function, call it.
-                                                    if (typeof column.cell === 'function') {
-                                                        cellContent = column.cell(mockCellContext);
-                                                    } else {
-                                                        // If column.cell is not a function (e.g., a string, which should ideally not happen if columnHelper is used correctly)
-                                                        cellContent = column.cell; // Render it directly as content
-                                                    }
-                                                } else {
-                                                    // If no custom cell renderer, try to get the value directly from the report using the column's id or accessorKey
-                                                    cellContent = mockCellContext.getValue();
-                                                }
-
-                                                return (
-                                                    <TableCell key={column.id || (column.header as string)}>
-                                                        {cellContent}
-                                                    </TableCell>
-                                                );
-                                            })}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
+                        <DataTableReusable
+                            columns={dailyVisitReportColumns}
+                            data={reports}
+                            reportTitle="Daily Visit Reports"
+                            filterColumnAccessorKey="salesmanName" // Column to search by
+                            enableRowDragging={false}
+                            onDownloadAll={handleDownloadAll}
+                        />
                     )}
                 </div>
             </div>
+
+            {selectedReport && (
+                <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+                    <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Daily Visit Report Details</DialogTitle>
+                            <DialogDescription>
+                                Detailed information about the visit report.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-1 gap-4 py-4">
+                            <div><Label>Salesman Name</Label><Input value={selectedReport.salesmanName} readOnly /></div>
+                            <div><Label>Report Date</Label><Input value={selectedReport.reportDate} readOnly /></div>
+                            <div><Label>Dealer Type</Label><Input value={selectedReport.dealerType} readOnly /></div>
+                            <div><Label>Dealer Name</Label><Input value={selectedReport.dealerName || 'N/A'} readOnly /></div>
+                            <div><Label>Sub Dealer Name</Label><Input value={selectedReport.subDealerName || 'N/A'} readOnly /></div>
+                            <div><Label>Location</Label><Input value={selectedReport.location} readOnly /></div>
+                            <div><Label>Latitude</Label><Input value={selectedReport.latitude} readOnly /></div>
+                            <div><Label>Longitude</Label><Input value={selectedReport.longitude} readOnly /></div>
+                            <div><Label>Visit Type</Label><Input value={selectedReport.visitType} readOnly /></div>
+                            <div><Label>Total Potential (₹)</Label><Input value={selectedReport.dealerTotalPotential?.toFixed(2) || 'N/A'} readOnly /></div>
+                            <div><Label>Best Potential (₹)</Label><Input value={selectedReport.dealerBestPotential?.toFixed(2) || 'N/A'} readOnly /></div>
+                            <div><Label>Brands Selling</Label><Input value={selectedReport.brandSelling.join(', ')} readOnly /></div>
+                            <div><Label>Contact Person</Label><Input value={selectedReport.contactPerson || 'N/A'} readOnly /></div>
+                            <div><Label>Contact Phone No.</Label><Input value={selectedReport.contactPersonPhoneNo || 'N/A'} readOnly /></div>
+                            <div><Label>Today&apos;s Order (MT)</Label><Input value={selectedReport.todayOrderMt?.toFixed(2) || 'N/A'} readOnly /></div>
+                            <div><Label>Today&apos;s Collection (₹)</Label><Input value={selectedReport.todayCollectionRupees?.toFixed(2) || 'N/A'} readOnly /></div>
+                            <div><Label>Feedbacks</Label><Textarea value={selectedReport.feedbacks} readOnly className="h-16" /></div>
+                            <div><Label>Solution by Salesperson</Label><Textarea value={selectedReport.solutionBySalesperson || 'N/A'} readOnly className="h-16" /></div>
+                            <div><Label>Remarks</Label><Textarea value={selectedReport.anyRemarks || 'N/A'} readOnly className="h-16" /></div>
+                            <div><Label>Check-in Time</Label><Input value={new Date(selectedReport.checkInTime).toLocaleString()} readOnly /></div>
+                            <div><Label>Check-out Time</Label><Input value={selectedReport.checkOutTime ? new Date(selectedReport.checkOutTime).toLocaleString() : 'N/A'} readOnly /></div>
+                            {selectedReport.inTimeImageUrl && (
+                              <div>
+                                <Label>Check-in Image</Label>
+                                <img src={selectedReport.inTimeImageUrl} alt="Check-in" className="mt-2 w-full h-auto rounded-md" />
+                              </div>
+                            )}
+                             {selectedReport.outTimeImageUrl && (
+                              <div>
+                                <Label>Check-out Image</Label>
+                                <img src={selectedReport.outTimeImageUrl} alt="Check-out" className="mt-2 w-full h-auto rounded-md" />
+                              </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={() => setIsViewModalOpen(false)}>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }

@@ -93,9 +93,9 @@ export default async function SignedInHomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center pt-0">
-                <Button variant="ghost" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Button >
                   Start Chatting
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight  />
                 </Button>
               </CardContent>
             </Link>
@@ -114,9 +114,9 @@ export default async function SignedInHomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center pt-0">
-                <Button variant="ghost" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Button >
                   View Dashboard
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight  />
                 </Button>
               </CardContent>
             </Link>
@@ -135,9 +135,9 @@ export default async function SignedInHomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center pt-0">
-                <Button variant="ghost" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Button >
                   Manage Account
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight  />
                 </Button>
               </CardContent>
             </Link>
