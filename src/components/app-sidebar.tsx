@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useEffect, useState } from "react";
 import { Building2 } from "lucide-react"
-//import Link from "next/link"
+import Link from "next/link"
 import {
   Sidebar,
   SidebarContent,
@@ -199,7 +199,7 @@ export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
-                {/* <Link href="/dashboard"> */}
+                <Link href="/dashboard">
                   <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <Building2 className="size-4" />
                   </div>
@@ -211,7 +211,7 @@ export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<
                       {companyInfo && `${companyInfo.totalUsers} users`}
                     </span>
                   </div>
-                {/* </Link> */}
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -256,7 +256,6 @@ export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                              {/* <SidebarMenuSubButton asChild > */}
                                 {/* Conditional rendering for Logout */}
                                 {subItem.title === "Logout" ? (
                                   // IMPORTANT CHANGE: Use a form for the Logout button
