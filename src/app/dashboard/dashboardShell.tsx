@@ -40,26 +40,21 @@ export default function DashboardShell({
   //permissions 
 }: Props) {
   return (
-    <SidebarProvider
-      // style={
-      //   {
-      //     "--sidebar-width": "calc(var(--spacing) * 72)",
-      //     "--header-height": "calc(var(--spacing) * 12)",
-      //   } as React.CSSProperties
-      // }
-    >
-      <AppSidebar 
-        userRole={workosRole as WorkOSRole}
-        variant="inset" 
-      />
-      <SidebarInset className="pl-4 pt-4 md:pl-6 md:pt-6">
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-2 @container/main">
-            {children}
+     <SidebarProvider>
+      <div className="flex min-h-screen">
+        <AppSidebar 
+          userRole={workosRole as WorkOSRole}
+          variant="inset" 
+        />
+        <SidebarInset className="pl-4 pt-4 md:pl-6 md:pt-6">
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col gap-2 @container/main">
+              {children}
+            </div>
           </div>
-        </div>
-      </SidebarInset>
+        </SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }
