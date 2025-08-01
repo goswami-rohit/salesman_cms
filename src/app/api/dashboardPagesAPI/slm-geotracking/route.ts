@@ -1,71 +1,70 @@
 // src/app/api/dashboardPagesAPI/slm-geotracking/route.ts
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import prisma from '@/lib/prisma';
-import { generateAndStreamCsv, getAuthClaims } from '@/lib/download-utils';
+import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const claims = await getAuthClaims();
+    const claims = await getTokenClaims();
 
-    // 1. Authentication and Authorization Checks
-    if (claims instanceof NextResponse) return claims;
+    // 1. Authentication Check
+    if (!claims || !claims.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
-      include: { company: true }
+      include: { company: true } // Include company to get companyId for filtering
     });
 
+    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
       return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
     }
 
-    // 2. Parse query parameters for filtering and formatting
-    const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format');
-    const ids = searchParams.get('ids')?.split(','); // Optional array of IDs to filter by
-
-    // 3. Fetch GeoTracking Records for the current user's company
+    // 4. Fetch GeoTracking Records for the current user's company
+    // We filter records based on the 'companyId' of the 'user' who created the record.
     const geoTrackingRecords = await prisma.geoTracking.findMany({
       where: {
-        // Fix: Use the array of strings directly, as 'id' is a String in Prisma.
-        ...(ids && { id: { in: ids } }),
-        user: {
-          companyId: currentUser.companyId,
+        user: { // Access the User relation
+          companyId: currentUser.companyId, // Filter by the admin/manager's company
         },
       },
       include: {
-        user: {
+        user: { // Include salesman details to get their name and other identifiers
           select: {
             id: true,
             email: true,
             firstName: true,
             lastName: true,
-            salesmanLoginId: true,
-            workosUserId: true,
+            salesmanLoginId: true, // Employee ID
+            workosUserId: true,    // WorkOS User ID
             role: true,
           },
         },
       },
       orderBy: {
-        recordedAt: 'desc',
+        recordedAt: 'desc', // Order by latest records first
       },
-      // Apply a limit only for the standard JSON response, not for downloads
-      ...(!format && { take: 200 }),
+      take: 200, // Limit the number of records for performance in a dashboard view
     });
 
-    // 4. Format the data for both JSON and CSV outputs
+    // 5. Format the data for the frontend table display
     const formattedRecords = geoTrackingRecords.map(record => ({
       id: record.id,
+      // Combine first and last name for salesmanName, fallback to email if names are null
       salesmanName: `${record.user.firstName || ''} ${record.user.lastName || ''}`.trim() || record.user.email,
-      employeeId: record.user.salesmanLoginId || 'N/A',
-      workosOrganizationId: record.user.workosUserId,
+      // Include unique identifiers for the employee
+      employeeId: record.user.salesmanLoginId || 'N/A', // Assuming salesmanLoginId is the employee ID
+      workosOrganizationId: record.user.workosUserId, // WorkOS User ID can serve as an org ID if needed, or fetch from Company model if more direct
       
-      latitude: record.latitude.toNumber(),
-      longitude: record.longitude.toNumber(),
-      recordedAt: record.recordedAt.toISOString(),
-      totalDistanceTravelled: record.totalDistanceTravelled?.toNumber() || 0,
+      latitude: record.latitude.toNumber(),   // Convert Decimal to Number
+      longitude: record.longitude.toNumber(), // Convert Decimal to Number
+      recordedAt: record.recordedAt.toISOString(), // Full ISO string for precise timestamp
+      totalDistanceTravelled: record.totalDistanceTravelled?.toNumber() || 0, // Convert Decimal to Number, default to 0 if null
 
+      // Include other optional fields, ensuring they are not 'undefined' for JSON serialization
       accuracy: record.accuracy?.toNumber() || null,
       speed: record.speed?.toNumber() || null,
       heading: record.heading?.toNumber() || null,
@@ -85,62 +84,13 @@ export async function GET(request: NextRequest) {
       updatedAt: record.updatedAt.toISOString(),
     }));
 
-    // 5. Handle download requests based on the 'format' query parameter
-    if (format) {
-      switch (format) {
-        case 'csv': {
-          const headers = [
-            "ID", "Salesman Name", "Employee ID", "WorkOS User ID", "Latitude",
-            "Longitude", "Recorded At", "Total Distance Travelled (m)", "Accuracy",
-            "Speed (m/s)", "Heading", "Altitude (m)", "Location Type",
-            "Activity Type", "App State", "Battery Level", "Is Charging",
-            "Network Status", "IP Address", "Site Name", "Check-in Time", "Check-out Time"
-          ];
-          const dataForCsv = [
-            headers,
-            ...formattedRecords.map(record => [
-              record.id,
-              record.salesmanName,
-              record.employeeId,
-              record.workosOrganizationId,
-              record.latitude,
-              record.longitude,
-              record.recordedAt,
-              record.totalDistanceTravelled,
-              record.accuracy,
-              record.speed,
-              record.heading,
-              record.altitude,
-              record.locationType,
-              record.activityType,
-              record.appState,
-              record.batteryLevel,
-              record.isCharging,
-              record.networkStatus,
-              record.ipAddress,
-              record.siteName,
-              record.checkInTime,
-              record.checkOutTime,
-            ])
-          ];
-          const filename = `geo-tracking-reports-${Date.now()}.csv`;
-          return generateAndStreamCsv(dataForCsv, filename);
-        }
-        case 'xlsx': {
-          return NextResponse.json({ message: 'XLSX format is not yet supported.' }, { status: 501 });
-        }
-        default: {
-          return NextResponse.json({ message: 'Invalid format specified.' }, { status: 400 });
-        }
-      }
-    }
-
-    // 6. Default behavior: return JSON data for the client-side table
     return NextResponse.json(formattedRecords, { status: 200 });
   } catch (error) {
     console.error('Error fetching geo-tracking data:', error);
+    // Return a 500 status with a generic error message
     return NextResponse.json({ error: 'Failed to fetch geo-tracking data' }, { status: 500 });
   } finally {
+    // Disconnect Prisma client to prevent connection leaks, especially important in serverless environments
     await prisma.$disconnect();
   }
 }

@@ -2,6 +2,8 @@
 'use client';
 
 import * as React from 'react';
+// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -10,8 +12,24 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconDownload, IconLoader2 } from '@tabler/icons-react';
+import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
+// import {
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableHead,
+//   TableHeader,
+//   TableRow,
+// } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationLink,
+  PaginationNext,
+} from "@/components/ui/pagination";
 import {
   Dialog,
   DialogContent,
@@ -38,19 +56,36 @@ const permanentJourneyPlanSchema = z.object({
 // Infer the TypeScript type from the Zod schema
 type PermanentJourneyPlan = z.infer<typeof permanentJourneyPlanSchema>;
 
+const ITEMS_PER_PAGE = 10; // Define items per page for pagination
+
 export default function PermanentJourneyPlanPage() {
   const [pjps, setPjps] = React.useState<PermanentJourneyPlan[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [currentPage, setCurrentPage] = React.useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedPjp, setSelectedPjp] = React.useState<PermanentJourneyPlan | null>(null);
+
+  // React.useEffect(() => {
+  //   async function checkAuth() {
+  //     const claims = await getTokenClaims();
+  //     if (!claims || !claims.sub) {
+  //       redirect('/login');
+  //     }
+  //     if (!claims.org_id) {
+  //       redirect('/dashboard');
+  //     }
+  //   }
+  //   checkAuth();
+  // }, []);
 
   // --- Data Fetching Logic ---
   const fetchPjps = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      // Use the new, correct API endpoint
       const response = await fetch("/api/dashboardPagesAPI/permanent-journey-plan");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -80,46 +115,39 @@ export default function PermanentJourneyPlanPage() {
     fetchPjps();
   }, [fetchPjps]);
 
-  // --- Download Handlers ---
-  const handleDownload = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // --- Filtering and Pagination Logic ---
+  const filteredPjps = pjps.filter((pjp) => {
+    const matchesSearch =
+      pjp.salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pjp.areaToBeVisited.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (pjp.description && pjp.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      pjp.date.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  const totalPages = Math.ceil(filteredPjps.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentPjps = filteredPjps.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
-  const handleIndividualDownload = async (pjpId: UniqueIdentifier, format: 'csv' | 'xlsx'): Promise<void> => {
-    if (format === 'xlsx') {
-      toast.info("XLSX downloading is not yet implemented.");
-      return;
-    }
-    setIsDownloading(true);
-    toast.info(`Downloading PJP ${pjpId} as ${format.toUpperCase()}...`);
-    const filename = `pjp-${pjpId}.csv`;
-    const downloadUrl = `/api/dashboardPagesAPI/permanent-journey-plan?format=${format}&ids=${pjpId}`;
-    handleDownload(downloadUrl, filename);
-    setIsDownloading(false);
-  };
+  React.useEffect(() => {
+    // Reset page to 1 when search query changes
+    setCurrentPage(1);
+  }, [searchQuery]);
 
-  const handleDownloadAllPermanentJourneyPlans = async (format: 'csv' | 'xlsx'): Promise<void> => {
-    if (format === 'xlsx') {
-      toast.info("XLSX downloading is not yet implemented.");
-      return;
-    }
-    setIsDownloading(true);
-    toast.info(`Downloading all Permanent Journey Plans as ${format.toUpperCase()}...`);
-    const filename = `all-permanent-journey-plans-${Date.now()}.csv`;
-    const downloadUrl = `/api/dashboardPagesAPI/permanent-journey-plan?format=${format}`;
-    handleDownload(downloadUrl, filename);
-    setIsDownloading(false);
-  };
-  
   const handleViewPjp = (pjp: PermanentJourneyPlan) => {
     setSelectedPjp(pjp);
     setIsViewModalOpen(true);
   };
+
 
   // --- 3. Define Columns for Permanent Journey Plan DataTable ---
   const permanentJourneyPlanColumns: ColumnDef<PermanentJourneyPlan>[] = [
@@ -135,6 +163,12 @@ export default function PermanentJourneyPlanPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
+        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
+          toast.info(`Downloading PJP for ${row.original.areaToBeVisited} on ${row.original.date} as ${format.toUpperCase()}...`);
+          console.log(`Simulating individual download for ${row.original.id} in ${format}`);
+          // In a real scenario, you'd call an API endpoint here to generate and download the file.
+        };
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -144,10 +178,10 @@ export default function PermanentJourneyPlanPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'csv')}>
+              <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
                 Download CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload(row.original.id, 'xlsx')}>
+              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
                 Download XLSX
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleViewPjp(row.original)}>
@@ -159,6 +193,16 @@ export default function PermanentJourneyPlanPage() {
       },
     },
   ];
+
+  // --- 4. Master Download Function for Permanent Journey Plans ---
+  const handleDownloadAllPermanentJourneyPlans = async (format: 'csv' | 'xlsx') => {
+    toast.info(`Preparing to download all Permanent Journey Plans as ${format.toUpperCase()}...`);
+    console.log(`Simulating master download for all Permanent Journey Plans in ${format}`);
+  };
+
+  const handlePermanentJourneyPlanOrderChange = (newOrder: PermanentJourneyPlan[]) => {
+    console.log("New permanent journey plan order:", newOrder.map(r => r.id));
+  };
 
   if (loading) {
     return (
@@ -183,26 +227,67 @@ export default function PermanentJourneyPlanPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Permanent Journey Plans</h2>
-          <Button
-            onClick={() => handleDownloadAllPermanentJourneyPlans('csv')}
-            className="h-8"
-            disabled={isDownloading}
-          >
-            {isDownloading ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconDownload className="mr-2 h-4 w-4" />}
-            Download All
+          <Button onClick={() => handleDownloadAllPermanentJourneyPlans('xlsx')} className="flex items-center gap-2">
+            <IconDownload size={20} /> Download All
           </Button>
+        </div>
+
+        {/* Search Input */}
+        <div className="flex justify-end mb-4">
+          <Input
+            placeholder="Search plans..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
         </div>
 
         {/* Data Table Section */}
         <div className="bg-card p-6 rounded-lg border border-border">
-          <DataTableReusable
-            columns={permanentJourneyPlanColumns}
-            data={pjps}
-            reportTitle="Permanent Journey Plans"
-            filterColumnAccessorKey="areaToBeVisited"
-            onDownloadAll={handleDownloadAllPermanentJourneyPlans}
-            enableRowDragging={false}
-          />
+          {filteredPjps.length === 0 && !loading && !error ? (
+            <div className="text-center text-gray-500 py-8">No permanent journey plans found.</div>
+          ) : (
+            <>
+              <DataTableReusable
+                columns={permanentJourneyPlanColumns}
+                data={currentPjps}
+                reportTitle="Permanent Journey Plans"
+                filterColumnAccessorKey="areaToBeVisited"
+                onDownloadAll={handleDownloadAllPermanentJourneyPlans}
+                enableRowDragging={false}
+                onRowOrderChange={handlePermanentJourneyPlanOrderChange}
+                // Removed: hideToolbar={true}
+              />
+              <Pagination className="mt-6">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      aria-disabled={currentPage === 1}
+                      tabIndex={currentPage === 1 ? -1 : undefined}
+                    />
+                  </PaginationItem>
+                  {[...Array(totalPages)].map((_, index) => (
+                    <PaginationItem key={index}>
+                      <PaginationLink
+                        onClick={() => handlePageChange(index + 1)}
+                        isActive={currentPage === index + 1}
+                      >
+                        {index + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      aria-disabled={currentPage === totalPages}
+                      tabIndex={currentPage === totalPages ? -1 : undefined}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </>
+          )}
         </div>
       </div>
 

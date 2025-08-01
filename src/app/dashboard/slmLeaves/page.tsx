@@ -2,6 +2,8 @@
 'use client';
 
 import * as React from 'react';
+// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -10,8 +12,8 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge'; // For status badges
+import { Input } from '@/components/ui/input'; // For search input
 import {
   Pagination,
   PaginationContent,
@@ -19,35 +21,49 @@ import {
   PaginationPrevious,
   PaginationLink,
   PaginationNext,
-} from "@/components/ui/pagination";
-import { IconDotsVertical, IconDownload, IconLoader2 } from '@tabler/icons-react';
+} from "@/components/ui/pagination"; // For pagination
+import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 
 // --- 1. Define Zod Schema for Salesman Leave Application Data ---
 const salesmanLeaveApplicationSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>,
+  id: z.string() as z.ZodType<UniqueIdentifier>, // Unique ID for the leave entry
   salesmanName: z.string(),
-  leaveType: z.string(),
-  startDate: z.string(),
-  endDate: z.string(),
+  leaveType: z.string(), // e.g., "Sick Leave", "Casual Leave", "Annual Leave"
+  startDate: z.string(), // e.g., "2025-08-01" (ISO string or YYYY-MM-DD)
+  endDate: z.string(),   // e.g., "2025-08-03" (ISO string or YYYY-MM-DD)
   reason: z.string(),
-  status: z.enum(["Pending", "Approved", "Rejected"]),
-  adminRemarks: z.string().optional().nullable(),
+  status: z.enum(["Pending", "Approved", "Rejected"]), // Key status field
+  adminRemarks: z.string().optional().nullable(), // For admin's notes on approval/rejection
 });
 
+// Infer the TypeScript type from the Zod schema
 type SalesmanLeaveApplication = z.infer<typeof salesmanLeaveApplicationSchema>;
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 export default function SlmLeavesPage() {
   const [leaveApplications, setLeaveApplications] = React.useState<SalesmanLeaveApplication[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [downloading, setDownloading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
+
+  // Auth check remains the same
+  // React.useEffect(() => {
+  //   async function checkAuth() {
+  //     const claims = await getTokenClaims();
+  //     if (!claims || !claims.sub) {
+  //       redirect('/login');
+  //     }
+  //     if (!claims.org_id) {
+  //       redirect('/dashboard');
+  //     }
+  //   }
+  //   checkAuth();
+  // }, []);
 
   // --- Data Fetching Logic ---
   const fetchLeaveApplications = React.useCallback(async () => {
@@ -61,13 +77,14 @@ export default function SlmLeavesPage() {
       const data: SalesmanLeaveApplication[] = await response.json();
       const validatedData = data.map((item) => {
         try {
+          // Validate each item against the schema
           return salesmanLeaveApplicationSchema.parse(item);
         } catch (e) {
           console.error("Validation error for item:", item, e);
           toast.error("Invalid salesman leave application data received from server.");
           return null;
         }
-      }).filter(Boolean) as SalesmanLeaveApplication[];
+      }).filter(Boolean) as SalesmanLeaveApplication[]; // Filter out any items that failed validation
 
       setLeaveApplications(validatedData);
       toast.success("Salesman leave applications loaded successfully!");
@@ -87,10 +104,13 @@ export default function SlmLeavesPage() {
   // --- Handle Leave Approval/Rejection ---
   const handleLeaveAction = async (id: UniqueIdentifier, newStatus: "Approved" | "Rejected", remarks: string | null = null) => {
     try {
-      setLoading(true);
+      setLoading(true); // Indicate loading for the action
       const response = await fetch('/api/dashboardPagesAPI/slm-leaves', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH', // Use PATCH for partial updates
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Explicitly pass adminRemarks: remarks to avoid shorthand property error if linter is strict
         body: JSON.stringify({ id, status: newStatus, adminRemarks: remarks }),
       });
 
@@ -101,9 +121,11 @@ export default function SlmLeavesPage() {
 
       const updatedApplication: SalesmanLeaveApplication = await response.json();
       
+      // Update the local state with the returned updated application
       setLeaveApplications((prevApplications) =>
         prevApplications.map((app) =>
           app.id === id
+            // The updatedApplication.adminRemarks will be string | null from the server
             ? { ...app, status: updatedApplication.status, adminRemarks: updatedApplication.adminRemarks }
             : app
         )
@@ -141,31 +163,8 @@ export default function SlmLeavesPage() {
   };
 
   React.useEffect(() => {
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset page to 1 when search query changes
   }, [searchQuery]);
-
-  // --- Download Functionality (New) ---
-  const handleDownload = async (format: 'csv', ids?: UniqueIdentifier[]) => {
-    setDownloading(true);
-    const idString = ids?.join(',') || '';
-    const query = `?format=${format}${ids ? `&ids=${idString}` : ''}`;
-    
-    const downloadUrl = `/api/dashboardPagesAPI/slm-leaves${query}`;
-    
-    window.open(downloadUrl, '_blank');
-    
-    setDownloading(false);
-    toast.success(`Download started for ${format.toUpperCase()} file!`);
-  };
-
-  // Corrected function to be async to match the DataTableReusable prop
-  const handleDownloadAllSalesmanLeaves = async (format: 'csv' | 'xlsx') => {
-    if (format === 'csv') {
-      await handleDownload(format);
-    } else {
-      toast.info("XLSX downloading is not yet implemented.");
-    }
-  };
 
   // --- Define Columns for Salesman Leave Applications DataTable ---
   const salesmanLeaveColumns: ColumnDef<SalesmanLeaveApplication>[] = [
@@ -184,13 +183,13 @@ export default function SlmLeavesPage() {
         let className = "";
         switch (status) {
           case "Approved":
-            className = "bg-green-500 hover:bg-green-600 text-white";
+            className = "bg-green-500 hover:bg-green-600 text-white"; // Tailwind classes
             break;
           case "Rejected":
             className = "bg-red-500 hover:bg-red-600 text-white";
             break;
           case "Pending":
-            className = "bg-yellow-500 hover:bg-yellow-600 text-black";
+            className = "bg-yellow-500 hover:bg-yellow-600 text-black"; // Pending is usually yellow/orange
             break;
         }
         return (
@@ -210,6 +209,12 @@ export default function SlmLeavesPage() {
         const leave = row.original;
         const isPending = leave.status === "Pending";
 
+        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
+          toast.info(`Downloading leave report for ${leave.salesmanName} (${leave.startDate} to ${leave.endDate}) as ${format.toUpperCase()}...`);
+          console.log(`Simulating individual download for ${leave.id} in ${format}`);
+          // In a real scenario, you'd call an API endpoint here to generate and download the file.
+        };
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -219,7 +224,7 @@ export default function SlmLeavesPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              {isPending && (
+              {isPending && ( // Show Approve/Reject only if status is Pending
                 <>
                   <DropdownMenuItem onClick={() => handleLeaveAction(leave.id, "Approved", "Approved by admin.")}>
                     Approve
@@ -229,15 +234,15 @@ export default function SlmLeavesPage() {
                   </DropdownMenuItem>
                 </>
               )}
-              {!isPending && (
+              {!isPending && ( // Show status if not pending
                 <DropdownMenuItem className="text-muted-foreground" disabled>
                   {leave.status}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="border-t border-border mt-1 pt-2" onClick={() => handleDownload('csv', [leave.id])}>
+              <DropdownMenuItem className="border-t border-border mt-1 pt-2" onClick={() => handleIndividualDownload('csv')}>
                 Download CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast.info("XLSX downloading is not yet implemented.")}>
+              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
                 Download XLSX
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -246,6 +251,12 @@ export default function SlmLeavesPage() {
       },
     },
   ];
+
+  // --- Master Download Function for Salesman Leave Applications ---
+  const handleDownloadAllSalesmanLeaves = async (format: 'csv' | 'xlsx') => {
+    toast.info(`Preparing to download all Salesman Leave Applications as ${format.toUpperCase()}...`);
+    console.log(`Simulating master download for all Salesman Leave Applications in ${format}`);
+  };
 
   const handleSalesmanLeaveOrderChange = (newOrder: SalesmanLeaveApplication[]) => {
     console.log("New salesman leave report order:", newOrder.map(r => r.id));
@@ -275,9 +286,8 @@ export default function SlmLeavesPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Salesman Leave Applications</h2>
-          <Button onClick={() => handleDownloadAllSalesmanLeaves('csv')} disabled={downloading} className="flex items-center gap-2">
-            {downloading ? <IconLoader2 className="animate-spin" size={20} /> : <IconDownload size={20} />}
-            Download All
+          <Button onClick={() => handleDownloadAllSalesmanLeaves('xlsx')} className="flex items-center gap-2">
+            <IconDownload size={20} /> Download All
           </Button>
         </div>
 
@@ -301,9 +311,9 @@ export default function SlmLeavesPage() {
                 columns={salesmanLeaveColumns}
                 data={paginatedApplications}
                 reportTitle="Salesman Leave Applications"
-                filterColumnAccessorKey="salesmanName"
+                filterColumnAccessorKey="salesmanName" // Filter by salesman name
                 onDownloadAll={handleDownloadAllSalesmanLeaves}
-                enableRowDragging={false}
+                enableRowDragging={false} // Leave applications typically don't need reordering
                 onRowOrderChange={handleSalesmanLeaveOrderChange}
               />
               <Pagination className="mt-6">

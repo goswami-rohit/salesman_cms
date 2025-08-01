@@ -33,27 +33,33 @@ interface Props {
 }
 
 export default function DashboardShell({ 
+  //user, 
+  //company, 
   children, 
   workosRole,
+  //permissions 
 }: Props) {
   return (
-    // Corrected: The SidebarProvider now wraps only the content area,
-    // ensuring it receives a single child component.
-    <div className="flex min-h-screen">
+    <SidebarProvider
+      // style={
+      //   {
+      //     "--sidebar-width": "calc(var(--spacing) * 72)",
+      //     "--header-height": "calc(var(--spacing) * 12)",
+      //   } as React.CSSProperties
+      // }
+    >
       <AppSidebar 
         userRole={workosRole as WorkOSRole}
         variant="inset" 
       />
-      <SidebarProvider>
-        <SidebarInset className="pl-4 pt-4 md:pl-6 md:pt-6">
-          <SiteHeader />
-          <div className="flex flex-1 flex-col">
-            <div className="flex flex-1 flex-col gap-2 @container/main">
-              {children}
-            </div>
+      <SidebarInset className="pl-4 pt-4 md:pl-6 md:pt-6">
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col gap-2 @container/main">
+            {children}
           </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
