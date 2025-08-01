@@ -67,7 +67,7 @@ const data = {
         {
           title: "CemTem Chat",
           url: "/home/cemtemChat",
-          isActive: true,
+          isActive: false,
         },
         {
           title: "Download Reports",
