@@ -173,6 +173,10 @@ export default function DealerReportsPage() {
     setIsViewModalOpen(true);
   };
 
+  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  };
+
   // --- 3. Define Columns for Dealer/Sub-Dealer Report DataTable ---
   const dealerReportColumns: ColumnDef<DealerReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
@@ -212,12 +216,12 @@ export default function DealerReportsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-          const name = row.original.type === "Dealer" ? row.original.dealerName : row.original.subDealerName;
-          toast.info(`Downloading report for ${name} as ${format.toUpperCase()}...`);
-          console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-          // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        };
+        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
+        //   const name = row.original.type === "Dealer" ? row.original.dealerName : row.original.subDealerName;
+        //   toast.info(`Downloading report for ${name} as ${format.toUpperCase()}...`);
+        //   console.log(`Simulating individual download for ${row.original.id} in ${format}`);
+        //   // In a real scenario, you'd call an API endpoint here to generate and download the file.
+        // };
 
         return (
           <DropdownMenu>
@@ -228,12 +232,6 @@ export default function DealerReportsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
-                Download CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
-                Download XLSX
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleViewReport(row.original)}>
                 View Details
               </DropdownMenuItem>
@@ -245,15 +243,15 @@ export default function DealerReportsPage() {
   ];
 
   // --- 4. Master Download Functions for Each Tab ---
-  const handleDownloadAllDealers = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Dealer Reports as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Dealers in ${format}`);
-  };
+  // const handleDownloadAllDealers = async (format: 'csv' | 'xlsx') => {
+  //   toast.info(`Preparing to download all Dealer Reports as ${format.toUpperCase()}...`);
+  //   console.log(`Simulating master download for all Dealers in ${format}`);
+  // };
 
-  const handleDownloadAllSubDealers = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Sub-Dealer Reports as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Sub-Dealers in ${format}`);
-  };
+  // const handleDownloadAllSubDealers = async (format: 'csv' | 'xlsx') => {
+  //   toast.info(`Preparing to download all Sub-Dealer Reports as ${format.toUpperCase()}...`);
+  //   console.log(`Simulating master download for all Sub-Dealers in ${format}`);
+  // };
 
   const handleDealerReportOrderChange = (newOrder: DealerReport[]) => {
     console.log("New dealer report order:", newOrder.map(r => r.id));
@@ -298,9 +296,9 @@ export default function DealerReportsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
               />
-              <Button onClick={() => (activeTab === 'dealers' ? handleDownloadAllDealers('xlsx') : handleDownloadAllSubDealers('xlsx'))} className="flex items-center gap-2">
+              {/* <Button onClick={() => (activeTab === 'dealers' ? handleDownloadAllDealers('xlsx') : handleDownloadAllSubDealers('xlsx'))} className="flex items-center gap-2">
                 <IconDownload size={20} /> Download All
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -316,7 +314,7 @@ export default function DealerReportsPage() {
                   data={paginatedReports}
                   reportTitle="Dealer Reports"
                   filterColumnAccessorKey="dealerName"
-                  onDownloadAll={handleDownloadAllDealers}
+                  onDownloadAll={dummyDownloadFunction}
                   enableRowDragging={false}
                   onRowOrderChange={handleDealerReportOrderChange}
                   // Removed: hideToolbar={true}
@@ -364,7 +362,7 @@ export default function DealerReportsPage() {
                   data={paginatedReports}
                   reportTitle="Sub-Dealer Reports"
                   filterColumnAccessorKey="subDealerName"
-                  onDownloadAll={handleDownloadAllSubDealers}
+                  onDownloadAll={dummyDownloadFunction}
                   enableRowDragging={false}
                   onRowOrderChange={handleDealerReportOrderChange}
                   // Removed: hideToolbar={true}

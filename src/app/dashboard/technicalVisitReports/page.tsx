@@ -72,6 +72,11 @@ export default function TechnicalVisitReportsPage() {
     }
   }, []);
 
+  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  };
+
+
   React.useEffect(() => {
     fetchTechnicalReports();
   }, [fetchTechnicalReports]);
@@ -96,10 +101,10 @@ export default function TechnicalVisitReportsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-          toast.info(`Downloading report for ${row.original.siteNameConcernedPerson} as ${format.toUpperCase()}...`);
-          console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-        };
+        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
+        //   toast.info(`Downloading report for ${row.original.siteNameConcernedPerson} as ${format.toUpperCase()}...`);
+        //   console.log(`Simulating individual download for ${row.original.id} in ${format}`);
+        // };
 
         return (
           <DropdownMenu>
@@ -110,12 +115,12 @@ export default function TechnicalVisitReportsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
+              {/* <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
                 Download CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
                 Download XLSX
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -124,10 +129,10 @@ export default function TechnicalVisitReportsPage() {
   ];
 
   // --- 4. Master Download Function for Technical Visit Reports ---
-  const handleDownloadAllTechnicalVisitReports = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Technical Visit Reports as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Technical Visit Reports in ${format}`);
-  };
+  // const handleDownloadAllTechnicalVisitReports = async (format: 'csv' | 'xlsx') => {
+  //   toast.info(`Preparing to download all Technical Visit Reports as ${format.toUpperCase()}...`);
+  //   console.log(`Simulating master download for all Technical Visit Reports in ${format}`);
+  // };
 
   const handleTechnicalVisitReportOrderChange = (newOrder: TechnicalVisitReport[]) => {
     console.log("New technical visit report order:", newOrder.map(r => r.id));
@@ -148,10 +153,9 @@ export default function TechnicalVisitReportsPage() {
             data={technicalReports} // Use fetched data
             reportTitle="Technical Visit Reports"
             filterColumnAccessorKey="siteNameConcernedPerson" // Filter by site name
-            onDownloadAll={handleDownloadAllTechnicalVisitReports}
+            onDownloadAll={dummyDownloadFunction}
             enableRowDragging={false} // Technical visit reports typically don't need reordering
             onRowOrderChange={handleTechnicalVisitReportOrderChange}
-            // isLoading={isLoading} // Removed this line to resolve the TypeScript error
           />
         </div>
       </div>

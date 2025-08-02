@@ -12,16 +12,8 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
+import { IconDotsVertical } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -43,8 +35,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 
 // Import the reusable DataTable (if you still use it, ensure it takes simple data and columns)
-// If DataTableReusable expects an API fetch itself, we might need to adjust or remove this.
-// For now, assuming it takes 'data' and 'columns' props and handles its own internal filtering/pagination if enabled.
 import { DataTableReusable } from '@/components/data-table-reusable';
 
 // --- 1. Define Zod Schema for Competition Report Data ---
@@ -152,6 +142,10 @@ export default function CompetitionReportsPage() {
     setIsViewModalOpen(true);
   };
 
+  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  };
+
   // --- 3. Define Columns for Competition Report DataTable ---
   const competitionReportColumns: ColumnDef<CompetitionReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
@@ -169,12 +163,6 @@ export default function CompetitionReportsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-          toast.info(`Downloading report for ${row.original.brandName} as ${format.toUpperCase()}...`);
-          console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-          // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        };
-
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -184,12 +172,6 @@ export default function CompetitionReportsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
-                Download CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
-                Download XLSX
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleViewReport(row.original)}>
                 View Details
               </DropdownMenuItem>
@@ -199,16 +181,6 @@ export default function CompetitionReportsPage() {
       },
     },
   ];
-
-  // --- 4. Master Download Function for Competition Reports ---
-  const handleDownloadAllCompetitionReports = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Competition Reports as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Competition Reports in ${format}`);
-    // In a real scenario, you'd call an API endpoint here to generate and download the file for all reports.
-  };
-
-  // Note: If DataTableReusable has its own internal fetching, you might need to adapt.
-  // Assuming it's a display component that takes 'data' and 'columns'.
 
   if (loading) {
     return (
@@ -233,9 +205,7 @@ export default function CompetitionReportsPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Competitor Information Reports</h2>
-          <Button onClick={() => handleDownloadAllCompetitionReports('xlsx')} className="flex items-center gap-2">
-            <IconDownload size={20} /> Download All
-          </Button>
+          {/* Removed the 'Download All' button */}
         </div>
 
         {/* Search Input */}
@@ -254,20 +224,14 @@ export default function CompetitionReportsPage() {
             <div className="text-center text-gray-500 py-8">No competition reports found.</div>
           ) : (
             <>
-              {/* Using a standard table here, as DataTableReusable might have its own internal fetch.
-                  If DataTableReusable is truly just for display and takes data/columns, you can use it.
-                  If it handles fetching, we might need to modify its internal logic or just use a standard table.
-                  For now, assuming you can pass `currentReports` and `competitionReportColumns` to it.
-              */}
-              {/* Assuming DataTableReusable is a display component as its name suggests 'Reusable' */}
               <DataTableReusable
                 columns={competitionReportColumns}
                 data={currentReports} // Pass the paginated & filtered data
-                reportTitle="Competitor Information Reports" // This prop might be for internal display
-                filterColumnAccessorKey="brandName" // This prop might not be needed if filtering is done externally
-                onDownloadAll={handleDownloadAllCompetitionReports} // Pass the master download function
-                enableRowDragging={false} // Competition reports typically don't need reordering
-                onRowOrderChange={() => {}} // No reordering for this table
+                reportTitle="Competitor Information Reports"
+                filterColumnAccessorKey="brandName"
+                enableRowDragging={false}
+                onDownloadAll={dummyDownloadFunction}
+                onRowOrderChange={() => {}}
               />
               <Pagination className="mt-6">
                 <PaginationContent>

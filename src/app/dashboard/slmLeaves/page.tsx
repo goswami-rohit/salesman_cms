@@ -162,6 +162,11 @@ export default function SlmLeavesPage() {
     }
   };
 
+  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  };
+
+
   React.useEffect(() => {
     setCurrentPage(1); // Reset page to 1 when search query changes
   }, [searchQuery]);
@@ -209,11 +214,11 @@ export default function SlmLeavesPage() {
         const leave = row.original;
         const isPending = leave.status === "Pending";
 
-        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-          toast.info(`Downloading leave report for ${leave.salesmanName} (${leave.startDate} to ${leave.endDate}) as ${format.toUpperCase()}...`);
-          console.log(`Simulating individual download for ${leave.id} in ${format}`);
-          // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        };
+        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
+        //   toast.info(`Downloading leave report for ${leave.salesmanName} (${leave.startDate} to ${leave.endDate}) as ${format.toUpperCase()}...`);
+        //   console.log(`Simulating individual download for ${leave.id} in ${format}`);
+        //   // In a real scenario, you'd call an API endpoint here to generate and download the file.
+        // };
 
         return (
           <DropdownMenu>
@@ -239,12 +244,6 @@ export default function SlmLeavesPage() {
                   {leave.status}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="border-t border-border mt-1 pt-2" onClick={() => handleIndividualDownload('csv')}>
-                Download CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
-                Download XLSX
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -253,10 +252,10 @@ export default function SlmLeavesPage() {
   ];
 
   // --- Master Download Function for Salesman Leave Applications ---
-  const handleDownloadAllSalesmanLeaves = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Salesman Leave Applications as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Salesman Leave Applications in ${format}`);
-  };
+  // const handleDownloadAllSalesmanLeaves = async (format: 'csv' | 'xlsx') => {
+  //   toast.info(`Preparing to download all Salesman Leave Applications as ${format.toUpperCase()}...`);
+  //   console.log(`Simulating master download for all Salesman Leave Applications in ${format}`);
+  // };
 
   const handleSalesmanLeaveOrderChange = (newOrder: SalesmanLeaveApplication[]) => {
     console.log("New salesman leave report order:", newOrder.map(r => r.id));
@@ -286,9 +285,9 @@ export default function SlmLeavesPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Salesman Leave Applications</h2>
-          <Button onClick={() => handleDownloadAllSalesmanLeaves('xlsx')} className="flex items-center gap-2">
+          {/* <Button onClick={() => handleDownloadAllSalesmanLeaves('xlsx')} className="flex items-center gap-2">
             <IconDownload size={20} /> Download All
-          </Button>
+          </Button> */}
         </div>
 
         {/* Search Input */}
@@ -312,7 +311,7 @@ export default function SlmLeavesPage() {
                 data={paginatedApplications}
                 reportTitle="Salesman Leave Applications"
                 filterColumnAccessorKey="salesmanName" // Filter by salesman name
-                onDownloadAll={handleDownloadAllSalesmanLeaves}
+                onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false} // Leave applications typically don't need reordering
                 onRowOrderChange={handleSalesmanLeaveOrderChange}
               />

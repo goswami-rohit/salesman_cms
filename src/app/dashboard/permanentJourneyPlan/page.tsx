@@ -148,6 +148,10 @@ export default function PermanentJourneyPlanPage() {
     setIsViewModalOpen(true);
   };
 
+  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  };
+
 
   // --- 3. Define Columns for Permanent Journey Plan DataTable ---
   const permanentJourneyPlanColumns: ColumnDef<PermanentJourneyPlan>[] = [
@@ -163,11 +167,11 @@ export default function PermanentJourneyPlanPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-          toast.info(`Downloading PJP for ${row.original.areaToBeVisited} on ${row.original.date} as ${format.toUpperCase()}...`);
-          console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-          // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        };
+        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
+        //   toast.info(`Downloading PJP for ${row.original.areaToBeVisited} on ${row.original.date} as ${format.toUpperCase()}...`);
+        //   console.log(`Simulating individual download for ${row.original.id} in ${format}`);
+        //   // In a real scenario, you'd call an API endpoint here to generate and download the file.
+        // };
 
         return (
           <DropdownMenu>
@@ -178,12 +182,6 @@ export default function PermanentJourneyPlanPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
-                Download CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
-                Download XLSX
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleViewPjp(row.original)}>
                 View Details
               </DropdownMenuItem>
@@ -195,10 +193,10 @@ export default function PermanentJourneyPlanPage() {
   ];
 
   // --- 4. Master Download Function for Permanent Journey Plans ---
-  const handleDownloadAllPermanentJourneyPlans = async (format: 'csv' | 'xlsx') => {
-    toast.info(`Preparing to download all Permanent Journey Plans as ${format.toUpperCase()}...`);
-    console.log(`Simulating master download for all Permanent Journey Plans in ${format}`);
-  };
+  // const handleDownloadAllPermanentJourneyPlans = async (format: 'csv' | 'xlsx') => {
+  //   toast.info(`Preparing to download all Permanent Journey Plans as ${format.toUpperCase()}...`);
+  //   console.log(`Simulating master download for all Permanent Journey Plans in ${format}`);
+  // };
 
   const handlePermanentJourneyPlanOrderChange = (newOrder: PermanentJourneyPlan[]) => {
     console.log("New permanent journey plan order:", newOrder.map(r => r.id));
@@ -227,9 +225,9 @@ export default function PermanentJourneyPlanPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Permanent Journey Plans</h2>
-          <Button onClick={() => handleDownloadAllPermanentJourneyPlans('xlsx')} className="flex items-center gap-2">
+          {/* <Button onClick={() => handleDownloadAllPermanentJourneyPlans('xlsx')} className="flex items-center gap-2">
             <IconDownload size={20} /> Download All
-          </Button>
+          </Button> */}
         </div>
 
         {/* Search Input */}
@@ -253,7 +251,7 @@ export default function PermanentJourneyPlanPage() {
                 data={currentPjps}
                 reportTitle="Permanent Journey Plans"
                 filterColumnAccessorKey="areaToBeVisited"
-                onDownloadAll={handleDownloadAllPermanentJourneyPlans}
+                onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false}
                 onRowOrderChange={handlePermanentJourneyPlanOrderChange}
                 // Removed: hideToolbar={true}
