@@ -3,6 +3,24 @@ import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthClaims, generateAndStreamCsv } from '@/lib/download-utils';
 
+// Helper function to mock XLSX generation. In a real application, you would use a library like 'exceljs' or 'xlsx'.
+const generateAndStreamXlsx = (data: string[][], filename: string) => {
+  // This is a placeholder. A real implementation would convert the data to an XLSX file buffer.
+  const content = `This is a placeholder for your XLSX file.
+A real implementation would use a library like 'exceljs' to convert the data to a spreadsheet.
+Data provided was:
+${data.map(row => row.join(',')).join('\n')}`;
+
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+
+  return new NextResponse(content, {
+    status: 200,
+    headers: headers,
+  });
+};
+
 // Generic helper to format any table data into CSV rows
 const formatTableDataForCsv = (data: any[]) => {
   if (!data || data.length === 0) {
@@ -12,7 +30,7 @@ const formatTableDataForCsv = (data: any[]) => {
   const headers = Object.keys(data[0]);
 
   const rows = data.map(row => headers.map(header => {
-    let value = row[header];
+    const value = row[header];
 
     if (value === null || value === undefined) {
       return '';
@@ -288,63 +306,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing reportType or format query parameter' }, { status: 400 });
     }
 
-    if (format !== 'csv') {
-      return NextResponse.json({ message: 'Only CSV format is currently supported.' }, { status: 501 });
-    }
-
     let csvData: string[][] = [];
     let filename = '';
 
     switch (reportType) {
       case 'dailyVisitReports':
         csvData = await getDailyVisitReportsForCsv(currentUser.companyId);
-        filename = `daily-visit-reports-${Date.now()}.csv`;
+        filename = `daily-visit-reports-${Date.now()}`;
         break;
       case 'technicalVisitReports':
         csvData = await getTechnicalVisitReportsForCsv(currentUser.companyId);
-        filename = `technical-visit-reports-${Date.now()}.csv`;
+        filename = `technical-visit-reports-${Date.now()}`;
         break;
       case 'pjp':
         csvData = await getPermanentJourneyPlansForCsv(currentUser.companyId);
-        filename = `pjp-${Date.now()}.csv`;
+        filename = `pjp-${Date.now()}`;
         break;
       case 'dealers':
         csvData = await getDealersForCsv(currentUser.companyId);
-        filename = `dealers-${Date.now()}.csv`;
+        filename = `dealers-${Date.now()}`;
         break;
       case 'salesmanAttendance':
         csvData = await getSalesmanAttendanceForCsv(currentUser.companyId);
-        filename = `salesman-attendance-${Date.now()}.csv`;
+        filename = `salesman-attendance-${Date.now()}`;
         break;
       case 'salesmanLeaveApplications':
         csvData = await getSalesmanLeaveApplicationsForCsv(currentUser.companyId);
-        filename = `salesman-leave-applications-${Date.now()}.csv`;
+        filename = `salesman-leave-applications-${Date.now()}`;
         break;
       case 'clientReports':
         csvData = await getClientReportsForCsv(currentUser.companyId);
-        filename = `client-reports-${Date.now()}.csv`;
+        filename = `client-reports-${Date.now()}`;
         break;
       case 'competitionReports':
         csvData = await getCompetitionReportsForCsv(currentUser.companyId);
-        filename = `competition-reports-${Date.now()}.csv`;
+        filename = `competition-reports-${Date.now()}`;
         break;
       case 'geoTracking':
         csvData = await getGeoTrackingForCsv(currentUser.companyId);
-        filename = `geo-tracking-${Date.now()}.csv`;
+        filename = `geo-tracking-${Date.now()}`;
         break;
       case 'dailyTasks':
         csvData = await getDailyTasksForCsv(currentUser.companyId);
-        filename = `daily-tasks-${Date.now()}.csv`;
+        filename = `daily-tasks-${Date.now()}`;
         break;
       case 'pjpEntries':
         csvData = await getPjpEntriesForCsv(currentUser.companyId);
-        filename = `pjp-entries-${Date.now()}.csv`;
+        filename = `pjp-entries-${Date.now()}`;
         break;
       default:
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });
     }
     
-    return generateAndStreamCsv(csvData, filename);
+    if (format === 'csv') {
+      return generateAndStreamCsv(csvData, `${filename}.csv`);
+    } else if (format === 'xlsx') {
+      return generateAndStreamXlsx(csvData, `${filename}.xlsx`);
+    } else {
+      return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
+    }
 
   } catch (error) {
     console.error('Error in downloads route:', error);
