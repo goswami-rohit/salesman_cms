@@ -17,24 +17,47 @@ import {
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
 
+// Updated schema to match the data structure from the API
 const geoTrackSchema = z.object({
   id: z.string(),
   salesmanName: z.string(),
-  trackDate: z.string(),
-  totalDistanceKm: z.number(),
+  totalDistanceTravelled: z.number(), // Corrected from totalDistanceKm
   checkInTime: z.string(),
   checkOutTime: z.string().nullable(),
 });
 
+// Define a type for the transformed data that we will use in the table
 type GeoTrack = z.infer<typeof geoTrackSchema>;
+type DisplayGeoTrack = GeoTrack & { trackDate: string };
+
 const ITEMS_PER_PAGE = 10;
 
 export default function SalesmanGeoTrackingPage() {
-  const [tracks, setTracks] = useState<GeoTrack[]>([]);
+  const [tracks, setTracks] = useState<DisplayGeoTrack[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper function to format ISO date strings
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
 
   const fetchTracks = useCallback(async () => {
     setLoading(true);
@@ -46,15 +69,21 @@ export default function SalesmanGeoTrackingPage() {
       }
       const rawData = await res.json();
 
-      const validatedData = rawData.map((item: unknown) => {
-        try {
-          return geoTrackSchema.parse(item);
-        } catch (e) {
-          console.error('Data validation failed for item:', item, 'ZodError', e);
-          return null;
-        }
-      }).filter((item: GeoTrack | null): item is GeoTrack => item !== null); // Filter out any items that failed validation
-      
+      const validatedData = rawData
+        .map((item: unknown) => {
+          try {
+            return geoTrackSchema.parse(item);
+          } catch (e) {
+            console.error('Data validation failed for item:', item, 'ZodError', e);
+            return null;
+          }
+        })
+        .filter((item: GeoTrack | null): item is GeoTrack => item !== null)
+        .map((item: GeoTrack) => ({
+          ...item,
+          trackDate: formatDate(item.checkInTime), // Create a display-friendly date field
+        }));
+
       setTracks(validatedData);
       toast.success('Geo-tracking reports loaded successfully.');
     } catch (e) {
@@ -85,7 +114,7 @@ export default function SalesmanGeoTrackingPage() {
     }
   };
 
-  const columns: ColumnDef<GeoTrack>[] = [
+  const columns: ColumnDef<DisplayGeoTrack>[] = [
     {
       accessorKey: 'salesmanName',
       header: 'Salesman',
@@ -95,16 +124,19 @@ export default function SalesmanGeoTrackingPage() {
       header: 'Date',
     },
     {
-      accessorKey: 'totalDistanceKm',
+      accessorKey: 'totalDistanceTravelled', // Updated accessor key
       header: 'Total Distance (km)',
+      cell: ({ row }) => `${row.original.totalDistanceTravelled.toFixed(2)} km`,
     },
     {
       accessorKey: 'checkInTime',
       header: 'Check-in Time',
+      cell: ({ row }) => formatTime(row.original.checkInTime),
     },
     {
       accessorKey: 'checkOutTime',
       header: 'Check-out Time',
+      cell: ({ row }) => (row.original.checkOutTime ? formatTime(row.original.checkOutTime) : 'N/A'),
     },
   ];
 
