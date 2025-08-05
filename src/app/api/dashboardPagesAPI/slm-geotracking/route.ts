@@ -1,7 +1,37 @@
 // src/app/api/dashboardPagesAPI/slm-geotracking/route.ts
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+
+// Define Zod schema for the GeoTracking data returned by this API
+// This ensures that the data we return is properly structured and typed.
+const geoTrackingSchema = z.object({
+  id: z.string(),
+  salesmanName: z.string(),
+  employeeId: z.string(),
+  workosOrganizationId: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  recordedAt: z.string(), // ISO string from the database
+  totalDistanceTravelled: z.number(),
+  accuracy: z.number().nullable().optional(),
+  speed: z.number().nullable().optional(),
+  heading: z.number().nullable().optional(),
+  altitude: z.number().nullable().optional(),
+  locationType: z.string().nullable().optional(),
+  activityType: z.string().nullable().optional(),
+  appState: z.string().nullable().optional(),
+  batteryLevel: z.number().nullable().optional(),
+  isCharging: z.boolean().nullable().optional(),
+  networkStatus: z.string().nullable().optional(),
+  ipAddress: z.string().nullable().optional(),
+  siteName: z.string().nullable().optional(),
+  checkInTime: z.string().nullable().optional(),
+  checkOutTime: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 
 export async function GET() {
   try {
@@ -24,67 +54,60 @@ export async function GET() {
     }
 
     // 4. Fetch GeoTracking Records for the current user's company
-    // We filter records based on the 'companyId' of the 'user' who created the record.
-    const geoTrackingRecords = await prisma.geoTracking.findMany({
+    const geotrackingReports = await prisma.geoTracking.findMany({
       where: {
-        user: { // Access the User relation
-          companyId: currentUser.companyId, // Filter by the admin/manager's company
+        user: {
+          companyId: currentUser.companyId,
         },
       },
+      // We must include the user and company to get the workosOrganizationId
       include: {
-        user: { // Include salesman details to get their name and other identifiers
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            salesmanLoginId: true, // Employee ID
-            workosUserId: true,    // WorkOS User ID
-            role: true,
-          },
+        user: {
+          include: {
+            company: true,
+          }
         },
       },
       orderBy: {
-        recordedAt: 'desc', // Order by latest records first
+        recordedAt: 'desc',
       },
-      take: 200, // Limit the number of records for performance in a dashboard view
+      take: 200,
     });
 
-    // 5. Format the data for the frontend table display
-    const formattedRecords = geoTrackingRecords.map(record => ({
-      id: record.id,
-      // Combine first and last name for salesmanName, fallback to email if names are null
-      salesmanName: `${record.user.firstName || ''} ${record.user.lastName || ''}`.trim() || record.user.email,
-      // Include unique identifiers for the employee
-      employeeId: record.user.salesmanLoginId || 'N/A', // Assuming salesmanLoginId is the employee ID
-      workosOrganizationId: record.user.workosUserId, // WorkOS User ID can serve as an org ID if needed, or fetch from Company model if more direct
-      
-      latitude: record.latitude.toNumber(),   // Convert Decimal to Number
-      longitude: record.longitude.toNumber(), // Convert Decimal to Number
-      recordedAt: record.recordedAt.toISOString(), // Full ISO string for precise timestamp
-      totalDistanceTravelled: record.totalDistanceTravelled?.toNumber() || 0, // Convert Decimal to Number, default to 0 if null
-
-      // Include other optional fields, ensuring they are not 'undefined' for JSON serialization
-      accuracy: record.accuracy?.toNumber() || null,
-      speed: record.speed?.toNumber() || null,
-      heading: record.heading?.toNumber() || null,
-      altitude: record.altitude?.toNumber() || null,
-      locationType: record.locationType || null,
-      activityType: record.activityType || null,
-      appState: record.appState || null,
-      batteryLevel: record.batteryLevel?.toNumber() || null,
-      isCharging: record.isCharging || null,
-      networkStatus: record.networkStatus || null,
-      ipAddress: record.ipAddress || null,
-      siteName: record.siteName || null,
-      checkInTime: record.checkInTime?.toISOString() || null,
-      checkOutTime: record.checkOutTime?.toISOString() || null,
-      
-      createdAt: record.createdAt.toISOString(),
-      updatedAt: record.updatedAt.toISOString(),
+     // 5. Format the data for the frontend table display
+    const formattedReports = geotrackingReports.map(report => ({
+      id: report.id,
+      // Access salesmanName from the nested user object
+      salesmanName: report.user.firstName && report.user.lastName ? `${report.user.firstName} ${report.user.lastName}` : null,
+      // Access employeeId from the nested user object
+      employeeId: report.user.salesmanLoginId,
+      workosOrganizationId: report.user.company?.workosOrganizationId ?? null,
+      latitude: report.latitude.toNumber(),
+      longitude: report.longitude.toNumber(),
+      recordedAt: report.recordedAt.toISOString(),
+      // Handle the case where totalDistanceTravelled might be null
+      totalDistanceTravelled: report.totalDistanceTravelled?.toNumber() ?? null,
+      accuracy: report.accuracy?.toNumber() ?? null,
+      speed: report.speed?.toNumber() ?? null,
+      heading: report.heading?.toNumber() ?? null,
+      altitude: report.altitude?.toNumber() ?? null,
+      locationType: report.locationType,
+      activityType: report.activityType,
+      appState: report.appState,
+      batteryLevel: report.batteryLevel?.toNumber() ?? null,
+      isCharging: report.isCharging,
+      networkStatus: report.networkStatus,
+      ipAddress: report.ipAddress,
+      siteName: report.siteName,
+      checkInTime: report.checkInTime?.toISOString() ?? null,
+      checkOutTime: report.checkOutTime?.toISOString() ?? null,
+      createdAt: report.createdAt.toISOString(),
+      updatedAt: report.updatedAt.toISOString(),
     }));
 
-    return NextResponse.json(formattedRecords, { status: 200 });
+    const validatedReports = z.array(geoTrackingSchema).parse(formattedReports);
+
+    return NextResponse.json(validatedReports, { status: 200 });
   } catch (error) {
     console.error('Error fetching geo-tracking data:', error);
     // Return a 500 status with a generic error message
