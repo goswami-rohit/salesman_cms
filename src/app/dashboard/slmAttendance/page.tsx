@@ -94,7 +94,7 @@ export default function SlmAttendancePage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/dashboardPagesAPI/slm-attendance");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-attendance`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

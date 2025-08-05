@@ -64,7 +64,7 @@ export default function DailyVisitReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/dashboardPagesAPI/daily-visit-reports');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/daily-visit-reports`);
       if (!response.ok) {
         if (response.status === 401) {
           toast.error('You are not authenticated. Redirecting to login.');

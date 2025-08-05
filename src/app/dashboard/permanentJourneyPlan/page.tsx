@@ -86,7 +86,7 @@ export default function PermanentJourneyPlanPage() {
     setError(null);
     try {
       // Use the new, correct API endpoint
-      const response = await fetch("/api/dashboardPagesAPI/permanent-journey-plan");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

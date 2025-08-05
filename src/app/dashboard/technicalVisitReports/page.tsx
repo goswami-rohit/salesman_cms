@@ -57,7 +57,7 @@ export default function TechnicalVisitReportsPage() {
     setIsLoading(true);
     try {
       // Fetch from the API path
-      const response = await fetch('/api/dashboardPagesAPI/technical-visit-reports');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/technical-visit-reports`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

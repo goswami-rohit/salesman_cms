@@ -40,7 +40,7 @@ export default function SalesmanGeoTrackingPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/dashboardPagesAPI/slm-geotracking');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-geotracking`);
       if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
 
       const data = await res.json();

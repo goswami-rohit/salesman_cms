@@ -136,10 +136,13 @@ export default function AssignTasksPage() {
   // }, []);
 
   // --- Fetch Salesmen and Dealers for the Form ---
+  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/assign-tasks`
+  
   const fetchFormData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/dashboardPagesAPI/assign-tasks");
+      
+      const response = await fetch(apiURI);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -201,7 +204,7 @@ export default function AssignTasksPage() {
     }
 
     try {
-      const response = await fetch("/api/dashboardPagesAPI/assign-tasks", {
+      const response = await fetch(apiURI, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

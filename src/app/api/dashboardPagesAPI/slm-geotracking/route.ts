@@ -65,7 +65,12 @@ export async function GET() {
         user: {
           include: {
             company: true,
-          }
+          },
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
         },
       },
       orderBy: {

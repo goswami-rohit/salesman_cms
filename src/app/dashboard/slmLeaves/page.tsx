@@ -66,11 +66,12 @@ export default function SlmLeavesPage() {
   // }, []);
 
   // --- Data Fetching Logic ---
+  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-leaves`
   const fetchLeaveApplications = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/dashboardPagesAPI/slm-leaves");
+      const response = await fetch(apiURI);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -105,7 +106,7 @@ export default function SlmLeavesPage() {
   const handleLeaveAction = async (id: UniqueIdentifier, newStatus: "Approved" | "Rejected", remarks: string | null = null) => {
     try {
       setLoading(true); // Indicate loading for the action
-      const response = await fetch('/api/dashboardPagesAPI/slm-leaves', {
+      const response = await fetch(apiURI, {
         method: 'PATCH', // Use PATCH for partial updates
         headers: {
           'Content-Type': 'application/json',

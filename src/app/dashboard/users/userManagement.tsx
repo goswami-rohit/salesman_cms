@@ -101,9 +101,10 @@ export default function UsersManagement({ adminUser }: Props) {
     fetchUsers();
   }, []);
 
+  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/users`
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users');
+      const response = await fetch(apiURI);
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
@@ -124,7 +125,7 @@ export default function UsersManagement({ adminUser }: Props) {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/users', {
+      const response = await fetch(apiURI, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -159,7 +160,7 @@ export default function UsersManagement({ adminUser }: Props) {
     setError('');
 
     try {
-      const response = await fetch(`/api/users/${editingUser.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -189,7 +190,7 @@ export default function UsersManagement({ adminUser }: Props) {
 
     try {
       // First, delete from your database
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/${userId}`, {
         method: 'DELETE'
       });
 

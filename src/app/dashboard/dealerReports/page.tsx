@@ -100,7 +100,7 @@ export default function DealerReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/dashboardPagesAPI/dealer-reports");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealer-reports`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -41,7 +41,7 @@ export default function ClientReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/dashboardPagesAPI/client-reports');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/client-reports`);
       if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
 
       const data = await res.json();
