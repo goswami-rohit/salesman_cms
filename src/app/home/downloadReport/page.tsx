@@ -64,7 +64,8 @@ const ReportCard: React.FC<ReportCardProps> = ({ id, title, description, icon: I
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="csv">CSV</SelectItem>
-              <SelectItem value="xlsx">XLSX</SelectItem>
+              {/*XLSX downloadable needs to be set later in lib/download-utils.ts and here */}
+              {/*<SelectItem value="xlsx">XLSX</SelectItem>*/}
             </SelectContent>
           </Select>
           <Button 
@@ -147,12 +148,12 @@ export default function DownloadsPage() {
       description: 'A list of daily tasks assigned to salesmen, including related dealer information.',
       icon: GitPullRequest,
     },
-    {
-      id: 'pjpEntries',
-      title: 'PJP Task Entries',
-      description: 'A report on individual tasks assigned as part of a Permanent Journey Plan.',
-      icon: MapPin,
-    },
+    // {
+    //   id: 'pjpEntries',
+    //   title: 'PJP Task Entries',
+    //   description: 'A report on individual tasks assigned as part of a Permanent Journey Plan.',
+    //   icon: MapPin,
+    // },
   ];
 
   const handleDownload = async (reportId: string, format: ReportFormat) => {

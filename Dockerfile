@@ -49,15 +49,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Copy only the essential files from the builder stage
 # We copy the standalone build output, static assets, and the public directory.
 # The Prisma schema is also copied, which is a good practice for runtime database connections.
+#COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+#COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/next.config.js ./next.config.js
 
 # Expose the default Next.js port
 EXPOSE 3000
 
 # Set the entrypoint to run the standalone server
 # The server.js file is the entrypoint for the standalone build.
-CMD ["node", "server.js"]
+CMD ["server.js"]
