@@ -17,20 +17,13 @@ import {
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
 
-// Define a more comprehensive and flexible Zod schema
 const geoTrackSchema = z.object({
   id: z.string(),
-  salesmanName: z.string().nullable(),
+  salesmanName: z.string(),
   trackDate: z.string(),
-  totalDistanceKm: z.number().nullable(),
+  totalDistanceKm: z.number(),
   checkInTime: z.string(),
   checkOutTime: z.string().nullable(),
-  // Add other potential fields from the API to be more robust
-  latitude: z.number().optional().nullable(),
-  longitude: z.number().optional().nullable(),
-  recordedAt: z.string().optional().nullable(),
-  employeeId: z.string().optional().nullable(),
-  // and so on...
 });
 
 type GeoTrack = z.infer<typeof geoTrackSchema>;
@@ -43,44 +36,31 @@ export default function SalesmanGeoTrackingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-geotracking`
   const fetchTracks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching geo-tracking data from API...');
-      const res = await fetch(apiURI);
-
+      const res = await fetch('/api/dashboardPagesAPI/slm-geotracking');
       if (!res.ok) {
-        console.error('Fetch failed with status:', res.status);
-        throw new Error(`Failed to fetch: ${res.status}`);
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
+      const rawData = await res.json();
 
-      const data = await res.json();
-      console.log('Raw API response data:', data);
-
-      if (!Array.isArray(data)) {
-        throw new Error('API response is not an array.');
-      }
-
-      const validated = data.map((item: any) => {
+      const validatedData = rawData.map((item: unknown) => {
         try {
           return geoTrackSchema.parse(item);
-        } catch (err) {
-          console.error('Data validation failed for item:', item, err);
-          toast.error('Invalid geotracking data received');
+        } catch (e) {
+          console.error('Data validation failed for item:', item, 'ZodError', e);
           return null;
         }
-      }).filter(Boolean) as GeoTrack[];
-
-      console.log('Validated data after Zod parsing:', validated);
-
-      setTracks(validated);
-      toast.success('GeoTracking data loaded');
-    } catch (err: any) {
-      console.error('Error in fetchTracks:', err);
-      toast.error(err.message);
-      setError(err.message);
+      }).filter((item: GeoTrack | null): item is GeoTrack => item !== null); // Filter out any items that failed validation
+      
+      setTracks(validatedData);
+      toast.success('Geo-tracking reports loaded successfully.');
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+      setError(errorMessage);
+      toast.error(`Failed to fetch geo-tracking reports: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -90,59 +70,78 @@ export default function SalesmanGeoTrackingPage() {
     fetchTracks();
   }, [fetchTracks]);
 
-  const filteredTracks = tracks.filter((track) =>
-    track.salesmanName && track.salesmanName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTracks = tracks.filter(track =>
+    track.salesmanName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredTracks.length / ITEMS_PER_PAGE);
-  const currentTracks = filteredTracks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentTracks = filteredTracks.slice(startIndex, endIndex);
 
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  const handlePageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
   };
 
   const columns: ColumnDef<GeoTrack>[] = [
-    { accessorKey: 'salesmanName', header: 'Salesman Name' },
-    { accessorKey: 'trackDate', header: 'Track Date' },
-    { accessorKey: 'totalDistanceKm', header: 'Total Distance (km)' },
-    { accessorKey: 'checkInTime', header: 'Check-in Time' },
-    { accessorKey: 'checkOutTime', header: 'Check-out Time' },
+    {
+      accessorKey: 'salesmanName',
+      header: 'Salesman',
+    },
+    {
+      accessorKey: 'trackDate',
+      header: 'Date',
+    },
+    {
+      accessorKey: 'totalDistanceKm',
+      header: 'Total Distance (km)',
+    },
+    {
+      accessorKey: 'checkInTime',
+      header: 'Check-in Time',
+    },
+    {
+      accessorKey: 'checkOutTime',
+      header: 'Check-out Time',
+    },
   ];
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen">Loading geotracking data...</div>;
-
-  if (error) return (
-    <div className="text-center text-red-500 min-h-screen pt-10">
-      Error: {error}
-      <Button onClick={fetchTracks} className="ml-4">Retry</Button>
-    </div>
-  );
-
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <div className="flex-1 space-y-8 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Salesman GeoTracking</h2>
-        </div>
-        <div className="flex justify-end mb-4">
+    <div className="p-6">
+      <div className="flex flex-col gap-4">
+        <h1 className="text-2xl font-bold">Salesman Geo-Tracking</h1>
+        <div className="flex justify-between items-center">
           <Input
-            placeholder="Search by salesman name..."
+            placeholder="Search by Salesman Name..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1); // Reset to first page on new search
+            }}
             className="max-w-sm"
           />
         </div>
-        <div className="bg-card p-6 rounded-lg border border-border">
-          {filteredTracks.length === 0 ? (
+        <div>
+          {loading ? (
+            <div className="text-center py-8">Loading geo-tracking reports...</div>
+          ) : error ? (
+            <div className="text-center text-red-500 py-8">Error: {error}</div>
+          ) : filteredTracks.length === 0 ? (
             <div className="text-center text-gray-500 py-8">No geotracking reports found.</div>
           ) : (
             <>
               <DataTableReusable
                 columns={columns}
                 data={currentTracks}
+                //reportTitle="GeoTracking Reports"
+                //filterColumnAccessorKey="salesmanName"
+                //onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false}
                 onRowOrderChange={() => {}}
               />
+
               <Pagination className="mt-6">
                 <PaginationContent>
                   <PaginationItem>
