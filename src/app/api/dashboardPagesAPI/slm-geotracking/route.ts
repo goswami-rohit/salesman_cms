@@ -45,7 +45,7 @@ export async function GET() {
     // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
-      include: { company: true } // Include company to get companyId for filtering
+      include: { company: true } 
     });
 
     // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
@@ -66,11 +66,6 @@ export async function GET() {
           include: {
             company: true,
           },
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
         },
       },
       orderBy: {
@@ -82,11 +77,11 @@ export async function GET() {
      // 5. Format the data for the frontend table display
     const formattedReports = geotrackingReports.map(report => ({
       id: report.id,
-      // Access salesmanName from the nested user object
-      salesmanName: report.user.firstName && report.user.lastName ? `${report.user.firstName} ${report.user.lastName}` : null,
-      // Access employeeId from the nested user object
-      employeeId: report.user.salesmanLoginId,
-      workosOrganizationId: report.user.company?.workosOrganizationId ?? null,
+      // Add optional chaining to prevent errors if the user object is unexpectedly null
+      salesmanName: report.user?.firstName && report.user?.lastName ? `${report.user.firstName} ${report.user.lastName}` : null,
+      // Access employeeId from the nested user object, handling potential nulls
+      employeeId: report.user?.salesmanLoginId ?? null,
+      workosOrganizationId: report.user?.company?.workosOrganizationId ?? null,
       latitude: report.latitude.toNumber(),
       longitude: report.longitude.toNumber(),
       recordedAt: report.recordedAt.toISOString(),
