@@ -142,9 +142,9 @@ export default function CompetitionReportsPage() {
     setIsViewModalOpen(true);
   };
 
-  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  };
+  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  // };
 
   // --- 3. Define Columns for Competition Report DataTable ---
   const competitionReportColumns: ColumnDef<CompetitionReport>[] = [
@@ -227,10 +227,10 @@ export default function CompetitionReportsPage() {
               <DataTableReusable
                 columns={competitionReportColumns}
                 data={currentReports} // Pass the paginated & filtered data
-                reportTitle="Competitor Information Reports"
-                filterColumnAccessorKey="brandName"
-                enableRowDragging={false}
-                onDownloadAll={dummyDownloadFunction}
+                //reportTitle="Competitor Information Reports"
+                //filterColumnAccessorKey="brandName"
+                //onDownloadAll={dummyDownloadFunction}
+                enableRowDragging={false}               
                 onRowOrderChange={() => {}}
               />
               <Pagination className="mt-6">

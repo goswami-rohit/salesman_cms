@@ -173,9 +173,9 @@ export default function DealerReportsPage() {
     setIsViewModalOpen(true);
   };
 
-  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  };
+  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  // };
 
   // --- 3. Define Columns for Dealer/Sub-Dealer Report DataTable ---
   const dealerReportColumns: ColumnDef<DealerReport>[] = [
@@ -312,9 +312,9 @@ export default function DealerReportsPage() {
                 <DataTableReusable
                   columns={dealerReportColumns}
                   data={paginatedReports}
-                  reportTitle="Dealer Reports"
-                  filterColumnAccessorKey="dealerName"
-                  onDownloadAll={dummyDownloadFunction}
+                  //reportTitle="Dealer Reports"
+                  //filterColumnAccessorKey="dealerName"
+                  //onDownloadAll={dummyDownloadFunction}
                   enableRowDragging={false}
                   onRowOrderChange={handleDealerReportOrderChange}
                   // Removed: hideToolbar={true}
@@ -360,9 +360,9 @@ export default function DealerReportsPage() {
                 <DataTableReusable
                   columns={dealerReportColumns}
                   data={paginatedReports}
-                  reportTitle="Sub-Dealer Reports"
-                  filterColumnAccessorKey="subDealerName"
-                  onDownloadAll={dummyDownloadFunction}
+                  //reportTitle="Sub-Dealer Reports"
+                  //filterColumnAccessorKey="subDealerName"
+                  //onDownloadAll={dummyDownloadFunction}
                   enableRowDragging={false}
                   onRowOrderChange={handleDealerReportOrderChange}
                   // Removed: hideToolbar={true}

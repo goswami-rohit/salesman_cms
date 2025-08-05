@@ -148,9 +148,9 @@ export default function PermanentJourneyPlanPage() {
     setIsViewModalOpen(true);
   };
 
-  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  };
+  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  // };
 
 
   // --- 3. Define Columns for Permanent Journey Plan DataTable ---
@@ -249,9 +249,9 @@ export default function PermanentJourneyPlanPage() {
               <DataTableReusable
                 columns={permanentJourneyPlanColumns}
                 data={currentPjps}
-                reportTitle="Permanent Journey Plans"
-                filterColumnAccessorKey="areaToBeVisited"
-                onDownloadAll={dummyDownloadFunction}
+                //reportTitle="Permanent Journey Plans"
+                //filterColumnAccessorKey="areaToBeVisited"
+                //onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false}
                 onRowOrderChange={handlePermanentJourneyPlanOrderChange}
                 // Removed: hideToolbar={true}

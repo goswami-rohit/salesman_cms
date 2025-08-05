@@ -158,9 +158,9 @@ export default function SlmAttendancePage() {
     setIsViewModalOpen(true);
   };
 
-  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  };
+  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  // };
 
 
   // --- 3. Define Columns for Salesman Attendance DataTable ---
@@ -301,9 +301,9 @@ export default function SlmAttendancePage() {
               <DataTableReusable
                 columns={salesmanAttendanceColumns}
                 data={paginatedReports}
-                reportTitle="Salesman Attendance Reports"
-                filterColumnAccessorKey="salesmanName"
-                onDownloadAll={dummyDownloadFunction}
+                //reportTitle="Salesman Attendance Reports"
+                //filterColumnAccessorKey="salesmanName"
+                //onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false}
                 onRowOrderChange={handleSalesmanAttendanceOrderChange}
               />

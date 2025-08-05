@@ -162,9 +162,9 @@ export default function SlmLeavesPage() {
     }
   };
 
-  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  };
+  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  // };
 
 
   React.useEffect(() => {
@@ -309,9 +309,9 @@ export default function SlmLeavesPage() {
               <DataTableReusable
                 columns={salesmanLeaveColumns}
                 data={paginatedApplications}
-                reportTitle="Salesman Leave Applications"
-                filterColumnAccessorKey="salesmanName" // Filter by salesman name
-                onDownloadAll={dummyDownloadFunction}
+                //reportTitle="Salesman Leave Applications"
+                //filterColumnAccessorKey="salesmanName" // Filter by salesman name
+                //onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false} // Leave applications typically don't need reordering
                 onRowOrderChange={handleSalesmanLeaveOrderChange}
               />

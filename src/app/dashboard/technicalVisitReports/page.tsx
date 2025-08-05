@@ -72,9 +72,9 @@ export default function TechnicalVisitReportsPage() {
     }
   }, []);
 
-  const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-    console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  };
+  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
+  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
+  // };
 
 
   React.useEffect(() => {
@@ -151,9 +151,9 @@ export default function TechnicalVisitReportsPage() {
           <DataTableReusable
             columns={technicalVisitReportColumns}
             data={technicalReports} // Use fetched data
-            reportTitle="Technical Visit Reports"
-            filterColumnAccessorKey="siteNameConcernedPerson" // Filter by site name
-            onDownloadAll={dummyDownloadFunction}
+            //reportTitle="Technical Visit Reports"
+            //filterColumnAccessorKey="siteNameConcernedPerson" // Filter by site name
+            //nDownloadAll={dummyDownloadFunction}
             enableRowDragging={false} // Technical visit reports typically don't need reordering
             onRowOrderChange={handleTechnicalVisitReportOrderChange}
           />
