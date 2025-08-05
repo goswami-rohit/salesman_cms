@@ -59,11 +59,12 @@ export default function SalesmanGeoTrackingPage() {
     });
   };
 
+  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-geotracking`
   const fetchTracks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/dashboardPagesAPI/slm-geotracking');
+      const res = await fetch(apiURI);
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
