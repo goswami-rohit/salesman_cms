@@ -2,22 +2,10 @@
 import { Suspense } from 'react';
 import { SectionCards } from '@/components/section-cards';
 import DashboardGraphs from './dashboardGraphs';
-import { 
-  getRawDailyVisitReports, // Changed import
-  getRawGeoTrackingRecords,
-} from './data-format';
+// Removed imports for data fetching functions from data-format.ts
 
 export default async function DashboardPage() {
-  console.log('DashboardPage: Fetching data for DashboardGraphs...');
-
-  // Fetch raw data using the updated functions
-  const [rawDailyReports, rawGeoTrackingRecords] = await Promise.all([ // Changed variable names
-    getRawDailyVisitReports(),
-    getRawGeoTrackingRecords(),
-  ]);
-
-  console.log('DashboardPage: rawDailyReports received:', rawDailyReports.length, 'records');
-  console.log('DashboardPage: rawGeoTrackingRecords received:', rawGeoTrackingRecords.length, 'records');
+  console.log('DashboardPage: Rendering DashboardGraphs (data fetched client-side)...');
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -26,10 +14,8 @@ export default async function DashboardPage() {
       </Suspense>
       
       <Suspense fallback={<div>Loading dashboard data...</div>}>
-        <DashboardGraphs 
-          rawDailyReports={rawDailyReports} // Pass raw data
-          rawGeoTrackingRecords={rawGeoTrackingRecords} // Pass raw data
-        />
+        {/* DashboardGraphs will now fetch its own data client-side */}
+        <DashboardGraphs />
       </Suspense>
     </div>
   );

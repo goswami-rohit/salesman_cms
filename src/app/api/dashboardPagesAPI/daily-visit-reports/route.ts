@@ -36,29 +36,27 @@ export async function GET() {
   try {
     const claims = await getTokenClaims();
 
-    // // 1. Authentication Check
-    // if (!claims || !claims.sub) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    // 1. Authentication Check
+    if (!claims || !claims.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // // 2. Fetch Current User to check role and companyId
-    // const currentUser = await prisma.user.findUnique({
-    //   where: { workosUserId: claims.sub },
-    //   select: { id: true, role: true, companyId: true } // Select only necessary fields
-    // });
+    // 2. Fetch Current User to check role and companyId
+    const currentUser = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      select: { id: true, role: true, companyId: true } // Select only necessary fields
+    });
 
-    // // 3. Role-based Authorization: Only 'admin' or 'manager' can access this
-    // if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-    //   return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
-    // }
-    const TEST_COMPANY_ID = 3;
-
+    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
+      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    }
+    
     // 4. Fetch Daily Visit Reports for the current user's company
     const dailyVisitReports = await prisma.dailyVisitReport.findMany({
       where: {
         user: { // Filter reports by the company of the user who created them
-          // companyId: currentUser.companyId,
-          companyId: TEST_COMPANY_ID,
+           companyId: currentUser.companyId,         
         },
       },
       include: {
@@ -116,6 +114,6 @@ export async function GET() {
     // Be careful not to expose sensitive error details in production
     return NextResponse.json({ error: 'Failed to fetch daily visit reports', details: (error as Error).message }, { status: 500 });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 }

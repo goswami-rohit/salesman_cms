@@ -1,7 +1,7 @@
 // src/app/dashboard/dashboardGraphs.tsx
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartAreaInteractive } from '@/components/chart-area-reusable';
 import {
@@ -19,16 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
+import { toast } from 'sonner'; // Import toast for client-side errors
+import { Button } from '@/components/ui/button';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import {
-  DailyVisitsData, // Still needed for type definition, though its data will be collection
+  DailyVisitsData,
   GeoTrackingData,
   DailyCollectionData,
   RawGeoTrackingRecord,
   RawDailyVisitReportRecord,
-  rawGeoTrackingSchema,
-  rawDailyVisitReportSchema,
+  rawGeoTrackingSchema, // Zod schema for validation
+  rawDailyVisitReportSchema, // Zod schema for validation
 } from './data-format';
 
 // Define the columns for the geo-tracking data table
@@ -45,39 +46,80 @@ const geoTrackingColumns: ColumnDef<RawGeoTrackingRecord>[] = [
 const dailyReportsColumns: ColumnDef<RawDailyVisitReportRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
   { accessorKey: 'reportDate', header: 'Report Date' },
-  { accessorKey: 'dealerName', header: 'Dealer Name' },
+  { accessorKey: 'dealerName', header: 'Dealer Name', cell: info => info.getValue() || 'N/A' },
   { accessorKey: 'visitType', header: 'Visit Type' },
   { accessorKey: 'todayCollectionRupees', header: 'Collection (₹)', cell: ({ row }) => `₹${row.original.todayCollectionRupees?.toFixed(2) ?? 'N/A'}` },
+  { accessorKey: 'feedbacks', 
+    header: 'Feedbacks', 
+    cell: info => <span className="max-w-[250px] truncate block">{info.getValue() as string}</span> // Explicitly cast to string
+  },
 ];
 
-// Define props for the DashboardGraphs component
-interface DashboardGraphsProps {
-  rawDailyReports: RawDailyVisitReportRecord[];
-  rawGeoTrackingRecords: RawGeoTrackingRecord[];
-}
+export default function DashboardGraphs() {
+  const [rawGeoTrackingRecords, setRawGeoTrackingRecords] = useState<RawGeoTrackingRecord[]>([]);
+  const [rawDailyReports, setRawDailyReports] = useState<RawDailyVisitReportRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default function DashboardGraphs({ rawDailyReports, rawGeoTrackingRecords }: DashboardGraphsProps) {
   const [selectedGeoSalesmanId, setSelectedGeoSalesmanId] = useState<string | 'all'>('all');
   const [selectedDailySalesmanId, setSelectedDailySalesmanId] = useState<string | 'all'>('all');
 
-  // Validate raw data using Zod
-  const validatedGeoRecords = useMemo(() => {
+  // Client-side fetching logic
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      return rawGeoTrackingSchema.array().parse(rawGeoTrackingRecords);
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://salesmancms-dashboard.onrender.com'; // Fallback for client-side
+
+      const [geoRes, dailyRes] = await Promise.all([
+        fetch(`${baseUrl}/api/dashboardPagesAPI/slm-geotracking`, { cache: 'no-store' }),
+        fetch(`${baseUrl}/api/dashboardPagesAPI/daily-visit-reports`, { cache: 'no-store' }),
+      ]);
+
+      if (!geoRes.ok) {
+        const geoErrorText = await geoRes.text();
+        throw new Error(`Failed to fetch geo-tracking data: ${geoRes.status} - ${geoErrorText}`);
+      }
+      if (!dailyRes.ok) {
+        const dailyErrorText = await dailyRes.text();
+        throw new Error(`Failed to fetch daily visit reports: ${dailyRes.status} - ${dailyErrorText}`);
+      }
+
+      const geoData = await geoRes.json();
+      const dailyData = await dailyRes.json();
+
+      // Validate and set data
+      const validatedGeo = rawGeoTrackingSchema.array().parse(geoData);
+      setRawGeoTrackingRecords(validatedGeo);
+
+      const validatedDaily = rawDailyVisitReportSchema.array().parse(dailyData);
+      setRawDailyReports(validatedDaily);
+
+      toast.success('Dashboard data loaded successfully!');
+
     } catch (e) {
-      console.error('Zod validation failed for rawGeoTrackingRecords:', e);
-      return [];
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+      console.error('Error fetching dashboard data:', e);
+      setError(errorMessage);
+      toast.error(`Failed to load dashboard data: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Validate raw data using Zod (moved here from page.tsx)
+  const validatedGeoRecords = useMemo(() => {
+    return rawGeoTrackingRecords; // Already validated in fetchData
   }, [rawGeoTrackingRecords]);
 
   const validatedDailyReports = useMemo(() => {
-    try {
-      return rawDailyVisitReportSchema.array().parse(rawDailyReports);
-    } catch (e) {
-      console.error('Zod validation failed for rawDailyReports:', e);
-      return [];
-    }
+    return rawDailyReports; // Already validated in fetchData
   }, [rawDailyReports]);
+
 
   // Extract unique salesmen for the Geo-Tracking filter dropdown
   const uniqueGeoSalesmen = useMemo(() => {
@@ -95,10 +137,10 @@ export default function DashboardGraphs({ rawDailyReports, rawGeoTrackingRecords
 
   // Extract unique salesmen for the Daily Reports filter dropdown
   const uniqueDailySalesmen = useMemo(() => {
-    const salesmenMap = new Map<string, string>(); // Map<employeeId, salesmanName>
+    const salesmenMap = new Map<string, string>(); // Map<salesmanName, salesmanName>
     validatedDailyReports.forEach(record => {
       if (record.salesmanName) {
-        salesmenMap.set(record.salesmanName, record.salesmanName); // Using salesmanName as ID for now
+        salesmenMap.set(record.salesmanName, record.salesmanName);
       }
     });
     return Array.from(salesmenMap.entries()).map(([id, name]) => ({
@@ -162,6 +204,19 @@ export default function DashboardGraphs({ rawDailyReports, rawGeoTrackingRecords
     return graphData;
   }, [validatedDailyReports, selectedDailySalesmanId]);
 
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-[400px]">Loading dashboard data...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500 py-8">
+        Error: {error}
+        <Button onClick={fetchData} className="ml-4">Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <Tabs defaultValue="graphs" className="space-y-4">

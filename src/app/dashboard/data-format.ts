@@ -2,18 +2,11 @@
 import { z } from 'zod';
 import { Prisma } from '@prisma/client'; // Import Prisma for Decimal type handling
 
-// Define a base URL for API calls. This is crucial for server components
-// as process.env.NEXT_PUBLIC_APP_URL might not always be reliably available
-// during server-side rendering, or relative paths might be misresolved.
-// Use a fallback to your deployment URL or a local development URL.
-const BASE_API_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://salesmancms-dashboard.onrender.com';
-
 // Define the schemas for the API responses to ensure data integrity
-// These schemas will now be used in dashboardGraphs.tsx for validation
 export const rawDailyVisitReportSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
-  reportDate: z.string(),
+  reportDate: z.string(), // YYYY-MM-DD string
   dealerType: z.string().optional(),
   dealerName: z.string().nullable().optional(),
   subDealerName: z.string().nullable().optional(),
@@ -85,56 +78,5 @@ export type DailyCollectionData = {
   collection: number;
 };
 
-// const dvrAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/daily-visit-reports`
-
-// const geoAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-geotracking`
-
-/**
- * Fetches raw daily visit reports data.
- * Aggregation and validation will happen in DashboardGraphs.tsx
- */
-export async function getRawDailyVisitReports(): Promise<RawDailyVisitReportRecord[]> {
-  try {
-    console.log('data-format: Fetching raw daily visit reports...');
-    const res = await fetch('https://salesmancms-dashboard.onrender.com/api/dashboardPagesAPI/daily-visit-reports', { cache: 'no-store' });
-    console.log('data-format: Daily Visit Reports API Response Status:', res.status);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('data-format: Daily Visit Reports API Error Text:', errorText);
-      throw new Error(`Failed to fetch daily visit reports: ${res.status} - ${errorText}`);
-    }
-
-    const data: RawDailyVisitReportRecord[] = await res.json();
-    console.log('data-format: Raw Daily Visit Reports Data:', data);
-    return data; // Return raw data
-  } catch (err) {
-    console.error('data-format: Error fetching raw daily visit reports:', err);
-    return [];
-  }
-}
-
-/**
- * Fetches all raw geo-tracking records.
- * Aggregation and validation will happen in DashboardGraphs.tsx
- */
-export async function getRawGeoTrackingRecords(): Promise<RawGeoTrackingRecord[]> {
-  try {
-    console.log('data-format: Fetching raw geo-tracking records...');
-    const res = await fetch('https://salesmancms-dashboard.onrender.com/api/dashboardPagesAPI/slm-geotracking', { cache: 'no-store' });
-    console.log('data-format: Raw Geo-Tracking Records API Response Status:', res.status);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('data-format: Raw Geo-Tracking Records API Error Text:', errorText);
-      throw new Error(`Failed to fetch raw geo-tracking data: ${res.status} - ${errorText}`);
-    }
-
-    const data: RawGeoTrackingRecord[] = await res.json();
-    console.log('data-format: Raw Geo-Tracking Records Data:', data);
-    return data; // Return raw data
-  } catch (err) {
-    console.error('data-format: Error fetching raw geo-tracking records:', err);
-    return [];
-  }
-}
+// Removed data fetching functions (getRawDailyVisitReports, getRawGeoTrackingRecords)
+// as they will now be handled directly in DashboardGraphs.tsx (client component)
