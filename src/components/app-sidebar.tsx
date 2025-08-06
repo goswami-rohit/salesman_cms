@@ -64,11 +64,11 @@ const data = {
       title: "Home",
       url: "/home",
       items: [
-        {
-          title: "CemTem Chat",
-          url: "/home/cemtemChat",
-          isActive: false,
-        },
+        // {
+        //   title: "CemTem Chat",
+        //   url: "/home/cemtemChat",
+        //   isActive: false,
+        // },
         {
           title: "Download Reports",
           url: "/home/downloadReport",
@@ -82,6 +82,7 @@ const data = {
         {
           title: "Users",
           url: "/dashboard/users",
+          isActive: false,
         },
         {
           title: "Assign Tasks",
