@@ -80,14 +80,21 @@ export type DailyVisitReportRecord = z.infer<typeof dailyVisitReportSchema>;
  */
 export async function getDailyVisitsDataForGraph(): Promise<DailyVisitsData[]> {
   try {
+    console.log('Fetching daily visit reports for graph...');
     const res = await fetch('/api/dashboardPagesAPI/daily-visit-reports', { cache: 'no-store' });
+    console.log('Daily Visit Reports for Graph API Response Status:', res.status);
+
     if (!res.ok) {
       const errorText = await res.text();
+      console.error('Daily Visit Reports for Graph API Error Text:', errorText);
       throw new Error(`Failed to fetch daily visit reports: ${res.status} - ${errorText}`);
     }
 
     const data = await res.json();
+    console.log('Raw Daily Visit Reports for Graph Data:', data);
     const validatedData = z.array(dailyVisitReportSchema).parse(data);
+    console.log('Validated Daily Visit Reports for Graph Data:', validatedData);
+
 
     // Aggregate data to get a count of visits per day
     const aggregatedData: Record<string, number> = {};
@@ -102,7 +109,7 @@ export async function getDailyVisitsDataForGraph(): Promise<DailyVisitsData[]> {
       name: date,
       visits: aggregatedData[date],
     }));
-
+    console.log('Aggregated Daily Visit Reports for Graph Data:', graphData);
     return graphData;
   } catch (err) {
     console.error('Error fetching/parsing daily visits data for graph:', err);
@@ -115,13 +122,20 @@ export async function getDailyVisitsDataForGraph(): Promise<DailyVisitsData[]> {
  */
 export async function getDailyVisitReportsForTable(): Promise<DailyVisitReportRecord[]> {
   try {
+    console.log('Fetching daily visit reports for table...');
     const res = await fetch('/api/dashboardPagesAPI/daily-visit-reports', { cache: 'no-store' });
+    console.log('Daily Visit Reports for Table API Response Status:', res.status);
+
     if (!res.ok) {
       const errorText = await res.text();
+      console.error('Daily Visit Reports for Table API Error Text:', errorText);
       throw new Error(`Failed to fetch daily visit reports for table: ${res.status} - ${errorText}`);
     }
     const data = await res.json();
-    return z.array(dailyVisitReportSchema).parse(data);
+    console.log('Raw Daily Visit Reports for Table Data:', data);
+    const validatedData = z.array(dailyVisitReportSchema).parse(data);
+    console.log('Validated Daily Visit Reports for Table Data:', validatedData);
+    return validatedData;
   } catch (err) {
     console.error('Error fetching/parsing daily visit reports for table:', err);
     return [];
@@ -134,16 +148,23 @@ export async function getDailyVisitReportsForTable(): Promise<DailyVisitReportRe
  */
 export async function getRawGeoTrackingRecords(): Promise<GeoTrackingRecord[]> {
   try {
+    console.log('Fetching raw geo-tracking records...');
     const res = await fetch('/api/dashboardPagesAPI/slm-geotracking', { cache: 'no-store' });
+    console.log('Raw Geo-Tracking Records API Response Status:', res.status);
+
     if (!res.ok) {
       const errorText = await res.text();
+      console.error('Raw Geo-Tracking Records API Error Text:', errorText);
       throw new Error(`Failed to fetch raw geo-tracking data: ${res.status} - ${errorText}`);
     }
 
     const data = await res.json();
+    console.log('Raw Geo-Tracking Records Data:', data);
     // Ensure totalDistanceTravelled is converted from Decimal if needed (handled in API route)
     // and that nullable fields are correctly parsed by Zod.
-    return z.array(geoTrackingSchema).parse(data);
+    const validatedData = z.array(geoTrackingSchema).parse(data);
+    console.log('Validated Raw Geo-Tracking Records Data:', validatedData);
+    return validatedData;
   } catch (err) {
     console.error('Error fetching/parsing raw geo-tracking records:', err);
     return [];
