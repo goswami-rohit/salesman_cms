@@ -126,10 +126,10 @@ export async function GET() {
         const formattedDealers = dealers.map(dealer => ({
             id: dealer.id,
             name: dealer.name,
-            type: dealer.type,
-            region: dealer.region,
-            area: dealer.area,
-            phoneNo: dealer.phoneNo,
+            type: dealer.type,     //made flexible type=string
+            region: dealer.region, //made flexible type=string
+            area: dealer.area,     //made flexible type=string
+            phoneNo: dealer.phoneNo, 
             address: dealer.address,
             totalPotential: dealer.totalPotential.toNumber(),
             bestPotential: dealer.bestPotential.toNumber(),
