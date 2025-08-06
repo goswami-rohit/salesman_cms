@@ -9,11 +9,17 @@ import {
 } from './data-format';
 
 export default async function DashboardPage() {
-  const [visitsData, rawGeoTrackingRecords, dailyReports] = await Promise.all([ // Changed variable name
-    getDailyVisitsDataForGraph(),
-    getRawGeoTrackingRecords(), // Fetches raw data
-    getDailyVisitReportsForTable(),
-  ]);
+  console.log('Fetching data for DashboardPage...');
+
+  const visitsData = await getDailyVisitsDataForGraph();
+  console.log('DashboardPage - visitsData:', visitsData);
+
+  const rawGeoTrackingRecords = await getRawGeoTrackingRecords();
+  console.log('DashboardPage - rawGeoTrackingRecords:', rawGeoTrackingRecords);
+
+  const dailyReports = await getDailyVisitReportsForTable();
+  console.log('DashboardPage - dailyReports:', dailyReports);
+
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
