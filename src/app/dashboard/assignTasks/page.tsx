@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from "react";
 //import { redirect } from 'next/navigation';
 import { z } from "zod";
 import { toast } from "sonner";
+import { ColumnDef, createColumnHelper } from '@tanstack/react-table'; // Import ColumnDef and createColumnHelper
 
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
@@ -33,11 +34,11 @@ import { Calendar } from "@/components/ui/calendar"; // Assuming you have a Cale
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { IconCalendar } from "@tabler/icons-react";
-
+import { DataTableReusable } from '@/components/data-table-reusable'; // Import DataTableReusable
 
 // --- Zod Schemas for Data and Form Validation ---
 
-// Schema for fetching salesmen and dealers
+// Schema for fetching salesmen and dealers (from GET response)
 const salesmanSchema = z.object({
   id: z.number().int(),
   firstName: z.string().nullable(),
@@ -52,8 +53,24 @@ const dealerSchema = z.object({
   type: z.enum(["Dealer", "Sub Dealer"]),
 });
 
+// Schema for fetching daily tasks (from GET response)
+const dailyTaskSchema = z.object({
+  id: z.string().uuid(),
+  salesmanName: z.string(),
+  assignedByUserName: z.string(),
+  taskDate: z.string(), // YYYY-MM-DD
+  visitType: z.enum(["Client Visit", "Technical Visit"]),
+  relatedDealerName: z.string().nullable().optional(), // For Client Visit
+  siteName: z.string().nullable().optional(), // For Technical Visit
+  description: z.string().nullable().optional(),
+  status: z.string(),
+  createdAt: z.string(),
+});
+
+
 type Salesman = z.infer<typeof salesmanSchema>;
 type Dealer = z.infer<typeof dealerSchema>;
+type DailyTaskRecord = z.infer<typeof dailyTaskSchema>; // Type for records fetched from GET API
 
 // Schema for form submission validation
 const assignTaskFormSchema = z.object({
@@ -102,15 +119,15 @@ const assignTaskFormSchema = z.object({
   }
 });
 
-//type AssignTaskFormData = z.infer<typeof assignTaskFormSchema>;
-
 export default function AssignTasksPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
   const [dealers, setDealers] = useState<Dealer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<DailyTaskRecord[]>([]); // State for displaying tasks in table
+  const [loading, setLoading] = useState(true); // For initial form data and tasks
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<z.ZodIssue[]>([]);
+  const [errorFetchingData, setErrorFetchingData] = useState<string | null>(null); // For fetching initial data
 
   // Form State
   const [selectedSalesmen, setSelectedSalesmen] = useState<number[]>([]);
@@ -120,28 +137,13 @@ export default function AssignTasksPage() {
   const [siteName, setSiteName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
 
-  // --- Authentication Check ---
-  // useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login'); 
-  //     }    
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard'); 
-  //     }
-    
-  //   }
-  //   checkAuth();
-  // }, []);
-
-  // --- Fetch Salesmen and Dealers for the Form ---
-  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/assign-tasks`
+  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/assign-tasks`;
   
-  const fetchFormData = useCallback(async () => {
+  // --- Fetch Form Data (Salesmen, Dealers) and Tasks for the Table ---
+  const fetchAllData = useCallback(async () => {
     setLoading(true);
+    setErrorFetchingData(null);
     try {
-      
       const response = await fetch(apiURI);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -166,18 +168,28 @@ export default function AssignTasksPage() {
         toast.error("Invalid dealers data received from server.");
       }
 
-      toast.success("Form data loaded successfully!");
+      // Validate fetched tasks data
+      const validatedTasks = z.array(dailyTaskSchema).safeParse(data.tasks);
+      if (validatedTasks.success) {
+        setTasks(validatedTasks.data);
+      } else {
+        console.error("Tasks data validation error:", validatedTasks.error);
+        toast.error("Invalid tasks data received from server.");
+      }
+
+      toast.success("Form data and tasks loaded successfully!");
     } catch (e: any) {
-      console.error("Failed to fetch form data:", e);
-      toast.error(e.message || "Failed to load form data.");
+      console.error("Failed to fetch all data:", e);
+      toast.error(e.message || "Failed to load form data or tasks.");
+      setErrorFetchingData(e.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiURI]);
 
   useEffect(() => {
-    fetchFormData();
-  }, [fetchFormData]);
+    fetchAllData(); // Fetch all data on component mount
+  }, [fetchAllData]);
 
   // --- Form Submission Handler ---
   const handleSubmit = async (e: React.FormEvent) => {
@@ -222,6 +234,8 @@ export default function AssignTasksPage() {
 
       toast.success("Tasks assigned successfully!");
       setIsFormOpen(false); // Close modal on success
+      fetchAllData(); // Re-fetch all data to update the tasks table
+
       // Reset form state
       setSelectedSalesmen([]);
       setTaskDate(undefined);
@@ -243,10 +257,32 @@ export default function AssignTasksPage() {
     return formErrors.find(error => error.path[0] === path)?.message;
   };
 
+  // Columns for the Daily Tasks table
+  const taskColumns: ColumnDef<DailyTaskRecord>[] = [
+    { accessorKey: 'salesmanName', header: 'Salesman' },
+    { accessorKey: 'assignedByUserName', header: 'Assigned By' },
+    { accessorKey: 'taskDate', header: 'Task Date' },
+    { accessorKey: 'visitType', header: 'Visit Type' },
+    { accessorKey: 'relatedDealerName', header: 'Client Name', cell: info => info.getValue() || 'N/A' },
+    { accessorKey: 'siteName', header: 'Site Name', cell: info => info.getValue() || 'N/A' },
+    { accessorKey: 'status', header: 'Status' },
+    { accessorKey: 'createdAt', header: 'Assigned On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
+  ];
+
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        Loading form data...
+        Loading form data and tasks...
+      </div>
+    );
+  }
+
+  if (errorFetchingData) {
+    return (
+      <div className="text-center text-red-500 min-h-screen pt-10">
+        Error: {errorFetchingData}
+        <Button onClick={fetchAllData} className="ml-4">Retry</Button>
       </div>
     );
   }
@@ -258,7 +294,7 @@ export default function AssignTasksPage() {
         <Button onClick={() => setIsFormOpen(true)}>+ Assign Tasks</Button>
       </div>
 
-      <p className="text-gray-600 dark:text-gray-400">
+      <p className="text-gray-600 dark:text-gray-400 mb-6">
         Use this page to assign daily client visits or technical visits to your salesmen.
       </p>
 
@@ -430,6 +466,25 @@ export default function AssignTasksPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Assigned Tasks Table */}
+      <h2 className="text-2xl font-bold mt-10 mb-4">Assigned Tasks</h2>
+      {loading ? ( // Use the same loading state for initial fetch
+        <div className="text-center py-8">Loading tasks...</div>
+      ) : errorFetchingData ? (
+        <div className="text-center text-red-500 py-8">Error loading tasks: {errorFetchingData}</div>
+      ) : tasks.length === 0 ? (
+        <div className="text-center text-gray-500 py-8">No tasks found for your company.</div>
+      ) : (
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <DataTableReusable
+            columns={taskColumns}
+            data={tasks}
+            enableRowDragging={false}
+            onRowOrderChange={() => {}}
+          />
+        </div>
+      )}
     </div>
   );
 }

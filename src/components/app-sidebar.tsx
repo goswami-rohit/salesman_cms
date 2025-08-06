@@ -41,6 +41,7 @@ const ITEM_PERMISSIONS = {
   "Business Dashboard": 'dashboard' as const,
   "Users": 'users' as const,
   "Assign Tasks": 'assignTasks' as const,
+  "Add Dealers|Sub-Dealers": 'addDealers' as const,
   "Salesman Attendance": 'salesmanAttendance' as const,
   "Salesman Leaves": 'salesmanLeaves' as const,
   "Salesman Geotracking": 'salesmanGeotracking' as const,
@@ -87,6 +88,10 @@ const data = {
         {
           title: "Assign Tasks",
           url: "/dashboard/assignTasks",
+        },
+        {
+          title: "Add Dealers|Sub-Dealers",
+          url: "/dashboard/addDealers",
         },
         {
           title: "Salesman Attendance",

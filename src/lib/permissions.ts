@@ -11,6 +11,7 @@ export interface DashboardPermissions {
   dashboard: boolean;
   users: boolean;
   assignTasks: boolean;
+  addDealers: boolean;
   salesmanAttendance: boolean;
   salesmanLeaves: boolean;
   salesmanGeotracking: boolean;
@@ -38,6 +39,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dashboard: true,
     users: true,
     assignTasks: true,
+    addDealers: true,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
@@ -63,6 +65,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dashboard: true,
     users: false,
     assignTasks: false,
+    addDealers: false,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
@@ -88,6 +91,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dashboard: true,
     users: false,
     assignTasks: false,
+    addDealers: false,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: false,  // No access

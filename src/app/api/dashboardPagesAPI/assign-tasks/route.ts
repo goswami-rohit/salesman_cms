@@ -16,6 +16,21 @@ const assignTaskSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
+// Zod schema for the GET response for daily tasks - DEFINED HERE
+ const dailyTaskSchema = z.object({ // Exported for use in page.tsx
+  id: z.string().uuid(),
+  salesmanName: z.string(),
+  assignedByUserName: z.string(),
+  exporttaskDate: z.string(), // YYYY-MM-DD
+  visitType: z.enum(["Client Visit", "Technical Visit"]),
+  relatedDealerName: z.string().nullable().optional(), // For Client Visit
+  siteName: z.string().nullable().optional(), // For Technical Visit
+  description: z.string().nullable().optional(),
+  status: z.string(),
+  createdAt: z.string(),
+});
+
+
 export async function GET() {
   try {
     const claims = await getTokenClaims();
@@ -71,12 +86,58 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ salesmen, dealers }, { status: 200 });
+    // 6. Fetch Daily Tasks for the current user's company
+    const dailyTasks = await prisma.dailyTask.findMany({
+      where: {
+        user: { // Filter tasks by the company of the salesman assigned to the task
+          companyId: currentUser.companyId,
+        },
+      },
+      include: {
+        user: { // Salesman assigned
+          select: { firstName: true, lastName: true, email: true },
+        },
+        assignedBy: { // Admin/Manager who assigned
+          select: { firstName: true, lastName: true, email: true },
+        },
+        relatedDealer: { // Related dealer for Client Visits
+          select: { name: true },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // Order by latest assigned tasks
+      },
+      take: 200, // Limit for dashboard view
+    });
+
+    // 7. Format the tasks data for the frontend table display
+    const formattedTasks = dailyTasks.map(task => {
+      const salesmanName = `${task.user.firstName || ''} ${task.user.lastName || ''}`.trim() || task.user.email;
+      const assignedByUserName = `${task.assignedBy.firstName || ''} ${task.assignedBy.lastName || ''}`.trim() || task.assignedBy.email;
+      
+      return {
+        id: task.id,
+        salesmanName: salesmanName,
+        assignedByUserName: assignedByUserName,
+        taskDate: task.taskDate.toISOString().split('T')[0], // YYYY-MM-DD
+        visitType: task.visitType,
+        relatedDealerName: task.relatedDealer?.name || null,
+        siteName: task.siteName || null,
+        description: task.description,
+        status: task.status,
+        createdAt: task.createdAt.toISOString(),
+      };
+    });
+
+    // Validate formatted tasks against the schema
+    const validatedTasks = z.array(dailyTaskSchema).parse(formattedTasks);
+
+    return NextResponse.json({ salesmen, dealers, tasks: validatedTasks }, { status: 200 });
   } catch (error) {
-    console.error('Error fetching data for assign tasks form:', error);
-    return NextResponse.json({ error: 'Failed to fetch form data' }, { status: 500 });
+    console.error('Error fetching data for assign tasks form/table:', error);
+    return NextResponse.json({ error: 'Failed to fetch form data or tasks' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
+    // Removed: await prisma.$disconnect();
   }
 }
 
@@ -154,6 +215,6 @@ export async function POST(request: NextRequest) {
     console.error('Error assigning tasks:', error);
     return NextResponse.json({ error: 'Failed to assign tasks', details: (error as Error).message }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
+    // Removed: await prisma.$disconnect();
   }
 }
