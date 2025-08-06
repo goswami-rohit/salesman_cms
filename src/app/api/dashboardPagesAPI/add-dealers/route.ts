@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prism
 import { z } from 'zod'; // Import Zod for schema validation
 
 // Define Zod schema for the data expected when adding a new dealer
-export const addDealerSchema = z.object({
+const addDealerSchema = z.object({
   id: z.string().uuid(), // Expecting a UUID string
   name: z.string().min(1, "Dealer name is required."),
   type: z.string().min(1, "Dealer type is required."), // Changed to z.string() for flexibility
