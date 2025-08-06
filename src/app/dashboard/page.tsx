@@ -3,23 +3,21 @@ import { Suspense } from 'react';
 import { SectionCards } from '@/components/section-cards';
 import DashboardGraphs from './dashboardGraphs';
 import { 
-  getDailyVisitsDataForGraph,
-  getRawGeoTrackingRecords, // Changed import
-  getDailyVisitReportsForTable
+  getRawDailyVisitReports, // Changed import
+  getRawGeoTrackingRecords,
 } from './data-format';
 
 export default async function DashboardPage() {
-  console.log('Fetching data for DashboardPage...');
+  console.log('DashboardPage: Fetching data for DashboardGraphs...');
 
-  const visitsData = await getDailyVisitsDataForGraph();
-  console.log('DashboardPage - visitsData:', visitsData);
+  // Fetch raw data using the updated functions
+  const [rawDailyReports, rawGeoTrackingRecords] = await Promise.all([ // Changed variable names
+    getRawDailyVisitReports(),
+    getRawGeoTrackingRecords(),
+  ]);
 
-  const rawGeoTrackingRecords = await getRawGeoTrackingRecords();
-  console.log('DashboardPage - rawGeoTrackingRecords:', rawGeoTrackingRecords);
-
-  const dailyReports = await getDailyVisitReportsForTable();
-  console.log('DashboardPage - dailyReports:', dailyReports);
-
+  console.log('DashboardPage: rawDailyReports received:', rawDailyReports.length, 'records');
+  console.log('DashboardPage: rawGeoTrackingRecords received:', rawGeoTrackingRecords.length, 'records');
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -29,9 +27,8 @@ export default async function DashboardPage() {
       
       <Suspense fallback={<div>Loading dashboard data...</div>}>
         <DashboardGraphs 
-          visitsData={visitsData}
+          rawDailyReports={rawDailyReports} // Pass raw data
           rawGeoTrackingRecords={rawGeoTrackingRecords} // Pass raw data
-          dailyReports={dailyReports}
         />
       </Suspense>
     </div>

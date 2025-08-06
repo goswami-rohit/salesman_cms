@@ -21,10 +21,18 @@ import {
 } from '@/components/ui/select';
 
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { DailyVisitsData, GeoTrackingData, GeoTrackingRecord, DailyVisitReportRecord } from './data-format';
+import {
+  DailyVisitsData, // Still needed for type definition, though its data will be collection
+  GeoTrackingData,
+  DailyCollectionData,
+  RawGeoTrackingRecord,
+  RawDailyVisitReportRecord,
+  rawGeoTrackingSchema,
+  rawDailyVisitReportSchema,
+} from './data-format';
 
 // Define the columns for the geo-tracking data table
-const geoTrackingColumns: ColumnDef<GeoTrackingRecord>[] = [
+const geoTrackingColumns: ColumnDef<RawGeoTrackingRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
   { accessorKey: 'recordedAt', header: 'Last Ping', cell: ({ row }) => new Date(row.original.recordedAt).toLocaleString() },
   { accessorKey: 'totalDistanceTravelled', header: 'Distance (km)', cell: ({ row }) => `${row.original.totalDistanceTravelled?.toFixed(2) ?? 'N/A'} km` },
@@ -34,35 +42,47 @@ const geoTrackingColumns: ColumnDef<GeoTrackingRecord>[] = [
 ];
 
 // Define the columns for the daily visit reports table
-const dailyReportsColumns: ColumnDef<DailyVisitReportRecord>[] = [
+const dailyReportsColumns: ColumnDef<RawDailyVisitReportRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
   { accessorKey: 'reportDate', header: 'Report Date' },
   { accessorKey: 'dealerName', header: 'Dealer Name' },
   { accessorKey: 'visitType', header: 'Visit Type' },
+  { accessorKey: 'todayCollectionRupees', header: 'Collection (₹)', cell: ({ row }) => `₹${row.original.todayCollectionRupees?.toFixed(2) ?? 'N/A'}` },
 ];
 
 // Define props for the DashboardGraphs component
 interface DashboardGraphsProps {
-  visitsData: DailyVisitsData[];
-  rawGeoTrackingRecords: GeoTrackingRecord[]; // Now receives raw data
-  dailyReports: DailyVisitReportRecord[];
+  rawDailyReports: RawDailyVisitReportRecord[];
+  rawGeoTrackingRecords: RawGeoTrackingRecord[];
 }
 
-export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dailyReports }: DashboardGraphsProps) {
-  const [selectedSalesmanId, setSelectedSalesmanId] = useState<string | 'all'>('all');
+export default function DashboardGraphs({ rawDailyReports, rawGeoTrackingRecords }: DashboardGraphsProps) {
+  const [selectedGeoSalesmanId, setSelectedGeoSalesmanId] = useState<string | 'all'>('all');
+  const [selectedDailySalesmanId, setSelectedDailySalesmanId] = useState<string | 'all'>('all');
 
-  // DEBUGGING LOGS: Check the data received by DashboardGraphs
-  useEffect(() => {
-    console.log('DashboardGraphs received rawGeoTrackingRecords:', rawGeoTrackingRecords);
-    console.log('DashboardGraphs received dailyReports:', dailyReports);
-    console.log('DashboardGraphs received visitsData:', visitsData);
-  }, [rawGeoTrackingRecords, dailyReports, visitsData]);
+  // Validate raw data using Zod
+  const validatedGeoRecords = useMemo(() => {
+    try {
+      return rawGeoTrackingSchema.array().parse(rawGeoTrackingRecords);
+    } catch (e) {
+      console.error('Zod validation failed for rawGeoTrackingRecords:', e);
+      return [];
+    }
+  }, [rawGeoTrackingRecords]);
 
+  const validatedDailyReports = useMemo(() => {
+    try {
+      return rawDailyVisitReportSchema.array().parse(rawDailyReports);
+    } catch (e) {
+      console.error('Zod validation failed for rawDailyReports:', e);
+      return [];
+    }
+  }, [rawDailyReports]);
 
-  // Extract unique salesmen for the filter dropdown
-  const uniqueSalesmen = useMemo(() => {
+  // Extract unique salesmen for the Geo-Tracking filter dropdown
+  const uniqueGeoSalesmen = useMemo(() => {
     const salesmenMap = new Map<string, string>(); // Map<employeeId, salesmanName>
-    rawGeoTrackingRecords.forEach(record => {
+    validatedGeoRecords.forEach(record => {
       if (record.employeeId && record.salesmanName) {
         salesmenMap.set(record.employeeId, record.salesmanName);
       }
@@ -71,37 +91,77 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
       id: employeeId,
       name: salesmanName,
     })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [rawGeoTrackingRecords]);
+  }, [validatedGeoRecords]);
+
+  // Extract unique salesmen for the Daily Reports filter dropdown
+  const uniqueDailySalesmen = useMemo(() => {
+    const salesmenMap = new Map<string, string>(); // Map<employeeId, salesmanName>
+    validatedDailyReports.forEach(record => {
+      if (record.salesmanName) {
+        salesmenMap.set(record.salesmanName, record.salesmanName); // Using salesmanName as ID for now
+      }
+    });
+    return Array.from(salesmenMap.entries()).map(([id, name]) => ({
+      id: id,
+      name: name,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [validatedDailyReports]);
+
 
   // Memoized function to prepare geo-tracking data for the graph
   const filteredAndAggregatedGeoData = useMemo(() => {
-    let filteredRecords = rawGeoTrackingRecords;
+    let filteredRecords = validatedGeoRecords;
 
-    if (selectedSalesmanId !== 'all') {
-      filteredRecords = rawGeoTrackingRecords.filter(
-        record => record.employeeId === selectedSalesmanId
+    if (selectedGeoSalesmanId !== 'all') {
+      filteredRecords = validatedGeoRecords.filter(
+        record => record.employeeId === selectedGeoSalesmanId
       );
     }
 
     // Aggregate data to get total distance per day for the filtered records
     const aggregatedData: Record<string, number> = {};
     filteredRecords.forEach(item => {
-      // Ensure recordedAt exists and is a valid date string
       if (item.recordedAt) {
-        const date = new Date(item.recordedAt).toLocaleDateString('en-US'); // Format date for aggregation key
-        // Ensure totalDistanceTravelled is treated as a number, defaulting to 0 if null
+        const date = new Date(item.recordedAt).toLocaleDateString('en-US');
         aggregatedData[date] = (aggregatedData[date] || 0) + (item.totalDistanceTravelled ?? 0);
       }
     });
 
-    // Convert the aggregated data into the chart format
     const graphData: GeoTrackingData[] = Object.keys(aggregatedData).sort().map(date => ({
       name: date,
       distance: aggregatedData[date],
     }));
 
     return graphData;
-  }, [rawGeoTrackingRecords, selectedSalesmanId]);
+  }, [validatedGeoRecords, selectedGeoSalesmanId]);
+
+
+  // Memoized function to prepare daily collection data for the graph
+  const filteredAndAggregatedDailyCollectionData = useMemo(() => {
+    let filteredReports = validatedDailyReports;
+
+    if (selectedDailySalesmanId !== 'all') {
+      filteredReports = validatedDailyReports.filter(
+        report => report.salesmanName === selectedDailySalesmanId
+      );
+    }
+
+    const aggregatedData: Record<string, number> = {};
+    filteredReports.forEach(item => {
+      if (item.reportDate) {
+        const date = item.reportDate; // reportDate is already YYYY-MM-DD string
+        aggregatedData[date] = (aggregatedData[date] || 0) + (item.todayCollectionRupees ?? 0);
+      }
+    });
+
+    const graphData: DailyCollectionData[] = Object.keys(aggregatedData).sort().map(date => ({
+      name: date,
+      collection: aggregatedData[date],
+    }));
+
+    return graphData;
+  }, [validatedDailyReports, selectedDailySalesmanId]);
+
 
   return (
     <Tabs defaultValue="graphs" className="space-y-4">
@@ -112,16 +172,31 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
       </TabsList>
 
       <TabsContent value="graphs" className="space-y-4">
-        {/* First Graph: Daily Visit Reports */}
+        {/* Consolidated Daily Reports Graph: Now shows Daily Collection */}
         <Card>
           <CardHeader>
-            <CardTitle>Daily Visits</CardTitle>
+            <CardTitle className="flex justify-between items-center">
+              Daily Collection Reports
+              <Select value={selectedDailySalesmanId} onValueChange={setSelectedDailySalesmanId}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select Salesman" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Salesmen</SelectItem>
+                  {uniqueDailySalesmen.map(salesman => (
+                    <SelectItem key={salesman.id} value={salesman.id}>
+                      {salesman.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardTitle>
             <CardDescription>
-              A quick overview of sales team visits over the last 30 days.
+              Total collection (in Rupees) by the sales team per day.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartAreaInteractive data={visitsData} dataKey="visits" />
+            <ChartAreaInteractive data={filteredAndAggregatedDailyCollectionData} dataKey="collection" />
           </CardContent>
         </Card>
         
@@ -130,14 +205,13 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
           <CardHeader>
             <CardTitle className="flex justify-between items-center">
               Geo-Tracking Activity
-              {/* Salesman Filter for Geo-Tracking Graph */}
-              <Select value={selectedSalesmanId} onValueChange={setSelectedSalesmanId}>
+              <Select value={selectedGeoSalesmanId} onValueChange={setSelectedGeoSalesmanId}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select Salesman" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Salesmen</SelectItem>
-                  {uniqueSalesmen.map(salesman => (
+                  {uniqueGeoSalesmen.map(salesman => (
                     <SelectItem key={salesman.id} value={salesman.id}>
                       {salesman.name}
                     </SelectItem>
@@ -153,6 +227,7 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
             <ChartAreaInteractive data={filteredAndAggregatedGeoData} dataKey="distance" />
           </CardContent>
         </Card>
+
       </TabsContent>
 
       <TabsContent value="geo-table">
@@ -164,11 +239,10 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* salespersonData is now rawGeoTrackingRecords */}
-            {rawGeoTrackingRecords.length === 0 ? (
+            {validatedGeoRecords.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No geo-tracking reports found for your company.</div>
             ) : (
-              <DataTableReusable columns={geoTrackingColumns} data={rawGeoTrackingRecords} />
+              <DataTableReusable columns={geoTrackingColumns} data={validatedGeoRecords} />
             )}
           </CardContent>
         </Card>
@@ -183,10 +257,10 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {dailyReports.length === 0 ? (
+            {validatedDailyReports.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No daily visit reports found for your company.</div>
             ) : (
-              <DataTableReusable columns={dailyReportsColumns} data={dailyReports} />
+              <DataTableReusable columns={dailyReportsColumns} data={validatedDailyReports} />
             )}
           </CardContent>
         </Card>
