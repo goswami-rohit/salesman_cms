@@ -124,7 +124,6 @@ export async function GET() {
 
         // 5. Format the data to match the frontend's expected structure and validate
         const formattedDealers = dealers.map(dealer => ({
-            id: dealer.id,
             name: dealer.name,
             type: dealer.type,     //made flexible type=string
             region: dealer.region, //made flexible type=string
@@ -136,8 +135,6 @@ export async function GET() {
             brandSelling: dealer.brandSelling,
             feedbacks: dealer.feedbacks,
             remarks: dealer.remarks,
-            createdAt: dealer.createdAt.toISOString(),
-            updatedAt: dealer.updatedAt.toISOString(),
         }));
 
         // Validate the formatted data against the schema
