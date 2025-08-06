@@ -21,7 +21,7 @@ const assignTaskSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),
-  exporttaskDate: z.string(), // YYYY-MM-DD
+  taskDate: z.string(), // YYYY-MM-DD
   visitType: z.enum(["Client Visit", "Technical Visit"]),
   relatedDealerName: z.string().nullable().optional(), // For Client Visit
   siteName: z.string().nullable().optional(), // For Technical Visit
