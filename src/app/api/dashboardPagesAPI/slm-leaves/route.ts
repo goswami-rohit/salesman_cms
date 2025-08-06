@@ -118,6 +118,6 @@ export async function PATCH(req: NextRequest) {
     // Return a 500 status with a generic error message
     return NextResponse.json({ message: 'Failed to update leave application', error: error.message }, { status: 500 });
   } finally {
-    //await prisma.$disconnect(); 
+    await prisma.$disconnect(); 
   }
 }

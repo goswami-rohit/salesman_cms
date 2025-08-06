@@ -70,7 +70,7 @@ const addDealerFormSchema = z.object({
 });
 
 
-type AddDealerFormData = z.infer<typeof addDealerFormSchema>; // This type reflects the *output* after transformation
+//type AddDealerFormData = z.infer<typeof addDealerFormSchema>; // This type reflects the *output* after transformation
 type DealerRecord = z.infer<typeof dealerSchema>; // Type for records fetched from GET API
 
 export default function AddDealersPage() {
