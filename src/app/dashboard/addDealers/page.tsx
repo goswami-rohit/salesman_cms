@@ -6,6 +6,9 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table'; // Import ColumnDef
 
+// Import the getDealerResponseSchema from your API route
+import { getDealerResponseSchema } from '@/app/api/dashboardPagesAPI/add-dealers/route';
+
 // Shadcn UI Components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,27 +33,11 @@ import { MultiSelect } from '@/components/multi-select'; // Assuming you have a 
 import { DataTableReusable } from '@/components/data-table-reusable'; // Import DataTableReusable
 
 // --- Zod Schema for GET response validation ---
-// This schema is used for validating data fetched from the GET API.
-// 'type', 'region', 'area' are now z.string() to be more permissive for existing data.
-const dealerSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1, "Dealer name is required."),
-    type: z.string().min(1, "Dealer type is required."), // Changed to z.string()
-    region: z.string().min(1, "Region is required."),     // Changed to z.string()
-    area: z.string().min(1, "Area is required."),         // Changed to z.string()
-    phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
-    address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    totalPotential: z.number().positive("Total potential must be a positive number."),
-    bestPotential: z.number().positive("Best potential must be a positive number."),
-    brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
-    feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
-    remarks: z.string().nullable().optional(),
-    createdAt: z.string(), // Expecting string from ISOString()
-    updatedAt: z.string(), // Expecting string from ISOString()
-});
+// Use the schema imported directly from the API route for consistency
+const dealerSchema = getDealerResponseSchema;
 
 // Schema for form submission, which transforms string inputs to numbers.
-// 'type', 'region', 'area' are also now z.string() for new entries.
+// This schema remains for client-side form validation before sending to API.
 const addDealerFormSchema = z.object({
     name: z.string().min(1, "Dealer name is required."),
     type: z.string().min(1, "Dealer type is required."), // Changed to z.string()
@@ -70,8 +57,8 @@ const addDealerFormSchema = z.object({
 });
 
 
-//type AddDealerFormData = z.infer<typeof addDealerFormSchema>; // This type reflects the *output* after transformation
-type DealerRecord = z.infer<typeof dealerSchema>; // Type for records fetched from GET API
+type AddDealerFormData = z.infer<typeof addDealerFormSchema>; // This type reflects the *output* after transformation
+type DealerRecord = z.infer<typeof dealerSchema>; // Type for records fetched from GET API (now directly from API route)
 
 export default function AddDealersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -115,7 +102,7 @@ export default function AddDealersPage() {
                 throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
             const data = await response.json(); // Data is now expected to be an array of DealerRecord
-            // Validate fetched data against the more permissive dealerSchema
+            // Validate fetched data against the imported getDealerResponseSchema
             const validatedDealers = z.array(dealerSchema).parse(data); 
             setDealers(validatedDealers);
             toast.success('Dealers loaded successfully!');
