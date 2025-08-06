@@ -51,6 +51,14 @@ interface DashboardGraphsProps {
 export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dailyReports }: DashboardGraphsProps) {
   const [selectedSalesmanId, setSelectedSalesmanId] = useState<string | 'all'>('all');
 
+  // DEBUGGING LOGS: Check the data received by DashboardGraphs
+  useEffect(() => {
+    console.log('DashboardGraphs received rawGeoTrackingRecords:', rawGeoTrackingRecords);
+    console.log('DashboardGraphs received dailyReports:', dailyReports);
+    console.log('DashboardGraphs received visitsData:', visitsData);
+  }, [rawGeoTrackingRecords, dailyReports, visitsData]);
+
+
   // Extract unique salesmen for the filter dropdown
   const uniqueSalesmen = useMemo(() => {
     const salesmenMap = new Map<string, string>(); // Map<employeeId, salesmanName>
@@ -157,7 +165,11 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
           </CardHeader>
           <CardContent>
             {/* salespersonData is now rawGeoTrackingRecords */}
-            <DataTableReusable columns={geoTrackingColumns} data={rawGeoTrackingRecords} />
+            {rawGeoTrackingRecords.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No geo-tracking reports found for your company.</div>
+            ) : (
+              <DataTableReusable columns={geoTrackingColumns} data={rawGeoTrackingRecords} />
+            )}
           </CardContent>
         </Card>
       </TabsContent>
@@ -171,7 +183,11 @@ export default function DashboardGraphs({ visitsData, rawGeoTrackingRecords, dai
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTableReusable columns={dailyReportsColumns} data={dailyReports} />
+            {dailyReports.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No daily visit reports found for your company.</div>
+            ) : (
+              <DataTableReusable columns={dailyReportsColumns} data={dailyReports} />
+            )}
           </CardContent>
         </Card>
       </TabsContent>

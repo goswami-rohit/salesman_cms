@@ -8,17 +8,17 @@ export const GET = async (request: NextRequest) => {
   const originalUrlObject = new URL(request.url);
 
   // --- Debugging logs ---
-  console.log('--- Auth Callback Debugging ---');
-  console.log('Original Request URL (string from NextRequest):', request.url); // The raw string
-  console.log('Parsed URL Object (toString()):', originalUrlObject.toString());
-  console.log('Parsed URL Object (origin):', originalUrlObject.origin);
-  console.log('Parsed URL Object (pathname):', originalUrlObject.pathname);
-  console.log('Parsed URL Object (search):', originalUrlObject.search);
-  console.log('process.env.WORKOS_REDIRECT_URI:', process.env.WORKOS_REDIRECT_URI);
-  console.log('process.env.NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
-  console.log('Request Headers Host:', request.headers.get('host'));
-  console.log('Request Headers X-Forwarded-Host:', request.headers.get('x-forwarded-host'));
-  console.log('--- End Auth Callback Debugging ---');
+  // console.log('--- Auth Callback Debugging ---');
+  // console.log('Original Request URL (string from NextRequest):', request.url); // The raw string
+  // console.log('Parsed URL Object (toString()):', originalUrlObject.toString());
+  // console.log('Parsed URL Object (origin):', originalUrlObject.origin);
+  // console.log('Parsed URL Object (pathname):', originalUrlObject.pathname);
+  // console.log('Parsed URL Object (search):', originalUrlObject.search);
+  // console.log('process.env.WORKOS_REDIRECT_URI:', process.env.WORKOS_REDIRECT_URI);
+  // console.log('process.env.NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
+  // console.log('Request Headers Host:', request.headers.get('host'));
+  // console.log('Request Headers X-Forwarded-Host:', request.headers.get('x-forwarded-host'));
+  // console.log('--- End Auth Callback Debugging ---');
 
   const publicHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
   const protocol = request.headers.get('x-forwarded-proto') || 'https'; 
