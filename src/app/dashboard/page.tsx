@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 import { Suspense } from 'react';
 import { SectionCards } from '@/components/section-cards';
-import DashboardGraphs from './DashboardGraphs';
+import DashboardGraphs from './dashboardGraphs';
 import { 
   getDailyVisitsDataForGraph,
   getGeoTrackingDataForGraph,

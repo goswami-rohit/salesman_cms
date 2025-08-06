@@ -37,7 +37,8 @@ const geoTrackingSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   recordedAt: z.string(),
-  totalDistanceTravelled: z.number(),
+  // CORRECTED: totalDistanceTravelled can be null as per schema.prisma
+  totalDistanceTravelled: z.number().nullable(),
   accuracy: z.number().nullable().optional(),
   speed: z.number().nullable().optional(),
   heading: z.number().nullable().optional(),
@@ -144,7 +145,8 @@ export async function getGeoTrackingDataForGraph(): Promise<GeoTrackingData[]> {
     const aggregatedData: Record<string, number> = {};
     validatedData.forEach(item => {
       const date = new Date(item.recordedAt).toLocaleDateString('en-US');
-      aggregatedData[date] = (aggregatedData[date] || 0) + item.totalDistanceTravelled;
+      // Ensure totalDistanceTravelled is treated as a number, defaulting to 0 if null
+      aggregatedData[date] = (aggregatedData[date] || 0) + (item.totalDistanceTravelled ?? 0);
     });
 
     // Convert the aggregated data into the chart format

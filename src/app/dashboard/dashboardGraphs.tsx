@@ -1,4 +1,4 @@
-// src/app/dashboard/DashboardGraphs.tsx
+// src/app/dashboard/dashboardGraphs.tsx
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
