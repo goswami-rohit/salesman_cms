@@ -6,7 +6,6 @@ import { z } from 'zod'; // Import Zod for schema validation
 
 // Define Zod schema for the data expected when adding a new dealer
 const addDealerSchema = z.object({
-  id: z.string().uuid(), // Expecting a UUID string
   name: z.string().min(1, "Dealer name is required."),
   type: z.string().min(1, "Dealer type is required."), // Changed to z.string() for flexibility
   region: z.string().min(1, "Region is required."),     // Changed to z.string() for flexibility
@@ -18,8 +17,6 @@ const addDealerSchema = z.object({
   brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
   feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
   remarks: z.string().nullable().optional(), // Optional field
-  createdAt: z.string(), // Expecting ISO string
-  updatedAt: z.string(), // Expecting ISO string
 });
 
 export async function POST(request: NextRequest) {
