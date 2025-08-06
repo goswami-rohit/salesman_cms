@@ -5,18 +5,21 @@ import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prism
 import { z } from 'zod'; // Import Zod for schema validation
 
 // Define Zod schema for the data expected when adding a new dealer
-const addDealerSchema = z.object({
-    name: z.string().min(1, "Dealer name is required."),
-    type: z.string().min(1, "Dealer type is required."),
-    region: z.string().min(1, "Region is required."),
-    area: z.string().min(1, "Area is required."),
-    phoneNo: z.string().min(1, "Phone number is required.").max(16, "Phone number is too long."),
-    address: z.string().min(1, "Address is required.").max(200, "Address is too long."),
-    totalPotential: z.number().positive("Total potential must be a positive number."),
-    bestPotential: z.number().positive("Best potential must be a positive number."),
-    brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
-    feedbacks: z.string().min(1, "Feedbacks are required.").max(250, "Feedbacks are too long."),
-    remarks: z.string().nullable().optional(), // Optional field
+export const addDealerSchema = z.object({
+  id: z.string().uuid(), // Expecting a UUID string
+  name: z.string().min(1, "Dealer name is required."),
+  type: z.string().min(1, "Dealer type is required."), // Changed to z.string() for flexibility
+  region: z.string().min(1, "Region is required."),     // Changed to z.string() for flexibility
+  area: z.string().min(1, "Area is required."),         // Changed to z.string() for flexibility
+  phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
+  address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
+  totalPotential: z.number().positive("Total potential must be a positive number."),
+  bestPotential: z.number().positive("Best potential must be a positive number."),
+  brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
+  feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
+  remarks: z.string().nullable().optional(), // Optional field
+  createdAt: z.string(), // Expecting ISO string
+  updatedAt: z.string(), // Expecting ISO string
 });
 
 export async function POST(request: NextRequest) {
