@@ -35,7 +35,20 @@ import {
 // Define the columns for the geo-tracking data table
 const geoTrackingColumns: ColumnDef<RawGeoTrackingRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
-  { accessorKey: 'recordedAt', header: 'Last Ping', cell: ({ row }) => new Date(row.original.recordedAt).toLocaleString() },
+  { 
+    accessorKey: 'recordedAt', 
+    header: 'Last Ping', 
+    cell: ({ row }) => new Date(row.original.recordedAt).toLocaleString('en-IN', { 
+      year: 'numeric', 
+      month: 'numeric', 
+      day: 'numeric', 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      second: '2-digit', 
+      hour12: true, 
+      timeZone: 'Asia/Kolkata' 
+    }) 
+  },
   { accessorKey: 'totalDistanceTravelled', header: 'Distance (km)', cell: ({ row }) => `${row.original.totalDistanceTravelled?.toFixed(2) ?? 'N/A'} km` },
   { accessorKey: 'employeeId', header: 'Employee ID' },
   { accessorKey: 'latitude', header: 'Latitude' },
