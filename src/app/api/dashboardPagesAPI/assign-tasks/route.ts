@@ -9,7 +9,7 @@ const assignTaskSchema = z.object({
   salesmanUserIds: z.array(z.number().int()).min(1, "At least one salesman must be selected."),
   taskDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Task date must be in YYYY-MM-DD format."),
   visitType: z.enum(["Client Visit", "Technical Visit"], {
-     error: "Visit type must be 'Client Visit' or 'Technical Visit'." 
+    error: "Visit type must be 'Client Visit' or 'Technical Visit'."
   }),
   relatedDealerId: z.string().uuid().optional().nullable(), // Only for Client Visit
   siteName: z.string().min(1, "Site name is required for Technical Visit.").optional().nullable(), // Only for Technical Visit
@@ -17,7 +17,7 @@ const assignTaskSchema = z.object({
 });
 
 // Zod schema for the GET response for daily tasks - DEFINED HERE
- const dailyTaskSchema = z.object({ // Exported for use in page.tsx
+const dailyTaskSchema = z.object({ // Exported for use in page.tsx
   id: z.string().uuid(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),
@@ -114,7 +114,7 @@ export async function GET() {
     const formattedTasks = dailyTasks.map(task => {
       const salesmanName = `${task.user.firstName || ''} ${task.user.lastName || ''}`.trim() || task.user.email;
       const assignedByUserName = `${task.assignedBy.firstName || ''} ${task.assignedBy.lastName || ''}`.trim() || task.assignedBy.email;
-      
+
       return {
         id: task.id,
         salesmanName: salesmanName,
@@ -137,7 +137,7 @@ export async function GET() {
     console.error('Error fetching data for assign tasks form/table:', error);
     return NextResponse.json({ error: 'Failed to fetch form data or tasks' }, { status: 500 });
   } finally {
-    // Removed: await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 }
 
@@ -215,6 +215,6 @@ export async function POST(request: NextRequest) {
     console.error('Error assigning tasks:', error);
     return NextResponse.json({ error: 'Failed to assign tasks', details: (error as Error).message }, { status: 500 });
   } finally {
-    // Removed: await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 }
