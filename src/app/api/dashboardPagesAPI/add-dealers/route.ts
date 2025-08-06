@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 // Schema for the data returned by the GET endpoint (full dealer record)
 // This schema includes 'id', 'createdAt', 'updatedAt'
-export const getDealerResponseSchema = z.object({
+const getDealerResponseSchema = z.object({
   id: z.string().uuid(), // Expecting a UUID string
   name: z.string().min(1, "Dealer name is required."),
   type: z.string().min(1, "Dealer type is required."), // Flexible string for existing data
