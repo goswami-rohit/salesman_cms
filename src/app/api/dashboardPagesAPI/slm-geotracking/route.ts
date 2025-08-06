@@ -113,7 +113,6 @@ export async function GET() {
     // Return a 500 status with a generic error message
     return NextResponse.json({ error: 'Failed to fetch geo-tracking data' }, { status: 500 });
   } finally {
-    // Disconnect Prisma client to prevent connection leaks, especially important in serverless environments
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }

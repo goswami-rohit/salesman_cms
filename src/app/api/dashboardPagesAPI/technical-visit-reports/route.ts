@@ -45,6 +45,6 @@ export async function GET() {
     // Return a 500 status with an error message in case of failure
     return NextResponse.json({ message: 'Failed to fetch technical visit reports', error: (error as Error).message }, { status: 500 });
   } finally {
-    await prisma.$disconnect(); // Disconnect Prisma client to prevent connection leaks
+    //await prisma.$disconnect();
   }
 }

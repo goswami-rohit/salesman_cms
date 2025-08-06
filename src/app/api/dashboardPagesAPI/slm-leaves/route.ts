@@ -50,7 +50,7 @@ export async function GET() {
     // Return a 500 status with an error message in case of failure
     return NextResponse.json({ message: 'Failed to fetch leave applications', error: (error as Error).message }, { status: 500 });
   } finally {
-    await prisma.$disconnect(); // Disconnect Prisma client to prevent connection leaks
+    //await prisma.$disconnect();
   }
 }
 
@@ -118,6 +118,6 @@ export async function PATCH(req: NextRequest) {
     // Return a 500 status with a generic error message
     return NextResponse.json({ message: 'Failed to update leave application', error: error.message }, { status: 500 });
   } finally {
-    await prisma.$disconnect(); // Disconnect Prisma client
+    //await prisma.$disconnect(); 
   }
 }

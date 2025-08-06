@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         // Be careful not to expose sensitive error details in production
         return NextResponse.json({ error: 'Failed to add dealer', details: (error as Error).message }, { status: 500 });
     } finally {
-        await prisma.$disconnect();
+        //await prisma.$disconnect();
     }
 }
 
@@ -148,6 +148,6 @@ export async function GET() {
         console.error('Error fetching dealers:', error);
         return NextResponse.json({ error: 'Failed to fetch dealers', details: (error as Error).message }, { status: 500 });
     } finally {
-        await prisma.$disconnect();
+        //await prisma.$disconnect();
     }
 }

@@ -137,7 +137,7 @@ export async function GET() {
     console.error('Error fetching data for assign tasks form/table:', error);
     return NextResponse.json({ error: 'Failed to fetch form data or tasks' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -215,6 +215,6 @@ export async function POST(request: NextRequest) {
     console.error('Error assigning tasks:', error);
     return NextResponse.json({ error: 'Failed to assign tasks', details: (error as Error).message }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }

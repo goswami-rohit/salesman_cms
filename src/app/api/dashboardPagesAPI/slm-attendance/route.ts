@@ -53,6 +53,6 @@ export async function GET() {
     console.error('Error fetching salesman attendance reports:', error);
     return NextResponse.json({ message: 'Failed to fetch salesman attendance reports', error: (error as Error).message }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
