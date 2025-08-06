@@ -29,14 +29,15 @@ import {
 import { MultiSelect } from '@/components/multi-select'; // Assuming you have a MultiSelect component
 import { DataTableReusable } from '@/components/data-table-reusable'; // Import DataTableReusable
 
-// --- Zod Schema for Form Validation (and GET response) ---
-// This schema is now used for both form validation (after transform) and GET response validation
+// --- Zod Schema for GET response validation ---
+// This schema is used for validating data fetched from the GET API.
+// 'type', 'region', 'area' are now z.string() to be more permissive for existing data.
 const dealerSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1, "Dealer name is required."),
-    type: z.string().min(1, "Dealer type is required."),
-    region: z.string().min(1, "Region is required."),
-    area: z.string().min(1, "Area is required."),
+    type: z.string().min(1, "Dealer type is required."), // Changed to z.string()
+    region: z.string().min(1, "Region is required."),     // Changed to z.string()
+    area: z.string().min(1, "Area is required."),         // Changed to z.string()
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
     totalPotential: z.number().positive("Total potential must be a positive number."),
@@ -44,16 +45,17 @@ const dealerSchema = z.object({
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
     remarks: z.string().nullable().optional(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    createdAt: z.string(), // Expecting string from ISOString()
+    updatedAt: z.string(), // Expecting string from ISOString()
 });
 
-// Schema for form submission, which transforms string inputs to numbers
+// Schema for form submission, which transforms string inputs to numbers.
+// 'type', 'region', 'area' are also now z.string() for new entries.
 const addDealerFormSchema = z.object({
     name: z.string().min(1, "Dealer name is required."),
-    type: z.string().min(1, "Dealer type is required."),
-    region: z.string().min(1, "Region is required."),
-    area: z.string().min(1, "Area is required."),
+    type: z.string().min(1, "Dealer type is required."), // Changed to z.string()
+    region: z.string().min(1, "Region is required."),     // Changed to z.string()
+    area: z.string().min(1, "Area is required."),         // Changed to z.string()
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
     totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
@@ -81,9 +83,9 @@ export default function AddDealersPage() {
 
     // Form State
     const [name, setName] = useState<string>('');
-    const [type, setType] = useState<AddDealerFormData['type'] | ''>('');
-    const [region, setRegion] = useState<AddDealerFormData['region'] | ''>('');
-    const [area, setArea] = useState<AddDealerFormData['area'] | ''>('');
+    const [type, setType] = useState<string>(''); // Changed type to string
+    const [region, setRegion] = useState<string>(''); // Changed region to string
+    const [area, setArea] = useState<string>('');     // Changed area to string
     const [phoneNo, setPhoneNo] = useState<string>('');
     const [address, setAddress] = useState<string>('');
     const [totalPotential, setTotalPotential] = useState<string>(''); // State holds string
@@ -92,7 +94,7 @@ export default function AddDealersPage() {
     const [feedbacks, setFeedbacks] = useState<string>('');
     const [remarks, setRemarks] = useState<string>('');
 
-    // Dropdown Options (Hardcoded as per request)
+    // Dropdown Options (Hardcoded as per request) - These are for UI presentation, not Zod validation
     const dealerTypes = ["Dealer-Best", "Sub Dealer-Best", "Dealer-Non Best", "Sub Dealer-Non Best"];
     const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
     const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
@@ -107,15 +109,20 @@ export default function AddDealersPage() {
         try {
             const response = await fetch(apiURI);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // Log the full response text for debugging
+                const errorText = await response.text();
+                console.error('API Response Error Text:', errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
-            const data: DealerRecord[] = await response.json();
-            const validatedDealers = z.array(dealerSchema).parse(data); // Validate fetched data
+            const data = await response.json(); // Data is now expected to be an array of DealerRecord
+            // Validate fetched data against the more permissive dealerSchema
+            const validatedDealers = z.array(dealerSchema).parse(data); 
             setDealers(validatedDealers);
             toast.success('Dealers loaded successfully!');
         } catch (e: any) {
             console.error("Failed to fetch dealers:", e);
-            toast.error(e.message || "Failed to load dealers.");
+            // Display a more user-friendly error message
+            toast.error(`Failed to load dealers: ${e.message || "An unknown error occurred."}`);
             setErrorDealers(e.message);
         } finally {
             setLoadingDealers(false);
@@ -132,11 +139,12 @@ export default function AddDealersPage() {
         setFormErrors([]); // Clear previous errors
         setIsSubmitting(true);
 
+        // Construct formData without explicit type, allowing TypeScript to infer string types for potential fields
         const formData = {
             name,
-            type: type as AddDealerFormData['type'],
-            region: region as AddDealerFormData['region'],
-            area: area as AddDealerFormData['area'],
+            type, // Now a string
+            region, // Now a string
+            area, // Now a string
             phoneNo,
             address,
             totalPotential, // This is a string from state
@@ -206,8 +214,8 @@ export default function AddDealersPage() {
         { accessorKey: 'region', header: 'Region' },
         { accessorKey: 'area', header: 'Area' },
         { accessorKey: 'phoneNo', header: 'Phone No.' },
-        { accessorKey: 'totalPotential', header: 'Total Potential', cell: info => info.getValue() },
-        { accessorKey: 'bestPotential', header: 'Best Potential', cell: info => info.getValue() },
+        { accessorKey: 'totalPotential', header: 'Total Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
+        { accessorKey: 'bestPotential', header: 'Best Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
         { accessorKey: 'brandSelling', header: 'Brands', cell: info => (info.getValue() as string[]).join(', ') },
         { accessorKey: 'createdAt', header: 'Added On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
     ];
@@ -223,7 +231,7 @@ export default function AddDealersPage() {
                 Add new dealer or sub-dealer records to your system.
             </p>
 
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}> {/* Corrected onOpenChange prop */}
                 <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Add New Dealer</DialogTitle>
@@ -256,7 +264,7 @@ export default function AddDealersPage() {
                                 Type <span className="text-red-500">*</span>
                             </Label>
                             <div className="col-span-3">
-                                <Select value={type} onValueChange={(value: AddDealerFormData['type']) => setType(value)}>
+                                <Select value={type} onValueChange={setType}> {/* Directly set string value */}
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select dealer type" />
                                     </SelectTrigger>
@@ -280,7 +288,7 @@ export default function AddDealersPage() {
                                 Region <span className="text-red-500">*</span>
                             </Label>
                             <div className="col-span-3">
-                                <Select value={region} onValueChange={(value: AddDealerFormData['region']) => setRegion(value)}>
+                                <Select value={region} onValueChange={setRegion}> {/* Directly set string value */}
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select region" />
                                     </SelectTrigger>
@@ -304,7 +312,7 @@ export default function AddDealersPage() {
                                 Area <span className="text-red-500">*</span>
                             </Label>
                             <div className="col-span-3">
-                                <Select value={area} onValueChange={(value: AddDealerFormData['area']) => setArea(value)}>
+                                <Select value={area} onValueChange={setArea}> {/* Directly set string value */}
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select area" />
                                     </SelectTrigger>

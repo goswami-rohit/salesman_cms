@@ -50,11 +50,11 @@ const salesmanSchema = z.object({
 const dealerSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  type: z.enum(["Dealer", "Sub Dealer"]),
+  type: z.string(),
 });
 
 // Schema for fetching daily tasks (from GET response)
-const dailyTaskSchema = z.object({
+const dailyTaskSchema = z.object({ 
   id: z.string().uuid(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),
