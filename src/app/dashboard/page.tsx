@@ -4,16 +4,14 @@ import { SectionCards } from '@/components/section-cards';
 import DashboardGraphs from './dashboardGraphs';
 import { 
   getDailyVisitsDataForGraph,
-  getGeoTrackingDataForGraph,
-  getGeoTrackingDataForTable,
+  getRawGeoTrackingRecords, // Changed import
   getDailyVisitReportsForTable
 } from './data-format';
 
 export default async function DashboardPage() {
-  const [visitsData, geoData, salespersonData, dailyReports] = await Promise.all([
+  const [visitsData, rawGeoTrackingRecords, dailyReports] = await Promise.all([ // Changed variable name
     getDailyVisitsDataForGraph(),
-    getGeoTrackingDataForGraph(),
-    getGeoTrackingDataForTable(),
+    getRawGeoTrackingRecords(), // Fetches raw data
     getDailyVisitReportsForTable(),
   ]);
 
@@ -26,8 +24,7 @@ export default async function DashboardPage() {
       <Suspense fallback={<div>Loading dashboard data...</div>}>
         <DashboardGraphs 
           visitsData={visitsData}
-          geoData={geoData}
-          salespersonData={salespersonData}
+          rawGeoTrackingRecords={rawGeoTrackingRecords} // Pass raw data
           dailyReports={dailyReports}
         />
       </Suspense>

@@ -1,5 +1,6 @@
 // src/app/dashboard/data-format.ts
 import { z } from 'zod';
+import { Prisma } from '@prisma/client'; // Import Prisma for Decimal type handling
 
 // Define the schemas for the API responses to ensure data integrity
 const dailyVisitReportSchema = z.object({
@@ -29,16 +30,16 @@ const dailyVisitReportSchema = z.object({
   outTimeImageUrl: z.string().nullable().optional(),
 });
 
+// Updated geoTrackingSchema to match the API response and prisma schema
 const geoTrackingSchema = z.object({
   id: z.string(),
-  salesmanName: z.string(),
-  employeeId: z.string(),
-  workosOrganizationId: z.string(),
+  salesmanName: z.string().nullable(), // Can be null if user data is missing
+  employeeId: z.string().nullable(),   // Can be null
+  workosOrganizationId: z.string().nullable(), // Can be null
   latitude: z.number(),
   longitude: z.number(),
   recordedAt: z.string(),
-  // CORRECTED: totalDistanceTravelled can be null as per schema.prisma
-  totalDistanceTravelled: z.number().nullable(),
+  totalDistanceTravelled: z.number().nullable(), // Marked as nullable as per schema.prisma
   accuracy: z.number().nullable().optional(),
   speed: z.number().nullable().optional(),
   heading: z.number().nullable().optional(),
@@ -57,14 +58,15 @@ const geoTrackingSchema = z.object({
   updatedAt: z.string(),
 });
 
+
 // New, more specific types for our chart data
 export type DailyVisitsData = {
-  name: string;
+  name: string; // Date
   visits: number;
 };
 
 export type GeoTrackingData = {
-  name: string;
+  name: string; // Date
   distance: number;
 };
 
@@ -103,7 +105,7 @@ export async function getDailyVisitsDataForGraph(): Promise<DailyVisitsData[]> {
 
     return graphData;
   } catch (err) {
-    console.error('Error fetching/parsing daily visits data:', err);
+    console.error('Error fetching/parsing daily visits data for graph:', err);
     return [];
   }
 }
@@ -116,7 +118,7 @@ export async function getDailyVisitReportsForTable(): Promise<DailyVisitReportRe
     const res = await fetch('/api/dashboardPagesAPI/daily-visit-reports', { cache: 'no-store' });
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to fetch daily visit reports: ${res.status} - ${errorText}`);
+      throw new Error(`Failed to fetch daily visit reports for table: ${res.status} - ${errorText}`);
     }
     const data = await res.json();
     return z.array(dailyVisitReportSchema).parse(data);
@@ -127,55 +129,23 @@ export async function getDailyVisitReportsForTable(): Promise<DailyVisitReportRe
 }
 
 /**
- * Fetches data from the slm-geotracking API and formats it for a graph.
- * The data is aggregated to show the total distance travelled per day.
+ * Fetches all raw geo-tracking records.
+ * This function will now be the source of raw data for both graph and table in DashboardGraphs.
  */
-export async function getGeoTrackingDataForGraph(): Promise<GeoTrackingData[]> {
+export async function getRawGeoTrackingRecords(): Promise<GeoTrackingRecord[]> {
   try {
     const res = await fetch('/api/dashboardPagesAPI/slm-geotracking', { cache: 'no-store' });
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to fetch geo-tracking data: ${res.status} - ${errorText}`);
+      throw new Error(`Failed to fetch raw geo-tracking data: ${res.status} - ${errorText}`);
     }
 
     const data = await res.json();
-    const validatedData = z.array(geoTrackingSchema).parse(data);
-
-    // Aggregate data to get total distance per day
-    const aggregatedData: Record<string, number> = {};
-    validatedData.forEach(item => {
-      const date = new Date(item.recordedAt).toLocaleDateString('en-US');
-      // Ensure totalDistanceTravelled is treated as a number, defaulting to 0 if null
-      aggregatedData[date] = (aggregatedData[date] || 0) + (item.totalDistanceTravelled ?? 0);
-    });
-
-    // Convert the aggregated data into the chart format
-    const graphData: GeoTrackingData[] = Object.keys(aggregatedData).sort().map(date => ({
-      name: date,
-      distance: aggregatedData[date],
-    }));
-
-    return graphData;
-  } catch (err) {
-    console.error('Error fetching/parsing geo-tracking data:', err);
-    return [];
-  }
-}
-
-/**
- * Fetches data for the main dashboard table.
- */
-export async function getGeoTrackingDataForTable(): Promise<GeoTrackingRecord[]> {
-  try {
-    const res = await fetch('/api/dashboardPagesAPI/slm-geotracking', { cache: 'no-store' });
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Failed to fetch salesperson data: ${res.status} - ${errorText}`);
-    }
-    const data = await res.json();
+    // Ensure totalDistanceTravelled is converted from Decimal if needed (handled in API route)
+    // and that nullable fields are correctly parsed by Zod.
     return z.array(geoTrackingSchema).parse(data);
   } catch (err) {
-    console.error('Error fetching/parsing salesperson data:', err);
+    console.error('Error fetching/parsing raw geo-tracking records:', err);
     return [];
   }
 }
