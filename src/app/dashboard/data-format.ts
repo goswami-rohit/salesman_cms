@@ -85,6 +85,9 @@ export type DailyCollectionData = {
   collection: number;
 };
 
+const dvrAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/daily-visit-reports`
+
+const geoAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-geotracking`
 
 /**
  * Fetches raw daily visit reports data.
@@ -93,7 +96,7 @@ export type DailyCollectionData = {
 export async function getRawDailyVisitReports(): Promise<RawDailyVisitReportRecord[]> {
   try {
     console.log('data-format: Fetching raw daily visit reports...');
-    const res = await fetch(`${BASE_API_URL}/api/dashboardPagesAPI/daily-visit-reports`, { cache: 'no-store' });
+    const res = await fetch(dvrAPI, { cache: 'no-store' });
     console.log('data-format: Daily Visit Reports API Response Status:', res.status);
 
     if (!res.ok) {
@@ -118,7 +121,7 @@ export async function getRawDailyVisitReports(): Promise<RawDailyVisitReportReco
 export async function getRawGeoTrackingRecords(): Promise<RawGeoTrackingRecord[]> {
   try {
     console.log('data-format: Fetching raw geo-tracking records...');
-    const res = await fetch(`${BASE_API_URL}/api/dashboardPagesAPI/slm-geotracking`, { cache: 'no-store' });
+    const res = await fetch(geoAPI, { cache: 'no-store' });
     console.log('data-format: Raw Geo-Tracking Records API Response Status:', res.status);
 
     if (!res.ok) {
