@@ -135,10 +135,10 @@ const data = {
       title: "Account",
       url: "/account",
       items: [
-        {
-          title: "Settings",
-          url: "/account/settings",
-        },
+        // {
+        //   title: "Settings",
+        //   url: "/account/settings",
+        // },
         {
           title: "Raise A Querry",
           url: "/account/query",
