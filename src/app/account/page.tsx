@@ -26,17 +26,15 @@ export default function AccountPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
           {/* Card for "Account Settings" */}
-          <Card
+          {/* <Card
             className={cn(
-              "bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-colors cursor-pointer", // Feature card styling
-              // Removed "flex flex-col items-start" from here
+              "bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-colors cursor-pointer", 
             )}
             onClick={() => handleCardClick('/account/settings')}
           >
-            {/* Added text-center here to center all contents of the header */}
+            
             <CardHeader className="p-0 mb-4 text-center">
-              {/* Icon container also centered by parent text-center due to display:block or inline-block */}
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 mx-auto"> {/* Added mx-auto to center the block element */}
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 mx-auto"> 
                 <Settings className="w-6 h-6 text-primary" />
               </div>
               <CardTitle className="text-xl font-semibold text-card-foreground mb-2">Account Settings</CardTitle>
@@ -46,7 +44,7 @@ export default function AccountPage() {
             </CardHeader>
             <CardContent className="p-0">
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Card for "Raise a Query" */}
           <Card
