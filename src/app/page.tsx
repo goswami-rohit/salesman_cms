@@ -1,8 +1,8 @@
 // src/app/page.tsx
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
-import SignedInHomePage from '@/app/home/signedInHomePage'; // Assuming you move this component to a shared location
-import SignedOutHomePage from '@/app/home/signedOutHomePage'; // The new component for logged-out users
+import SignedInHomePage from '@/app/home/page'; 
+import SignedOutHomePage from '@/app/home/signedOutHomePage'; 
 
 export default async function LandingPage() {
   const claims = await getTokenClaims();
