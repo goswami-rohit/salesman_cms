@@ -3,7 +3,7 @@
 
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
-import SignedInHomePage from '@/app/home/signedInHomePage';
+import SignedInHomePage from '@/app/home/signedInHomePage/page';
 
 export default async function AuthenticatedHomePage() {
   // Get the token claims from the user's session.
