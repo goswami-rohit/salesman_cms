@@ -86,8 +86,8 @@ export default async function SignedInHomePage() {
                                 <CardDescription className="text-base">
                                     Access your complete management suite with analytics and team oversight
                                     <p className="text-sm text-red-400 font-bold mt-2">
-                                        User must be authenticated to use dashboard <br>
-                                        <span className="text-blue-500">(Login with the account you signed up)</span></br>
+                                        User must be authenticated to use dashboard <br/>
+                                        <span className="text-blue-500">(Login with the account you signed up)</span>
                                     </p>
                                 </CardDescription>
                             </CardHeader>
