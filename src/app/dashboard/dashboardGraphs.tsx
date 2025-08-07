@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toast } from 'sonner'; // Import toast for client-side errors
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import {
@@ -28,31 +28,33 @@ import {
   DailyCollectionData,
   RawGeoTrackingRecord,
   RawDailyVisitReportRecord,
-  rawGeoTrackingSchema, // Zod schema for validation
-  rawDailyVisitReportSchema, // Zod schema for validation
+  rawGeoTrackingSchema,
+  rawDailyVisitReportSchema,
 } from './data-format';
 
 // Define the columns for the geo-tracking data table
 const geoTrackingColumns: ColumnDef<RawGeoTrackingRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
-  { 
-    accessorKey: 'recordedAt', 
-    header: 'Last Ping', 
-    cell: ({ row }) => new Date(row.original.recordedAt).toLocaleString('en-IN', { 
-      year: 'numeric', 
-      month: 'numeric', 
-      day: 'numeric', 
-      hour: 'numeric', 
-      minute: '2-digit', 
-      second: '2-digit', 
-      hour12: true, 
-      timeZone: 'Asia/Kolkata' 
-    }) 
+  {
+    accessorKey: 'recordedAt',
+    header: 'Last Ping',
+    cell: ({ row }) => new Date(row.original.recordedAt).toLocaleString('en-IN', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
+    })
   },
   { accessorKey: 'totalDistanceTravelled', header: 'Distance (km)', cell: ({ row }) => `${row.original.totalDistanceTravelled?.toFixed(2) ?? 'N/A'} km` },
   { accessorKey: 'employeeId', header: 'Employee ID' },
   { accessorKey: 'latitude', header: 'Latitude' },
   { accessorKey: 'longitude', header: 'Longitude' },
+  { accessorKey: 'locationType', header: 'Location Type' },
+  { accessorKey: 'activityType', header: 'Activity Type' },
 ];
 
 // Define the columns for the daily visit reports table
@@ -62,8 +64,8 @@ const dailyReportsColumns: ColumnDef<RawDailyVisitReportRecord>[] = [
   { accessorKey: 'dealerName', header: 'Dealer Name', cell: info => info.getValue() || 'N/A' },
   { accessorKey: 'visitType', header: 'Visit Type' },
   { accessorKey: 'todayCollectionRupees', header: 'Collection (₹)', cell: ({ row }) => `₹${row.original.todayCollectionRupees?.toFixed(2) ?? 'N/A'}` },
-  { accessorKey: 'feedbacks', 
-    header: 'Feedbacks', 
+  { accessorKey: 'feedbacks',
+    header: 'Feedbacks',
     cell: info => <span className="max-w-[250px] truncate block">{info.getValue() as string}</span> // Explicitly cast to string
   },
 ];
@@ -82,7 +84,7 @@ export default function DashboardGraphs() {
     setLoading(true);
     setError(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://salesmancms-dashboard.onrender.com'; // Fallback for client-side
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://salesmancms-dashboard.onrender.com';
 
       const [geoRes, dailyRes] = await Promise.all([
         fetch(`${baseUrl}/api/dashboardPagesAPI/slm-geotracking`, { cache: 'no-store' }),
@@ -124,20 +126,18 @@ export default function DashboardGraphs() {
     fetchData();
   }, [fetchData]);
 
-  // Validate raw data using Zod (moved here from page.tsx)
-  const validatedGeoRecords = useMemo(() => {
-    return rawGeoTrackingRecords; // Already validated in fetchData
+
+  // Filter the raw data to only include 'journey_end' records before any other processing
+  const journeyEndRecords = useMemo(() => {
+    // Only process records where locationType is explicitly 'journey_end'
+    return rawGeoTrackingRecords.filter(record => record.locationType === 'journey_end');
   }, [rawGeoTrackingRecords]);
-
-  const validatedDailyReports = useMemo(() => {
-    return rawDailyReports; // Already validated in fetchData
-  }, [rawDailyReports]);
-
 
   // Extract unique salesmen for the Geo-Tracking filter dropdown
   const uniqueGeoSalesmen = useMemo(() => {
     const salesmenMap = new Map<string, string>(); // Map<employeeId, salesmanName>
-    validatedGeoRecords.forEach(record => {
+    // Use the filtered records to build the salesman list
+    journeyEndRecords.forEach(record => {
       if (record.employeeId && record.salesmanName) {
         salesmenMap.set(record.employeeId, record.salesmanName);
       }
@@ -146,12 +146,12 @@ export default function DashboardGraphs() {
       id: employeeId,
       name: salesmanName,
     })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [validatedGeoRecords]);
+  }, [journeyEndRecords]);
 
   // Extract unique salesmen for the Daily Reports filter dropdown
   const uniqueDailySalesmen = useMemo(() => {
     const salesmenMap = new Map<string, string>(); // Map<salesmanName, salesmanName>
-    validatedDailyReports.forEach(record => {
+    rawDailyReports.forEach(record => {
       if (record.salesmanName) {
         salesmenMap.set(record.salesmanName, record.salesmanName);
       }
@@ -160,15 +160,15 @@ export default function DashboardGraphs() {
       id: id,
       name: name,
     })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [validatedDailyReports]);
+  }, [rawDailyReports]);
 
 
   // Memoized function to prepare geo-tracking data for the graph
   const filteredAndAggregatedGeoData = useMemo(() => {
-    let filteredRecords = validatedGeoRecords;
+    let filteredRecords = journeyEndRecords; // Start with the filtered journey_end records
 
     if (selectedGeoSalesmanId !== 'all') {
-      filteredRecords = validatedGeoRecords.filter(
+      filteredRecords = journeyEndRecords.filter(
         record => record.employeeId === selectedGeoSalesmanId
       );
     }
@@ -188,15 +188,15 @@ export default function DashboardGraphs() {
     }));
 
     return graphData;
-  }, [validatedGeoRecords, selectedGeoSalesmanId]);
+  }, [journeyEndRecords, selectedGeoSalesmanId]);
 
 
   // Memoized function to prepare daily collection data for the graph
   const filteredAndAggregatedDailyCollectionData = useMemo(() => {
-    let filteredReports = validatedDailyReports;
+    let filteredReports = rawDailyReports;
 
     if (selectedDailySalesmanId !== 'all') {
-      filteredReports = validatedDailyReports.filter(
+      filteredReports = rawDailyReports.filter(
         report => report.salesmanName === selectedDailySalesmanId
       );
     }
@@ -215,7 +215,7 @@ export default function DashboardGraphs() {
     }));
 
     return graphData;
-  }, [validatedDailyReports, selectedDailySalesmanId]);
+  }, [rawDailyReports, selectedDailySalesmanId]);
 
 
   if (loading) {
@@ -267,7 +267,7 @@ export default function DashboardGraphs() {
             <ChartAreaInteractive data={filteredAndAggregatedDailyCollectionData} dataKey="collection" />
           </CardContent>
         </Card>
-        
+
         {/* Second Graph: GeoTracking */}
         <Card>
           <CardHeader>
@@ -307,10 +307,11 @@ export default function DashboardGraphs() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {validatedGeoRecords.length === 0 ? (
+            {journeyEndRecords.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No geo-tracking reports found for your company.</div>
             ) : (
-              <DataTableReusable columns={geoTrackingColumns} data={validatedGeoRecords} />
+              // The table now uses the filtered `journeyEndRecords`
+              <DataTableReusable columns={geoTrackingColumns} data={journeyEndRecords} />
             )}
           </CardContent>
         </Card>
@@ -325,10 +326,10 @@ export default function DashboardGraphs() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {validatedDailyReports.length === 0 ? (
+            {rawDailyReports.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No daily visit reports found for your company.</div>
             ) : (
-              <DataTableReusable columns={dailyReportsColumns} data={validatedDailyReports} />
+              <DataTableReusable columns={dailyReportsColumns} data={rawDailyReports} />
             )}
           </CardContent>
         </Card>

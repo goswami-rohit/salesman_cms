@@ -24,6 +24,8 @@ const geoTrackSchema = z.object({
   totalDistanceTravelled: z.number(), // Corrected from totalDistanceKm
   checkInTime: z.string(),
   checkOutTime: z.string().nullable(),
+  locationType: z.string().nullable().optional(),
+  activityType: z.string().nullable().optional(),
 });
 
 // Define a type for the transformed data that we will use in the table
@@ -138,6 +140,16 @@ export default function SalesmanGeoTrackingPage() {
       accessorKey: 'totalDistanceTravelled', // Updated accessor key
       header: 'Total Distance (km)',
       cell: ({ row }) => `${row.original.totalDistanceTravelled.toFixed(2)} km`,
+    },
+    {
+      accessorKey: 'locationType',
+      header: 'Location Type',
+      cell: ({ row }) => row.original.locationType ?? 'N/A',
+    },
+    {
+      accessorKey: 'activityType',
+      header: 'Activity Type',
+      cell: ({ row }) => row.original.activityType ?? 'N/A',
     },
     {
       accessorKey: 'checkInTime',
