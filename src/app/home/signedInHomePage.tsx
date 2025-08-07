@@ -1,11 +1,8 @@
-// src/app/home/page.tsx (New signed-in version)
-import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import { redirect } from 'next/navigation';
+// src/app/home/signedInHomePage.tsx (Server Component)
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  MessageCircle, 
   LayoutDashboard, 
   User, 
   ArrowRight,
@@ -21,20 +18,14 @@ interface CustomClaims {
   [key: string]: unknown;
 }
 
-export default async function SignedInHomePage() {
-  // const claims = await getTokenClaims() as CustomClaims | null;
-
-  // // Redirect to landing page if not signed in
-  // if (!claims || !claims.sub) {
-  //   redirect('/');
-  // }
-
-  // const user = {
-  //   id: claims.sub,
-  //   email: claims.email || '',
-  //   firstName: typeof claims.given_name === 'string' ? claims.given_name : undefined,
-  //   lastName: typeof claims.family_name === 'string' ? claims.family_name : undefined,
-  // };
+// The 'claims' object is now passed as a prop, and we've removed the redirect logic.
+export default async function SignedInHomePage({ claims }: { claims: CustomClaims }) {
+  const user = {
+    id: claims.sub,
+    email: claims.email || '',
+    firstName: typeof claims.given_name === 'string' ? claims.given_name : undefined,
+    lastName: typeof claims.family_name === 'string' ? claims.family_name : undefined,
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,12 +40,6 @@ export default async function SignedInHomePage() {
               <span className="text-xl font-bold text-foreground">CemTemBot CMS</span>
             </div>
             <div className="flex items-center space-x-4">
-              {/* <Link
-                href="/dashboard"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Dashboard
-              </Link> */}
               <Link
                 href="/account/logout"
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
@@ -71,7 +56,7 @@ export default async function SignedInHomePage() {
         {/* Welcome Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Welcome back, <span className="text-primary">{'User'}</span>!
+            Welcome back, <span className="text-primary">{user.firstName || 'User'}</span>!
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Choose how you'd like to manage your company today with CemTemBot's intelligent tools
@@ -79,28 +64,7 @@ export default async function SignedInHomePage() {
         </div>
 
         {/* Main Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {/* CemTem Chat Card */}
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 cursor-pointer">
-            <Link href="/home/cemtemChat" className="block h-full">
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-chart-2 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <MessageCircle className="w-8 h-8 text-white" />
-                </div>
-                <CardTitle className="text-2xl mb-2">CemTem Chat</CardTitle>
-                <CardDescription className="text-base">
-                  Interact with your AI-powered assistant for instant help and automation
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center pt-0">
-                <Button >
-                  Start Chatting
-                  <ArrowRight/>
-                </Button>
-              </CardContent>
-            </Link>
-          </Card> */}
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-16">
           {/* Dashboard Card */}
           <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 cursor-pointer">
             <Link href="/dashboard" className="block h-full">
@@ -114,7 +78,7 @@ export default async function SignedInHomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center pt-0">
-                <Button >
+                <Button>
                   View Dashboard
                   <ArrowRight />
                 </Button>
@@ -135,9 +99,9 @@ export default async function SignedInHomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center pt-0">
-                <Button >
+                <Button>
                   Manage Account
-                  <ArrowRight  />
+                  <ArrowRight />
                 </Button>
               </CardContent>
             </Link>
@@ -151,7 +115,7 @@ export default async function SignedInHomePage() {
               <Building2 className="w-6 h-6 text-primary" />
               <h2 className="text-2xl font-semibold">Quick Overview</h2>
             </div>
-            <Link 
+            <Link
               href="/dashboard"
               className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
             >
