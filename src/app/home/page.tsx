@@ -66,7 +66,7 @@ export default async function SignedInHomePage() {
                 {/* Welcome Section */}
                 <div className="text-center mb-16">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                        Welcome back, <span className="text-primary">{user.firstName || 'User'}</span>!
+                        Welcome back, <span className="text-primary">{claims.first_name || 'User'}</span>!
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Choose how you'd like to manage your company today with AI's intelligent tools
@@ -85,8 +85,9 @@ export default async function SignedInHomePage() {
                                 <CardTitle className="text-2xl mb-2">Dashboard</CardTitle>
                                 <CardDescription className="text-base">
                                     Access your complete management suite with analytics and team oversight
-                                    <p className="text-sm text-red-500 font-bold mt-2">
-                                        User must be authenticated to use dashboard (Login with the account you signed up)
+                                    <p className="text-sm text-red-400 font-bold mt-2">
+                                        User must be authenticated to use dashboard <br>
+                                        <span className="text-blue-500">(Login with the account you signed up)</span></br>
                                     </p>
                                 </CardDescription>
                             </CardHeader>
