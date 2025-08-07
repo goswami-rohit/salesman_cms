@@ -47,7 +47,7 @@ export default async function SignedInHomePage() {
                             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                                 <Bot className="w-4 h-4 text-primary-foreground" />
                             </div>
-                            <span className="text-xl font-bold text-foreground">CemTemBot CMS</span>
+                            <span className="text-xl font-bold text-foreground">MyCoco CMS</span>
                         </div>
                         <div className="flex items-center space-x-4">
                             <Link
@@ -69,7 +69,7 @@ export default async function SignedInHomePage() {
                         Welcome back, <span className="text-primary">{user.firstName || 'User'}</span>!
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                        Choose how you'd like to manage your company today with CemTemBot's intelligent tools
+                        Choose how you'd like to manage your company today with AI's intelligent tools
                     </p>
                 </div>
 
@@ -85,6 +85,9 @@ export default async function SignedInHomePage() {
                                 <CardTitle className="text-2xl mb-2">Dashboard</CardTitle>
                                 <CardDescription className="text-base">
                                     Access your complete management suite with analytics and team oversight
+                                    <p className="text-sm text-red-500 font-bold mt-2">
+                                        User must be authenticated to use dashboard (Login with the account you signed up)
+                                    </p>
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="text-center pt-0">
@@ -119,25 +122,19 @@ export default async function SignedInHomePage() {
                 </div>
 
                 {/* Quick Stats Section */}
-                <div className="bg-card border border-border rounded-lg p-8 mb-8">
+                {/* <div className="bg-card border border-border rounded-lg p-8 mb-8">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center space-x-3">
                             <Building2 className="w-6 h-6 text-primary" />
                             <h2 className="text-2xl font-semibold">Quick Overview</h2>
                         </div>
-                        <Link
-                            href="/dashboard"
-                            className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-                        >
-                            View Full Dashboard →
-                        </Link>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
                         <div className="text-center">
                             <div className="text-3xl font-bold text-primary mb-1">AI Ready</div>
-                            <div className="text-muted-foreground">CemTemBot Status</div>
-                        </div>
+                            <div className="text-muted-foreground">AI Bot Status</div>
+                        </div> 
                         <div className="text-center">
                             <div className="text-3xl font-bold text-chart-2 mb-1">Active</div>
                             <div className="text-muted-foreground">Account Status</div>
@@ -147,7 +144,18 @@ export default async function SignedInHomePage() {
                             <div className="text-muted-foreground">Plan Type</div>
                         </div>
                     </div>
-                </div>
+                </div> */}
+
+                {/* Footer */}
+                <footer className="border-t border-border py-12">
+                    <div className="text-center">
+                        <p className="text-muted-foreground">
+                            © 2025 MyCoco CMS with Telegram PWA.
+                            <span className="text-primary"> AI Powered Telegram-PWA for Salesman</span>
+                        </p>
+                    </div>
+                </footer>
+
             </div>
         </div>
     );
