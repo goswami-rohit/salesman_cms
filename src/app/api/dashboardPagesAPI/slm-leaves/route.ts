@@ -82,6 +82,24 @@ export async function GET() {
 // Updates the status and remarks of a salesman leave application
 export async function PATCH(req: NextRequest) {
   try {
+    const claims = await getTokenClaims();
+
+    // 1. Authentication Check
+    if (!claims || !claims.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Fetch Current User to check role and companyId
+    const currentUser = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      include: { company: true }
+    });
+
+    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
+      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    }
+
     const body = await req.json();
     const parsedBody = updateLeaveApplicationSchema.safeParse(body); // Validate request body with Zod
 
@@ -91,7 +109,17 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid request body', errors: parsedBody.error.format() }, { status: 400 });
     }
 
-    const { id, status, adminRemarks } = parsedBody.data; // Destructure validated data
+    const { id, status, adminRemarks } = parsedBody.data;
+    
+    // First, verify that the leave application belongs to the current user's company
+    const leaveApplicationToUpdate = await prisma.salesmanLeaveApplication.findUnique({
+      where: { id: id },
+      include: { user: true }
+    });
+
+    if (!leaveApplicationToUpdate || leaveApplicationToUpdate.user.companyId !== currentUser.companyId) {
+      return NextResponse.json({ message: 'Leave application not found or unauthorized' }, { status: 404 });
+    }
 
     // Construct the data object for Prisma update operation
     // Define an explicit type to ensure correctness for conditional properties
