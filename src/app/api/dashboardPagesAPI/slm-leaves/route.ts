@@ -1,7 +1,8 @@
 // src/app/api/dashboardPagesAPI/salesman-leaves/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { z } from 'zod'; // Ensure zod is imported
+import { z } from 'zod';
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 
 const prisma = new PrismaClient();
 
@@ -16,7 +17,30 @@ const updateLeaveApplicationSchema = z.object({
 // Fetches all salesman leave applications from the database
 export async function GET() {
   try {
+    const claims = await getTokenClaims();
+
+    // 1. Authentication Check
+    if (!claims || !claims.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Fetch Current User to check role and companyId
+    const currentUser = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      include: { company: true }
+    });
+
+    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
+      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    }
+
     const leaveApplications = await prisma.salesmanLeaveApplication.findMany({
+      where: {
+        user: { // Access the User relation
+          companyId: currentUser.companyId, // Filter by the admin/manager's company
+        },
+      },
       include: {
         user: true, // Include the associated User record to get salesman details
       },
@@ -118,6 +142,6 @@ export async function PATCH(req: NextRequest) {
     // Return a 500 status with a generic error message
     return NextResponse.json({ message: 'Failed to update leave application', error: error.message }, { status: 500 });
   } finally {
-    await prisma.$disconnect(); 
+    await prisma.$disconnect();
   }
 }

@@ -1,12 +1,36 @@
 // src/app/api/dashboardPagesAPI/salesman-attendance/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 
 const prisma = new PrismaClient();
 
 export async function GET() {
   try {
+    const claims = await getTokenClaims();
+
+    // 1. Authentication Check
+    if (!claims || !claims.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Fetch Current User to check role and companyId
+    const currentUser = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      include: { company: true }
+    });
+
+    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
+      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    }
+
     const attendanceRecords = await prisma.salesmanAttendance.findMany({
+      where: {
+        user: { // Access the User relation
+          companyId: currentUser.companyId, // Filter by the admin/manager's company
+        },
+      },
       include: {
         user: true, // Include the entire User object to access firstName and lastName
       },

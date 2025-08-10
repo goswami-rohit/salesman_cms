@@ -7,16 +7,18 @@ export async function GET() {
   try {
     const claims = await getTokenClaims();
 
+    // 1. Authentication Check
     if (!claims || !claims.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch the current user from your DB to check their role and companyId
+    // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
       include: { company: true } // Include company to get companyId
     });
 
+    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
       return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
     }
