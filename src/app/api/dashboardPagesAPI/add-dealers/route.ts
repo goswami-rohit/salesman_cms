@@ -95,22 +95,22 @@ export async function POST(request: NextRequest) {
         try {
             const geocodeResponse = await fetch(openCageApiUrl);
             
-            console.log('OpenCage API response status:', geocodeResponse.status);
+            //console.log('OpenCage API response status:', geocodeResponse.status);
 
             if (geocodeResponse.ok) {
                 const geocodeResults = await geocodeResponse.json();
-                console.log('Geocoding results:', geocodeResults);
+                //console.log('Geocoding results:', geocodeResults);
 
                 if (geocodeResults.results.length > 0) {
                     latitude = geocodeResults.results[0].geometry.lat;
                     longitude = geocodeResults.results[0].geometry.lng;
-                    formattedAddress = `${geocodeResults.results[0].formatted} || ${latitude},${longitude}`;
+                    formattedAddress = `${geocodeResults.results[0]} || ${latitude},${longitude}`;
                     console.log('Successfully geocoded. Formatted address:', formattedAddress);
                 } else {
-                    console.warn('Geocoding failed: OpenCage returned no results.');
+                    //console.warn('Geocoding failed: OpenCage returned no results.');
                 }
             } else {
-                console.error('Geocoding failed. HTTP Status:', geocodeResponse.status);
+                //console.error('Geocoding failed. HTTP Status:', geocodeResponse.status);
                 try {
                   const errorText = await geocodeResponse.text();
                   console.error('Geocoding Error Body:', errorText);
