@@ -210,6 +210,7 @@ export default function AddDealersPage() {
         { accessorKey: 'type', header: 'Type' },
         { accessorKey: 'region', header: 'Region' },
         { accessorKey: 'area', header: 'Area' },
+        { accessorKey: 'address', header: 'Address' },
         { accessorKey: 'phoneNo', header: 'Phone No.' },
         { accessorKey: 'totalPotential', header: 'Total Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
         { accessorKey: 'bestPotential', header: 'Best Potential', cell: info => (info.getValue() as number)?.toFixed(2) },

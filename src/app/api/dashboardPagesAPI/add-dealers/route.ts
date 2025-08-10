@@ -83,9 +83,9 @@ export async function POST(request: NextRequest) {
         } = parsedBody.data;
 
         //Geocoding API call to Nominatim OpenStreetMap (OSM) section to add Lat and Lon to address column in dealers table
-        if (!name || !address) {
-            return NextResponse.json({ message: 'Missing required fields: name, address' }, { status: 400 });
-        }
+        // if (!name || !address) {
+        //     return NextResponse.json({ message: 'Missing required fields: name, address' }, { status: 400 });
+        // }
 
         // 2. Geocoding the address using OpenStreetMap Nominatim
         let latitude = null;
@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
 
         // Build the URL for the geocoding request
         const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+        console.log('Nominatim API URL:', nominatimUrl);
 
         // The Nominatim API requires a User-Agent header
         const geocodeResponse = await fetch(nominatimUrl, {
@@ -101,9 +102,11 @@ export async function POST(request: NextRequest) {
                 'User-Agent': 'SalesmanCMS-Dashboard'
             }
         });
+        console.log('Geocoding API response status:', geocodeResponse.status);
 
         if (geocodeResponse.ok) {
             const geocodeResults = await geocodeResponse.json();
+            console.log('Geocoding results:', geocodeResults);
 
             if (geocodeResults && geocodeResults.length > 0) {
                 latitude = geocodeResults[0].lat;
@@ -112,9 +115,12 @@ export async function POST(request: NextRequest) {
                 // 3. Store the original address and coordinates in a single string
                 // The '||' acts as a clear separator for your PWA to parse
                 formattedAddress = `${address} || ${latitude},${longitude}`;
+                console.log('Successfully geocoded. Formatted address:', formattedAddress);
+            } else {
+                console.warn('Geocoding failed: No results found.');
             }
         } else {
-            console.warn('Geocoding failed, storing address without coordinates.');
+            console.warn('Geocoding failed, storing address without coordinates. HTTP Status:', geocodeResponse.status);
         }
         //End of Geocoding section
         
@@ -127,7 +133,7 @@ export async function POST(request: NextRequest) {
                 region: region,
                 area: area,
                 phoneNo: phoneNo,
-                address: formattedAddress, //Address stored with Lat and Lon using ||
+                address: formattedAddress, //Address stored with Lat and Lon using || separator
                 totalPotential: totalPotential,
                 bestPotential: bestPotential,
                 brandSelling: brandSelling,
