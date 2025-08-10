@@ -32,8 +32,12 @@ const postDealerSchema = z.object({
     area: z.string(),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    totalPotential: z.number().positive("Total potential must be a positive number."),
-    bestPotential: z.number().positive("Best potential must be a positive number."),
+    totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
+        message: "Total potential must be a positive number.",
+    }),
+    bestPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
+        message: "Best potential must be a positive number.",
+    }),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
     remarks: z.string().nullable().optional(), // Optional field
