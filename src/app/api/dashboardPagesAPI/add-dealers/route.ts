@@ -32,12 +32,8 @@ const postDealerSchema = z.object({
     area: z.string(),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
-        message: "Total potential must be a positive number.",
-    }),
-    bestPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
-        message: "Best potential must be a positive number.",
-    }),
+    totalPotential: z.number().positive("Total potential must be a positive number."),
+    bestPotential: z.number().positive("Best potential must be a positive number."),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
     remarks: z.string().nullable().optional(), // Optional field
@@ -87,11 +83,6 @@ export async function POST(request: NextRequest) {
         } = parsedBody.data;
 
         //Geocoding API call to Nominatim OpenStreetMap (OSM) section to add Lat and Lon to address column in dealers table
-        // if (!name || !address) {
-        //     return NextResponse.json({ message: 'Missing required fields: name, address' }, { status: 400 });
-        // }
-
-        // 2. Geocoding the address using OpenStreetMap Nominatim
         let latitude = null;
         let longitude = null;
         let formattedAddress = address; // Default to the original address
@@ -101,33 +92,42 @@ export async function POST(request: NextRequest) {
         console.log('Nominatim API URL:', nominatimUrl);
 
         // The Nominatim API requires a User-Agent header
-        const geocodeResponse = await fetch(nominatimUrl, {
-            headers: {
-                'User-Agent': 'SalesmanCMS-Dashboard'
-            }
-        });
-        console.log('Geocoding API response status:', geocodeResponse.status);
+        try {
+            const geocodeResponse = await fetch(nominatimUrl, {
+                headers: {
+                    'User-Agent': 'SalesmanCMS-Dashboard'
+                }
+            });
 
-        if (geocodeResponse.ok) {
-            const geocodeResults = await geocodeResponse.json();
-            console.log('Geocoding results:', geocodeResults);
+            console.log('Geocoding API response status:', geocodeResponse.status);
 
-            if (geocodeResults && geocodeResults.length > 0) {
-                latitude = geocodeResults[0].lat;
-                longitude = geocodeResults[0].lon;
+            if (geocodeResponse.ok) {
+                const geocodeResults = await geocodeResponse.json();
+                console.log('Geocoding results:', geocodeResults);
 
-                // 3. Store the original address and coordinates in a single string
-                // The '||' acts as a clear separator for your PWA to parse
-                formattedAddress = `${address} || ${latitude},${longitude}`;
-                console.log('Successfully geocoded. Formatted address:', formattedAddress);
+                if (geocodeResults && geocodeResults.length > 0) {
+                    latitude = geocodeResults[0].lat;
+                    longitude = geocodeResults[0].lon;
+
+                    // Use the more accurate display_name from Nominatim
+                    const validatedAddress = geocodeResults[0].display_name;
+
+                    // Store the validated address and coordinates in a single string
+                    // The '||' acts as a clear separator for your PWA to parse
+                    formattedAddress = `${validatedAddress} || ${latitude},${longitude}`;
+                    console.log('Successfully geocoded. Formatted address:', formattedAddress);
+                } else {
+                    console.warn('Geocoding failed: No results found.');
+                }
             } else {
-                console.warn('Geocoding failed: No results found.');
+                console.warn('Geocoding failed, storing address without coordinates. HTTP Status:', geocodeResponse.status);
             }
-        } else {
-            console.warn('Geocoding failed, storing address without coordinates. HTTP Status:', geocodeResponse.status);
+        } catch (geocodeError) {
+            console.error('An error occurred during geocoding:', geocodeError);
+            console.warn('Geocoding failed, storing address without coordinates.');
         }
         //End of Geocoding section
-        
+
         // Create the new dealer in the database
         const newDealer = await prisma.dealer.create({
             data: {
