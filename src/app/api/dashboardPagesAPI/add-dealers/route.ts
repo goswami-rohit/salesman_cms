@@ -82,51 +82,47 @@ export async function POST(request: NextRequest) {
             remarks,
         } = parsedBody.data;
 
-        //Geocoding API call to Nominatim OpenStreetMap (OSM) section to add Lat and Lon to address column in dealers table
+        // Geocoding API call to OpenCage Geocoding service
         let latitude = null;
         let longitude = null;
         let formattedAddress = address; // Default to the original address
+        const apiKey = process.env.OPENCAGE_GEO_API; // <--- YOU MUST REPLACE THIS
 
         // Build the URL for the geocoding request
-        const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
-        console.log('Nominatim API URL:', nominatimUrl);
+        const openCageApiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${apiKey}`;
+        console.log('OpenCage API URL:', openCageApiUrl);
 
-        // The Nominatim API requires a User-Agent header
         try {
-            const geocodeResponse = await fetch(nominatimUrl, {
-                headers: {
-                    'User-Agent': 'SalesmanCMS-Dashboard'
-                }
-            });
-
-            console.log('Geocoding API response status:', geocodeResponse.status);
+            const geocodeResponse = await fetch(openCageApiUrl);
+            
+            console.log('OpenCage API response status:', geocodeResponse.status);
 
             if (geocodeResponse.ok) {
                 const geocodeResults = await geocodeResponse.json();
                 console.log('Geocoding results:', geocodeResults);
 
-                if (geocodeResults && geocodeResults.length > 0) {
-                    latitude = geocodeResults[0].lat;
-                    longitude = geocodeResults[0].lon;
-
-                    // Use the more accurate display_name from Nominatim
-                    const validatedAddress = geocodeResults[0].display_name;
-
-                    // Store the validated address and coordinates in a single string
-                    // The '||' acts as a clear separator for your PWA to parse
-                    formattedAddress = `${validatedAddress} || ${latitude},${longitude}`;
+                if (geocodeResults.results.length > 0) {
+                    latitude = geocodeResults.results[0].geometry.lat;
+                    longitude = geocodeResults.results[0].geometry.lng;
+                    formattedAddress = `${geocodeResults.results[0].formatted} || ${latitude},${longitude}`;
                     console.log('Successfully geocoded. Formatted address:', formattedAddress);
                 } else {
-                    console.warn('Geocoding failed: No results found.');
+                    console.warn('Geocoding failed: OpenCage returned no results.');
                 }
             } else {
-                console.warn('Geocoding failed, storing address without coordinates. HTTP Status:', geocodeResponse.status);
+                console.error('Geocoding failed. HTTP Status:', geocodeResponse.status);
+                try {
+                  const errorText = await geocodeResponse.text();
+                  console.error('Geocoding Error Body:', errorText);
+                } catch (e) {
+                  console.error('Could not parse error body:', e);
+                }
             }
         } catch (geocodeError) {
             console.error('An error occurred during geocoding:', geocodeError);
             console.warn('Geocoding failed, storing address without coordinates.');
         }
-        //End of Geocoding section
+        // End of Geocoding section
 
         // Create the new dealer in the database
         const newDealer = await prisma.dealer.create({
