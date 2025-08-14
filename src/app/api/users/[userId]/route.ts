@@ -1,5 +1,5 @@
 // src/app/api/users/[userId]/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 
@@ -17,11 +17,10 @@ const allowedAdminRoles = [
 
 // GET - Get single user
 export async function GET(
-  request: Request,
-  { params }: { params: { userId: string } }
+  context: { params: { userId: string } }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = context.params;
 
     const claims = await getTokenClaims();
 
@@ -58,11 +57,11 @@ export async function GET(
 
 // PUT - Update user
 export async function PUT(
-  request: Request,
-  { params }: { params: { userId: string } }
+  request: NextRequest,
+  context: { params: { userId: string } }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = context.params;
 
     const claims = await getTokenClaims();
 
@@ -135,11 +134,10 @@ export async function PUT(
 
 // DELETE - Delete user
 export async function DELETE(
-  request: Request,
-  { params }: { params: { userId: string } }
+  context: { params: { userId: string } }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = context.params;
 
     const claims = await getTokenClaims();
 

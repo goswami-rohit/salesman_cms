@@ -1,10 +1,10 @@
 // src/app/api/users/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
 import nodemailer from 'nodemailer';
-import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique IDs
+//import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique IDs
 //import bcrypt from 'bcryptjs'; // Import bcryptjs
 
 // Define the roles that have admin-level access
@@ -176,7 +176,7 @@ function generateRandomPassword(length: number = 10): string {
 
 
 // POST - Create a new user and send invitation
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
         const workos = new WorkOS(process.env.WORKOS_API_KEY!);
         const claims = await getTokenClaims();
@@ -378,7 +378,7 @@ export async function POST(request: Request) {
 }
 
 // ... (GET function for /api/users remains unchanged below this)
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     try {
         const claims = await getTokenClaims();
 
