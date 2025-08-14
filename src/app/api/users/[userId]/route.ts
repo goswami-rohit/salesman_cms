@@ -18,10 +18,10 @@ const allowedAdminRoles = [
 // GET - Get single user
 export async function GET(
   request: NextRequest,
-  context: { params: { userId: string } }
+  { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = context.params;
+    const { userId } = params;
 
     const claims = await getTokenClaims();
 
@@ -59,10 +59,10 @@ export async function GET(
 // PUT - Update user
 export async function PUT(
   request: NextRequest,
-  context: { params: { userId: string } }
+  { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = context.params;
+    const { userId } = params;
 
     const claims = await getTokenClaims();
 
@@ -136,10 +136,10 @@ export async function PUT(
 // DELETE - Delete user
 export async function DELETE(
   request: NextRequest,
-  context: { params: { userId: string } }
+  { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = context.params;
+    const { userId } = params;
 
     const claims = await getTokenClaims();
 
