@@ -7,6 +7,18 @@ import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique IDs
 //import bcrypt from 'bcryptjs'; // Import bcryptjs
 
+// Define the roles that have admin-level access
+const allowedAdminRoles = [
+    'president',
+    'senior-general-manager',
+    'general-manager',
+    'regional-sales-manager',
+    'area-sales-manager',
+    'senior-manager',
+    'manager',
+    'assistant-manager',
+];
+
 // Create Gmail transporter
 const createEmailTransporter = () => {
     return nodemailer.createTransport({
@@ -82,23 +94,23 @@ Password: ${tempPassword}
             <h1>🎉 You're Invited!</h1>
             <p>Welcome to ${companyName}</p>
         </div>
-        
+
         <div class="content">
             <p><strong>Hi ${firstName},</strong></p>
-            
+
             <p>${adminName} has invited you to join <strong>${companyName}</strong> as a <strong>${role}</strong>.</p>
-            
+
             <p>To accept this invitation and set up your account for the web application, please click the button below:</p>
-            
+
             <div style="text-align: center;">
                 <a href="${inviteUrl}" class="button">Accept Web App Invitation & Join Team</a>
             </div>
-            
+
             <p>Or copy and paste this link into your browser:</p>
             <div class="invite-code">${inviteUrl}</div>
-            
+
             ${salesmanDetailsHtml} {/* Include salesman details */}
-            
+
             <p><strong>What happens next?</strong></p>
             <ul>
                 <li>Click the invitation link above to set up your web app account.</li>
@@ -106,13 +118,13 @@ Password: ${tempPassword}
                 <li>${salesmanLoginId ? 'Use your Employee ID and Temporary Password above to log in to the Sales Team Mobile App.' : ''}</li>
                 <li>Start collaborating with your team!</li>
             </ul>
-            
+
             <p><em>This web app invitation will expire in 7 days for security reasons.</em></p>
-            
+
             <p>Welcome to the team!</p>
             <p><strong>The ${companyName} Team</strong></p>
         </div>
-        
+
         <div class="footer">
             <p>If you have any questions, please contact your administrator.</p>
             <p>This email was sent from ${companyName} Team Management System.</p>
@@ -154,7 +166,7 @@ The ${companyName} Team
 
 // Function to generate a random password
 function generateRandomPassword(length: number = 10): string {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let password = "";
     for (let i = 0; i < length; i++) {
         password += charset.charAt(Math.floor(Math.random() * charset.length));
@@ -183,26 +195,27 @@ export async function POST(request: Request) {
             include: { company: true }
         });
 
-        if (!adminUser || adminUser.role !== 'admin') {
+        // Check if the user's role is in the list of allowed admin roles
+        if (!adminUser || !allowedAdminRoles.includes(adminUser.role)) {
             return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
         }
+
 
         if (!organizationId) {
             return NextResponse.json({ error: 'No organization found for admin user. Please logout and login again.' }, { status: 400 });
         }
 
         const body = await request.json();
-        const { email, firstName, lastName, phoneNumber, role } = body;
+        // Updated to include `region` and `area`
+        const { email, firstName, lastName, phoneNumber, role, region, area } = body;
 
         // Validate required fields
         if (!email || !firstName || !lastName || !role) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        let workosRole = role.toLowerCase();
-        if (role === 'employee') {
-            workosRole = 'staff';
-        }
+        // The WorkOS role slug is the same as the user role
+        const workosRole = role.toLowerCase();
 
         const existingUser = await prisma.user.findUnique({
             where: {
@@ -228,8 +241,8 @@ export async function POST(request: Request) {
         let tempPasswordPlaintext: string | null = null;
         let hashedPassword = null;
 
-        // Generate salesmanLoginId and temporary password ONLY for 'staff' role
-        if (workosRole === 'staff') {
+        // Generate salesmanLoginId and temporary password ONLY for executive roles
+        if (['senior-executive', 'executive', 'junior-executive'].includes(workosRole)) {
             let isUnique = false;
             while (!isUnique) {
                 const generatedId = `EMP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -292,6 +305,9 @@ export async function POST(request: Request) {
                     lastName,
                     phoneNumber,
                     role: workosRole,
+                    // New: Added region and area to the update data
+                    region,
+                    area,
                     // The workosUserId remains null until they log in
                     status: 'pending',
                     inviteToken: workosInvitation.id, // Use inviteToken for the workosInvitation ID
@@ -308,6 +324,9 @@ export async function POST(request: Request) {
                     lastName,
                     phoneNumber,
                     role: workosRole,
+                    // New: Added region and area to the creation data
+                    region,
+                    area,
                     workosUserId: null, // The user ID is not yet available
                     inviteToken: workosInvitation.id, // Store the invitation ID
                     companyId: adminUser.companyId,
@@ -359,9 +378,6 @@ export async function POST(request: Request) {
 }
 
 // ... (GET function for /api/users remains unchanged below this)
-// src/app/api/users/route.ts
-// ... (GET function - Fetch all users remains the same as before)
-// ... (GET function for /api/users remains unchanged below this)
 export async function GET(request: Request) {
     try {
         const claims = await getTokenClaims();
@@ -386,12 +402,15 @@ export async function GET(request: Request) {
                     role: currentUser.role,
                     firstName: currentUser.firstName,
                     lastName: currentUser.lastName,
-                    companyName: currentUser.company?.companyName
+                    companyName: currentUser.company?.companyName,
+                    // New: Added region and area
+                    region: currentUser.region,
+                    area: currentUser.area,
                 }
             });
         }
-        // Original logic for admin users list
-        if (currentUser.role !== 'admin') {
+        // Check if the user's role is in the list of allowed admin roles
+        if (!allowedAdminRoles.includes(currentUser.role)) {
             return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
         }
 
@@ -404,7 +423,10 @@ export async function GET(request: Request) {
             users,
             currentUser: {
                 role: currentUser.role,
-                companyName: currentUser.company?.companyName
+                companyName: currentUser.company?.companyName,
+                // New: Added region and area
+                region: currentUser.region,
+                area: currentUser.area,
             }
         });
     } catch (error: any) {

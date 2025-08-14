@@ -5,6 +5,10 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 
 const prisma = new PrismaClient();
 
+const allowedRoles = [
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive', 'executive'];
+
 export async function GET() {
   try {
     const claims = await getTokenClaims();
@@ -20,9 +24,9 @@ export async function GET() {
       include: { company: true }
     });
 
-    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    // --- UPDATED ROLE-BASED AUTHORIZATION ---
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
 
     const attendanceRecords = await prisma.salesmanAttendance.findMany({

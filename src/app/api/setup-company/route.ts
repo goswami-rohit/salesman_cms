@@ -3,8 +3,25 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
+import { z } from 'zod';
+import { WorkOSRole } from '@/lib/permissions';
 
 const workos = new WorkOS(process.env.WORKOS_API_KEY as string);
+
+// Define the valid regions and areas
+const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
+const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
+
+// Schema for the POST request body
+const SetupCompanySchema = z.object({
+  companyName: z.string().min(1, "Company name is required."),
+  officeAddress: z.string().min(1, "Office address is required."),
+  isHeadOffice: z.boolean(),
+  phoneNumber: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
+  region: z.enum(regions as [string, ...string[]]),
+  area: z.enum(areas as [string, ...string[]]),
+});
+
 
 export async function POST(request: Request) {
   try {
@@ -17,11 +34,17 @@ export async function POST(request: Request) {
     console.log('✅ Authenticated user:', { id: user.id, email: user.email });
 
     const body = await request.json();
-    const { companyName, officeAddress, isHeadOffice, phoneNumber } = body;
+    const parsedBody = SetupCompanySchema.safeParse(body);
 
-    if (!companyName || !officeAddress || typeof isHeadOffice !== 'boolean' || !phoneNumber) {
-      return NextResponse.json({ error: 'Missing required company details in the request body.' }, { status: 400 });
+    if (!parsedBody.success) {
+      console.error('Company Setup Validation Error:', parsedBody.error.format());
+      return NextResponse.json({ 
+        error: 'Invalid request body', 
+        details: parsedBody.error.format() 
+      }, { status: 400 });
     }
+
+    const { companyName, officeAddress, isHeadOffice, phoneNumber, region, area } = parsedBody.data;
 
     const existingCompanyInDb = await prisma.company.findUnique({
       where: { adminUserId: user.id },
@@ -49,14 +72,14 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // Create Organization Membership without role initially
+    // Create WorkOS Organization Membership with the 'senior-manager' role
     try {
-      console.log('👤 Creating organization membership without role...');
+      console.log('👤 Creating organization membership for senior-manager role...');
       
       const membership = await workos.userManagement.createOrganizationMembership({
         userId: user.id,
         organizationId: workosOrganization.id,
-        roleSlug: 'admin',
+        roleSlug: 'senior-manager', // Set the initial role here
       });
       
       console.log(`✅ WorkOS Organization Membership created:`, {
@@ -96,11 +119,14 @@ export async function POST(request: Request) {
         officeAddress,
         isHeadOffice,
         phoneNumber,
+        region: region, // Save the new region
+        area: area, // Save the new area
         adminUserId: user.id,
         workosOrganizationId: workosOrganization.id,
       },
     });
 
+    // Create the initial user with the senior-manager role and the new fields
     const newAdminUser = await prisma.user.create({
       data: {
         workosUserId: user.id,
@@ -108,7 +134,9 @@ export async function POST(request: Request) {
         email: user.email,
         firstName: user.firstName || null,
         lastName: user.lastName || null,
-        role: 'admin', // This is your internal database role
+        role: 'senior-manager', // This is your internal database role
+        region: region, // Save the new region
+        area: area, // Save the new area
       },
     });
 

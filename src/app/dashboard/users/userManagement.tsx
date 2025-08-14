@@ -49,6 +49,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+// Define the valid regions and areas based on your company's data
+const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
+const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
+
+
 interface User {
   id: number;
   email: string;
@@ -56,7 +61,9 @@ interface User {
   lastName: string | null;
   phoneNumber: string | null;
   role: string;
-  workosUserId: string | null; // Make workosUserId nullable here too
+  region: string | null; // Added new field
+  area: string | null;   // Added new field
+  workosUserId: string | null;
   createdAt: string;
   updatedAt: string;
   salesmanLoginId?: string | null;
@@ -94,14 +101,16 @@ export default function UsersManagement({ adminUser }: Props) {
     firstName: '',
     lastName: '',
     phoneNumber: '',
-    role: 'staff'
+    role: 'junior-executive',
+    region: regions[0], // Initialize with a default value
+    area: areas[0],     // Initialize with a default value
   });
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/users`
+  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/users`;
   const fetchUsers = async () => {
     try {
       const response = await fetch(apiURI);
@@ -125,10 +134,11 @@ export default function UsersManagement({ adminUser }: Props) {
     setSuccess('');
 
     try {
-      const response = await fetch(apiURI, {
+      // invitation for new users is set in /api/user
+      const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData) // formData now includes region and area
       });
 
       if (response.ok) {
@@ -163,7 +173,7 @@ export default function UsersManagement({ adminUser }: Props) {
       const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData) // formData now includes region and area
       });
 
       if (response.ok) {
@@ -182,23 +192,20 @@ export default function UsersManagement({ adminUser }: Props) {
     }
   };
 
-  // MODIFIED: handleDeleteUser to call WorkOS API
   const handleDeleteUser = async (userId: number, workosUserId: string | null) => {
     setLoading(true);
     setError('');
-    setSuccess(''); // Clear previous success messages
+    setSuccess('');
 
     try {
-      // First, delete from your database
       const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/${userId}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
-        // If local deletion is successful, attempt to delete from WorkOS
         if (workosUserId) {
           console.log(`Attempting to delete WorkOS user: ${workosUserId}`);
-          const workosDeleteResponse = await fetch('/api/delete-user', { // Create a new API route for this
+          const workosDeleteResponse = await fetch('/api/delete-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ workosUserId: workosUserId })
@@ -215,7 +222,7 @@ export default function UsersManagement({ adminUser }: Props) {
         } else {
           setSuccess('User deleted from local database successfully (no WorkOS ID found).');
         }
-        await fetchUsers(); // Refresh the user list
+        await fetchUsers();
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to delete user locally');
@@ -234,7 +241,9 @@ export default function UsersManagement({ adminUser }: Props) {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       phoneNumber: user.phoneNumber || '',
-      role: user.role
+      role: user.role,
+      region: user.region || regions[0],
+      area: user.area || areas[0],
     });
   };
 
@@ -244,7 +253,9 @@ export default function UsersManagement({ adminUser }: Props) {
       firstName: '',
       lastName: '',
       phoneNumber: '',
-      role: 'staff'
+      role: 'junior-executive',
+      region: regions[0],
+      area: areas[0],
     });
     setEditingUser(null);
     setError('');
@@ -252,14 +263,35 @@ export default function UsersManagement({ adminUser }: Props) {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'admin': return 'default';
-      case 'manager': return 'secondary';
-      case 'staff': return 'outline';
-      default: return 'outline';
+      case 'president':
+        return 'destructive'; // A prominent red for the highest-level role
+      case 'senior-general-manager':
+        return 'default';
+      case 'general-manager':
+        return 'secondary';
+      case 'regional-sales-manager':
+        return 'outline';
+      case 'area-sales-manager':
+        return 'destructive'; // Reusing 'destructive' for a key sales role
+      case 'senior-manager':
+        return 'default';
+      case 'manager':
+        return 'secondary';
+      case 'assistant-manager':
+        return 'outline';
+      case 'senior-executive':
+        return 'default';
+      case 'executive':
+        return 'secondary';
+      case 'junior-executive':
+        return 'outline';
+      default:
+        return 'outline'; // A safe default for any unrecognized roles
     }
   };
 
-  const isUserActive = (workosUserId: string | null) => { // Updated to accept null
+
+  const isUserActive = (workosUserId: string | null) => {
     return workosUserId && !workosUserId.startsWith('pending_') && !workosUserId.startsWith('temp_');
   };
 
@@ -354,11 +386,49 @@ export default function UsersManagement({ adminUser }: Props) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="president">President</SelectItem>
+                      <SelectItem value="senior-general-manager">Senior General Manager</SelectItem>
+                      <SelectItem value="general-manager">General Manager</SelectItem>
+                      <SelectItem value="regional-sales-manager">Regional Sales Manager</SelectItem>
+                      <SelectItem value="area-sales-manager">Area Sales Manager</SelectItem>
+                      <SelectItem value="senior-manager">Senior Manager</SelectItem>
                       <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="assistant-manager">Assistant Manager</SelectItem>
+                      <SelectItem value="senior-executive">Senior Executive</SelectItem>
+                      <SelectItem value="executive">Executive</SelectItem>
+                      <SelectItem value="junior-executive">Junior Executive</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Region</Label>
+                    <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {regions.map(region => (
+                          <SelectItem key={region} value={region}>{region}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="area">Area</Label>
+                    <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {areas.map(area => (
+                          <SelectItem key={area} value={area}>{area}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="flex space-x-2 pt-4">
@@ -405,6 +475,8 @@ export default function UsersManagement({ adminUser }: Props) {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Region</TableHead>
+                  <TableHead>Area</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -422,6 +494,8 @@ export default function UsersManagement({ adminUser }: Props) {
                         {user.role}
                       </Badge>
                     </TableCell>
+                    <TableCell>{user.region || '-'}</TableCell>
+                    <TableCell>{user.area || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         {isUserActive(user.workosUserId) ? (
@@ -510,11 +584,49 @@ export default function UsersManagement({ adminUser }: Props) {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="staff">Staff</SelectItem>
+                                    <SelectItem value="president">President</SelectItem>
+                                    <SelectItem value="senior-general-manager">Senior General Manager</SelectItem>
+                                    <SelectItem value="general-manager">General Manager</SelectItem>
+                                    <SelectItem value="regional-sales-manager">Regional Sales Manager</SelectItem>
+                                    <SelectItem value="area-sales-manager">Area Sales Manager</SelectItem>
+                                    <SelectItem value="senior-manager">Senior Manager</SelectItem>
                                     <SelectItem value="manager">Manager</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
+                                    <SelectItem value="assistant-manager">Assistant Manager</SelectItem>
+                                    <SelectItem value="senior-executive">Senior Executive</SelectItem>
+                                    <SelectItem value="executive">Executive</SelectItem>
+                                    <SelectItem value="junior-executive">Junior Executive</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-region">Region</Label>
+                                  <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {regions.map(region => (
+                                        <SelectItem key={region} value={region}>{region}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-area">Area</Label>
+                                  <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {areas.map(area => (
+                                        <SelectItem key={area} value={area}>{area}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
 
                               <div className="flex space-x-2 pt-4">
@@ -537,7 +649,7 @@ export default function UsersManagement({ adminUser }: Props) {
                         </Dialog>
 
                         {/* Delete Dialog - Conditional Rendering */}
-                        {user.id !== adminUser.id && ( // Only show delete button if not the current admin
+                        {user.id !== adminUser.id && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
@@ -555,7 +667,7 @@ export default function UsersManagement({ adminUser }: Props) {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDeleteUser(user.id, user.workosUserId)} // Pass workosUserId
+                                  onClick={() => handleDeleteUser(user.id, user.workosUserId)}
                                   className="bg-red-600 hover:bg-red-700"
                                 >
                                   Delete

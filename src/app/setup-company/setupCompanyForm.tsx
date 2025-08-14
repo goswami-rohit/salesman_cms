@@ -1,14 +1,34 @@
-// src/app/setup-company/SetupCompanyForm.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+// Define the valid regions and areas
+const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
+const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
 
 export default function SetupCompanyForm() {
   const [companyName, setCompanyName] = useState('');
   const [officeAddress, setOfficeAddress] = useState('');
   const [isHeadOffice, setIsHeadOffice] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
+  // New state for region and area
+  const [region, setRegion] = useState<string>(regions[0]);
+  const [area, setArea] = useState<string>(areas[0]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,6 +60,9 @@ export default function SetupCompanyForm() {
           officeAddress,
           isHeadOffice,
           phoneNumber,
+          // Include new fields in the request body
+          region,
+          area,
         }),
       });
 
@@ -64,77 +87,97 @@ export default function SetupCompanyForm() {
           Set Up Your Company Profile
         </h1>
         <p className="text-muted-foreground text-center mb-6">
-          Please provide your company's initial details.
+          Please provide your company's initial details. The first user will be
+          created with the role of "senior-manager".
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="companyName" className="block text-sm font-medium text-foreground">
-              Company Name
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="companyName">Company Name</Label>
+            <Input
               ref={companyNameRef}
-              type="text"
               id="companyName"
+              type="text"
               name="companyName"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               required
-              autoFocus
-              className="mt-1 block w-full px-3 py-2 bg-input border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-border sm:text-sm text-foreground placeholder:text-muted-foreground"
               placeholder="e.g., Acme Corp."
+              autoFocus
             />
           </div>
-          <div>
-            <label htmlFor="officeAddress" className="block text-sm font-medium text-foreground">
-              Office Address
-            </label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="officeAddress">Office Address</Label>
+            <Textarea
               id="officeAddress"
               name="officeAddress"
               value={officeAddress}
               onChange={(e) => setOfficeAddress(e.target.value)}
               required
               rows={3}
-              className="mt-1 block w-full px-3 py-2 bg-input border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-border sm:text-sm text-foreground placeholder:text-muted-foreground"
               placeholder="Full street address, city, state, zip/postal code"
             />
           </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
+          <div className="flex items-center space-x-2">
+            <Checkbox
               id="isHeadOffice"
-              name="isHeadOffice"
               checked={isHeadOffice}
-              onChange={(e) => setIsHeadOffice(e.target.checked)}
-              className="h-4 w-4 text-primary focus:ring-ring border-border rounded"
+              onCheckedChange={(checked) => setIsHeadOffice(!!checked)}
             />
-            <label htmlFor="isHeadOffice" className="ml-2 block text-sm text-foreground">
+            <Label htmlFor="isHeadOffice" className="text-sm">
               Check If Head Office
-            </label>
+            </Label>
           </div>
-          <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-foreground">
-              Phone Number
-            </label>
-            <input
-              type="tel"
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
               id="phoneNumber"
+              type="tel"
               name="phoneNumber"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               required
-              className="mt-1 block w-full px-3 py-2 bg-input border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-border sm:text-sm text-foreground placeholder:text-muted-foreground"
               placeholder="1234567890"
             />
           </div>
+          {/* New shadcn/ui Select components for Region and Area */}
+          <div className="space-y-2">
+            <Label htmlFor="region">Region</Label>
+            <Select onValueChange={setRegion} value={region}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a region" />
+              </SelectTrigger>
+              <SelectContent>
+                {regions.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="area">Area</Label>
+            <Select onValueChange={setArea} value={area}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an area" />
+              </SelectTrigger>
+              <SelectContent>
+                {areas.map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 transition-opacity"
+            className="w-full"
           >
             {loading ? 'Setting up...' : 'Save Company Profile'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

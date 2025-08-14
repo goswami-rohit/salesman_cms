@@ -3,6 +3,17 @@ import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthClaims, generateAndStreamCsv } from '@/lib/download-utils';
 
+const allowedRoles = [
+  'president',
+  'senior-general-manager',
+  'general-manager',
+  'regional-sales-manager',
+  'area-sales-manager',
+  'senior-manager',
+  'manager',
+  'assistant-manager',
+];
+
 // Helper function to mock XLSX generation. In a real application, you would use a library like 'exceljs' or 'xlsx'.
 const generateAndStreamXlsx = (data: string[][], filename: string) => {
   // This is a placeholder. A real implementation would convert the data to an XLSX file buffer.
@@ -26,7 +37,7 @@ const formatTableDataForCsv = (data: any[]) => {
   if (!data || data.length === 0) {
     return [[], []]; // Return empty headers and data
   }
-  
+
   const headers = Object.keys(data[0]);
 
   const rows = data.map(row => headers.map(header => {
@@ -71,32 +82,98 @@ const formatTableDataForCsv = (data: any[]) => {
 async function getDailyVisitReportsForCsv(companyId: number) {
   const reports = await prisma.dailyVisitReport.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { email: true } } },
+    // Select the necessary fields and include the 'user' relation to get the name.
+    select: {
+      reportDate: true,
+      dealerType: true,
+      dealerName: true,
+      subDealerName: true,
+      location: true,
+      visitType: true,
+      todayOrderMt: true,
+      todayCollectionRupees: true,
+      feedbacks: true,
+      // Here, we select the user's name instead of their ID.
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
-  return formatTableDataForCsv(reports);
+
+  // Now, we need to transform the data to match the new structure before
+  // sending it to the CSV formatting function.
+  const formattedReports = reports.map(report => ({
+    ...report,
+    // Replace the 'user' object with a simple 'salesmanName' field.
+    salesmanName: `${report.user.firstName} ${report.user.lastName}`,
+  }));
+
+  // We pass the new, cleaner data structure to the formatter.
+  return formatTableDataForCsv(formattedReports);
 }
 
 async function getTechnicalVisitReportsForCsv(companyId: number) {
   const reports = await prisma.technicalVisitReport.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { email: true } } },
+    // Select the necessary fields for the report and the user's name parts.
+    select: {
+      reportDate: true,
+      visitType: true,
+      siteNameConcernedPerson: true,
+      phoneNo: true,
+      emailId: true,
+      clientsRemarks: true,
+      salespersonRemarks: true,
+      checkInTime: true,
+      checkOutTime: true,
+      inTimeImageUrl: true,
+      outTimeImageUrl: true,
+      // Select both the first and last name from the related User model.
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
-  return formatTableDataForCsv(reports);
+
+  // Now, we transform the data to create a 'salesmanName' field
+  // before sending it to the CSV formatting function.
+  const formattedReports = reports.map(report => ({
+    ...report,
+    // Combine the first and last name to create a single 'salesmanName' field.
+    salesmanName: `${report.user.firstName} ${report.user.lastName}`,
+  }));
+
+  // The formatter will now receive the cleaner, more readable data.
+  return formatTableDataForCsv(formattedReports);
 }
 
 async function getPermanentJourneyPlansForCsv(companyId: number) {
   const plans = await prisma.permanentJourneyPlan.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { firstName: true, lastName: true, email: true } } },
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      }
+    },
     orderBy: { createdAt: 'desc' },
   });
   const headers = [
-    "ID", "Area to be Visited", "User Name", "User Email", "Plan Date", "Description", "Status", "Created At", "Updated At"
+    "Area to be Visited", "Salesman Name", "User Email", "Plan Date", "Description", "Status", "Created At", "Updated At"
   ];
   const dataForCsv = plans.map(plan => [
-    plan.id,
+    // plan.id,
     plan.areaToBeVisited,
     `${plan.user?.firstName || ''} ${plan.user?.lastName || ''}`.trim(),
     plan.user?.email || '',
@@ -112,27 +189,54 @@ async function getPermanentJourneyPlansForCsv(companyId: number) {
 async function getDealersForCsv(companyId: number) {
   const dealers = await prisma.dealer.findMany({
     where: { user: { companyId: companyId } },
+    // Include the user to get their name
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
-  
-  return formatTableDataForCsv(dealers);
+
+  // Map the results to create a salesmanName field
+  const formattedDealers = dealers.map(dealer => ({
+    ...dealer,
+    salesmanName: `${dealer.user?.firstName || ''} ${dealer.user?.lastName || ''}`.trim(),
+  }));
+
+  // Remove the user object before formatting
+  const cleanedDealers = formattedDealers.map(({ user, ...rest }) => rest);
+
+  return formatTableDataForCsv(cleanedDealers);
 }
 
 async function getSalesmanAttendanceForCsv(companyId: number) {
   const attendance = await prisma.salesmanAttendance.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { email: true } } },
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      }
+    },
     orderBy: { createdAt: 'desc' },
   });
   const headers = [
-    "ID", "User Email", "Attendance Date", "Location Name", "In Time", "Out Time",
+    "Salesman Name", "User Email", "Attendance Date", "Location Name", "In Time", "Out Time",
     "In Time Image Captured", "Out Time Image Captured", "In Time Image URL", "Out Time Image URL",
     "In Time Latitude", "In Time Longitude", "In Time Accuracy", "In Time Speed", "In Time Heading",
     "In Time Altitude", "Out Time Latitude", "Out Time Longitude", "Out Time Accuracy", "Out Time Speed",
     "Out Time Heading", "Out Time Altitude", "Created At", "Updated At"
   ];
   const dataForCsv = attendance.map(att => [
-    att.id,
+    //att.id,
+    `${att.user?.firstName || ''} ${att.user?.lastName || ''}`.trim(),
     att.user?.email || '',
     att.attendanceDate.toISOString(),
     att.locationName,
@@ -163,44 +267,112 @@ async function getSalesmanAttendanceForCsv(companyId: number) {
 async function getSalesmanLeaveApplicationsForCsv(companyId: number) {
   const leaves = await prisma.salesmanLeaveApplication.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { email: true } } },
+    // Include the user to get their name and email
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        }
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
-  return formatTableDataForCsv(leaves);
+
+  // Map the results to create a salesmanName field
+  const formattedLeaves = leaves.map(leave => ({
+    ...leave,
+    salesmanName: `${leave.user?.firstName || ''} ${leave.user?.lastName || ''}`.trim(),
+    salesmanEmail: leave.user?.email || '',
+  }));
+
+  // Remove the user object before formatting
+  const cleanedLeaves = formattedLeaves.map(({ user, ...rest }) => rest);
+
+  return formatTableDataForCsv(cleanedLeaves);
 }
 
 async function getClientReportsForCsv(companyId: number) {
   const reports = await prisma.clientReport.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { email: true } } },
+    // Include the user to get their name and email
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        }
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
-  return formatTableDataForCsv(reports);
+
+  // Map the results to create a salesmanName field
+  const formattedReports = reports.map(report => ({
+    ...report,
+    salesmanName: `${report.user?.firstName || ''} ${report.user?.lastName || ''}`.trim(),
+    salesmanEmail: report.user?.email || '',
+  }));
+
+  // Remove the user object before formatting
+  const cleanedReports = formattedReports.map(({ user, ...rest }) => rest);
+
+  return formatTableDataForCsv(cleanedReports);
 }
 
 async function getCompetitionReportsForCsv(companyId: number) {
   const reports = await prisma.competitionReport.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { email: true } } },
+    // Include the user to get their name and email
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        }
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
-  return formatTableDataForCsv(reports);
+
+  // Map the results to create a salesmanName field
+  const formattedReports = reports.map(report => ({
+    ...report,
+    salesmanName: `${report.user?.firstName || ''} ${report.user?.lastName || ''}`.trim(),
+    salesmanEmail: report.user?.email || '',
+  }));
+
+  // Remove the user object before formatting
+  const cleanedReports = formattedReports.map(({ user, ...rest }) => rest);
+
+  return formatTableDataForCsv(cleanedReports);
 }
 
 async function getGeoTrackingForCsv(companyId: number) {
   const tracking = await prisma.geoTracking.findMany({
     where: { user: { companyId: companyId } },
-    include: { user: { select: { email: true } } },
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      }
+    },
     orderBy: { recordedAt: 'desc' },
   });
   const headers = [
-    "ID", "User Email", "Latitude", "Longitude", "Recorded At", "Accuracy", "Speed", "Heading", "Altitude",
+    "Salesman Name", "User Email", "Latitude", "Longitude", "Recorded At", "Accuracy", "Speed", "Heading", "Altitude",
     "Location Type", "Activity Type", "App State", "Battery Level", "Is Charging", "Network Status",
     "IP Address", "Site Name", "Check In Time", "Check Out Time", "Total Distance Travelled",
     "Created At", "Updated At"
   ];
   const dataForCsv = tracking.map(record => [
-    record.id,
+    //record.id,
     record.user?.email || '',
     record.latitude.toNumber().toString(),
     record.longitude.toNumber().toString(),
@@ -230,20 +402,23 @@ async function getDailyTasksForCsv(companyId: number) {
   const tasks = await prisma.dailyTask.findMany({
     where: { user: { companyId: companyId } },
     include: {
-      user: { select: { email: true } },
-      assignedBy: { select: { email: true } },
+      user: { select: { firstName: true, lastName: true, email: true } },
+      assignedBy: { select: { firstName: true, lastName: true, email: true } },
       relatedDealer: { select: { name: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
 
   const headers = [
-    "ID", "Assigned To (Email)", "Assigned By (Email)", "Task Date", "Visit Type", "Related Dealer",
-    "Site Name", "Description", "Status", "PJP Plan ID", "Created At", "Updated At"
+    "Assigned To (Name)", "Assigned To (Email)", "Assigned By (Name)", "Assigned By (Email)",
+    "Task Date", "Visit Type", "Related Dealer", "Site Name", "Description", "Status",
+    "PJP Plan ID", "Created At", "Updated At"
   ];
   const dataForCsv = tasks.map(task => [
-    task.id,
+    //task.id,
+    `${task.user?.firstName || ''} ${task.user?.lastName || ''}`.trim(),
     task.user?.email || '',
+    `${task.assignedBy?.firstName || ''} ${task.assignedBy?.lastName || ''}`.trim(),
     task.assignedBy?.email || '',
     task.taskDate.toISOString(),
     task.visitType,
@@ -258,30 +433,30 @@ async function getDailyTasksForCsv(companyId: number) {
   return [headers, ...dataForCsv];
 }
 
-async function getPjpEntriesForCsv(companyId: number) {
-  const entries = await prisma.dailyTask.findMany({
-    where: { user: { companyId: companyId }, pjpId: { not: null } },
-    include: {
-      permanentJourneyPlan: { select: { id: true, areaToBeVisited: true, planDate: true } },
-      relatedDealer: { select: { name: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-  const headers = [
-    "Task ID", "PJP Plan ID", "PJP Plan Area", "PJP Plan Date", "Dealer Name", "Visit Type", "Status", "Created At"
-  ];
-  const dataForCsv = entries.map(entry => [
-    entry.id,
-    entry.pjpId || '',
-    entry.permanentJourneyPlan?.areaToBeVisited || '',
-    entry.permanentJourneyPlan?.planDate.toISOString() || '',
-    entry.relatedDealer?.name || '',
-    entry.visitType,
-    entry.status,
-    entry.createdAt.toISOString(),
-  ]);
-  return [headers, ...dataForCsv];
-}
+// async function getPjpEntriesForCsv(companyId: number) {
+//   const entries = await prisma.dailyTask.findMany({
+//     where: { user: { companyId: companyId }, pjpId: { not: null } },
+//     include: {
+//       permanentJourneyPlan: { select: { id: true, areaToBeVisited: true, planDate: true } },
+//       relatedDealer: { select: { name: true } },
+//     },
+//     orderBy: { createdAt: 'desc' },
+//   });
+//   const headers = [
+//     "Task ID", "PJP Plan ID", "PJP Plan Area", "PJP Plan Date", "Dealer Name", "Visit Type", "Status", "Created At"
+//   ];
+//   const dataForCsv = entries.map(entry => [
+//     entry.id,
+//     entry.pjpId || '',
+//     entry.permanentJourneyPlan?.areaToBeVisited || '',
+//     entry.permanentJourneyPlan?.planDate.toISOString() || '',
+//     entry.relatedDealer?.name || '',
+//     entry.visitType,
+//     entry.status,
+//     entry.createdAt.toISOString(),
+//   ]);
+//   return [headers, ...dataForCsv];
+// }
 
 
 export async function GET(request: NextRequest) {
@@ -294,8 +469,9 @@ export async function GET(request: NextRequest) {
       include: { company: true }
     });
 
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    // 3. Role-based Authorization
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: `Forbidden: Only the following roles can delete dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -350,14 +526,14 @@ export async function GET(request: NextRequest) {
         csvData = await getDailyTasksForCsv(currentUser.companyId);
         filename = `daily-tasks-${Date.now()}`;
         break;
-      case 'pjpEntries':
-        csvData = await getPjpEntriesForCsv(currentUser.companyId);
-        filename = `pjp-entries-${Date.now()}`;
-        break;
+      // case 'pjpEntries':
+      //   csvData = await getPjpEntriesForCsv(currentUser.companyId);
+      //   filename = `pjp-entries-${Date.now()}`;
+      //   break;
       default:
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });
     }
-    
+
     if (format === 'csv') {
       return generateAndStreamCsv(csvData, `${filename}.csv`);
     } else if (format === 'xlsx') {

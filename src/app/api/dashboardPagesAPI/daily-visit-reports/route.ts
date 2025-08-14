@@ -8,6 +8,7 @@ import { z } from 'zod'; // Import Zod for schema validation
 const dailyVisitReportSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
+  role: z.string(),
   reportDate: z.string(), // YYYY-MM-DD string
   dealerType: z.string(),
   dealerName: z.string().nullable(),
@@ -32,6 +33,11 @@ const dailyVisitReportSchema = z.object({
   outTimeImageUrl: z.string().nullable(),
 });
 
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive', 'executive','junior-executive'];
+
 export async function GET() {
   try {
     const claims = await getTokenClaims();
@@ -47,16 +53,16 @@ export async function GET() {
       select: { id: true, role: true, companyId: true } // Select only necessary fields
     });
 
-    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    // --- UPDATED ROLE-BASED AUTHORIZATION ---
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
-    
+
     // 4. Fetch Daily Visit Reports for the current user's company
     const dailyVisitReports = await prisma.dailyVisitReport.findMany({
       where: {
         user: { // Filter reports by the company of the user who created them
-           companyId: currentUser.companyId,         
+          companyId: currentUser.companyId,
         },
       },
       include: {
@@ -65,6 +71,7 @@ export async function GET() {
             firstName: true,
             lastName: true,
             email: true,
+            role: true,
           },
         },
       },
@@ -76,10 +83,11 @@ export async function GET() {
     // 5. Format the data to match the frontend's expected structure and validate
     const formattedReports = dailyVisitReports.map(report => {
       const salesmanName = `${report.user.firstName || ''} ${report.user.lastName || ''}`.trim() || report.user.email;
-      
+
       return {
         id: report.id,
         salesmanName: salesmanName,
+        role: report.user.role,
         reportDate: report.reportDate.toISOString().split('T')[0], // YYYY-MM-DD
         dealerType: report.dealerType,
         dealerName: report.dealerName,

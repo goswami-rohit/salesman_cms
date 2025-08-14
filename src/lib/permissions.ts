@@ -1,5 +1,16 @@
 // src/lib/permissions.ts
-export type WorkOSRole = 'admin' | 'manager' | 'staff';
+export type WorkOSRole =
+  | 'president'
+  | 'senior-general-manager'
+  | 'general-manager'
+  | 'regional-sales-manager'
+  | 'area-sales-manager'
+  | 'senior-manager'
+  | 'manager'
+  | 'assistant-manager'
+  | 'senior-executive'
+  | 'executive'
+  | 'junior-executive';
 
 export interface DashboardPermissions {
   // Home section
@@ -9,6 +20,7 @@ export interface DashboardPermissions {
   
   // Business Dashboard section
   dashboard: boolean;
+  teamOverview: boolean;
   users: boolean;
   assignTasks: boolean;
   addDealers: boolean;
@@ -29,14 +41,13 @@ export interface DashboardPermissions {
 }
 
 export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> = {
-  admin: {
-    // Home - full access
+  // Executive Roles
+  president: {
     home: true,
     cemtemChat: true,
     downloadReports: true,
-    
-    // Business Dashboard - full access
     dashboard: true,
+    teamOverview: true,
     users: true,
     assignTasks: true,
     addDealers: true,
@@ -49,20 +60,174 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    
-    // Account - full access
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+  'senior-general-manager': {
+    home: true,
+    cemtemChat: true,
+    downloadReports: true,
+    dashboard: true,
+    teamOverview: true,
+    users: true,
+    assignTasks: true,
+    addDealers: true,
+    salesmanAttendance: true,
+    salesmanLeaves: true,
+    salesmanGeotracking: true,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: true,
+    competitionReports: true,
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+  'general-manager': {
+    home: true,
+    cemtemChat: true,
+    downloadReports: true,
+    dashboard: true,
+    teamOverview: true,
+    users: true,
+    assignTasks: true,
+    addDealers: true,
+    salesmanAttendance: true,
+    salesmanLeaves: true,
+    salesmanGeotracking: true,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: true,
+    competitionReports: true,
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+
+  // Managerial Roles
+  'regional-sales-manager': {
+    home: true,
+    cemtemChat: true,
+    downloadReports: true,
+    dashboard: true,
+    teamOverview: true,
+    users: true,
+    assignTasks: true,
+    addDealers: true,
+    salesmanAttendance: true,
+    salesmanLeaves: true,
+    salesmanGeotracking: true,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: false, // Not a sales-focused role
+    competitionReports: true,
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+  'area-sales-manager': {
+    home: true,
+    cemtemChat: true,
+    downloadReports: true,
+    dashboard: true,
+    teamOverview: true,
+    users: false,
+    assignTasks: true,
+    addDealers: true,
+    salesmanAttendance: true,
+    salesmanLeaves: true,
+    salesmanGeotracking: true,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: false,
+    competitionReports: true,
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+  'senior-manager': {     //Default role assigned when company is created(has all permissions)
+    home: true,
+    cemtemChat: true,
+    downloadReports: true,
+    dashboard: true,
+    teamOverview: true,
+    users: true,
+    assignTasks: true,
+    addDealers: false,
+    salesmanAttendance: true,
+    salesmanLeaves: true,
+    salesmanGeotracking: true,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: true,
+    competitionReports: true,
     account: true,
     settings: true,
     raiseAQuery: true,
   },
   manager: {
-    // Home - full access
     home: true,
     cemtemChat: true,
     downloadReports: true,
-    
-    // Business Dashboard - all except users and tasks
     dashboard: true,
+    teamOverview: true,
+    users: true,
+    assignTasks: true,
+    addDealers: false, // Managers can't add dealers directly
+    salesmanAttendance: true,
+    salesmanLeaves: true,
+    salesmanGeotracking: true,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: true,
+    competitionReports: true,
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+  'assistant-manager': {
+    home: true,
+    cemtemChat: true,
+    downloadReports: true,
+    dashboard: true,
+    teamOverview: true,
+    users: true,
+    assignTasks: true,
+    addDealers: false,
+    salesmanAttendance: true,
+    salesmanLeaves: true,
+    salesmanGeotracking: true,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: true,
+    competitionReports: true,
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+
+  // Executive Staff Roles
+  'senior-executive': {
+    home: true,
+    cemtemChat: true,
+    downloadReports: false,
+    dashboard: true,
+    teamOverview: true,
     users: false,
     assignTasks: false,
     addDealers: false,
@@ -74,35 +239,51 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     clientReports: true,
     dealerReports: true,
     technicalVisitReports: true,
-    competitionReports: true,
-    
-    // Account - full access
+    competitionReports: false,
     account: true,
     settings: true,
     raiseAQuery: true,
   },
-  staff: {
-    // Home - no download reports
+  executive: {
     home: true,
     cemtemChat: true,
     downloadReports: false,
-    
-    // Business Dashboard - limited access
     dashboard: true,
+    teamOverview: false,
     users: false,
     assignTasks: false,
     addDealers: false,
     salesmanAttendance: true,
     salesmanLeaves: true,
-    salesmanGeotracking: false,  // No access
+    salesmanGeotracking: false,
+    dailyVisitReports: true,
+    permanentJourneyPlan: true,
+    clientReports: true,
+    dealerReports: true,
+    technicalVisitReports: false,
+    competitionReports: false,
+    account: true,
+    settings: true,
+    raiseAQuery: true,
+  },
+  'junior-executive': {
+    home: true,
+    cemtemChat: true,
+    downloadReports: false,
+    dashboard: true,
+    teamOverview: false,
+    users: false,
+    assignTasks: false,
+    addDealers: false,
+    salesmanAttendance: false,
+    salesmanLeaves: false,
+    salesmanGeotracking: false,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
     clientReports: true,
     dealerReports: true,
     technicalVisitReports: true,
-    competitionReports: false,  // No access
-    
-    // Account - full access
+    competitionReports: false,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -114,5 +295,5 @@ export function hasPermission(role: WorkOSRole, feature: keyof DashboardPermissi
 }
 
 export function getUserPermissions(role: WorkOSRole): DashboardPermissions {
-  return WORKOS_ROLE_PERMISSIONS[role] || WORKOS_ROLE_PERMISSIONS.staff;
+  return WORKOS_ROLE_PERMISSIONS[role] || WORKOS_ROLE_PERMISSIONS['junior-executive'];
 }

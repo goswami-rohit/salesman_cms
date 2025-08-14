@@ -94,6 +94,9 @@ export default function AddDealersPage() {
     const [brandSelling, setBrandSelling] = useState<string[]>([]);
     const [feedbacks, setFeedbacks] = useState<string>('');
     const [remarks, setRemarks] = useState<string>('');
+    // --- State for Delete Confirmation Dialog ---
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [dealerToDeleteId, setDealerToDeleteId] = useState<string | null>(null);
 
     // Dropdown Options (Hardcoded as per request)
     const dealerTypes = ["Dealer-Best", "Sub Dealer-Best", "Dealer-Non Best", "Sub Dealer-Non Best"];
@@ -199,6 +202,30 @@ export default function AddDealersPage() {
         }
     };
 
+    // --- Delete Handler ---
+    const handleDelete = async () => {
+        if (!dealerToDeleteId) return;
+
+        try {
+            const response = await fetch(`${apiURI}?id=${dealerToDeleteId}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || errorData.error || "Failed to delete dealer.");
+            }
+
+            toast.success("Dealer deleted successfully!");
+            setIsDeleteDialogOpen(false);
+            setDealerToDeleteId(null);
+            fetchDealers(); // Re-fetch the dealers to update the table
+        } catch (e: any) {
+            console.error("Error deleting dealer:", e);
+            toast.error(e.message || "An unexpected error occurred.");
+        }
+    };
+
     // Helper to find and display form errors
     const findFormError = (path: string) => {
         return formErrors.find(error => error.path[0] === path)?.message;
@@ -216,6 +243,22 @@ export default function AddDealersPage() {
         { accessorKey: 'bestPotential', header: 'Best Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
         { accessorKey: 'brandSelling', header: 'Brands', cell: info => (info.getValue() as string[]).join(', ') },
         { accessorKey: 'createdAt', header: 'Added On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
+        {
+            id: 'actions',
+            header: 'Actions',
+            cell: ({ row }) => (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        setDealerToDeleteId(row.original.id);
+                        setIsDeleteDialogOpen(true);
+                    }}
+                >
+                    Delete
+                </Button>
+            ),
+        },
     ];
 
     return (
@@ -470,6 +513,25 @@ export default function AddDealersPage() {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Are you absolutely sure?</DialogTitle>
+                        <DialogDescription>
+                            This action cannot be undone. This will permanently delete the dealer record.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

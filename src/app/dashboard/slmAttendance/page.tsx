@@ -2,8 +2,6 @@
 'use client';
 
 import * as React from 'react';
-// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,7 +10,7 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconCheck, IconX, IconDownload, IconExternalLink } from '@tabler/icons-react';
+import { IconDotsVertical, IconCheck, IconX, IconDownload, IconExternalLink, IconCalendar } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import {
   Pagination,
@@ -35,6 +33,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
+import { format, addDays } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from '@/lib/utils';
 
 // --- 1. Define Zod Schema for Salesman Attendance Report Data ---
 const salesmanAttendanceReportSchema = z.object({
@@ -75,26 +78,22 @@ export default function SlmAttendancePage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedReport, setSelectedReport] = React.useState<SalesmanAttendanceReport | null>(null);
-
-  // React.useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login');
-  //     }
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard');
-  //     }
-  //   }
-  //   checkAuth();
-  // }, []);
-
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   // --- Data Fetching Logic ---
   const fetchAttendanceReports = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-attendance`);
+      const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-attendance`);
+      if (dateRange?.from) {
+        url.searchParams.append('startDate', format(dateRange.from, 'yyyy-MM-dd'));
+      }
+      if (dateRange?.to) {
+        url.searchParams.append('endDate', format(dateRange.to, 'yyyy-MM-dd'));
+      }
+
+      const response = await fetch(url.toString());
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -118,7 +117,7 @@ export default function SlmAttendancePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   React.useEffect(() => {
     fetchAttendanceReports();
@@ -166,12 +165,32 @@ export default function SlmAttendancePage() {
   // --- 3. Define Columns for Salesman Attendance DataTable ---
   const salesmanAttendanceColumns: ColumnDef<SalesmanAttendanceReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
-    { accessorKey: "date", header: "Date" },
-    { accessorKey: "location", header: "Location",
+    {
+      accessorKey: 'date',
+      header: 'Report Date',
+      // Note: The `date` from the API is only a YYYY-MM-DD string, so the time will be 00:00:00.
+      cell: ({ row }) => {
+        const date = new Date(row.original.date);
+        const formattedDate = new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          // hour: 'numeric',
+          // minute: '2-digit',
+          // second: '2-digit',
+          hour12: true,
+          timeZone: 'Asia/Kolkata'
+        }).format(date);
+        return <div>{formattedDate}</div>;
+      },
+    },
+    {
+      accessorKey: "location", header: "Location",
       cell: ({ row }) => <span className="max-w-[250px] truncate block">{row.original.location}</span>,
     },
     { accessorKey: "inTime", header: "In Time" },
-    { accessorKey: "outTime", header: "Out Time",
+    {
+      accessorKey: "outTime", header: "Out Time",
       cell: ({ row }) => (
         <span>{row.original.outTime || "N/A (Still In)"}</span>
       ),
@@ -290,6 +309,47 @@ export default function SlmAttendancePage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-sm"
           />
+          {/* Date Range Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={"outline"}
+                className={cn(
+                  "w-[300px] justify-start text-left font-normal",
+                  !dateRange && "text-muted-foreground"
+                )}
+              >
+                <IconCalendar className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "LLL dd, y")} -{" "}
+                      {format(dateRange.to, "LLL dd, y")}
+                    </>
+                  ) : (
+                    format(dateRange.from, "LLL dd, y")
+                  )
+                ) : (
+                  <span>Filter by Date Range</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+          {dateRange && (
+            <Button variant="ghost" onClick={() => setDateRange(undefined)}>
+              Clear Filter
+            </Button>
+          )}
         </div>
 
         {/* Data Table Section */}

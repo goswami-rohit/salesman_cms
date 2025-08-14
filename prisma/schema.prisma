@@ -16,6 +16,8 @@ model Company {
   officeAddress        String    @map("office_address")
   isHeadOffice         Boolean   @default(true) @map("is_head_office")
   phoneNumber          String    @map("phone_number") @db.VarChar(50)
+  region               String?   @map("region")
+  area                 String?   @map("area")
   adminUserId          String    @unique @map("admin_user_id")
   createdAt            DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -33,17 +35,26 @@ model User {
   email                     String    @map("email")
   firstName                 String?   @map("first_name")
   lastName                  String?   @map("last_name")
-  role                      String    @map("role") // "admin", "manager", "staff" (for salesmen)
+  role                      String    @map("role") // Jr Exec, Exec, Sr Exec, Asst Manager, Manager, Sr Manager, etc....
   createdAt                 DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                 DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   phoneNumber               String?   @map("phone_number") @db.VarChar(50)
   company                   Company   @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   inviteToken               String?   @unique
   status                    String    @default("active") // "pending", "active", "inactive"
+  region                    String?   @map("region")
+  area                      String?   @map("area")
+
 
   // Fields for salesman app specific login (empID and emp_password)
   salesmanLoginId           String?   @unique @map("salesman_login_id")
   hashedPassword            String?   @map("hashed_password") // Stores securely hashed passwords
+
+  // --- HIERARCHY FIELDS ---
+  reportsToId               Int?      @map("reports_to_id")
+  reportsTo                 User?     @relation("ReportsToManager", fields: [reportsToId], references: [id], onDelete: SetNull)
+  reports                   User[]    @relation("ReportsToManager")
+  // -------------------------
 
   // Relationships to new tables
   dailyVisitReports         DailyVisitReport[]
@@ -166,6 +177,8 @@ model Dealer {
   subDealers   Dealer[] @relation("SubDealers")
   dailyTasks   DailyTask[] @relation("DealerDailyTasks") // NEW: Tasks related to this dealer (Named relation)
 
+  reportsAndScores DealerReportsAndScores? @relation("DealerScores")
+  
   @@index([userId], map: "idx_dealers_user_id") // Corrected duplicate index name
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
   @@map("dealers")
@@ -307,7 +320,6 @@ model GeoTracking {
   @@map("geo_tracking") // Table name in DB
 }
 
-
 // 10. DailyTask model for admin to salesman task assignment
 model DailyTask {
   id                String    @id @default(uuid()) @db.VarChar(255)
@@ -334,4 +346,23 @@ model DailyTask {
   @@index([taskDate], map: "idx_daily_tasks_task_date")
   @@index([pjpId], map: "idx_daily_tasks_pjp_id")
   @@map("daily_tasks")
+}
+
+// 11. Dealer Reports and Scores
+model DealerReportsAndScores {
+  id                      String    @id @default(cuid()) @db.VarChar(255)
+  dealerId                String    @unique @map("dealer_id") // Foreign Key to the Dealer.id, ensures one score entry per dealer
+  dealerScore             Decimal   @map("dealer_score") @db.Decimal(10, 2)
+  trustWorthinessScore    Decimal   @map("trust_worthiness_score") @db.Decimal(10, 2) // Based on timely payments
+  creditWorthinessScore   Decimal   @map("credit_worthiness_score") @db.Decimal(10, 2) // Based on payment history and collection data
+  orderHistoryScore       Decimal   @map("order_history_score") @db.Decimal(10, 2) // Based on volume and consistency of orders
+  visitFrequencyScore     Decimal   @map("visit_frequency_score") @db.Decimal(10, 2) // Based on technical and daily visits
+  lastUpdatedDate         DateTime  @map("last_updated_date") @db.Timestamptz(6) // Timestamp of the last score calculation
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relation back to the Dealer model
+  dealer Dealer @relation("DealerScores", fields: [dealerId], references: [id])
+
+  @@map("dealer_reports_and_scores")
 }

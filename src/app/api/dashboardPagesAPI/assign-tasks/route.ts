@@ -1,7 +1,7 @@
 // src/app/api/dashboardPagesAPI/assign-tasks/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
+import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 // Zod schema for validating the POST request body when assigning tasks
@@ -17,7 +17,7 @@ const assignTaskSchema = z.object({
 });
 
 // Zod schema for the GET response for daily tasks - DEFINED HERE
-const dailyTaskSchema = z.object({ // Exported for use in page.tsx
+const dailyTaskSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),
@@ -30,6 +30,20 @@ const dailyTaskSchema = z.object({ // Exported for use in page.tsx
   createdAt: z.string(),
 });
 
+// Roles allowed to assign tasks
+const allowedAssignerRoles = [
+  'senior-manager',
+  'manager',
+  'assistant-manager',
+  'senior-executive',
+];
+
+// Roles that can be assigned tasks by a manager
+const allowedAssigneeRoles = [
+  'junior-executive',
+  'executive',
+];
+
 
 export async function GET() {
   try {
@@ -40,22 +54,33 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Fetch Current User to check role and companyId
+    // 2. Fetch Current User to check role, companyId, area, and region
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
-      include: { company: true }
+      select: {
+        id: true,
+        role: true,
+        companyId: true,
+        area: true,
+        region: true,
+        company: true, // Select the entire company object here
+      },
     });
 
-    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    // 3. Role-based Authorization: Check if user's role is in the allowedAssignerRoles array
+    if (!currentUser || !allowedAssignerRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: `Forbidden: Only the following roles can assign tasks: ${allowedAssignerRoles.join(', ')}` }, { status: 403 });
     }
 
-    // 4. Fetch Salesmen (Users with role 'staff') within the same company
-    const salesmen = await prisma.user.findMany({
+    // 4. Fetch the users that can be assigned tasks (junior/executives) within the same company
+    // and matching the assigner's area and region.
+    const assignableSalesmen = await prisma.user.findMany({
       where: {
         companyId: currentUser.companyId,
-        role: 'staff', // Assuming 'staff' role for salesmen
+        role: { in: allowedAssigneeRoles }, // Only junior-executive and executive roles
+        // Filter by the current user's area and region if they exist
+        ...(currentUser.area && { area: currentUser.area }),
+        ...(currentUser.region && { region: currentUser.region }),
       },
       select: {
         id: true,
@@ -86,11 +111,13 @@ export async function GET() {
       },
     });
 
-    // 6. Fetch Daily Tasks for the current user's company
+    // 6. Fetch Daily Tasks for the current user's company and area/region
     const dailyTasks = await prisma.dailyTask.findMany({
       where: {
-        user: { // Filter tasks by the company of the salesman assigned to the task
+        user: { // Filter tasks by the company and the user's area/region
           companyId: currentUser.companyId,
+          ...(currentUser.area && { area: currentUser.area }),
+          ...(currentUser.region && { region: currentUser.region }),
         },
       },
       include: {
@@ -132,12 +159,10 @@ export async function GET() {
     // Validate formatted tasks against the schema
     const validatedTasks = z.array(dailyTaskSchema).parse(formattedTasks);
 
-    return NextResponse.json({ salesmen, dealers, tasks: validatedTasks }, { status: 200 });
+    return NextResponse.json({ salesmen: assignableSalesmen, dealers, tasks: validatedTasks }, { status: 200 });
   } catch (error) {
     console.error('Error fetching data for assign tasks form/table:', error);
     return NextResponse.json({ error: 'Failed to fetch form data or tasks' }, { status: 500 });
-  } finally {
-    //await prisma.$disconnect();
   }
 }
 
@@ -150,15 +175,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Fetch Current User to get the assignedByUserId
+    // 2. Fetch Current User to get the assignedByUserId and geographical data
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
-      select: { id: true, role: true, companyId: true }
+      select: { id: true, role: true, companyId: true, area: true, region: true }
     });
 
-    // 3. Role-based Authorization: Only 'admin' or 'manager' can assign tasks
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden: Only admins or managers can assign tasks' }, { status: 403 });
+    // 3. Role-based Authorization: Check if user's role is in the allowedAssignerRoles array
+    if (!currentUser || !allowedAssignerRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: `Forbidden: Only the following roles can assign tasks: ${allowedAssignerRoles.join(', ')}` }, { status: 403 });
     }
 
     const body = await request.json();
@@ -185,6 +210,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Related dealer should not be provided for Technical Visit.' }, { status: 400 });
     }
 
+    // 4. Validate that the assigned users are of the correct role and in the same area/region as the assigner
+    const assignedUsers = await prisma.user.findMany({
+      where: {
+        id: { in: salesmanUserIds },
+        role: { in: allowedAssigneeRoles },
+        companyId: currentUser.companyId,
+        // Filter by the current user's area and region if they exist
+        ...(currentUser.area && { area: currentUser.area }),
+        ...(currentUser.region && { region: currentUser.region }),
+      },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    if (assignedUsers.length !== salesmanUserIds.length) {
+      // Find the invalid user IDs
+      const assignedUserIdsSet = new Set(assignedUsers.map(u => u.id));
+      const invalidUserIds = salesmanUserIds.filter(id => !assignedUserIdsSet.has(id));
+      return NextResponse.json({ error: `Forbidden: The following user IDs are not valid assignees for your role and area/region: ${invalidUserIds.join(', ')}` }, { status: 403 });
+    }
 
     // Convert taskDate string to Date object
     const parsedTaskDate = new Date(taskDate);
@@ -214,7 +258,5 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error assigning tasks:', error);
     return NextResponse.json({ error: 'Failed to assign tasks', details: (error as Error).message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

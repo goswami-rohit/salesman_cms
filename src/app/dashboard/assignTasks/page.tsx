@@ -1,12 +1,9 @@
-// src/app/dashboard/assignTasks/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-//import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-//import { redirect } from 'next/navigation';
 import { z } from "zod";
 import { toast } from "sonner";
-import { ColumnDef, createColumnHelper } from '@tanstack/react-table'; // Import ColumnDef and createColumnHelper
+import { ColumnDef } from '@tanstack/react-table';
 
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
@@ -29,12 +26,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { MultiSelect } from "@/components/multi-select"; // Assuming you have a MultiSelect component
-import { Calendar } from "@/components/ui/calendar"; // Assuming you have a Calendar component
+import { MultiSelect } from "@/components/multi-select";
+import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { IconCalendar } from "@tabler/icons-react";
-import { DataTableReusable } from '@/components/data-table-reusable'; // Import DataTableReusable
+import { DataTableReusable } from '@/components/data-table-reusable';
 
 // --- Zod Schemas for Data and Form Validation ---
 
@@ -54,7 +51,7 @@ const dealerSchema = z.object({
 });
 
 // Schema for fetching daily tasks (from GET response)
-const dailyTaskSchema = z.object({ 
+const dailyTaskSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),
@@ -67,12 +64,11 @@ const dailyTaskSchema = z.object({
   createdAt: z.string(),
 });
 
-
 type Salesman = z.infer<typeof salesmanSchema>;
 type Dealer = z.infer<typeof dealerSchema>;
 type DailyTaskRecord = z.infer<typeof dailyTaskSchema>; // Type for records fetched from GET API
 
-// Schema for form submission validation
+// Schema for form submission validation - UPDATED for MultiSelect and Area/Region
 const assignTaskFormSchema = z.object({
   salesmanUserIds: z.array(z.number().int()).min(1, "Please select at least one salesman."),
   taskDate: z.date({
@@ -81,17 +77,19 @@ const assignTaskFormSchema = z.object({
   visitType: z.enum(["Client Visit", "Technical Visit"], {
     error: "Please select a visit type.",
   }),
-  relatedDealerId: z.string().uuid().optional(), // Required only for Client Visit
-  siteName: z.string().min(1, "Site name is required for Technical Visit.").optional(), // Required only for Technical Visit
+  relatedDealerIds: z.array(z.string().uuid()).optional(), // Changed to array for multi-select
+  siteName: z.string().min(1, "Site name is required for Technical Visit.").optional(),
   description: z.string().optional(),
+  area: z.string().optional(),
+  region: z.string().optional(),
 }).superRefine((data, ctx) => {
-  // Conditional validation based on visitType
+  // Conditional validation based on visitType - UPDATED for multi-select
   if (data.visitType === "Client Visit") {
-    if (!data.relatedDealerId) {
+    if (!data.relatedDealerIds || data.relatedDealerIds.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Client name is required for Client Visit.",
-        path: ['relatedDealerId'],
+        message: "At least one client is required for Client Visit.",
+        path: ['relatedDealerIds'],
       });
     }
     if (data.siteName) {
@@ -109,36 +107,42 @@ const assignTaskFormSchema = z.object({
         path: ['siteName'],
       });
     }
-    if (data.relatedDealerId) {
+    if (data.relatedDealerIds && data.relatedDealerIds.length > 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Client name should not be provided for Technical Visit.",
-        path: ['relatedDealerId'],
+        message: "Clients should not be provided for Technical Visit.",
+        path: ['relatedDealerIds'],
       });
     }
   }
 });
 
+// Hardcoded lists for Area and Region selectors
+const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
+const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
+
 export default function AssignTasksPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
   const [dealers, setDealers] = useState<Dealer[]>([]);
-  const [tasks, setTasks] = useState<DailyTaskRecord[]>([]); // State for displaying tasks in table
-  const [loading, setLoading] = useState(true); // For initial form data and tasks
+  const [tasks, setTasks] = useState<DailyTaskRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<z.ZodIssue[]>([]);
-  const [errorFetchingData, setErrorFetchingData] = useState<string | null>(null); // For fetching initial data
+  const [errorFetchingData, setErrorFetchingData] = useState<string | null>(null);
 
-  // Form State
+  // Form State - UPDATED with selectedDealers, selectedArea, and selectedRegion
   const [selectedSalesmen, setSelectedSalesmen] = useState<number[]>([]);
   const [taskDate, setTaskDate] = useState<Date | undefined>(undefined);
   const [visitType, setVisitType] = useState<"Client Visit" | "Technical Visit" | "">("");
-  const [selectedDealerId, setSelectedDealerId] = useState<string>("");
+  const [selectedDealers, setSelectedDealers] = useState<string[]>([]); // Array for multi-select
+  const [selectedArea, setSelectedArea] = useState<string>("");
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [siteName, setSiteName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
 
   const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/assign-tasks`;
-  
+
   // --- Fetch Form Data (Salesmen, Dealers) and Tasks for the Table ---
   const fetchAllData = useCallback(async () => {
     setLoading(true);
@@ -197,13 +201,16 @@ export default function AssignTasksPage() {
     setFormErrors([]); // Clear previous errors
     setIsSubmitting(true);
 
+    // UPDATED form data with new fields
     const formData = {
       salesmanUserIds: selectedSalesmen,
-      taskDate: taskDate, // Zod will expect a Date object
+      taskDate: taskDate,
       visitType: visitType,
-      relatedDealerId: visitType === "Client Visit" ? selectedDealerId : undefined,
+      relatedDealerIds: visitType === "Client Visit" ? selectedDealers : undefined,
       siteName: visitType === "Technical Visit" ? siteName : undefined,
-      description: description || undefined, // Send as undefined if empty string
+      description: description || undefined,
+      area: selectedArea || undefined,
+      region: selectedRegion || undefined,
     };
 
     const validationResult = assignTaskFormSchema.safeParse(formData);
@@ -223,7 +230,7 @@ export default function AssignTasksPage() {
         },
         body: JSON.stringify({
           ...validationResult.data,
-          taskDate: format(validationResult.data.taskDate, 'yyyy-MM-dd') // Format date for API
+          taskDate: format(validationResult.data.taskDate, 'yyyy-MM-dd')
         }),
       });
 
@@ -236,11 +243,13 @@ export default function AssignTasksPage() {
       setIsFormOpen(false); // Close modal on success
       fetchAllData(); // Re-fetch all data to update the tasks table
 
-      // Reset form state
+      // Reset form state - UPDATED
       setSelectedSalesmen([]);
       setTaskDate(undefined);
       setVisitType("");
-      setSelectedDealerId("");
+      setSelectedDealers([]);
+      setSelectedArea("");
+      setSelectedRegion("");
       setSiteName("");
       setDescription("");
 
@@ -268,7 +277,6 @@ export default function AssignTasksPage() {
     { accessorKey: 'status', header: 'Status' },
     { accessorKey: 'createdAt', header: 'Assigned On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
   ];
-
 
   if (loading) {
     return (
@@ -313,7 +321,6 @@ export default function AssignTasksPage() {
                 Salesmen <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3">
-                {/* MultiSelect component - you'll need to ensure this component is available */}
                 <MultiSelect
                   options={salesmen.map(s => ({
                     label: `${s.firstName || s.email} ${s.lastName || ''} (${s.salesmanLoginId || 'N/A'})`.trim(),
@@ -326,6 +333,48 @@ export default function AssignTasksPage() {
                 {findFormError('salesmanUserIds') && (
                   <p className="text-red-500 text-sm mt-1">{findFormError('salesmanUserIds')}</p>
                 )}
+              </div>
+            </div>
+
+            {/* Area Selector - NEW */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="area" className="text-right">
+                Area
+              </Label>
+              <div className="col-span-3">
+                <Select value={selectedArea} onValueChange={setSelectedArea}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {areas.map(area => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Region Selector - NEW */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="region" className="text-right">
+                Region
+              </Label>
+              <div className="col-span-3">
+                <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regions.map(region => (
+                      <SelectItem key={region} value={region}>
+                        {region}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -371,7 +420,7 @@ export default function AssignTasksPage() {
                 onValueChange={(value: "Client Visit" | "Technical Visit") => {
                   setVisitType(value);
                   // Reset conditional fields when type changes
-                  setSelectedDealerId("");
+                  setSelectedDealers([]);
                   setSiteName("");
                 }}
                 value={visitType}
@@ -394,24 +443,22 @@ export default function AssignTasksPage() {
             {/* Conditional Fields based on Visit Type */}
             {visitType === "Client Visit" && (
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="clientName" className="text-right">
-                  Client Name <span className="text-red-500">*</span>
+                <Label htmlFor="clients" className="text-right">
+                  Clients <span className="text-red-500">*</span>
                 </Label>
                 <div className="col-span-3">
-                  <Select value={selectedDealerId} onValueChange={setSelectedDealerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dealers.map(dealer => (
-                        <SelectItem key={dealer.id} value={dealer.id}>
-                          {dealer.name} ({dealer.type})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {findFormError('relatedDealerId') && (
-                    <p className="text-red-500 text-sm mt-1">{findFormError('relatedDealerId')}</p>
+                  {/* MultiSelect for dealers - UPDATED */}
+                  <MultiSelect
+                    options={dealers.map(dealer => ({
+                      label: `${dealer.name} (${dealer.type})`,
+                      value: dealer.id,
+                    }))}
+                    selectedValues={selectedDealers}
+                    onValueChange={setSelectedDealers}
+                    placeholder="Select clients"
+                  />
+                  {findFormError('relatedDealerIds') && (
+                    <p className="text-red-500 text-sm mt-1">{findFormError('relatedDealerIds')}</p>
                   )}
                 </div>
               </div>
@@ -469,7 +516,7 @@ export default function AssignTasksPage() {
 
       {/* Assigned Tasks Table */}
       <h2 className="text-2xl font-bold mt-10 mb-4">Assigned Tasks</h2>
-      {loading ? ( // Use the same loading state for initial fetch
+      {loading ? (
         <div className="text-center py-8">Loading tasks...</div>
       ) : errorFetchingData ? (
         <div className="text-center text-red-500 py-8">Error loading tasks: {errorFetchingData}</div>

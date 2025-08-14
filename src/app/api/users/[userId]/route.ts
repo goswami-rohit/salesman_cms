@@ -3,16 +3,28 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 
+// Define the roles that have admin-level access
+const allowedAdminRoles = [
+  'president',
+  'senior-general-manager',
+  'general-manager',
+  'regional-sales-manager',
+  'area-sales-manager',
+  'senior-manager',
+  'manager',
+  'assistant-manager',
+];
+
 // GET - Get single user
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ userId: string }> } // Made params async
+  { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = await params; // Await params first
-    
+    const { userId } = params;
+
     const claims = await getTokenClaims();
-    
+
     if (!claims || !claims.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -21,14 +33,15 @@ export async function GET(
       where: { workosUserId: claims.sub },
     });
 
-    if (!adminUser || adminUser.role !== 'admin') {
+     // Check if the user's role is in the list of allowed admin roles
+    if (!adminUser || !allowedAdminRoles.includes(adminUser.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const targetUser = await prisma.user.findFirst({
-      where: { 
-        id: parseInt(userId), // Use awaited userId
-        companyId: adminUser.companyId 
+      where: {
+        id: parseInt(userId),
+        companyId: adminUser.companyId
       }
     });
 
@@ -46,13 +59,13 @@ export async function GET(
 // PUT - Update user
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ userId: string }> } // Made params async
+  { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = await params; // Await params first
-    
+    const { userId } = params;
+
     const claims = await getTokenClaims();
-    
+
     if (!claims || !claims.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -61,19 +74,21 @@ export async function PUT(
       where: { workosUserId: claims.sub },
     });
 
-    if (!adminUser || adminUser.role !== 'admin') {
+     // Check if the user's role is in the list of allowed admin roles
+    if (!adminUser || !allowedAdminRoles.includes(adminUser.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const body = await request.json();
-    const { firstName, lastName, role, email, phoneNumber } = body;
+    // Updated to include `region` and `area`
+    const { firstName, lastName, role, email, phoneNumber, region, area } = body;
 
     // Check if email already exists for another user in the same company
     const existingUser = await prisma.user.findFirst({
       where: {
         email,
         companyId: adminUser.companyId,
-        id: { not: parseInt(userId) } // Use awaited userId
+        id: { not: parseInt(userId) }
       }
     });
 
@@ -82,9 +97,9 @@ export async function PUT(
     }
 
     const updatedUser = await prisma.user.update({
-      where: { 
-        id: parseInt(userId), // Use awaited userId
-        companyId: adminUser.companyId 
+      where: {
+        id: parseInt(userId),
+        companyId: adminUser.companyId
       },
       data: {
         firstName,
@@ -92,17 +107,20 @@ export async function PUT(
         role,
         email,
         phoneNumber,
+        // New: Added region and area to the update data
+        region,
+        area,
         updatedAt: new Date()
       }
     });
 
-    return NextResponse.json({ 
-      message: 'User updated successfully', 
-      user: updatedUser 
+    return NextResponse.json({
+      message: 'User updated successfully',
+      user: updatedUser
     });
   } catch (error: any) {
     console.error('Error updating user:', error);
-    
+
     // Handle Prisma errors
     if (error.code === 'P2002') {
       return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
@@ -110,7 +128,7 @@ export async function PUT(
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 }
@@ -118,13 +136,13 @@ export async function PUT(
 // DELETE - Delete user
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ userId: string }> } // Made params async
+  { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = await params; // Await params first
-    
+    const { userId } = params;
+
     const claims = await getTokenClaims();
-    
+
     if (!claims || !claims.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -133,12 +151,13 @@ export async function DELETE(
       where: { workosUserId: claims.sub },
     });
 
-    if (!adminUser || adminUser.role !== 'admin') {
+     // Check if the user's role is in the list of allowed admin roles
+    if (!adminUser || !allowedAdminRoles.includes(adminUser.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     // Prevent admin from deleting themselves
-    const targetUserId = parseInt(userId); // Use awaited userId
+    const targetUserId = parseInt(userId);
     if (targetUserId === adminUser.id) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     }
@@ -156,7 +175,7 @@ export async function DELETE(
     }
 
     await prisma.user.delete({
-      where: { 
+      where: {
         id: targetUserId
       }
     });
@@ -164,12 +183,12 @@ export async function DELETE(
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting user:', error);
-    
+
     // Handle Prisma errors
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
   }
 }

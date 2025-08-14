@@ -1,0 +1,114 @@
+// src/app/api/dashboardPagesAPI/team-overview/editRole/route.ts
+
+import { NextResponse, NextRequest } from 'next/server';
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+import { WorkOS } from '@workos-inc/node';
+
+// Initialize WorkOS with your API key
+const workos = new WorkOS(process.env.WORKOS_API_KEY);
+
+const allowedAdminRoles = [
+  'president',
+  'senior-general-manager',
+  'general-manager',
+  'regional-sales-manager',
+  'area-sales-manager',
+  'senior-manager',
+  'manager',
+  'assistant-manager',
+  'senior-executive',
+  'executive',
+  'junior-executive',
+];
+
+const editRoleSchema = z.object({
+  userId: z.number(),
+  newRole: z.string().refine(role => allowedAdminRoles.includes(role), {
+    message: 'Invalid role provided. Role must be one of the allowed admin roles.',
+  }),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const claims = await getTokenClaims();
+    const currentUserRole = claims?.role as string;
+    const workosOrganizationId = claims?.org_id;
+
+    // Authentication and authorization check
+    if (!claims || !claims.sub || !workosOrganizationId || !allowedAdminRoles.includes(currentUserRole)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const validatedBody = editRoleSchema.safeParse(body);
+
+    if (!validatedBody.success) {
+      console.error('Edit Role Validation Error:', validatedBody.error.format());
+      return NextResponse.json({ message: 'Invalid request body', errors: validatedBody.error.format() }, { status: 400 });
+    }
+
+    const { userId, newRole } = validatedBody.data;
+
+    // Use a transaction to ensure both the Prisma and WorkOS updates are successful.
+    const updatedUser = await prisma.$transaction(async (prisma) => {
+      // Step 1: Find the user in the database to get their WorkOS ID and the company's WorkOS ID
+      const userToUpdate = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          workosUserId: true,
+          company: {
+            select: {
+              workosOrganizationId: true,
+            },
+          },
+        },
+      });
+
+      if (!userToUpdate || !userToUpdate.workosUserId || !userToUpdate.company?.workosOrganizationId) {
+        throw new Error('User or WorkOS organization ID not found');
+      }
+
+      // Step 2: Find the organization membership ID for the user
+      // NOTE: The `listOrganizationMemberships` function is now directly on the `workos` instance.
+      const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
+        userId: userToUpdate.workosUserId,
+        organizationId: userToUpdate.company.workosOrganizationId,
+      });
+
+      const userMembership = memberships.find(
+        (membership) => membership.userId === userToUpdate.workosUserId
+      );
+
+      if (!userMembership) {
+        throw new Error('WorkOS organization membership not found for user');
+      }
+
+      // Step 3: Update the user's role in WorkOS using the membership ID
+      // The `updateOrganizationMembership` function is also now directly on the `workos` instance.
+      await workos.userManagement.updateOrganizationMembership(
+        userMembership.id,
+        { roleSlug: newRole },
+      );
+
+      // Step 4: Update the user's role in the local database
+      const prismaUpdatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { role: newRole },
+      });
+
+      return prismaUpdatedUser;
+    });
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'User not found or not in company' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Role updated successfully', user: updatedUser }, { status: 200 });
+
+  } catch (error: any) {
+    console.error('Error updating user role:', error);
+    return NextResponse.json({ error: error.message || 'Failed to update user role' }, { status: 500 });
+  }
+}

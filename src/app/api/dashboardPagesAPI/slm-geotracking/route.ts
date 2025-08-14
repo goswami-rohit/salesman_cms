@@ -33,6 +33,10 @@ const geoTrackingSchema = z.object({
   updatedAt: z.string(),
 });
 
+const allowedRoles = [
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive', 'executive'];
+
 export async function GET() {
   try {
     const claims = await getTokenClaims();
@@ -45,12 +49,12 @@ export async function GET() {
     // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
-      include: { company: true } 
+      include: { company: true }
     });
 
-    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    // --- UPDATED ROLE-BASED AUTHORIZATION ---
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
 
     // 4. Fetch GeoTracking Records for the current user's company
@@ -74,7 +78,7 @@ export async function GET() {
       take: 200,
     });
 
-     // 5. Format the data for the frontend table display
+    // 5. Format the data for the frontend table display
     const formattedReports = geotrackingReports.map(report => ({
       id: report.id,
       // Add optional chaining to prevent errors if the user object is unexpectedly null

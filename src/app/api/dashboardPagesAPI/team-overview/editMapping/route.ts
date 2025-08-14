@@ -1,0 +1,104 @@
+// src/app/api/dashboardPagesAPI/team-overview/editMapping/route.ts
+
+import { NextResponse, NextRequest } from 'next/server';
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+
+// Define the allowed roles that can perform this action
+const allowedAdminRoles = [
+  'president',
+  'senior-general-manager',
+  'general-manager',
+  'regional-sales-manager',
+  'area-sales-manager',
+  'senior-manager',
+  'manager',
+  'assistant-manager',
+];
+
+// Define a schema to validate the incoming request body
+const editMappingSchema = z.object({
+  userId: z.number(), // The ID of the user whose reportsToId is being updated
+  reportsToId: z.number().nullable(), // The ID of the new manager, or null to remove mapping
+  managesIds: z.array(z.number()).optional().default([]), // The IDs of the users this user now manages
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const claims = await getTokenClaims();
+    const currentUserRole = claims?.role as string;
+    const workosOrganizationId = claims?.org_id;
+
+    // Authentication and authorization check: ensure the user is an admin
+    if (!claims || !claims.sub || !workosOrganizationId || !allowedAdminRoles.includes(currentUserRole)) {
+      console.warn('Unauthorized attempt to update user mapping by:', claims?.sub);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const validatedBody = editMappingSchema.safeParse(body);
+
+    if (!validatedBody.success) {
+      console.error('Edit Mapping Validation Error:', validatedBody.error.format());
+      return NextResponse.json({ message: 'Invalid request body', errors: validatedBody.error.format() }, { status: 400 });
+    }
+
+    const { userId, reportsToId, managesIds } = validatedBody.data;
+
+    // Use a Prisma transaction to ensure all updates are atomic
+    await prisma.$transaction(async (tx) => {
+      // Step 1: Get the current direct reports for the user
+      const currentDirectReports = await tx.user.findMany({
+        where: {
+          reportsToId: userId
+        },
+        select: { id: true }
+      });
+      const currentDirectReportIds = currentDirectReports.map(report => report.id);
+
+      // Step 2: Users to be unmanaged (no longer in the managesIds list)
+      const usersToUnmanage = currentDirectReportIds.filter(id => !managesIds.includes(id));
+      if (usersToUnmanage.length > 0) {
+        await tx.user.updateMany({
+          where: {
+            id: { in: usersToUnmanage }
+          },
+          data: {
+            reportsToId: null
+          }
+        });
+      }
+
+      // Step 3: Update all users in the new managesIds list to report to the current user
+      if (managesIds.length > 0) {
+        await tx.user.updateMany({
+          where: {
+            id: { in: managesIds }
+          },
+          data: {
+            reportsToId: userId
+          }
+        });
+      }
+
+      // Step 4: Update the user's own reportsToId (who they report to)
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: { reportsToId: reportsToId },
+      });
+
+      return updatedUser;
+    });
+
+    console.log(`Successfully updated mapping for user ${userId}. New reportsToId: ${reportsToId}`);
+    return NextResponse.json({ message: 'Mapping updated successfully' }, { status: 200 });
+
+  } catch (error) {
+    console.error('Error updating user mapping:', error);
+    // You could check for specific Prisma errors here if needed
+    return NextResponse.json({ error: 'Failed to update user mapping' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
+}

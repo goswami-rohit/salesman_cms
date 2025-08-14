@@ -39,6 +39,7 @@ const postDealerSchema = z.object({
     remarks: z.string().nullable().optional(), // Optional field
 });
 
+const allowedRoles = ['senior-executive', 'executive', 'junior-executive'];
 
 export async function POST(request: NextRequest) {
     try {
@@ -55,9 +56,10 @@ export async function POST(request: NextRequest) {
             select: { id: true, role: true, companyId: true } // Select only necessary fields
         });
 
-        // 3. Role-based Authorization: Only 'admin' or 'manager' can add dealers
-        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-            return NextResponse.json({ error: 'Forbidden: Only admins or managers can add dealers' }, { status: 403 });
+        // --- UPDATED ROLE-BASED AUTHORIZATION ---
+        // 3. Role-based Authorization: Now allows 'sr executive', 'executive', and 'jr executive' to add dealers
+        if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+            return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
         }
 
         const body = await request.json();
@@ -166,9 +168,9 @@ export async function GET() {
             select: { id: true, role: true, companyId: true } // Select only necessary fields
         });
 
-        // 3. Role-based Authorization: Only 'admin' or 'manager' can view dealers
-        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-            return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+        // 3. Role-based Authorization: Now allows 'sr executive', 'executive', and 'jr executive' to add dealers
+        if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+            return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
         }
 
         // 4. Fetch Dealers for the current user's company
@@ -211,5 +213,63 @@ export async function GET() {
         return NextResponse.json({ error: 'Failed to fetch dealers', details: (error as Error).message }, { status: 500 });
     } finally {
         //await prisma.$disconnect(); // Disconnect Prisma client
+    }
+}
+
+// DELETE function to remove a dealer
+export async function DELETE(request: NextRequest) {
+    try {
+        const claims = await getTokenClaims();
+
+        // 1. Authentication Check
+        if (!claims || !claims.sub) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // 2. Fetch Current User to get their ID and role
+        const currentUser = await prisma.user.findUnique({
+            where: { workosUserId: claims.sub },
+            select: { id: true, role: true, companyId: true }
+        });
+
+        // 3. Role-based Authorization
+        if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+            return NextResponse.json({ error: `Forbidden: Only the following roles can delete dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
+        }
+
+        // 4. Extract dealerId from the query parameters
+        const url = new URL(request.url);
+        const dealerId = url.searchParams.get('id');
+
+        if (!dealerId) {
+            return NextResponse.json({ error: 'Missing dealer ID in request' }, { status: 400 });
+        }
+
+        // 5. Verify the dealer exists and belongs to the current user's company
+        const dealerToDelete = await prisma.dealer.findUnique({
+            where: { id: dealerId },
+            include: { user: true }
+        });
+
+        if (!dealerToDelete) {
+            return NextResponse.json({ error: 'Dealer not found' }, { status: 404 });
+        }
+
+        if (dealerToDelete.user.companyId !== currentUser.companyId) {
+            return NextResponse.json({ error: 'Forbidden: Cannot delete a dealer from another company' }, { status: 403 });
+        }
+
+        // 6. Delete the dealer from the database
+        await prisma.dealer.delete({
+            where: { id: dealerId }
+        });
+
+        return NextResponse.json({ message: 'Dealer deleted successfully' }, { status: 200 });
+
+    } catch (error) {
+        console.error('Error deleting dealer (DELETE):', error);
+        return NextResponse.json({ error: 'Failed to delete dealer', details: (error as Error).message }, { status: 500 });
+    } finally {
+        await prisma.$disconnect();
     }
 }

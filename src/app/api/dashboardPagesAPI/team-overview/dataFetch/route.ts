@@ -1,0 +1,108 @@
+// src/app/api/dashboardPagesAPI/team-overview/dataFetch/route.ts
+import { NextResponse, NextRequest } from 'next/server';
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+
+// Define the roles that are allowed to view the Team Overview page.
+// This list includes all roles except 'junior-executive' and 'executive'.
+const allowedRoles = [
+  'president',
+  'senior-general-manager',
+  'general-manager',
+  'regional-sales-manager',
+  'area-sales-manager',
+  'senior-manager',
+  'manager',
+  'assistant-manager',
+  'senior-executive',
+];
+
+export async function GET() {
+  try {
+    // 1. Get the claims from the JWT.
+    const claims = await getTokenClaims();
+
+    // 2. Authentication Check: Ensure a user is logged in.
+    if (!claims || !claims.sub) {
+      console.log('Unauthorized access: No claims or subject found.');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 3. Fetch the current user to get their role and companyId.
+    const currentUser = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      include: { company: true },
+    });
+
+    // 4. Role-Based Authorization Check: Ensure the user has the correct role.
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+      console.log(`Forbidden access: User with role '${currentUser?.role}' attempted to access team overview.`);
+      return NextResponse.json(
+        { error: `Forbidden: Only the following roles can view this page: ${allowedRoles.join(', ')}` },
+        { status: 403 }
+      );
+    }
+
+    // 5. Fetch all users within the same company as the current user.
+    // The include block is updated to use the correct relation names from your schema: 'reportsTo' and 'reports'.
+    const teamMembers = await prisma.user.findMany({
+      where: {
+        companyId: currentUser.companyId,
+      },
+      include: {
+        reportsTo: true, // Includes the manager's data
+        reports: true, // Includes the list of direct reports
+      },
+      orderBy: {
+        firstName: 'asc',
+      },
+    });
+
+    // 6. Format the data for the frontend table.
+    const formattedTeamData = teamMembers.map((member) => {
+      // Create the managedBy string from the manager's first and last name using the 'reportsTo' relation.
+      const managedBy = member.reportsTo
+        ? `${member.reportsTo.firstName || ''} ${member.reportsTo.lastName || ''}`.trim()
+        : 'none';
+
+      // Create a comma-separated string of direct report names using the 'reports' relation.
+      const manages = member.reports
+        .map((report) => `${report.firstName || ''} ${report.lastName || ''}`.trim())
+        .filter(Boolean) // Filter out any empty strings
+        .join(', ') || 'None';
+
+      // Create a structured array of objects for the popover
+      const managesReports = member.reports.map(report => ({
+        name: `${report.firstName || ''} ${report.lastName || ''}`.trim(),
+        role: report.role,
+      }));
+
+      const managesIds = member.reports.map(report => report.id);
+
+      return {
+        id: member.id,
+        name: `${member.firstName || ''} ${member.lastName || ''}`.trim(),
+        role: member.role,
+        managedBy,
+        manages,
+        managesReports,
+        managedById: member.reportsToId,
+        managesIds,
+      };
+    });
+
+    // 7. Return the formatted data.
+    return NextResponse.json(formattedTeamData, { status: 200 });
+
+  } catch (error) {
+    console.error('Error fetching team data:', error);
+    // Handle specific Prisma errors if needed, otherwise return a generic server error.
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
+}

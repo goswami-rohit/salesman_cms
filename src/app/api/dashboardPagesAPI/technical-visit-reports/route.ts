@@ -5,6 +5,11 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 
 const prisma = new PrismaClient();
 
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive', 'executive', 'junior-executive'];
+
 // GET /api/dashboardPagesAPI/technical-reports
 // Fetches all technical visit reports from the database
 export async function GET() {
@@ -22,9 +27,9 @@ export async function GET() {
       include: { company: true } // Include company to get companyId
     });
 
-    // 3. Role-based Authorization: Only 'admin' or 'manager' can access this dashboard data
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden: Requires admin or manager role' }, { status: 403 });
+    // --- UPDATED ROLE-BASED AUTHORIZATION ---
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
 
     const technicalReports = await prisma.technicalVisitReport.findMany({
@@ -33,8 +38,16 @@ export async function GET() {
           companyId: currentUser.companyId, // Filter by the admin/manager's company
         },
       },
-      include: {
-        user: true, // Include the associated User record to get salesman details
+       include: {
+        // --- CORRECTED PRISMA QUERY: Use `select` within `include` to fetch specific user fields ---
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            role: true, // Now we are correctly selecting the user's role
+            email: true,
+          },
+        },
       },
       orderBy: {
         reportDate: 'desc', // Order the results by report date in descending order
@@ -51,6 +64,7 @@ export async function GET() {
       return {
         id: report.id,
         salesmanName: salesmanName,
+        role: report.user.role,
         visitType: report.visitType,
         siteNameConcernedPerson: report.siteNameConcernedPerson,
         phoneNo: report.phoneNo,
