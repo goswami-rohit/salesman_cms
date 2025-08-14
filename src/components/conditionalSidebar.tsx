@@ -37,7 +37,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
           // Fallback user
           setCurrentUser({
             id: 0,
-            role: 'staff',
+            role: 'junior-executive',
             firstName: 'Guest',
             lastName: 'User',
             email: 'guest@example.com',
@@ -49,7 +49,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
         // Fallback user
         setCurrentUser({
           id: 0,
-          role: 'staff',
+          role: 'junior-executive',
           firstName: 'Guest',
           lastName: 'User',
           email: 'guest@example.com',
@@ -89,7 +89,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   
   return (
     <SidebarProvider>
-      <AppSidebar userRole={currentUser?.role || 'staff'} />
+      <AppSidebar userRole={currentUser?.role || 'junior-executive'} />
       <main className="flex-1 w-full">
         {children}
       </main>
