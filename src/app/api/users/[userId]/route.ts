@@ -17,6 +17,7 @@ const allowedAdminRoles = [
 
 // GET - Get single user
 export async function GET(
+  request: NextRequest,
   context: { params: { userId: string } }
 ) {
   try {
@@ -32,7 +33,7 @@ export async function GET(
       where: { workosUserId: claims.sub },
     });
 
-     // Check if the user's role is in the list of allowed admin roles
+    // Check if the user's role is in the list of allowed admin roles
     if (!adminUser || !allowedAdminRoles.includes(adminUser.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
@@ -73,7 +74,7 @@ export async function PUT(
       where: { workosUserId: claims.sub },
     });
 
-     // Check if the user's role is in the list of allowed admin roles
+    // Check if the user's role is in the list of allowed admin roles
     if (!adminUser || !allowedAdminRoles.includes(adminUser.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
@@ -134,6 +135,7 @@ export async function PUT(
 
 // DELETE - Delete user
 export async function DELETE(
+  request: NextRequest,
   context: { params: { userId: string } }
 ) {
   try {
@@ -149,7 +151,7 @@ export async function DELETE(
       where: { workosUserId: claims.sub },
     });
 
-     // Check if the user's role is in the list of allowed admin roles
+    // Check if the user's role is in the list of allowed admin roles
     if (!adminUser || !allowedAdminRoles.includes(adminUser.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
