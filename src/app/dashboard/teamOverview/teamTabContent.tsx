@@ -32,11 +32,11 @@ interface TeamMember {
 }
 
 // Define the shape of a user for the dropdowns
-interface UserDropdown {
-  id: number;
-  name: string;
-  role: string;
-}
+// interface UserDropdown {
+//   id: number;
+//   name: string;
+//   role: string;
+// }
 
 const allRoles = [
   'president',
@@ -52,14 +52,140 @@ const allRoles = [
   'junior-executive',
 ];
 
-// Helper function to get roles a user can be assigned to.
-const getAssignableRoles = (currentRole: string) => {
-  const roleIndex = allRoles.indexOf(currentRole);
-  if (roleIndex === -1) return [];
-  // Admins can assign roles that are lower in the hierarchy.
-  return allRoles.slice(roleIndex + 1);
-};
+function EditRoleCell({ row, onSaveRole }: { row: any; onSaveRole: (userId: number, newRole: string) => void }) {
+  const member = row.original;
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [newRole, setNewRole] = useState(member.role);
+  const [isSaving, setIsSaving] = useState(false);
 
+  const canEdit = true; // Replace with real logic
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onSaveRole(member.id, newRole);
+    setIsSaving(false);
+    setIsPopoverOpen(false);
+  };
+
+  return (
+    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="secondary" size="icon" disabled={!canEdit}>
+          <PencilIcon className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <h4 className="font-bold mb-2">Edit Role</h4>
+        <p className="text-sm text-gray-500">Member: {member.name}</p>
+        <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
+        <div className="space-y-2">
+          <Select value={newRole} onValueChange={setNewRole}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Assign new role" />
+            </SelectTrigger>
+            <SelectContent>
+              {allRoles.map((role) => (
+                <SelectItem key={role} value={role}>{role}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsPopoverOpen(false)} disabled={isSaving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={newRole === member.role || isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function EditMappingCell({ row, onSaveMapping, teamData }: { row: any; onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void; teamData: any[] }) {
+  const member = row.original;
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [newReportsToId, setNewReportsToId] = useState<number | null>(member.managedById);
+  const [newManagesIds, setNewManagesIds] = useState<number[]>(member.managesIds ?? []);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const seniorMembers = teamData.filter(m => allRoles.indexOf(m.role) < allRoles.indexOf(member.role));
+  const juniorMembers = teamData.filter(m => allRoles.indexOf(m.role) > allRoles.indexOf(member.role));
+  const canEdit = true;
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onSaveMapping(member.id, newReportsToId, newManagesIds ?? []);
+    setIsSaving(false);
+    setIsPopoverOpen(false);
+  };
+
+  const juniorDropdownOptions = juniorMembers.map(m => ({
+    value: m.id.toString(),
+    label: `${m.name} (${m.role})`,
+  }));
+
+  return (
+    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="secondary" size="icon" disabled={!canEdit}>
+          <UsersIcon className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <h4 className="font-bold mb-2">Edit Reporting Structure</h4>
+        <p className="text-sm text-gray-500">Member: {member.name}</p>
+        <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Is Managed By</label>
+            <Select
+              value={newReportsToId?.toString() || 'none'}
+              onValueChange={(value) => setNewReportsToId(value === 'none' ? null : Number(value))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Senior that manages this member" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {seniorMembers.map(m => (
+                  <SelectItem key={m.id} value={m.id.toString()}>{m.name} ({m.role})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Manages</label>
+          <MultiSelect
+            options={juniorDropdownOptions}
+            selectedValues={newManagesIds.map(id => id.toString())}
+            onValueChange={(selectedValues) => setNewManagesIds(selectedValues.map(Number))}
+            placeholder="Juniors that reports to this member.."
+          />
+        </div>
+
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsPopoverOpen(false)} disabled={isSaving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Helper function to get roles a user can be assigned to.
+// const getAssignableRoles = (currentRole: string) => {
+//   const roleIndex = allRoles.indexOf(currentRole);
+//   if (roleIndex === -1) return [];
+//   // Admins can assign roles that are lower in the hierarchy.
+//   return allRoles.slice(roleIndex + 1);
+// };
 
 // A function that returns the columns definition, allowing us to pass in state and handlers
 const getTeamColumns = (
@@ -102,147 +228,12 @@ const getTeamColumns = (
     {
       id: 'editRole',
       header: 'Edit Role',
-      cell: ({ row }) => {
-        const member = row.original;
-        const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-        const [newRole, setNewRole] = useState(member.role);
-        const [isSaving, setIsSaving] = useState(false);
-
-        // This should be based on the current user's role and the target member's role
-        const canEdit = true; // Placeholder for now
-
-        const handleSave = async () => {
-          setIsSaving(true);
-          await onSaveRole(member.id, newRole);
-          setIsSaving(false);
-          setIsPopoverOpen(false);
-        };
-
-        return (
-          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="secondary" size="icon" disabled={!canEdit}>
-                <PencilIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <h4 className="font-bold mb-2">Edit Role</h4>
-              <p className="text-sm text-gray-500">Member: {member.name}</p>
-              <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
-              <div className="space-y-2">
-                <Select value={newRole} onValueChange={setNewRole}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Assign new role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allRoles.map((role) => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="mt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsPopoverOpen(false)} disabled={isSaving}>Cancel</Button>
-                <Button onClick={handleSave} disabled={newRole === member.role || isSaving}>
-                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        );
-      },
+      cell: ({ row }) => <EditRoleCell row={row} onSaveRole={onSaveRole} />
     },
     {
       id: 'editMapping',
       header: 'Edit Mapping',
-      cell: ({ row }) => {
-        const member = row.original;
-        const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-        const [newReportsToId, setNewReportsToId] = useState<number | null>(member.managedById);
-        const [newManagesIds, setNewManagesIds] = useState<number[]>(member.managesIds ?? []);
-        const [isSaving, setIsSaving] = useState(false);
-
-        // Filter out the current user and their direct reports from the list of potential managers
-        const seniorMembers = teamData.filter(m => allRoles.indexOf(m.role) < allRoles.indexOf(member.role));
-
-        // Placeholder for a multi-select component for 'Manages' - currently not implemented
-        const juniorMembers = teamData.filter(m => allRoles.indexOf(m.role) > allRoles.indexOf(member.role));
-
-        // Mock logic: a user cannot manage themselves
-        const canEdit = true; //member.id !== member.managedById;
-
-        const handleSave = async () => {
-          setIsSaving(true);
-          await onSaveMapping(member.id, newReportsToId, newManagesIds ?? []);
-          setIsSaving(false);
-          setIsPopoverOpen(false);
-        };
-
-        const seniorDropdownOptions = seniorMembers.map(m => ({
-          value: m.id.toString(),
-          label: `${m.name} (${m.role})`,
-        }));
-
-        const juniorDropdownOptions = juniorMembers.map(m => ({
-          value: m.id.toString(),
-          label: `${m.name} (${m.role})`,
-        }));
-
-        return (
-          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="secondary" size="icon" disabled={!canEdit}>
-                <UsersIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <h4 className="font-bold mb-2">Edit Reporting Structure</h4>
-              <p className="text-sm text-gray-500">Member: {member.name}</p>
-              <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Is Managed By</label>
-                  <Select
-                    value={newReportsToId?.toString() || 'none'}
-                    onValueChange={(value) => setNewReportsToId(value === 'none' ? null : Number(value))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Senior that manages this member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {seniorMembers.map(m => (
-                        <SelectItem key={m.id} value={m.id.toString()}>{m.name} ({m.role})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Manages</label>
-                {/* The multi-select component for junior members */}
-                <MultiSelect
-                  options={juniorDropdownOptions}
-                  selectedValues={newManagesIds.map(id => id.toString()) || []}
-                  onValueChange={(selectedValues) => setNewManagesIds(selectedValues.map(Number))}
-                  placeholder="Juniors that reports to this member.."
-                />
-              </div>
-
-              <div className="mt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsPopoverOpen(false)} disabled={isSaving}>Cancel</Button>
-                <Button onClick={handleSave} disabled={newReportsToId === member.managedById || isSaving}>
-                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        );
-      },
+      cell: ({ row }) => <EditMappingCell row={row} onSaveMapping={onSaveMapping} teamData={teamData} />
     },
   ];
 };

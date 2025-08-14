@@ -9,7 +9,6 @@ import {
     User,
     ArrowRight,
     Bot,
-    Building2
 } from 'lucide-react';
 
 interface CustomClaims {
@@ -30,12 +29,12 @@ export default async function SignedInHomePage() {
         redirect('/');
     }
 
-    const user = {
-        id: claims.sub,
-        email: claims.email || '',
-        firstName: typeof claims.first_name === 'string' ? claims.first_name : undefined,
-        lastName: typeof claims.last_name === 'string' ? claims.last_name : undefined,
-    };
+    // const user = {
+    //     id: claims.sub,
+    //     email: claims.email || '',
+    //     firstName: typeof claims.first_name === 'string' ? claims.first_name : undefined,
+    //     lastName: typeof claims.last_name === 'string' ? claims.last_name : undefined,
+    // };
 
     return (
         <div className="min-h-screen bg-background">

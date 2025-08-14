@@ -6,7 +6,6 @@ import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -31,13 +30,6 @@ import {
 // } from "@/components/ui/toggle-group"
 
 export const description = "An interactive area chart"
-
-// We will use a placeholder chartData, but the component will now use the prop data
-// const chartData = [
-//   { date: "2024-04-01", desktop: 222, mobile: 150 },
-//   { date: "2024-04-02", desktop: 97, mobile: 180 },
-//   // ... rest of the original data
-// ];
 
 // Define a generic type for the data
 type ChartDataItem = {

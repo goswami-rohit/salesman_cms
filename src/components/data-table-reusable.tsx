@@ -32,7 +32,6 @@ import {
   IconChevronsRight,
   IconGripVertical,
   IconLayoutColumns,
-  IconDownload // Added Download Icon
 } from '@tabler/icons-react'; // Kept essential icons
 
 import {
@@ -57,10 +56,9 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem, // Added for master download options
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+//import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,

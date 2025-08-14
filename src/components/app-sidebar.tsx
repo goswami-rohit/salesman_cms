@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useEffect, useState } from "react";
 import { Building2 } from "lucide-react"
-import Link from "next/link"
 import {
   Sidebar,
   SidebarContent,
