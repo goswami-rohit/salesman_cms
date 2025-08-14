@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prism
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive', 'executive'];
+  'senior-executive'];
 
 export async function GET() {
   try {
