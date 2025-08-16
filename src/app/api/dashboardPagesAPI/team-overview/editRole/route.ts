@@ -5,6 +5,8 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { WorkOS } from '@workos-inc/node';
+// Import the new hierarchy check
+import { canAssignRole } from '@/lib/roleHierarchy';
 
 // Initialize WorkOS with your API key
 const workos = new WorkOS(process.env.WORKOS_API_KEY);
@@ -50,6 +52,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId, newRole } = validatedBody.data;
+
+    // **IMPORTANT NEW CHECK**: Validate that the current user can assign this new role
+    if (!canAssignRole(currentUserRole, newRole)) {
+      console.warn(`Unauthorized role change attempt by user ${claims.sub}: tried to set role to ${newRole}`);
+      return NextResponse.json({ error: 'Forbidden: You cannot assign this role' }, { status: 403 });
+    }
 
     // Use a transaction to ensure both the Prisma and WorkOS updates are successful.
     const updatedUser = await prisma.$transaction(async (prisma) => {

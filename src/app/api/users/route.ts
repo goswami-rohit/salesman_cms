@@ -63,7 +63,7 @@ async function sendInvitationEmailGmail({
                 <li><strong>Employee ID (Login ID):</strong> <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${salesmanLoginId}</span></li>
                 <li><strong>Temporary Password:</strong> <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${tempPassword}</span></li>
             </ul>
-            <p style="color: #d9534f; font-weight: bold;">Please change this temporary password immediately after your first login to the mobile app.</p>
+            <p style="color: #d9534f; font-weight: bold;">Please change this password after your first login to the mobile app.</p>
         ` : '';
 
     const salesmanDetailsText = salesmanLoginId && tempPassword ? `
@@ -83,8 +83,7 @@ Password: ${tempPassword}
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background-color: #0070f3; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
             .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { background-color: #0070f3; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; font-weight: bold; }
-            .button:hover { background-color: #0056b3; }
+            .button { background-color: #0070f3; color: #ffffff !important; padding: 15px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; font-weight: bold; }
             .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
             .invite-code { background-color: #e9ecef; padding: 10px; border-radius: 4px; font-family: monospace; word-break: break-all; }
         </style>
@@ -103,7 +102,8 @@ Password: ${tempPassword}
             <p>To accept this invitation and set up your account for the web application, please click the button below:</p>
 
             <div style="text-align: center;">
-                <a href="${inviteUrl}" class="button">Accept Web App Invitation & Join Team</a>
+                <a href="${inviteUrl}" class="button" style="color: #ffffff !important;">
+                Accept Web App Invitation & Join Team</a>
             </div>
 
             <p>Or copy and paste this link into your browser:</p>
@@ -115,7 +115,7 @@ Password: ${tempPassword}
             <ul>
                 <li>Click the invitation link above to set up your web app account.</li>
                 <li>Access your team dashboard.</li>
-                <li>${salesmanLoginId ? 'Use your Employee ID and Temporary Password above to log in to the Sales Team Mobile App.' : ''}</li>
+                <li>${salesmanLoginId ? 'Use your Employee ID and Password above to log in to the Sales Team Mobile App.' : ''}</li>
                 <li>Start collaborating with your team!</li>
             </ul>
 

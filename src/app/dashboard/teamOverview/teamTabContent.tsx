@@ -18,8 +18,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PencilIcon, EyeIcon, UsersIcon, Loader2 } from 'lucide-react';
 import { MultiSelect } from '@/components/multi-select';
+import { ROLE_HIERARCHY, canAssignRole } from '@/lib/roleHierarchy';
 
-// Define the shape of a team member.
 interface TeamMember {
   id: number;
   name: string;
@@ -28,70 +28,87 @@ interface TeamMember {
   manages: string;
   managedById: number | null;
   managesIds: number[];
-  managesReports: { name: string; role: string; }[];
+  managesReports: { name: string; role: string }[];
 }
 
-// Define the shape of a user for the dropdowns
-// interface UserDropdown {
-//   id: number;
-//   name: string;
-//   role: string;
-// }
+const allRoles = ROLE_HIERARCHY;
 
-const allRoles = [
-  'president',
-  'senior-general-manager',
-  'general-manager',
-  'regional-sales-manager',
-  'area-sales-manager',
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-  'senior-executive',
-  'executive',
-  'junior-executive',
-];
+/** Returns roles currentUser can assign */
+const getAssignableRoles = (currentRole?: string | null) => {
+  if (!currentRole) return [];
+  return allRoles.filter((r) => canAssignRole(currentRole, r));
+};
 
-function EditRoleCell({ row, onSaveRole }: { row: any; onSaveRole: (userId: number, newRole: string) => void }) {
-  const member = row.original;
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+function EditRoleCell({
+  row,
+  onSaveRole,
+  currentUserRole,
+}: {
+  row: any;
+  onSaveRole: (userId: number, newRole: string) => void;
+  currentUserRole: string | null;
+}) {
+  const member: TeamMember = row.original;
+  const [isOpen, setIsOpen] = useState(false);
   const [newRole, setNewRole] = useState(member.role);
   const [isSaving, setIsSaving] = useState(false);
 
-  const canEdit = true; // Replace with real logic
+  // Roles current user can assign
+  const assignableRoles = useMemo(() => getAssignableRoles(currentUserRole), [currentUserRole]);
+
+  // Roles to show in select: always include current role for valid select value
+  const rolesToShow = useMemo(() => {
+    const set = new Set<string>();
+    // current role must appear so the select shows a valid value
+    if (member.role) set.add(member.role);
+    for (const r of assignableRoles) set.add(r);
+    return Array.from(set);
+  }, [assignableRoles, member.role]);
+
+  const canEdit = (currentUserRole !== null) && assignableRoles.length > 0;
 
   const handleSave = async () => {
     setIsSaving(true);
-    await onSaveRole(member.id, newRole);
-    setIsSaving(false);
-    setIsPopoverOpen(false);
+    try {
+      await onSaveRole(member.id, newRole);
+      setIsOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="secondary" size="icon" disabled={!canEdit}>
           <PencilIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-80">
         <h4 className="font-bold mb-2">Edit Role</h4>
         <p className="text-sm text-gray-500">Member: {member.name}</p>
         <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
+
         <div className="space-y-2">
-          <Select value={newRole} onValueChange={setNewRole}>
+          <Select value={newRole} onValueChange={(v) => setNewRole(v)}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Assign new role" />
             </SelectTrigger>
             <SelectContent>
-              {allRoles.map((role) => (
-                <SelectItem key={role} value={role}>{role}</SelectItem>
+              {rolesToShow.map((role) => (
+                <SelectItem key={role} value={role}>
+                  {role}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsPopoverOpen(false)} disabled={isSaving}>Cancel</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
           <Button onClick={handleSave} disabled={newRole === member.role || isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save
@@ -102,36 +119,69 @@ function EditRoleCell({ row, onSaveRole }: { row: any; onSaveRole: (userId: numb
   );
 }
 
-function EditMappingCell({ row, onSaveMapping, teamData }: { row: any; onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void; teamData: any[] }) {
-  const member = row.original;
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+function EditMappingCell({
+  row,
+  onSaveMapping,
+  teamData,
+  currentUserRole,
+}: {
+  row: any;
+  onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void;
+  teamData: TeamMember[];
+  currentUserRole: string | null;
+}) {
+  const member: TeamMember = row.original;
+  const [isOpen, setIsOpen] = useState(false);
   const [newReportsToId, setNewReportsToId] = useState<number | null>(member.managedById);
   const [newManagesIds, setNewManagesIds] = useState<number[]>(member.managesIds ?? []);
   const [isSaving, setIsSaving] = useState(false);
 
-  const seniorMembers = teamData.filter(m => allRoles.indexOf(m.role) < allRoles.indexOf(member.role));
-  const juniorMembers = teamData.filter(m => allRoles.indexOf(m.role) > allRoles.indexOf(member.role));
-  const canEdit = true;
+  const memberIndex = allRoles.indexOf(member.role);
+
+  // manager options = people who are higher (index < memberIndex) AND current user may assign that manager role
+  const managerOptions = useMemo(() => {
+    if (!currentUserRole) return [];
+    if (memberIndex === -1) return [];
+    return teamData
+      .filter((m) => m.id !== member.id)
+      .filter((m) => {
+        const idx = allRoles.indexOf(m.role);
+        return idx !== -1 && idx < memberIndex && canAssignRole(currentUserRole, m.role);
+      })
+      .map((m) => ({ id: m.id, value: m.id.toString(), label: `${m.name} (${m.role})` }));
+  }, [teamData, memberIndex, member.id, member.role, currentUserRole]);
+
+  // junior options = people who are lower (index > memberIndex) AND current user may assign that junior role
+  const juniorOptions = useMemo(() => {
+    if (!currentUserRole) return [];
+    if (memberIndex === -1) return [];
+    return teamData
+      .filter((m) => m.id !== member.id)
+      .filter((m) => {
+        const idx = allRoles.indexOf(m.role);
+        return idx !== -1 && idx > memberIndex && canAssignRole(currentUserRole, m.role);
+      })
+      .map((m) => ({ id: m.id, value: m.id.toString(), label: `${m.name} (${m.role})` }));
+  }, [teamData, memberIndex, member.id, member.role, currentUserRole]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    await onSaveMapping(member.id, newReportsToId, newManagesIds ?? []);
-    setIsSaving(false);
-    setIsPopoverOpen(false);
+    try {
+      await onSaveMapping(member.id, newReportsToId, newManagesIds ?? []);
+      setIsOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const juniorDropdownOptions = juniorMembers.map(m => ({
-    value: m.id.toString(),
-    label: `${m.name} (${m.role})`,
-  }));
-
   return (
-    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="icon" disabled={!canEdit}>
+        <Button variant="secondary" size="icon" disabled={!currentUserRole}>
           <UsersIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-80">
         <h4 className="font-bold mb-2">Edit Reporting Structure</h4>
         <p className="text-sm text-gray-500">Member: {member.name}</p>
@@ -141,7 +191,7 @@ function EditMappingCell({ row, onSaveMapping, teamData }: { row: any; onSaveMap
           <div>
             <label className="text-sm font-medium">Is Managed By</label>
             <Select
-              value={newReportsToId?.toString() || 'none'}
+              value={newReportsToId?.toString() ?? 'none'}
               onValueChange={(value) => setNewReportsToId(value === 'none' ? null : Number(value))}
             >
               <SelectTrigger className="w-full">
@@ -149,26 +199,30 @@ function EditMappingCell({ row, onSaveMapping, teamData }: { row: any; onSaveMap
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {seniorMembers.map(m => (
-                  <SelectItem key={m.id} value={m.id.toString()}>{m.name} ({m.role})</SelectItem>
+                {managerOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        <div>
-          <label className="text-sm font-medium">Manages</label>
-          <MultiSelect
-            options={juniorDropdownOptions}
-            selectedValues={newManagesIds.map(id => id.toString())}
-            onValueChange={(selectedValues) => setNewManagesIds(selectedValues.map(Number))}
-            placeholder="Juniors that reports to this member.."
-          />
+          <div>
+            <label className="text-sm font-medium">Manages</label>
+            <MultiSelect
+              options={juniorOptions.map((o) => ({ value: o.value, label: o.label }))}
+              selectedValues={newManagesIds.map((id) => id.toString())}
+              onValueChange={(selectedValues) => setNewManagesIds(selectedValues.map(Number))}
+              placeholder="Juniors that report to this member.."
+            />
+          </div>
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsPopoverOpen(false)} disabled={isSaving}>Cancel</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save
@@ -179,19 +233,11 @@ function EditMappingCell({ row, onSaveMapping, teamData }: { row: any; onSaveMap
   );
 }
 
-// Helper function to get roles a user can be assigned to.
-// const getAssignableRoles = (currentRole: string) => {
-//   const roleIndex = allRoles.indexOf(currentRole);
-//   if (roleIndex === -1) return [];
-//   // Admins can assign roles that are lower in the hierarchy.
-//   return allRoles.slice(roleIndex + 1);
-// };
-
-// A function that returns the columns definition, allowing us to pass in state and handlers
 const getTeamColumns = (
   teamData: TeamMember[],
   onSaveRole: (userId: number, newRole: string) => void,
-  onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void
+  onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void,
+  currentUserRole: string | null
 ): ColumnDef<TeamMember>[] => {
   return [
     { accessorKey: 'name', header: 'Member Name' },
@@ -201,7 +247,7 @@ const getTeamColumns = (
       accessorKey: 'manages',
       header: 'Manages',
       cell: ({ row }) => {
-        const managesReports = row.original.managesReports;
+        const managesReports = row.original.managesReports as TeamMember['managesReports'];
         return (
           <Popover>
             <PopoverTrigger asChild>
@@ -213,8 +259,10 @@ const getTeamColumns = (
               <h4 className="font-bold mb-2">Total members: {managesReports.length}</h4>
               {managesReports.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-1">
-                  {managesReports.map((report, index) => (
-                    <li key={index}>{report.name} ({report.role})</li>
+                  {managesReports.map((report, idx) => (
+                    <li key={idx}>
+                      {report.name} ({report.role})
+                    </li>
                   ))}
                 </ul>
               ) : (
@@ -228,12 +276,14 @@ const getTeamColumns = (
     {
       id: 'editRole',
       header: 'Edit Role',
-      cell: ({ row }) => <EditRoleCell row={row} onSaveRole={onSaveRole} />
+      cell: ({ row }) => <EditRoleCell row={row} currentUserRole={currentUserRole} onSaveRole={onSaveRole} />,
     },
     {
       id: 'editMapping',
       header: 'Edit Mapping',
-      cell: ({ row }) => <EditMappingCell row={row} onSaveMapping={onSaveMapping} teamData={teamData} />
+      cell: ({ row }) => (
+        <EditMappingCell row={row} currentUserRole={currentUserRole} onSaveMapping={onSaveMapping} teamData={teamData} />
+      ),
     },
   ];
 };
@@ -243,96 +293,135 @@ export function TeamTabContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState('all');
+  const [selectedRole, setSelectedRole] = useState<string>('all');
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
-  const dataFetchURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/dataFetch`
-  const editRoleURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editRole`
-  const editMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMapping`
+  const dataFetchURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/dataFetch`;
+  const editRoleURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editRole`;
+  const editMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMapping`;
+  const currentUserURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/me`;
 
-  const fetchTeamData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const loadTeamData = useCallback(
+    async (roleOverride?: string) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const roleToUse = roleOverride ?? selectedRole;
+        const url = new URL(dataFetchURI, window.location.origin);
+        if (roleToUse && roleToUse !== 'all') url.searchParams.append('role', roleToUse);
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch team data');
+        }
+        const data: TeamMember[] = await response.json();
+        setTeamData(data);
+      } catch (err: any) {
+        console.error('Error fetching team data:', err);
+        toast.error(err.message || 'Error fetching team data');
+        setError(err.message || 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [dataFetchURI, selectedRole]
+  );
+
+  const fetchCurrentUser = useCallback(async () => {
     try {
-      const url = new URL(dataFetchURI, window.location.origin);
-      if (selectedRole !== 'all') {
-        url.searchParams.append('role', selectedRole);
+      const res = await fetch(currentUserURI);
+      if (res.ok) {
+        const user = await res.json();
+        setCurrentUserRole(user.role ?? null);
+      } else {
+        setCurrentUserRole(null);
       }
-
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch team data');
-      }
-      const data: TeamMember[] = await response.json();
-      setTeamData(data);
-    } catch (err: any) {
-      console.error('Error fetching team data:', err);
-      toast.error(err.message);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      console.error('Failed to fetch current user role', e);
+      setCurrentUserRole(null);
     }
-  }, [selectedRole]);
+  }, [currentUserURI]);
 
   useEffect(() => {
-    fetchTeamData();
-  }, [fetchTeamData]);
+    (async () => {
+      await fetchCurrentUser();
+      await loadTeamData();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleSaveRole = async (userId: number, newRole: string) => {
-    try {
-      const response = await fetch(editRoleURI, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, newRole: newRole }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update role');
-      }
-      toast.success('User role updated successfully!');
-      // Re-fetch data to reflect the changes in the table
-      fetchTeamData();
-    } catch (error: any) {
-      console.error('Failed to update role:', error);
-      toast.error(error.message);
-    }
-  };
+  const handleRoleChange = useCallback(
+    async (value: string) => {
+      setSelectedRole(value);
+      await loadTeamData(value);
+    },
+    [loadTeamData]
+  );
 
-  const handleSaveMapping = async (userId: number, reportsToId: number | null) => {
-    try {
-      const response = await fetch(editMappingURI, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, reportsToId }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update reporting structure');
+  const handleSaveRole = useCallback(
+    async (userId: number, newRole: string) => {
+      try {
+        const response = await fetch(editRoleURI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, newRole }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update role');
+        }
+        toast.success('User role updated successfully!');
+        await loadTeamData();
+      } catch (err: any) {
+        console.error('Failed to update role:', err);
+        toast.error(err.message || 'Failed to update role');
       }
-      toast.success('Reporting structure updated successfully!');
-      // Re-fetch data to reflect the changes
-      fetchTeamData();
-    } catch (error: any) {
-      console.error('Failed to update reporting structure:', error);
-      toast.error(error.message);
-    }
-  };
+    },
+    [editRoleURI, loadTeamData]
+  );
+
+  const handleSaveMapping = useCallback(
+    async (userId: number, reportsToId: number | null, managesIds: number[] = []) => {
+      try {
+        const response = await fetch(editMappingURI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, reportsToId, managesIds }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update reporting structure');
+        }
+        toast.success('Reporting structure updated successfully!');
+        await loadTeamData();
+      } catch (err: any) {
+        console.error('Failed to update reporting structure:', err);
+        toast.error(err.message || 'Failed to update reporting structure');
+      }
+    },
+    [editMappingURI, loadTeamData]
+  );
 
   const filteredData = useMemo(() => {
-    return teamData.filter(member => {
-      const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.role.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch;
+    const q = searchQuery.trim().toLowerCase();
+    return teamData.filter((member) => {
+      if (!q) return true;
+      return member.name.toLowerCase().includes(q) || member.role.toLowerCase().includes(q);
     });
   }, [teamData, searchQuery]);
 
-  const teamColumns = useMemo(() => getTeamColumns(teamData, handleSaveRole, handleSaveMapping), [teamData]);
+  const teamColumns = useMemo(
+    () => getTeamColumns(teamData, handleSaveRole, handleSaveMapping, currentUserRole),
+    [teamData, handleSaveRole, handleSaveMapping, currentUserRole]
+  );
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader><CardTitle>Team Hierarchy</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Team Hierarchy</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="flex justify-center py-8">
             <span className="text-gray-500">Loading team data...</span>
@@ -345,7 +434,9 @@ export function TeamTabContent() {
   if (error) {
     return (
       <Card>
-        <CardHeader><CardTitle>Team Hierarchy</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Team Hierarchy</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="flex justify-center py-8 text-red-500">
             <p>Error: {error}</p>
@@ -368,7 +459,7 @@ export function TeamTabContent() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="md:max-w-sm flex-grow"
           />
-          <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <Select value={selectedRole} onValueChange={handleRoleChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
@@ -382,10 +473,9 @@ export function TeamTabContent() {
             </SelectContent>
           </Select>
         </div>
+
         {filteredData.length === 0 ? (
-          <div className="text-center text-neutral-500 py-8">
-            No team members found for this company with the selected filters.
-          </div>
+          <div className="text-center text-neutral-500 py-8">No team members found for this company with the selected filters.</div>
         ) : (
           <DataTableReusable columns={teamColumns} data={filteredData} />
         )}

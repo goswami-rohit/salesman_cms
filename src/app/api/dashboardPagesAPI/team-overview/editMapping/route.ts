@@ -4,6 +4,8 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+// Import the new hierarchy check
+import { canAssignRole } from '@/lib/roleHierarchy';
 
 // Define the allowed roles that can perform this action
 const allowedAdminRoles = [
@@ -46,6 +48,31 @@ export async function POST(request: NextRequest) {
 
     const { userId, reportsToId, managesIds } = validatedBody.data;
 
+    // Prevent self-reporting
+    if (reportsToId === userId) {
+      return NextResponse.json({ error: "A user cannot report to themselves" }, { status: 400 });
+    }
+
+    // Prevent self in managesIds
+    if (managesIds.includes(userId)) {
+      return NextResponse.json({ error: "A user cannot manage themselves" }, { status: 400 });
+    }
+
+    if (reportsToId) {
+      const manager = await prisma.user.findUnique({
+        where: { id: reportsToId },
+        select: { role: true },
+      });
+
+      if (!manager) {
+        return NextResponse.json({ error: 'Target manager not found' }, { status: 404 });
+      }
+
+      if (!canAssignRole(currentUserRole, manager.role)) {
+        return NextResponse.json({ error: 'Forbidden: You cannot assign this manager' }, { status: 403 });
+      }
+    }
+
     // Use a Prisma transaction to ensure all updates are atomic
     await prisma.$transaction(async (tx) => {
       // Step 1: Get the current direct reports for the user
@@ -72,23 +99,28 @@ export async function POST(request: NextRequest) {
 
       // Step 3: Update all users in the new managesIds list to report to the current user
       if (managesIds.length > 0) {
-        await tx.user.updateMany({
-          where: {
-            id: { in: managesIds }
-          },
-          data: {
-            reportsToId: userId
+        // Ensure all assigned direct reports are valid according to hierarchy
+        const targetUsers = await tx.user.findMany({
+          where: { id: { in: managesIds } },
+          select: { id: true, role: true }
+        });
+
+        for (const target of targetUsers) {
+          if (!canAssignRole(currentUserRole, target.role)) {
+            throw new Error(`Forbidden: You cannot manage user with role ${target.role}`);
           }
+        }
+
+        await tx.user.updateMany({
+          where: { id: { in: managesIds } },
+          data: { reportsToId: userId }
         });
       }
 
-      // Step 4: Update the user's own reportsToId (who they report to)
-      const updatedUser = await tx.user.update({
+      await tx.user.update({
         where: { id: userId },
-        data: { reportsToId: reportsToId },
+        data: { reportsToId }
       });
-
-      return updatedUser;
     });
 
     console.log(`Successfully updated mapping for user ${userId}. New reportsToId: ${reportsToId}`);

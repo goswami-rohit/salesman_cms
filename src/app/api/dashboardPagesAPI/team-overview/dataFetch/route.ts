@@ -3,6 +3,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { ROLE_HIERARCHY } from '@/lib/roleHierarchy';
 
 // Define the roles that are allowed to view the Team Overview page.
 // This list includes all roles except 'junior-executive' and 'executive'.
@@ -18,7 +19,7 @@ const allowedRoles = [
   'senior-executive',
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // 1. Get the claims from the JWT.
     const claims = await getTokenClaims();
@@ -44,12 +45,21 @@ export async function GET() {
       );
     }
 
+    // Read and validate role filter from query string
+    const roleParam = request.nextUrl.searchParams.get('role') ?? undefined;
+    const roleFilter =
+      roleParam && roleParam !== 'all' && ROLE_HIERARCHY.includes(roleParam) ? roleParam : undefined;
+
+    const whereClause: any = {
+      companyId: currentUser.companyId,
+    };
+    if (roleFilter) {
+      whereClause.role = roleFilter;
+    }
     // 5. Fetch all users within the same company as the current user.
     // The include block is updated to use the correct relation names from your schema: 'reportsTo' and 'reports'.
     const teamMembers = await prisma.user.findMany({
-      where: {
-        companyId: currentUser.companyId,
-      },
+      where: whereClause,
       include: {
         reportsTo: true, // Includes the manager's data
         reports: true, // Includes the list of direct reports
