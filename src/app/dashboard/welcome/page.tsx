@@ -2,13 +2,22 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function WelcomePage() {
   const searchParams = useSearchParams();
   const name = searchParams.get('name') || 'user';
+  const error = searchParams.get('error');
+
+  useEffect(() => {
+    if (error === 'unauthorized') {
+      toast.error("🚫 You do not have access to this page yet. Contact the admin/manager.");
+    }
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

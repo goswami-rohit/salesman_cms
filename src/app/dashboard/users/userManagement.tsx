@@ -148,7 +148,7 @@ export default function UsersManagement({ adminUser }: Props) {
         resetForm();
         let successMsg = `User created and invitation sent to ${formData.email}.`;
         if (data.user && data.user.salesmanLoginId) {
-          successMsg += ` Employee ID for mobile app: ${data.user.salesmanLoginId}. Temporary password sent via email.`;
+          successMsg += ` Employee ID for mobile app: ${data.user.salesmanLoginId}. Password sent via email.`;
         }
         setSuccess(successMsg);
       } else {
@@ -212,15 +212,15 @@ export default function UsersManagement({ adminUser }: Props) {
           });
 
           if (workosDeleteResponse.ok) {
-            console.log(`✅ WorkOS user ${workosUserId} deleted successfully.`);
-            setSuccess('User deleted from local database and WorkOS successfully.');
+            //console.log(`✅ WorkOS user ${workosUserId} deleted successfully.`);
+            setSuccess('User deleted successfully.');
           } else {
             const errorData = await workosDeleteResponse.json();
-            console.error('❌ Failed to delete user from WorkOS:', errorData.error);
-            setError(`User deleted locally, but failed to delete from WorkOS: ${errorData.error}`);
+            //console.error('❌ Failed to delete user from WorkOS:', errorData.error);
+            setError(`User deletion done locally. Issue in deleting from Auth Side. Contact Authenticator: ${errorData.error}`);
           }
         } else {
-          setSuccess('User deleted from local database successfully (no WorkOS ID found).');
+          setSuccess('User deleted successfully.');
         }
         await fetchUsers();
       } else {

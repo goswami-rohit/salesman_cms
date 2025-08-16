@@ -14,11 +14,20 @@ const allowedAdminRoles = [
   'senior-manager',
   'manager',
   'assistant-manager',
+  'senior-executive',
+  //'executive',
+  //'junior-executive',
 ];
 const allowedNonAdminRoles = [
-  'senior-executive',
   'executive',
   'junior-executive',
+];
+// Pages that non-admin roles are allowed to access
+const nonAdminAllowedPages = [
+  "/dashboard/addDealers",
+  "/dashboard/dailyVisitReports",
+  "/dashboard/technicalVisitReports",
+  "/dashboard/permanentJourneyPlan",
 ];
 
 async function refreshUserJWTIfNeeded(user: any, claims: any) {
@@ -119,10 +128,13 @@ export default async function DashboardLayout({
   const isWelcomePage = url.pathname === '/dashboard/welcome';
   const hasNameParam = url.searchParams.has('name');
 
-  if (allowedNonAdminRoles.includes(finalRole) && !(isWelcomePage && hasNameParam)) {
-      console.log(`➡️ Redirecting non-admin user with role '${finalRole}' to welcome page.`);
+  if (allowedNonAdminRoles.includes(finalRole)) {
+    const isAllowedPage = nonAdminAllowedPages.includes(url.pathname);
+
+    if (!isAllowedPage && !(isWelcomePage && hasNameParam)) {
       const name = dbUser.firstName || dbUser.email;
-      redirect(`/dashboard/welcome?name=${name}`);
+      redirect(`/dashboard/welcome?name=${name}&error=unauthorized`);
+    }
   }
 
   return (
