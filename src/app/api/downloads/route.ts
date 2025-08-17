@@ -455,8 +455,8 @@ async function getSalesReportForCsv(companyId: number) {
     }
   });
 
-   const headers = [
-    "Salesman Name", "Area", "Region","Monthly Target (MT)", "Till Date Achievement (MT)",
+  const headers = [
+    "Salesman Name", "Area", "Region", "Dealer Type", "Dealer Name", "Sub-Dealer Name", "Monthly Target (MT)", "Till Date Achievement (MT)",
     "Yesterday's Target (MT)", "Yesterday's Collection (₹)", //"Achievement %",
     // "Balance Target (MT)", 
   ];
@@ -485,36 +485,53 @@ async function getSalesReportForCsv(companyId: number) {
 
     const tillDateAchievement = tillDate._sum.todayOrderMt?.toNumber() || 0;
 
-    // 4. Yesterday's target & collection
-    const yesterdayReport = await prisma.dailyVisitReport.findFirst({
-      where: { userId: user.id, reportDate: yesterday },
+    // 3. Yesterday’s all dealer visits
+    const yesterdayReports = await prisma.dailyVisitReport.findMany({
+      where: {
+        userId: user.id,
+        reportDate: yesterday,
+      },
       select: {
         todayOrderMt: true,
-        todayCollectionRupees: true
+        todayCollectionRupees: true,
+        dealerName: true,
+        subDealerName: true,
+        dealerType: true,
+        //monthlyTarget: true, // only if you add this col in DailyVisitReport
       }
     });
 
-    const yesterdayTarget = yesterdayReport?.todayOrderMt?.toNumber() || 0;
-    const yesterdayCollection = yesterdayReport?.todayCollectionRupees?.toNumber() || 0;
-
-    // 5. Balance target & achievement %
-    //const balanceTarget = Math.max(monthlyTarget - tillDateAchievement, 0);
-    //calc of achievement percentage from given info in target table
-    // const achievementPct = monthlyTarget > 0 
-    //   ? ((tillDateAchievement / monthlyTarget) * 100).toFixed(2) 
-    //   : "0.00";
-
-    dataForCsv.push([
-      salesmanName,
-      area,
-      region,
-      //monthlyTarget.toString(),
-      tillDateAchievement.toString(),
-      yesterdayTarget.toString(),
-      yesterdayCollection.toString(),
-      //balanceTarget.toString(),
-      //achievementPct
-    ]);
+    if (yesterdayReports.length === 0) {
+      // still push one row for salesman even if no dealer entry
+      dataForCsv.push([
+        salesmanName,
+        area,
+        region,
+        "",             // DealerType
+        "",             // DealerName 
+        "",             // SubDealerName
+        "0",            // MonthlyTarget placeholder
+        tillDateAchievement.toString(),
+        "0",
+        "0"
+      ]);
+    } else {
+      // push one row per dealer entry
+      for (const report of yesterdayReports) {
+        dataForCsv.push([
+          salesmanName,
+          area,
+          region,
+          report.dealerType || "",
+          report.dealerName || "",
+          report.subDealerName || "",
+          //report.monthlyTarget?.toString() || "0",
+          tillDateAchievement.toString(),
+          report.todayOrderMt?.toString() || "0",
+          report.todayCollectionRupees?.toString() || "0",
+        ]);
+      }
+    }
   }
 
   return [headers, ...dataForCsv];
