@@ -5,14 +5,15 @@ import { useState } from 'react';
 import { 
   Download, 
   Car,
-  ClipboardList,
   MapPin,
   PencilRuler,
   CalendarCheck,
-  Plane,
   Building,
   Briefcase,
-  GitPullRequest
+  BadgeIndianRupeeIcon,
+  ChartNoAxesCombined,
+  ListTodo,
+  BandageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -122,7 +123,7 @@ export default function DownloadsPage() {
       id: 'salesmanLeaveApplications',
       title: 'Leave Applications',
       description: 'Complete record of all leave applications submitted by salesmen.',
-      icon: Plane,
+      icon: BandageIcon,
     },
     {
       id: 'clientReports',
@@ -134,7 +135,7 @@ export default function DownloadsPage() {
       id: 'competitionReports',
       title: 'Competition Reports',
       description: 'Records of competitor activity, including products, pricing, and customer feedback.',
-      icon: ClipboardList,
+      icon: ChartNoAxesCombined,
     },
     {
       id: 'geoTracking',
@@ -146,7 +147,13 @@ export default function DownloadsPage() {
       id: 'dailyTasks',
       title: 'Daily Tasks',
       description: 'A list of daily tasks assigned to salesmen, including related dealer information.',
-      icon: GitPullRequest,
+      icon: ListTodo,
+    },
+    {
+      id: 'salesReport',
+      title: 'Sales Report',
+      description: 'A comrehensive report of sales in Metric Tonnes and Collection in Rs in regards to Daily Visit Reports of salesmen.',
+      icon: BadgeIndianRupeeIcon,
     },
     // {
     //   id: 'pjpEntries',

@@ -433,6 +433,94 @@ async function getDailyTasksForCsv(companyId: number) {
   return [headers, ...dataForCsv];
 }
 
+async function getSalesReportForCsv(companyId: number) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  // 1. Fetch all users (salesmen) with their area/region
+  const users = await prisma.user.findMany({
+    where: { companyId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      area: true,
+      region: true,
+      // If you're storing target separately:
+      // targets: {
+      //   where: { month: today.getMonth() + 1, year: today.getFullYear() },
+      //   select: { targetMt: true }
+      // }
+    }
+  });
+
+   const headers = [
+    "Salesman Name", "Area", "Region","Monthly Target (MT)", "Till Date Achievement (MT)",
+    "Yesterday's Target (MT)", "Yesterday's Collection (₹)", //"Achievement %",
+    // "Balance Target (MT)", 
+  ];
+
+  const dataForCsv: string[][] = [];
+
+  for (const user of users) {
+    const salesmanName = `${user.firstName} ${user.lastName}`.trim();
+    const area = user.area || '';
+    const region = user.region || '';
+
+    // 2. Get monthly target (from Target table or DailyVisitReport if you hack it in)
+    //const monthlyTarget = user.targets[0]?.targetMt?.toNumber() || 0;
+
+    // 3. Till date achievement = sum of todayOrderMt for current month
+    const tillDate = await prisma.dailyVisitReport.aggregate({
+      where: {
+        userId: user.id,
+        reportDate: {
+          gte: new Date(today.getFullYear(), today.getMonth(), 1),
+          lte: today,
+        }
+      },
+      _sum: { todayOrderMt: true }
+    });
+
+    const tillDateAchievement = tillDate._sum.todayOrderMt?.toNumber() || 0;
+
+    // 4. Yesterday's target & collection
+    const yesterdayReport = await prisma.dailyVisitReport.findFirst({
+      where: { userId: user.id, reportDate: yesterday },
+      select: {
+        todayOrderMt: true,
+        todayCollectionRupees: true
+      }
+    });
+
+    const yesterdayTarget = yesterdayReport?.todayOrderMt?.toNumber() || 0;
+    const yesterdayCollection = yesterdayReport?.todayCollectionRupees?.toNumber() || 0;
+
+    // 5. Balance target & achievement %
+    //const balanceTarget = Math.max(monthlyTarget - tillDateAchievement, 0);
+    //calc of achievement percentage from given info in target table
+    // const achievementPct = monthlyTarget > 0 
+    //   ? ((tillDateAchievement / monthlyTarget) * 100).toFixed(2) 
+    //   : "0.00";
+
+    dataForCsv.push([
+      salesmanName,
+      area,
+      region,
+      //monthlyTarget.toString(),
+      tillDateAchievement.toString(),
+      yesterdayTarget.toString(),
+      yesterdayCollection.toString(),
+      //balanceTarget.toString(),
+      //achievementPct
+    ]);
+  }
+
+  return [headers, ...dataForCsv];
+}
+
+
 // async function getPjpEntriesForCsv(companyId: number) {
 //   const entries = await prisma.dailyTask.findMany({
 //     where: { user: { companyId: companyId }, pjpId: { not: null } },
@@ -525,6 +613,10 @@ export async function GET(request: NextRequest) {
       case 'dailyTasks':
         csvData = await getDailyTasksForCsv(currentUser.companyId);
         filename = `daily-tasks-${Date.now()}`;
+        break;
+      case 'salesReport':
+        csvData = await getSalesReportForCsv(currentUser.companyId);
+        filename = `sales-reports-${Date.now()}`;
         break;
       // case 'pjpEntries':
       //   csvData = await getPjpEntriesForCsv(currentUser.companyId);
