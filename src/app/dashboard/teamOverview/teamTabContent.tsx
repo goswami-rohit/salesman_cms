@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PencilIcon, EyeIcon, UsersIcon, Loader2 } from 'lucide-react';
+import { PencilIcon, EyeIcon, UsersIcon, Loader2, StoreIcon } from 'lucide-react';
 import { MultiSelect } from '@/components/multi-select';
 import { ROLE_HIERARCHY, canAssignRole } from '@/lib/roleHierarchy';
 
@@ -233,10 +233,95 @@ function EditMappingCell({
   );
 }
 
+function EditDealerMappingCell({
+  row,
+  onSaveDealerMapping,
+  currentUserRole,
+}: {
+  row: any;
+  onSaveDealerMapping: (userId: number, dealerIds: string[]) => void;
+  currentUserRole: string | null;
+}) {
+  const member: TeamMember = row.original;
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedDealerIds, setSelectedDealerIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dealerOptions, setDealerOptions] = useState<{ value: string; label: string }[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch dealers for this user when popover opens
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editDealerMapping?userId=${member.id}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setDealerOptions(data.dealers.map((d: any) => ({ value: d.id, label: d.name })));
+          setSelectedDealerIds(data.assignedDealerIds ?? []);
+        }
+      } catch (e) {
+        console.error("Failed to fetch dealers", e);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [isOpen, member.id]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSaveDealerMapping(member.id, selectedDealerIds);
+      setIsOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="secondary" size="icon" disabled={!currentUserRole}>
+          <StoreIcon className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96">
+        <h4 className="font-bold mb-2">Edit Dealer Mapping</h4>
+        <p className="text-sm text-gray-500 mb-4">Salesman: {member.name}</p>
+
+        {isLoading ? (
+          <div className="py-4 text-center text-gray-500">Loading dealers...</div>
+        ) : (
+          <MultiSelect
+            options={dealerOptions}
+            selectedValues={selectedDealerIds}
+            onValueChange={setSelectedDealerIds}
+            placeholder="Assign dealers to salesmen.."
+          />
+        )}
+
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const getTeamColumns = (
   teamData: TeamMember[],
   onSaveRole: (userId: number, newRole: string) => void,
   onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void,
+  onSaveDealerMapping: (userId: number, dealerIds: string[]) => void,
   currentUserRole: string | null
 ): ColumnDef<TeamMember>[] => {
   return [
@@ -285,6 +370,13 @@ const getTeamColumns = (
         <EditMappingCell row={row} currentUserRole={currentUserRole} onSaveMapping={onSaveMapping} teamData={teamData} />
       ),
     },
+    {
+      id: 'editDealerMapping',
+      header: 'Edit Dealer Mapping',
+      cell: ({ row }) => (
+        <EditDealerMappingCell row={row} currentUserRole={currentUserRole} onSaveDealerMapping={onSaveDealerMapping} />
+      ),
+    },
   ];
 };
 
@@ -299,6 +391,7 @@ export function TeamTabContent() {
   const dataFetchURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/dataFetch`;
   const editRoleURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editRole`;
   const editMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMapping`;
+  const editDealerMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editDealerMapping`;
   const currentUserURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/me`;
 
   const loadTeamData = useCallback(
@@ -403,6 +496,28 @@ export function TeamTabContent() {
     [editMappingURI, loadTeamData]
   );
 
+  const handleSaveDealerMapping = useCallback(
+    async (userId: number, dealerIds: string[]) => {
+      try {
+        const response = await fetch(editDealerMappingURI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, dealerIds }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update dealer mapping');
+        }
+        toast.success('Dealer mapping updated successfully!');
+        await loadTeamData();
+      } catch (err: any) {
+        console.error('Failed to update dealer mapping:', err);
+        toast.error(err.message || 'Failed to update dealer mapping');
+      }
+    },
+    [editDealerMappingURI, loadTeamData]
+  );
+
   const filteredData = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return teamData.filter((member) => {
@@ -412,8 +527,8 @@ export function TeamTabContent() {
   }, [teamData, searchQuery]);
 
   const teamColumns = useMemo(
-    () => getTeamColumns(teamData, handleSaveRole, handleSaveMapping, currentUserRole),
-    [teamData, handleSaveRole, handleSaveMapping, currentUserRole]
+    () => getTeamColumns(teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, currentUserRole),
+    [teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, currentUserRole]
   );
 
   if (isLoading) {
@@ -449,7 +564,7 @@ export function TeamTabContent() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Team Hierarchy</CardTitle>
+        <CardTitle>Team Hierarchy & Overview</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col md:flex-row items-center gap-4 mb-4">

@@ -54,13 +54,12 @@ model User {
   reportsToId               Int?      @map("reports_to_id")
   reportsTo                 User?     @relation("ReportsToManager", fields: [reportsToId], references: [id], onDelete: SetNull)
   reports                   User[]    @relation("ReportsToManager")
-  // -------------------------
 
   // Relationships to new tables
+  dealers                   Dealer[] 
   dailyVisitReports         DailyVisitReport[]
   technicalVisitReports     TechnicalVisitReport[]
   permanentJourneyPlans     PermanentJourneyPlan[]
-  dealers                   Dealer[] // A user can be associated with multiple dealers/sub-dealers
   salesmanAttendance        SalesmanAttendance[]
   salesmanLeaveApplications SalesmanLeaveApplication[]
   clientReports             ClientReport[]
@@ -156,7 +155,7 @@ model PermanentJourneyPlan {
 // 4. Dealers (Consolidated for Dealers and Sub-Dealers)
 model Dealer {
   id             String   @id @default(uuid()) @db.VarChar(255)
-  userId         Int      @map("user_id") // Primary user (salesman) associated
+  userId         Int?      @map("user_id") // Primary user (salesman) associated
   type           String   @db.VarChar(50) // "Dealer", "Sub Dealer"
   parentDealerId String?  @map("parent_dealer_id") @db.VarChar(255) // Self-referencing FK for sub-dealers
   name           String   @db.VarChar(255) // Stores dealerName or subDealerName
@@ -172,10 +171,10 @@ model Dealer {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parentDealer Dealer?  @relation("SubDealers", fields: [parentDealerId], references: [id], onDelete: SetNull)
-  subDealers   Dealer[] @relation("SubDealers")
-  dailyTasks   DailyTask[] @relation("DealerDailyTasks") // NEW: Tasks related to this dealer (Named relation)
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentDealer    Dealer?  @relation("SubDealers", fields: [parentDealerId], references: [id], onDelete: SetNull)
+  subDealers      Dealer[] @relation("SubDealers")
+  dailyTasks      DailyTask[] @relation("DealerDailyTasks") // NEW: Tasks related to this dealer (Named relation)
 
   reportsAndScores DealerReportsAndScores? @relation("DealerScores")
   
