@@ -2,6 +2,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getTokenClaims } from "@workos-inc/authkit-nextjs";
 import prisma from "@/lib/prisma";
+//import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 const allowedAdminRoles = [
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
         // Unassign all dealers from this user
         await prisma.dealer.updateMany({
             where: { userId },
-            data: { userId: null },
+            data: { userId: { set: null } },
         });
 
         // Assign selected dealers to this user
