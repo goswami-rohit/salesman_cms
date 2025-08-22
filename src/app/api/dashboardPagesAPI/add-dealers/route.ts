@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
         try {
             const geocodeResponse = await fetch(openCageApiUrl);
-            
+
             //console.log('OpenCage API response status:', geocodeResponse.status);
 
             if (geocodeResponse.ok) {
@@ -114,10 +114,10 @@ export async function POST(request: NextRequest) {
             } else {
                 //console.error('Geocoding failed. HTTP Status:', geocodeResponse.status);
                 try {
-                  const errorText = await geocodeResponse.text();
-                  console.error('Geocoding Error Body:', errorText);
+                    const errorText = await geocodeResponse.text();
+                    console.error('Geocoding Error Body:', errorText);
                 } catch (e) {
-                  console.error('Could not parse error body:', e);
+                    console.error('Could not parse error body:', e);
                 }
             }
         } catch (geocodeError) {
@@ -255,8 +255,9 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Dealer not found' }, { status: 404 });
         }
 
-        if (dealerToDelete.user.companyId !== currentUser.companyId) {
-            return NextResponse.json({ error: 'Forbidden: Cannot delete a dealer from another company' }, { status: 403 });
+        if (!dealerToDelete.user || dealerToDelete.user.companyId !== currentUser.companyId) {
+            return NextResponse.json({ error: 'Forbidden: Cannot delete a dealer from another company' },
+                { status: 403 });
         }
 
         // 6. Delete the dealer from the database

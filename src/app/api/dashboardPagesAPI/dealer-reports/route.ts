@@ -50,23 +50,28 @@ export async function GET() {
     });
 
     // Map the data to match the frontend's DealerReport schema
-    const formattedReports = dealersAndSubDealers.map(report => ({
-      id: report.id,
-      salesmanName: `${report.user.firstName || ''} ${report.user.lastName || ''}`.trim() || report.user.email,
-      type: report.type, // "Dealer" or "Sub Dealer"
-      // Conditionally assign 'name' from DB to 'dealerName' or 'subDealerName'
-      dealerName: report.type === 'Dealer' ? report.name : null,
-      subDealerName: report.type === 'Sub Dealer' ? report.name : null,
-      region: report.region,
-      area: report.area,
-      phoneNo: report.phoneNo,
-      address: report.address,
-      dealerTotalPotential: report.totalPotential.toNumber(), // Convert Decimal to Number
-      dealerBestPotential: report.bestPotential.toNumber(),   // Convert Decimal to Number
-      brandSelling: report.brandSelling,
-      feedbacks: report.feedbacks,
-      remarks: report.remarks,
-    }));
+    const formattedReports = dealersAndSubDealers.map(report => {
+      const salesmanName =
+        report.user? `${report.user.firstName || ''} ${report.user.lastName || ''}`.trim() || report.user.email
+          : "Unassigned"; // fallback if dealer has no salesman
+
+      return {
+        id: report.id,
+        salesmanName,
+        type: report.type, // "Dealer" or "Sub Dealer"
+        dealerName: report.type === "Dealer" ? report.name : null,
+        subDealerName: report.type === "Sub Dealer" ? report.name : null,
+        region: report.region,
+        area: report.area,
+        phoneNo: report.phoneNo,
+        address: report.address,
+        dealerTotalPotential: report.totalPotential.toNumber(),
+        dealerBestPotential: report.bestPotential.toNumber(),
+        brandSelling: report.brandSelling,
+        feedbacks: report.feedbacks,
+        remarks: report.remarks,
+      };
+    });
 
     return NextResponse.json(formattedReports, { status: 200 });
   } catch (error) {
