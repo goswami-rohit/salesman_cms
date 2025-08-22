@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         // Unassign all dealers from this user
         await prisma.dealer.updateMany({
             where: { userId },
-            data: { userId: { equals: null } as any },
+            data: { userId: { set: null } as any },
         });
 
         // Assign selected dealers to this user
