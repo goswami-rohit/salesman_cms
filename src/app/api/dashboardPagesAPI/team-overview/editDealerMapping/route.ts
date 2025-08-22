@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       where: {
         OR: [ 
           { userId: { in: companyUserIds } },
-          { userId: {equals:null} },
+          { userId: null },
         ],
       },
       orderBy: { createdAt: "desc" },
