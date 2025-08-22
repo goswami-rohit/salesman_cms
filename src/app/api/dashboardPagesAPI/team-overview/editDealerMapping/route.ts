@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       where: {
         OR: [ 
           { userId: { in: companyUserIds } },
-          { userId: null as any },
+          { userId: null as number | null },
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         // Unassign all dealers from this user
         await prisma.dealer.updateMany({
             where: { userId },
-            data: { userId: null as any },
+            data: { userId: null as number | null },
         });
 
         // Assign selected dealers to this user
