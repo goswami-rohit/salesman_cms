@@ -58,9 +58,9 @@ export async function GET(request: NextRequest) {
     // Step 2: Get all dealers belonging to those users OR unassigned (userId = null)
     const dealers = await prisma.dealer.findMany({
       where: {
-        OR: [
+        OR: [ 
           { userId: { in: companyUserIds } },
-          { userId: { equals: null } },
+          { userId: null },
         ],
       },
       orderBy: { createdAt: "desc" },
