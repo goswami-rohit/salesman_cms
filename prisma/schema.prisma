@@ -67,15 +67,18 @@ model User {
   geoTrackingRecords        GeoTracking[] @relation("UserGeoTracking") // Relationship for GeoTracking records
   assignedTasks             DailyTask[]  @relation("AssignedTasks") // Tasks assigned to this user (salesman)
   createdTasks              DailyTask[]  @relation("CreatedTasks") // Tasks created by this user (admin)
-
-
+  salesReports              SalesReport[]
+  ddpRecords                DDP[]
+  ratings                   Rating[]
+  
+  
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
   @@index([workosUserId], map: "idx_workos_user_id")
   @@map("users")
 }
 
-// 1. Daily Visit Reports
+// Daily Visit Reports
 model DailyVisitReport {
   id                    String    @id @default(uuid()) @db.VarChar(255)
   userId                Int       @map("user_id") // Foreign Key to User.id
@@ -94,6 +97,7 @@ model DailyVisitReport {
   contactPersonPhoneNo  String?   @map("contact_person_phone_no") @db.VarChar(20)
   todayOrderMt          Decimal   @map("today_order_mt") @db.Decimal(10, 2)
   todayCollectionRupees Decimal   @map("today_collection_rupees") @db.Decimal(10, 2)
+  overdueAmount         Decimal?  @map("overdue_amount") @db.Decimal(12, 2)
   feedbacks             String    @db.VarChar(500)
   solutionBySalesperson String?   @map("solution_by_salesperson") @db.VarChar(500)
   anyRemarks            String?   @map("any_remarks") @db.VarChar(500)
@@ -104,13 +108,17 @@ model DailyVisitReport {
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // New relation to the CollectionReport. A Daily Visit Report can be associated with one CollectionReport
+  // This sets up a one-to-one or one-to-many link, allowing a collection to be recorded for a specific visit.
+  collectionReport      CollectionReport?
 
   @@index([userId], map: "idx_daily_visit_reports_user_id")
   @@map("daily_visit_reports")
 }
 
-// 2. Technical Visit Reports
+// Technical Visit Reports
 model TechnicalVisitReport {
   id                      String    @id @default(uuid()) @db.VarChar(255)
   userId                  Int       @map("user_id") // Foreign Key to User.id
@@ -128,13 +136,26 @@ model TechnicalVisitReport {
   createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  //Added fields from the pdf
+  siteVisitBrandInUse String? @map("site_visit_brand_in_use") // e.g., "Star/Dalmia/Ultratech" [cite: 99]
+  siteVisitStage      String? @map("site_visit_stage")      // e.g., "Foundation/column/slab casting" [cite: 100]
+  conversionFromBrand     String?  @map("conversion_from_brand")      // e.g., "Dalmia/Star" [cite: 102]
+  conversionQuantityValue Decimal? @map("conversion_quantity_value") @db.Decimal(10, 2)
+  conversionQuantityUnit  String?  @map("conversion_quantity_unit")  @db.VarChar(20) // "Bag" or "MT" [cite: 103]
+  associatedPartyName     String?  @map("associated_party_name")     // Dealer, Sub dealer name [cite: 104]
+  influencerType String? @map("influencer_type") // e.g., "Contractor", "Engineer" etc. [cite: 106, 107, 108, 109, 110, 111]
+  serviceType String? @map("service_type") // e.g., "Dhalai Attend" [cite: 113]
+  qualityComplaint String? @map("quality_complaint") // e.g., "Slow Setting", "Cracks" etc. [cite: 116, 117, 118, 119]
+  promotionalActivity String? @map("promotional_activity") // e.g., "Mason Meet" [cite: 122]
+  channelPartnerVisit String? @map("channel_partner_visit") // e.g., "Dealer Visit" [cite: 129]
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "idx_technical_visit_reports_user_id")
   @@map("technical_visit_reports")
 }
 
-// 3. Permanent Journey Plans
+// Permanent Journey Plans
 model PermanentJourneyPlan {
   id              String   @id @default(uuid()) @db.VarChar(255)
   userId          Int      @map("user_id") // Foreign Key to User.id
@@ -152,7 +173,7 @@ model PermanentJourneyPlan {
   @@map("permanent_journey_plans")
 }
 
-// 4. Dealers (Consolidated for Dealers and Sub-Dealers)
+// Dealers (Consolidated for Dealers and Sub-Dealers)
 model Dealer {
   id             String   @id @default(uuid()) @db.VarChar(255)
   userId         Int?      @map("user_id") // Primary user (salesman) associated
@@ -177,13 +198,20 @@ model Dealer {
   dailyTasks      DailyTask[] @relation("DealerDailyTasks") // NEW: Tasks related to this dealer (Named relation)
 
   reportsAndScores DealerReportsAndScores? @relation("DealerScores")
-  
-  @@index([userId], map: "idx_dealers_user_id") // Corrected duplicate index name
+
+  //New fields linked back to tables under 3 Excel files: Sales & Colln August'25 + 
+  //                                                      Daily Sale & Collection + MIS Pointers
+  salesReports            SalesReport[]
+  collectionReports CollectionReport[]
+  dealerBrandCapacities  DealerBrandMapping[]
+  ddpRecords                DDP[]
+
+  @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
   @@map("dealers")
 }
 
-// 5. Salesman Attendance
+// Salesman Attendance
 model SalesmanAttendance {
   id                   String    @id @default(uuid()) @db.VarChar(255)
   userId               Int       @map("user_id") // Foreign Key to User.id
@@ -216,7 +244,7 @@ model SalesmanAttendance {
   @@map("salesman_attendance")
 }
 
-// 6. Salesman Leave Applications
+// Salesman Leave Applications
 model SalesmanLeaveApplication {
   id           String   @id @default(uuid()) @db.VarChar(255)
   userId       Int      @map("user_id") // Foreign Key to User.id
@@ -235,7 +263,7 @@ model SalesmanLeaveApplication {
   @@map("salesman_leave_applications")
 }
 
-// 7. Client Report
+// Client Report
 model ClientReport {
   id                        String   @id @default(cuid()) // Unique ID for each report
   dealerType                String
@@ -263,7 +291,7 @@ model ClientReport {
   @@map("client_reports")
 }
 
-// 8. Competition Report
+// Competition Report
 model CompetitionReport {
   id                    String    @id @default(cuid()) // Unique ID for each report
   userId                Int       @map("user_id") // Foreign Key to User.id (salesman who created report)
@@ -285,7 +313,7 @@ model CompetitionReport {
   @@index([userId]) // Index for faster lookups by user
 }
 
-// 9. Geo Tracking
+// Geo Tracking
 model GeoTracking {
   id                      String    @id @default(uuid()) // Unique ID for each geo-tracking record
   userId                  Int       @map("user_id") // Foreign Key to User.id
@@ -319,7 +347,7 @@ model GeoTracking {
   @@map("geo_tracking") // Table name in DB
 }
 
-// 10. DailyTask model for admin to salesman task assignment
+// DailyTask model for admin to salesman task assignment
 model DailyTask {
   id                String    @id @default(uuid()) @db.VarChar(255)
   userId            Int       @map("user_id") // Salesman to whom the task is assigned
@@ -347,7 +375,7 @@ model DailyTask {
   @@map("daily_tasks")
 }
 
-// 11. Dealer Reports and Scores
+// Dealer Reports and Scores
 model DealerReportsAndScores {
   id                      String    @id @default(cuid()) @db.VarChar(255)
   dealerId                String    @unique @map("dealer_id") // Foreign Key to the Dealer.id, ensures one score entry per dealer
@@ -364,4 +392,113 @@ model DealerReportsAndScores {
   dealer Dealer @relation("DealerScores", fields: [dealerId], references: [id])
 
   @@map("dealer_reports_and_scores")
+}
+
+// Newly added tables from the Excel file: Sales & Collection for August'25 + 
+//                                         Daily Sale & Collection + MIS Pointers
+// SalesReport: Tracks sales data for each salesperson and dealer.
+// Derived from the 'Sales' sheet.
+model SalesReport {
+  id                     Int        @id @default(autoincrement())
+  date                   DateTime   @db.Date
+  monthlyTarget          Decimal    @map("monthly_target") @db.Decimal(12, 2)
+  tillDateAchievement    Decimal    @map("till_date_achievement") @db.Decimal(12, 2)
+  yesterdayTarget        Decimal?   @map("yesterday_target") @db.Decimal(12, 2)
+  yesterdayAchievement   Decimal?   @map("yesterday_achievement") @db.Decimal(12, 2)
+
+  // Foreign keys to User and Dealer tables
+  salesPersonId           Int       @map("sales_person_id")
+  dealerId                String    @map("dealer_id")
+
+  // Relations
+  salesPerson             User      @relation(fields: [salesPersonId], references: [id])
+  dealer                  Dealer    @relation(fields: [dealerId], references: [id])
+
+  @@map("sales_report")
+}
+
+// Derived from the 'Collection' sheet.
+// Collection Reports (Refactored to be transactional)
+model CollectionReport {
+  id                String   @id @default(uuid()) @db.VarChar(255)
+  // Foreign key to link to a specific Daily Visit Report
+  dvrId             String   @unique @map("dvr_id")
+  // Foreign key to link to the Dealer who made the payment
+  dealerId          String   @map("dealer_id")
+  // The amount collected during this visit
+  collectedAmount   Decimal  @map("collected_amount") @db.Decimal(12, 2)
+  // The date the collection was made, which is the same as the DVR created date
+  collectedOnDate   DateTime @map("collected_on_date") @db.Date
+
+  weeklyTarget          Decimal?  @map("weekly_target") @db.Decimal(12, 2)
+  tillDateAchievement   Decimal?  @map("till_date_achievement") @db.Decimal(12, 2)
+  yesterdayTarget       Decimal?  @map("yesterday_target") @db.Decimal(12, 2)
+  yesterdayAchievement  Decimal?  @map("yesterday_achievement") @db.Decimal(12, 2)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations to the Daily Visit Report and the Dealer
+  dvr               DailyVisitReport @relation(fields: [dvrId], references: [id], onDelete: Cascade)
+  dealer            Dealer           @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+
+  @@index([dealerId], map: "idx_collection_reports_dealer_id")
+  @@map("collection_reports")
+}
+
+// DDP: Tracks the Dealer Development Process.
+// Derived from the 'DDP' sheet.
+model DDP {
+  id                     Int        @id @default(autoincrement())
+  userId          Int       @map("user_id") // Foreign key to User model
+  dealerId        String    @map("dealer_id") // Foreign key to Dealer model
+  creationDate           DateTime   @map("creation_date") @db.Date
+  status                 String     @map("status")
+  obstacle               String?    @map("obstacle")
+
+  // Relations to other tables
+  user            User      @relation(fields: [userId], references: [id])
+  dealer          Dealer    @relation(fields: [dealerId], references: [id])
+
+  @@map("dealer_development_process")
+}
+
+// Rating: Stores ratings for salespeople.
+// Derived from the 'Rating' sheet.
+model Rating {
+  id                      Int        @id @default(autoincrement())
+  userId                  Int        @map("user_id") // Foreign key to User model
+  area                    String     @map("area")
+  region                  String     @map("region")
+  rating                  Int        @map("rating")
+
+  // Relations to other tables
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@map("ratings")
+}
+
+// Brand and DealerBrandMapping tables are taken and used together 
+// New model to store the brand names to normalize the schema
+model Brand {
+  id         Int    @id @default(autoincrement())
+  name       String @unique @map("brand_name") @db.VarChar(255)
+  // Relation to DealerBrandMapping
+  dealers    DealerBrandMapping[]
+  
+  @@map("brands")
+}
+
+// New model for the mapping of dealers to brand capacities
+model DealerBrandMapping {
+  id          String   @id @default(cuid()) @db.VarChar(255)
+  dealerId    String   @map("dealer_id")
+  brandId     Int      @map("brand_id")
+  capacityMT  Decimal  @map("capacity_mt") @db.Decimal(12, 2)
+
+  // Relations
+  dealer      Dealer @relation(fields: [dealerId], references: [id])
+  brand       Brand  @relation(fields: [brandId], references: [id])
+
+  @@unique([dealerId, brandId])
+  @@map("dealer_brand_mapping")
 }

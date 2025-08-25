@@ -39,7 +39,9 @@ const postDealerSchema = z.object({
     remarks: z.string().nullable().optional(), // Optional field
 });
 
-const allowedRoles = ['senior-executive', 'executive', 'junior-executive'];
+const allowedRoles = ['area-sales-manager','regional-sales-manager',
+  'senior-manager','manager', 'assistant-manager',
+  'senior-executive', 'executive', 'junior-executive'];
 
 export async function POST(request: NextRequest) {
     try {
