@@ -397,7 +397,6 @@ model DealerReportsAndScores {
 // Newly added tables from the Excel file: Sales & Collection for August'25 + 
 //                                         Daily Sale & Collection + MIS Pointers
 // SalesReport: Tracks sales data for each salesperson and dealer.
-// Derived from the 'Sales' sheet.
 model SalesReport {
   id                     Int        @id @default(autoincrement())
   date                   DateTime   @db.Date
@@ -446,7 +445,6 @@ model CollectionReport {
 }
 
 // DDP: Tracks the Dealer Development Process.
-// Derived from the 'DDP' sheet.
 model DDP {
   id                     Int        @id @default(autoincrement())
   userId          Int       @map("user_id") // Foreign key to User model
@@ -463,7 +461,6 @@ model DDP {
 }
 
 // Rating: Stores ratings for salespeople.
-// Derived from the 'Rating' sheet.
 model Rating {
   id                      Int        @id @default(autoincrement())
   userId                  Int        @map("user_id") // Foreign key to User model
@@ -478,7 +475,7 @@ model Rating {
 }
 
 // Brand and DealerBrandMapping tables are taken and used together 
-// New model to store the brand names to normalize the schema
+// model to store the brand names to normalize the schema
 model Brand {
   id         Int    @id @default(autoincrement())
   name       String @unique @map("brand_name") @db.VarChar(255)
@@ -488,7 +485,7 @@ model Brand {
   @@map("brands")
 }
 
-// New model for the mapping of dealers to brand capacities
+// model for the mapping of dealers to brand capacities
 model DealerBrandMapping {
   id          String   @id @default(cuid()) @db.VarChar(255)
   dealerId    String   @map("dealer_id")

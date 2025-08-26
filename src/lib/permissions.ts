@@ -17,7 +17,7 @@ export interface DashboardPermissions {
   home: boolean;
   cemtemChat: boolean;
   downloadReports: boolean;
-  
+
   // Business Dashboard section
   dashboard: boolean;
   teamOverview: boolean;
@@ -33,7 +33,10 @@ export interface DashboardPermissions {
   dealerReports: boolean;
   technicalVisitReports: boolean;
   competitionReports: boolean;
-  
+  salesAndCollectionReports: boolean;
+  dealerDevelopmentAndMappingReports: boolean;
+  scoresAndRatings: boolean;
+
   // Account section
   account: boolean;
   settings: boolean;
@@ -60,6 +63,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -82,6 +88,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -104,6 +113,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -128,6 +140,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: false, // Not a sales-focused role
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -150,6 +165,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: false,
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -172,6 +190,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -194,6 +215,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -216,6 +240,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -240,6 +267,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: true,
     technicalVisitReports: true,
     competitionReports: false,
+    salesAndCollectionReports: true,
+    dealerDevelopmentAndMappingReports: true,
+    scoresAndRatings: true,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -262,6 +292,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: false,
     technicalVisitReports: true,
     competitionReports: false,
+    salesAndCollectionReports: false,
+    dealerDevelopmentAndMappingReports: false,
+    scoresAndRatings: false,
     account: true,
     settings: true,
     raiseAQuery: true,
@@ -284,6 +317,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dealerReports: false,
     technicalVisitReports: true,
     competitionReports: false,
+    salesAndCollectionReports: false,
+    dealerDevelopmentAndMappingReports: false,
+    scoresAndRatings: false,
     account: true,
     settings: true,
     raiseAQuery: true,

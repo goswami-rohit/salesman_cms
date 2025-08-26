@@ -51,6 +51,9 @@ const ITEM_PERMISSIONS = {
   "Dealer Reports": 'dealerReports' as const,
   "Technical Visit Reports": 'technicalVisitReports' as const,
   "Competition Reports": 'competitionReports' as const,
+  "Sales And Competition Reports": 'salesAndCollectionReports' as const,
+  "Dealer Development And Mapping Reports": 'dealerDevelopmentAndMappingReports' as const,
+  "Scores And Ratings": 'scoresAndRatings' as const,
 
   // Account items
   "Account": 'account' as const,
@@ -133,6 +136,18 @@ const data = {
           title: "Competition Reports",
           url: "/dashboard/competitionReports",
         },
+        {
+          title: "Sales And Competition Reports",
+          url: "/dashboard/salesAndCollectionReports",
+        },
+        {
+          title: "Dealer Development And Mapping Reports",
+          url: "/dashboard/dealerDevelopmentAndMappingReports",
+        },
+        {
+          title: "Scores And Ratings",
+          url: "/dashboard/scoresAndRatings",
+        },
       ],
     },
     {
@@ -200,97 +215,98 @@ export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<
     return section.items?.some(item => hasItemPermission(item.title)) || false;
   };
 
-  return (
+   return (
     // Apply `is-collapsed` class conditionally to the Sidebar component
     <Sidebar {...props} className={isCollapsed ? 'is-collapsed' : ''}>
       <SidebarHeader>
         {/* Sidebar rendering--commented out for now */}
         {/* {!isCollapsed && ( */}
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
-                <div>
-                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <Building2 className="size-4" />
-                  </div>
-                  <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-medium">
-                      {loading ? 'Loading...' : companyInfo?.companyName || 'My Company'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {companyInfo && `${companyInfo.totalUsers} users`}
-                    </span>
-                  </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <div>
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <Building2 className="size-4" />
                 </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-medium">
+                    {loading ? 'Loading...' : companyInfo?.companyName || 'My Company'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {companyInfo && `${companyInfo.totalUsers} users`}
+                  </span>
+                </div>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
         {/* )} */}
 
         {/* Collapse Toggle - move to the right using flexbox and ml-auto */}
         {/* <button
-          onClick={() => setIsCollapsed(prev => !prev)}
-          className={`p-1 text-muted-foreground hover:text-foreground ${!isCollapsed ? 'ml-auto' : 'w-full' // Add ml-auto when expanded, full width when collapsed
-            }`}
-        >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button> */}
+            onClick={() => setIsCollapsed(prev => !prev)}
+            className={`p-1 text-muted-foreground hover:text-foreground ${!isCollapsed ? 'ml-auto' : 'w-full' // Add ml-auto when expanded, full width when collapsed
+              }`}
+          >
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button> */}
       </SidebarHeader>
 
       {/* Sidebar rendering--commented out for now */}
       {/* {!isCollapsed && ( */}
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarMenu>
-              {data.navMain.map((item) => {
-                // Only show sections that have at least one visible item
-                if (!shouldShowSection(item)) {
-                  return null;
-                }
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarMenu>
+            {data.navMain.map((item) => {
+              // Only show sections that have at least one visible item
+              if (!shouldShowSection(item)) {
+                return null;
+              }
 
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={item.url} className="font-medium">
-                        {item.title}
-                      </a>
-                    </SidebarMenuButton>
-                    {item.items?.length ? (
-                      <SidebarMenuSub>
-                        {item.items.map((subItem) => {
-                          // Check if user has permission for this specific item
-                          if (!hasItemPermission(subItem.title)) {
-                            return null;
-                          }
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a href={item.url} className="font-medium">
+                      {item.title}
+                    </a>
+                  </SidebarMenuButton>
+                  {item.items?.length ? (
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => {
+                        // Check if user has permission for this specific item
+                        if (!hasItemPermission(subItem.title)) {
+                          return null;
+                        }
 
-                          return (
-                            <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                                {/* Conditional rendering for Logout */}
-                                {subItem.title === "Logout" ? (
-                                  // IMPORTANT CHANGE: Use a form for the Logout button
-                                  <form action="/account/logout" method="post" className="w-full">
-                                    <button type="submit"
-                                      className="hidden sm:flex bg-red-600/65 text-white w-full h-full justify-start items-center px-4 py-2 rounded-md">
-                                      {subItem.title}
-                                    </button>
-                                  </form>
-                                ) : (
-                                  // For all other menu items, use a standard <a> tag
-                                  <a href={subItem.url}>{subItem.title}</a>
-                                )}
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          );
-                        })}
-                      </SidebarMenuSub>
-                    ) : null}
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
+                        return (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={subItem.isActive}>
+                              {/* Conditional rendering for Logout */}
+                              {subItem.title === "Logout" ? (
+                                // IMPORTANT CHANGE: Use a form for the Logout button
+                                <form action="/account/logout" method="post" className="w-full">
+                                  <button type="submit"
+                                    className="hidden sm:flex bg-red-600/65 text-white w-full h-full justify-start items-center px-4 py-2 rounded-md">
+                                    {subItem.title}
+                                  </button>
+                                </form>
+                              ) : (
+                                // For all other menu items, use a standard <a> tag
+                                <a href={subItem.url} className="py-4.5 my-0.5">
+                                  {subItem.title}</a>
+                              )}
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  ) : null}
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
       {/* )} */}
       <SidebarRail />
     </Sidebar>
