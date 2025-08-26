@@ -59,7 +59,6 @@ model User {
   dealers                   Dealer[] 
   dailyVisitReports         DailyVisitReport[]
   technicalVisitReports     TechnicalVisitReport[]
-  permanentJourneyPlans     PermanentJourneyPlan[]
   salesmanAttendance        SalesmanAttendance[]
   salesmanLeaveApplications SalesmanLeaveApplication[]
   clientReports             ClientReport[]
@@ -70,7 +69,10 @@ model User {
   salesReports              SalesReport[]
   ddpRecords                DDP[]
   ratings                   Rating[]
-  
+  // PJPs assigned to this user
+  permanentJourneyPlansAssigned PermanentJourneyPlan[] @relation("PJP_AssignedUser")
+  // PJPs created by this user
+  permanentJourneyPlansCreated  PermanentJourneyPlan[] @relation("PJP_CreatedBy")
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -158,18 +160,28 @@ model TechnicalVisitReport {
 // Permanent Journey Plans
 model PermanentJourneyPlan {
   id              String   @id @default(uuid()) @db.VarChar(255)
-  userId          Int      @map("user_id") // Foreign Key to User.id
+
+  // Assigned-to user
+  userId          Int      @map("user_id")
+  user            User     @relation("PJP_AssignedUser", fields: [userId], references: [id])
+
+  // Creator user
+  createdById     Int      @map("created_by_id")
+  createdBy       User     @relation("PJP_CreatedBy", fields: [createdById], references: [id])
+
   planDate        DateTime @map("plan_date") @db.Date
   areaToBeVisited String   @map("area_to_be_visited") @db.VarChar(500)
   description     String?  @db.VarChar(500)
-  status          String   @db.VarChar(50) // "Planned", "Visited", "Not Visited", etc.
+  status          String   @db.VarChar(50)
+
+  // Ensure the name here matches DailyTask (see below)
+  dailyTasks      DailyTask[] @relation("PJPTasks")
+
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dailyTasks DailyTask[] @relation("PJPTasks") // NEW: A Permanent Journey Plan can have multiple daily tasks
-
-  @@index([userId], map: "idx_permanent_journey_plans_user_id") // Unique index name
+  @@index([userId], map: "idx_permanent_journey_plans_user_id")
+  @@index([createdById], map: "idx_permanent_journey_plans_created_by_id")
   @@map("permanent_journey_plans")
 }
 
@@ -372,6 +384,9 @@ model DailyTask {
   @@index([assignedByUserId], map: "idx_daily_tasks_assigned_by_user_id")
   @@index([taskDate], map: "idx_daily_tasks_task_date")
   @@index([pjpId], map: "idx_daily_tasks_pjp_id")
+  @@index([relatedDealerId], map: "idx_daily_tasks_related_dealer_id")
+  @@index([taskDate, userId], map: "idx_daily_tasks_date_user")
+  @@index([status], map: "idx_daily_tasks_status")
   @@map("daily_tasks")
 }
 
@@ -499,3 +514,64 @@ model DealerBrandMapping {
   @@unique([dealerId, brandId])
   @@map("dealer_brand_mapping")
 }
+
+// MASTER TABLE LINKING ALL USERS-DEALERS-REPORTS-SCORES-TRACKING-... etc.
+model MasterConnectedTable {
+  id                              String   @id @default(uuid()) @db.VarChar(255)
+
+  companyId                       Int?
+  userId                          Int?
+  dealerId                        String?  @db.VarChar(255)
+
+  dvrId                           String?  @db.VarChar(255)
+  tvrId                           String?  @db.VarChar(255)
+
+  permanentJourneyPlanId          String?  @db.VarChar(255)
+  permanentJourneyPlanCreatedById Int?     // mirrors PermanentJourneyPlan.created_by_id
+
+  dailyTaskId                     String?  @db.VarChar(255)
+
+  attendanceId                    String?  @db.VarChar(255)
+  leaveApplicationId              String?  @db.VarChar(255)
+
+  clientReportId                  String?  @db.VarChar(255)
+  competitionReportId             String?  @db.VarChar(255)
+  geoTrackingId                   String?  @db.VarChar(255)
+
+  dealerReportsAndScoresId        String?  @db.VarChar(255)
+
+  salesReportId                   Int?
+  collectionReportId              String?  @db.VarChar(255)
+
+  ddpId                           Int?
+  ratingId                        Int?
+  brandId                         Int?
+  dealerBrandMappingId            String?  @db.VarChar(255)
+
+  createdAt                       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([companyId], map: "idx_mct_company_id")
+  @@index([userId], map: "idx_mct_user_id")
+  @@index([dealerId], map: "idx_mct_dealer_id")
+  @@index([permanentJourneyPlanId], map: "idx_mct_pjp_id")
+  @@index([permanentJourneyPlanCreatedById], map: "idx_mct_pjp_created_by_id")
+  @@index([dailyTaskId], map: "idx_mct_dailytask_id")
+  @@index([dvrId], map: "idx_mct_dvr_id")
+  @@index([tvrId], map: "idx_mct_tvr_id")
+  @@index([attendanceId], map: "idx_mct_attendance_id")
+  @@index([leaveApplicationId], map: "idx_mct_leave_id")
+  @@index([clientReportId], map: "idx_mct_client_report_id")
+  @@index([competitionReportId], map: "idx_mct_comp_report_id")
+  @@index([geoTrackingId], map: "idx_mct_geotracking_id")
+  @@index([dealerReportsAndScoresId], map: "idx_mct_dealer_scores_id")
+  @@index([salesReportId], map: "idx_mct_sales_report_id")
+  @@index([collectionReportId], map: "idx_mct_collection_report_id")
+  @@index([ddpId], map: "idx_mct_ddp_id")
+  @@index([ratingId], map: "idx_mct_rating_id")
+  @@index([brandId], map: "idx_mct_brand_id")
+  @@index([dealerBrandMappingId], map: "idx_mct_dealer_brand_map_id")
+
+  @@map("master_connected_table")
+}
+// END OF MASTER TABLE

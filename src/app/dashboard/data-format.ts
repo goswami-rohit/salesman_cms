@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client'; // Import Prisma for Decimal type handl
 export const rawDailyVisitReportSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
+  role: z.string(),
   reportDate: z.string(), // YYYY-MM-DD string
   dealerType: z.string().optional(),
   dealerName: z.string().nullable().optional(),

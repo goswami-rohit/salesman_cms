@@ -1,8 +1,7 @@
 // src/app/dashboard/page.tsx
 import { Suspense } from 'react';
-import { SectionCards } from '@/components/section-cards';
+//import { SectionCards } from '@/components/section-cards';
 import DashboardGraphs from './dashboardGraphs';
-// Removed imports for data fetching functions from data-format.ts
 
 export default async function DashboardPage() {
   console.log('DashboardPage: Rendering DashboardGraphs (data fetched client-side)...');
