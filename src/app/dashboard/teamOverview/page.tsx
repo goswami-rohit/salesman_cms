@@ -4,8 +4,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TeamTabContent } from './teamTabContent';
-import { DVRTabContent } from './dvrTabContent';
-import { TVRTabContent } from './tvrTabContent';
+import { SalesmanLiveLocation } from './salesmanLiveLocation';
 
 export default function TeamOverviewPage() {
   return (
@@ -14,23 +13,19 @@ export default function TeamOverviewPage() {
         <h2 className="text-3xl font-bold tracking-tight">Team Overview</h2>
       </div>
       <p className="text-neutral-500">
-        View detailed reports and the management hierarchy of your sales team.
+        View detailed Hierarchy and Live Tracking of your team.
       </p>
 
       <Tabs defaultValue="team-view" className="space-y-4">
         <TabsList>
           <TabsTrigger value="team-view">Team View</TabsTrigger>
-          <TabsTrigger value="daily-reports">Daily Visit Reports</TabsTrigger>
-          <TabsTrigger value="technical-reports">Technical Visit Reports</TabsTrigger>
+          <TabsTrigger value="salesman-live-location">Salesman Live Location</TabsTrigger>
         </TabsList>
         <TabsContent value="team-view" className="space-y-4">
           <TeamTabContent />
         </TabsContent>
-        <TabsContent value="daily-reports" className="space-y-4">
-          <DVRTabContent />
-        </TabsContent>
-        <TabsContent value="technical-reports" className="space-y-4">
-          <TVRTabContent />
+        <TabsContent value="salesman-live-location" className="space-y-4">
+          <SalesmanLiveLocation/>
         </TabsContent>
       </Tabs>
     </div>
