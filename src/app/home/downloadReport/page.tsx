@@ -155,12 +155,37 @@ export default function DownloadsPage() {
       description: 'A comrehensive report of sales in Metric Tonnes and Collection in Rs in regards to Daily Visit Reports of salesmen.',
       icon: BadgeIndianRupeeIcon,
     },
-    // {
-    //   id: 'pjpEntries',
-    //   title: 'PJP Task Entries',
-    //   description: 'A report on individual tasks assigned as part of a Permanent Journey Plan.',
-    //   icon: MapPin,
-    // },
+    {
+      id: 'collectionReport',
+      title: 'Collection Reports',
+      description: 'A comrehensive report of only Collection in Rs in regards to Daily Visit Reports of salesmen.',
+      icon: BadgeIndianRupeeIcon,
+    },
+    {
+      id: 'ddpReport',
+      title: 'DDP Report',
+      description: 'A comrehensive report of Dealer Development Process.',
+      icon: BadgeIndianRupeeIcon,
+    },
+    {
+      id: 'dealerBrandCapacities',
+      title: 'Dealer Brand Capacities-Mapping',
+      description: 'A comrehensive report of how many MT of capacities each dealer has per brand of cement.',
+      icon: BadgeIndianRupeeIcon,
+    },
+    {
+      id: 'salesmanRating',
+      title: 'Salesman Rating',
+      description: 'A comrehensive report of ratings the salesmen recieve for their daily tasks, report submissions etc.',
+      icon: BadgeIndianRupeeIcon,
+    },
+    {
+      id: 'dealerReportsAndScores',
+      title: 'Dealer Reports and Scores',
+      description: 'A comrehensive report of scores of dealers/sub-delaers for their timely orders and payments etc.',
+      icon: BadgeIndianRupeeIcon,
+    },
+   
   ];
 
   const handleDownload = async (reportId: string, format: ReportFormat) => {

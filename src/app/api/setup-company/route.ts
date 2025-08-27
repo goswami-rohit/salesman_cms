@@ -5,12 +5,9 @@ import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
 import { z } from 'zod';
 import { WorkOSRole } from '@/lib/permissions';
-
-const workos = new WorkOS(process.env.WORKOS_API_KEY as string);
-
 // Define the valid regions and areas
-const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
-const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
+import {areas, regions} from '@/lib/area-region'
+const workos = new WorkOS(process.env.WORKOS_API_KEY as string);
 
 // Schema for the POST request body
 const SetupCompanySchema = z.object({

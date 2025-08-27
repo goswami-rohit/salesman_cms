@@ -6,7 +6,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
   Pagination,
   PaginationContent,
@@ -20,17 +19,38 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 // Updated schema to match the data structure from the API
 const geoTrackSchema = z.object({
   id: z.string(),
-  salesmanName: z.string(),
-  totalDistanceTravelled: z.number(), // Corrected from totalDistanceKm
-  checkInTime: z.string(),
-  checkOutTime: z.string().nullable(),
+  salesmanName: z.string().nullable(),
+  employeeId: z.string().nullable(),
+  workosOrganizationId: z.string().nullable(),
+  latitude: z.number(),
+  longitude: z.number(),
+  recordedAt: z.string(),
+  totalDistanceTravelled: z.number().nullable(),
+  accuracy: z.number().nullable().optional(),
+  speed: z.number().nullable().optional(),
+  heading: z.number().nullable().optional(),
+  altitude: z.number().nullable().optional(),
   locationType: z.string().nullable().optional(),
   activityType: z.string().nullable().optional(),
+  appState: z.string().nullable().optional(),
+  batteryLevel: z.number().nullable().optional(),
+  isCharging: z.boolean().nullable().optional(),
+  networkStatus: z.string().nullable().optional(),
+  ipAddress: z.string().nullable().optional(),
+  siteName: z.string().nullable().optional(),
+  checkInTime: z.string().nullable().optional(),
+  checkOutTime: z.string().nullable().optional(),
+  journeyId: z.string().nullable().optional(),
+  isActive: z.boolean(),
+  destLat: z.number().nullable().optional(),
+  destLng: z.number().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 // Define a type for the transformed data that we will use in the table
 type GeoTrack = z.infer<typeof geoTrackSchema>;
-type DisplayGeoTrack = GeoTrack & { trackDate: string };
+type DisplayGeoTrack = GeoTrack & { displayDate: string; displayCheckInTime: string; displayCheckOutTime: string };
 
 const ITEMS_PER_PAGE = 10;
 
@@ -41,33 +61,25 @@ export default function SalesmanGeoTrackingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper function to format ISO date strings
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'numeric', 
       day: 'numeric', 
-      hour: 'numeric', 
-      minute: '2-digit', 
-      second: '2-digit', 
-      hour12: true, 
-      timeZone: 'Asia/Kolkata' 
     });
   };
-
-  const formatTime = (dateString: string) => {
+  
+  const formatTime = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', { 
-      year: 'numeric', 
-      month: 'numeric', 
-      day: 'numeric', 
       hour: 'numeric', 
       minute: '2-digit', 
       second: '2-digit', 
-      hour12: true, 
-      timeZone: 'Asia/Kolkata' 
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
     });
   };
 
@@ -94,7 +106,9 @@ export default function SalesmanGeoTrackingPage() {
         .filter((item: GeoTrack | null): item is GeoTrack => item !== null)
         .map((item: GeoTrack) => ({
           ...item,
-          trackDate: formatDate(item.checkInTime), // Create a display-friendly date field
+          displayDate: formatDate(item.recordedAt),
+          displayCheckInTime: formatTime(item.checkInTime),
+          displayCheckOutTime: formatTime(item.checkOutTime),
         }));
 
       setTracks(validatedData);
@@ -112,9 +126,17 @@ export default function SalesmanGeoTrackingPage() {
     fetchTracks();
   }, [fetchTracks]);
 
-  const filteredTracks = tracks.filter(track =>
-    track.salesmanName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTracks = tracks.filter(track => {
+    const salesmanName = track.salesmanName || '';
+    const journeyId = track.journeyId || '';
+    const siteName = track.siteName || '';
+    
+    return (
+      salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      journeyId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      siteName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   const totalPages = Math.ceil(filteredTracks.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -131,35 +153,41 @@ export default function SalesmanGeoTrackingPage() {
     {
       accessorKey: 'salesmanName',
       header: 'Salesman',
+      cell: ({ row }) => row.original.salesmanName ?? 'N/A',
     },
     {
-      accessorKey: 'trackDate',
+      accessorKey: 'displayDate',
       header: 'Date',
     },
     {
-      accessorKey: 'totalDistanceTravelled', // Updated accessor key
-      header: 'Total Distance (km)',
-      cell: ({ row }) => `${row.original.totalDistanceTravelled.toFixed(2)} km`,
-    },
-    {
-      accessorKey: 'locationType',
-      header: 'Location Type',
-      cell: ({ row }) => row.original.locationType ?? 'N/A',
-    },
-    {
-      accessorKey: 'activityType',
-      header: 'Activity Type',
-      cell: ({ row }) => row.original.activityType ?? 'N/A',
+      accessorKey: 'siteName',
+      header: 'Site Name',
+      cell: ({ row }) => row.original.siteName ?? 'N/A',
     },
     {
       accessorKey: 'checkInTime',
       header: 'Check-in Time',
-      cell: ({ row }) => formatTime(row.original.checkInTime),
+      cell: ({ row }) => row.original.displayCheckInTime,
     },
     {
       accessorKey: 'checkOutTime',
       header: 'Check-out Time',
-      cell: ({ row }) => (row.original.checkOutTime ? formatTime(row.original.checkOutTime) : 'N/A'),
+      cell: ({ row }) => row.original.displayCheckOutTime,
+    },
+    {
+      accessorKey: 'totalDistanceTravelled',
+      header: 'Distance (km)',
+      cell: ({ row }) => (row.original.totalDistanceTravelled ? `${row.original.totalDistanceTravelled.toFixed(2)} km` : 'N/A'),
+    },
+    {
+      accessorKey: 'journeyId',
+      header: 'Journey ID',
+      cell: ({ row }) => row.original.journeyId ?? 'N/A',
+    },
+    {
+      accessorKey: 'isActive',
+      header: 'Active',
+      cell: ({ row }) => (row.original.isActive ? 'Yes' : 'No'),
     },
   ];
 
@@ -169,11 +197,11 @@ export default function SalesmanGeoTrackingPage() {
         <h1 className="text-2xl font-bold">Salesman Geo-Tracking</h1>
         <div className="flex justify-between items-center">
           <Input
-            placeholder="Search by Salesman Name..."
+            placeholder="Search by Salesman, Journey ID, or Site..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setCurrentPage(1); // Reset to first page on new search
+              setCurrentPage(1);
             }}
             className="max-w-sm"
           />
@@ -190,13 +218,9 @@ export default function SalesmanGeoTrackingPage() {
               <DataTableReusable
                 columns={columns}
                 data={currentTracks}
-                //reportTitle="GeoTracking Reports"
-                //filterColumnAccessorKey="salesmanName"
-                //onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false}
                 onRowOrderChange={() => {}}
               />
-
               <Pagination className="mt-6">
                 <PaginationContent>
                   <PaginationItem>

@@ -116,10 +116,6 @@ export default function DailyVisitReportsPage() {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-//   const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-//     console.log(`Download requested for ${format}`);
-//   };
-
   const dailyVisitReportColumns: ColumnDef<DailyVisitReport, any>[] = [
     columnHelper.accessor('salesmanName', { header: 'Salesman' }),
     columnHelper.accessor('reportDate', { header: 'Date' }),
@@ -169,9 +165,7 @@ export default function DailyVisitReportsPage() {
               <DataTableReusable
                 columns={dailyVisitReportColumns}
                 data={currentReports}
-                //reportTitle="Daily Visit Reports"
                 //filterColumnAccessorKey="salesmanName"
-                //onDownloadAll={dummyDownloadFunction}
                 enableRowDragging={false}
                 onRowOrderChange={() => {}}
               />

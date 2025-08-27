@@ -2,8 +2,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -32,9 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-
-// Import the reusable DataTable (if you still use it, ensure it takes simple data and columns)
 import { DataTableReusable } from '@/components/data-table-reusable';
 
 // --- 1. Define Zod Schema for Competition Report Data ---
@@ -64,19 +59,6 @@ export default function CompetitionReportsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<CompetitionReport | null>(null);
-
-  // React.useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login');
-  //     }
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard');
-  //     }
-  //   }
-  //   checkAuth();
-  // }, []);
 
   // --- Data Fetching Logic ---
   const fetchReports = useCallback(async () => {
@@ -142,10 +124,6 @@ export default function CompetitionReportsPage() {
     setIsViewModalOpen(true);
   };
 
-  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  // };
-
   // --- 3. Define Columns for Competition Report DataTable ---
   const competitionReportColumns: ColumnDef<CompetitionReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
@@ -205,7 +183,6 @@ export default function CompetitionReportsPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Competitor Information Reports</h2>
-          {/* Removed the 'Download All' button */}
         </div>
 
         {/* Search Input */}
@@ -227,9 +204,7 @@ export default function CompetitionReportsPage() {
               <DataTableReusable
                 columns={competitionReportColumns}
                 data={currentReports} // Pass the paginated & filtered data
-                //reportTitle="Competitor Information Reports"
-                //filterColumnAccessorKey="brandName"
-                //onDownloadAll={dummyDownloadFunction}
+                //filterColumnAccessorKey="brandName"      
                 enableRowDragging={false}               
                 onRowOrderChange={() => {}}
               />

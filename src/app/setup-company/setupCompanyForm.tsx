@@ -14,10 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
 // Define the valid regions and areas
-const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
-const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
+import {areas, regions} from '@/lib/area-region'
 
 export default function SetupCompanyForm() {
   const [companyName, setCompanyName] = useState('');

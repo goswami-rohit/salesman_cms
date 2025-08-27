@@ -6,11 +6,9 @@ import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { UniqueIdentifier } from '@dnd-kit/core';
-
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconCheck, IconX, IconDownload, IconExternalLink, IconCalendar } from '@tabler/icons-react';
+import { IconCheck, IconX, IconExternalLink, IconCalendar } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import {
   Pagination,
@@ -157,11 +155,6 @@ export default function SlmAttendancePage() {
     setIsViewModalOpen(true);
   };
 
-  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  // };
-
-
   // --- 3. Define Columns for Salesman Attendance DataTable ---
   const salesmanAttendanceColumns: ColumnDef<SalesmanAttendanceReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
@@ -233,41 +226,7 @@ export default function SlmAttendancePage() {
         </div>
       ),
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-        //   toast.info(`Downloading attendance report for ${row.original.salesmanName} on ${row.original.date} as ${format.toUpperCase()}...`);
-        //   console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-        //   // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        // };
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <IconDotsVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleViewReport(row.original)}>
-                View Details
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
   ];
-
-  // --- 4. Master Download Function for Salesman Attendance Reports ---
-  // const handleDownloadAllSalesmanAttendance = async (format: 'csv' | 'xlsx') => {
-  //   toast.info(`Preparing to download all Salesman Attendance Reports as ${format.toUpperCase()}...`);
-  //   console.log(`Simulating master download for all Salesman Attendance Reports in ${format}`);
-  //   // In a real scenario, you'd call an API endpoint here to generate and download the file for all reports.
-  // };
 
   const handleSalesmanAttendanceOrderChange = (newOrder: SalesmanAttendanceReport[]) => {
     console.log("New salesman attendance report order:", newOrder.map(r => r.id));
@@ -296,9 +255,6 @@ export default function SlmAttendancePage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Salesman Attendance Reports</h2>
-          {/* <Button onClick={() => handleDownloadAllSalesmanAttendance('xlsx')} className="flex items-center gap-2">
-            <IconDownload size={20} /> Download All
-          </Button> */}
         </div>
 
         {/* Search Input */}
@@ -361,9 +317,7 @@ export default function SlmAttendancePage() {
               <DataTableReusable
                 columns={salesmanAttendanceColumns}
                 data={paginatedReports}
-                //reportTitle="Salesman Attendance Reports"
-                //filterColumnAccessorKey="salesmanName"
-                //onDownloadAll={dummyDownloadFunction}
+                //filterColumnAccessorKey="salesmanName"              
                 enableRowDragging={false}
                 onRowOrderChange={handleSalesmanAttendanceOrderChange}
               />

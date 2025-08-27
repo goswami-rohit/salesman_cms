@@ -346,14 +346,23 @@ model GeoTracking {
   siteName                String?   @map("site_name") @db.VarChar(255) // Optional: Name of a specific site if visited
   checkInTime             DateTime? @map("check_in_time") @db.Timestamptz(6) // Optional: Timestamp of check-in
   checkOutTime            DateTime? @map("check_out_time") @db.Timestamptz(6) // Optional: Timestamp of check-out
-  totalDistanceTravelled Decimal? @map("total_distance_travelled") @db.Decimal(10, 3) // NEW FIELD! Total distance in KM or M
+  totalDistanceTravelled  Decimal?  @map("total_distance_travelled") @db.Decimal(10, 3) // NEW FIELD! Total distance in KM or M
+  journeyId               String?   @map("journey_id")
+  isActive                Boolean   @default(true) @map("is_active")
+  destLat                 Decimal?  @map("dest_lat") @db.Decimal(10, 7)
+  destLng                 Decimal?  @map("dest_lng") @db.Decimal(10, 7)
 
-  // Relationship to the User (staff/employee)
+  // Relationship to the User (junior-exec, exec, etc...)
   user User @relation("UserGeoTracking", fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+   // INDEXES THAT MATTER
+  @@index([userId, recordedAt], map: "idx_geo_user_time")
+  @@index([journeyId, recordedAt], map: "idx_geo_journey_time")
+  @@index([isActive], map: "idx_geo_active")
+  //-----------------
   @@index([userId], map: "idx_geo_tracking_user_id")
   @@index([recordedAt], map: "idx_geo_tracking_recorded_at") // Useful for time-based queries
   @@map("geo_tracking") // Table name in DB

@@ -2,8 +2,6 @@
 'use client';
 
 import * as React from 'react';
-// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,17 +10,9 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
+import { IconDotsVertical } from '@tabler/icons-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -80,20 +70,6 @@ export default function DealerReportsPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedReport, setSelectedReport] = React.useState<DealerReport | null>(null);
-
-
-  // React.useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login');
-  //     }
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard');
-  //     }
-  //   }
-  //   checkAuth();
-  // }, []);
 
   // --- Data Fetching Logic ---
   const fetchReports = React.useCallback(async () => {
@@ -173,10 +149,6 @@ export default function DealerReportsPage() {
     setIsViewModalOpen(true);
   };
 
-  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  // };
-
   // --- 3. Define Columns for Dealer/Sub-Dealer Report DataTable ---
   const dealerReportColumns: ColumnDef<DealerReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
@@ -216,13 +188,6 @@ export default function DealerReportsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-        //   const name = row.original.type === "Dealer" ? row.original.dealerName : row.original.subDealerName;
-        //   toast.info(`Downloading report for ${name} as ${format.toUpperCase()}...`);
-        //   console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-        //   // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        // };
-
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -241,17 +206,6 @@ export default function DealerReportsPage() {
       },
     },
   ];
-
-  // --- 4. Master Download Functions for Each Tab ---
-  // const handleDownloadAllDealers = async (format: 'csv' | 'xlsx') => {
-  //   toast.info(`Preparing to download all Dealer Reports as ${format.toUpperCase()}...`);
-  //   console.log(`Simulating master download for all Dealers in ${format}`);
-  // };
-
-  // const handleDownloadAllSubDealers = async (format: 'csv' | 'xlsx') => {
-  //   toast.info(`Preparing to download all Sub-Dealer Reports as ${format.toUpperCase()}...`);
-  //   console.log(`Simulating master download for all Sub-Dealers in ${format}`);
-  // };
 
   const handleDealerReportOrderChange = (newOrder: DealerReport[]) => {
     console.log("New dealer report order:", newOrder.map(r => r.id));
@@ -296,12 +250,8 @@ export default function DealerReportsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
               />
-              {/* <Button onClick={() => (activeTab === 'dealers' ? handleDownloadAllDealers('xlsx') : handleDownloadAllSubDealers('xlsx'))} className="flex items-center gap-2">
-                <IconDownload size={20} /> Download All
-              </Button> */}
             </div>
           </div>
-
 
           {/* Content for Dealers Tab */}
           <TabsContent value="dealers" className="mt-4 bg-card p-6 rounded-lg border border-border">
@@ -312,12 +262,9 @@ export default function DealerReportsPage() {
                 <DataTableReusable
                   columns={dealerReportColumns}
                   data={paginatedReports}
-                  //reportTitle="Dealer Reports"
                   //filterColumnAccessorKey="dealerName"
-                  //onDownloadAll={dummyDownloadFunction}
                   enableRowDragging={false}
                   onRowOrderChange={handleDealerReportOrderChange}
-                  // Removed: hideToolbar={true}
                 />
                 <Pagination className="mt-6">
                   <PaginationContent>

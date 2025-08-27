@@ -32,6 +32,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { IconCalendar } from "@tabler/icons-react";
 import { DataTableReusable } from '@/components/data-table-reusable';
+// Define the valid regions and areas
+import {areas, regions} from '@/lib/area-region'
 
 // --- Zod Schemas for Data and Form Validation ---
 
@@ -116,10 +118,6 @@ const assignTaskFormSchema = z.object({
     }
   }
 });
-
-// Hardcoded lists for Area and Region selectors
-const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
-const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
 
 export default function AssignTasksPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);

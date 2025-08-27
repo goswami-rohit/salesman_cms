@@ -48,11 +48,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-
-// Define the valid regions and areas based on your company's data
-const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
-const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
-
+// Define the valid regions and areas
+import {areas, regions} from '@/lib/area-region'
 
 interface User {
   id: number;

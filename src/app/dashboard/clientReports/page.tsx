@@ -81,10 +81,6 @@ export default function ClientReportsPage() {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-  //   console.log(`Download requested for ${format}`);
-  // };
-
   const columns: ColumnDef<ClientReport>[] = [
     { accessorKey: 'clientName', header: 'Client Name' },
     { accessorKey: 'contactPerson', header: 'Contact Person' },
@@ -127,9 +123,7 @@ export default function ClientReportsPage() {
               <DataTableReusable
                 columns={columns}
                 data={currentReports}
-                //reportTitle="Client Reports"
-                //filterColumnAccessorKey="clientName"
-                //onDownloadAll={dummyDownloadFunction}
+                //filterColumnAccessorKey="clientName"       
                 enableRowDragging={false}
                 onRowOrderChange={() => {}}
               />

@@ -105,6 +105,10 @@ export async function GET() {
       siteName: report.siteName,
       checkInTime: report.checkInTime?.toISOString() ?? null,
       checkOutTime: report.checkOutTime?.toISOString() ?? null,
+      journeyId: report.journeyId ?? null, 
+      isActive: report.isActive, 
+      destLat: report.destLat?.toNumber() ?? null, 
+      destLng: report.destLng?.toNumber() ?? null, 
       createdAt: report.createdAt.toISOString(),
       updatedAt: report.updatedAt.toISOString(),
     }));

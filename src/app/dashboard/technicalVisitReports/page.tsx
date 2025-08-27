@@ -2,18 +2,14 @@
 'use client';
 
 import * as React from 'react';
-// import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-// import { redirect } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { UniqueIdentifier } from '@dnd-kit/core';
-
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { IconDotsVertical } from '@tabler/icons-react';
-
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 
@@ -30,6 +26,17 @@ const technicalVisitReportSchema = z.object({
   salespersonRemarks: z.string(),
   checkInTime: z.string(),
   checkOutTime: z.string(),
+  siteVisitBrandInUse: z.string().optional(),
+  siteVisitStage: z.string().optional(),
+  conversionFromBrand: z.string().optional(),
+  conversionQuantityValue: z.string().optional(),
+  conversionQuantityUnit: z.string().optional(),
+  associatedPartyName: z.string().optional(),
+  influencerType: z.string().optional(),
+  serviceType: z.string().optional(),
+  qualityComplaint: z.string().optional(),
+  promotionalActivity: z.string().optional(),
+  channelPartnerVisit: z.string().optional(),
 });
 
 // Infer the TypeScript type from the Zod schema
@@ -38,19 +45,6 @@ type TechnicalVisitReport = z.infer<typeof technicalVisitReportSchema>;
 export default function TechnicalVisitReportsPage() {
   const [technicalReports, setTechnicalReports] = React.useState<TechnicalVisitReport[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-
-  // React.useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login');
-  //     }
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard');
-  //     }
-  //   }
-  //   checkAuth();
-  // }, []);
 
   // --- Data Fetching Function ---
   const fetchTechnicalReports = React.useCallback(async () => {
@@ -71,10 +65,6 @@ export default function TechnicalVisitReportsPage() {
       setIsLoading(false);
     }
   }, []);
-
-  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  // };
 
 
   React.useEffect(() => {
@@ -97,42 +87,18 @@ export default function TechnicalVisitReportsPage() {
     { accessorKey: "salespersonRemarks", header: "Salesman Remarks",
       cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.salespersonRemarks}</span>,
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-        //   toast.info(`Downloading report for ${row.original.siteNameConcernedPerson} as ${format.toUpperCase()}...`);
-        //   console.log(`Simulating individual download for ${row.original.id} in ${format}`);
-        // };
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <IconDotsVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              {/* <DropdownMenuItem onClick={() => handleIndividualDownload('csv')}>
-                Download CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleIndividualDownload('xlsx')}>
-                Download XLSX
-              </DropdownMenuItem> */}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
+    { accessorKey: "siteVisitBrandInUse", header: "Brand in Use" },
+    { accessorKey: "siteVisitStage", header: "Site Stage" },
+    { accessorKey: "conversionFromBrand", header: "Conversion From" },
+    { accessorKey: "conversionQuantityValue", header: "Conv. Qty." },
+    { accessorKey: "conversionQuantityUnit", header: "Conv. Unit" },
+    { accessorKey: "associatedPartyName", header: "Associated Party" },
+    { accessorKey: "influencerType", header: "Influencer Type" },
+    { accessorKey: "serviceType", header: "Service Type" },
+    { accessorKey: "qualityComplaint", header: "Quality Complaint" },
+    { accessorKey: "promotionalActivity", header: "Promotional Activity" },
+    { accessorKey: "channelPartnerVisit", header: "Channel Partner Visit" },
   ];
-
-  // --- 4. Master Download Function for Technical Visit Reports ---
-  // const handleDownloadAllTechnicalVisitReports = async (format: 'csv' | 'xlsx') => {
-  //   toast.info(`Preparing to download all Technical Visit Reports as ${format.toUpperCase()}...`);
-  //   console.log(`Simulating master download for all Technical Visit Reports in ${format}`);
-  // };
 
   const handleTechnicalVisitReportOrderChange = (newOrder: TechnicalVisitReport[]) => {
     console.log("New technical visit report order:", newOrder.map(r => r.id));
@@ -151,9 +117,7 @@ export default function TechnicalVisitReportsPage() {
           <DataTableReusable
             columns={technicalVisitReportColumns}
             data={technicalReports} // Use fetched data
-            //reportTitle="Technical Visit Reports"
             //filterColumnAccessorKey="siteNameConcernedPerson" // Filter by site name
-            //nDownloadAll={dummyDownloadFunction}
             enableRowDragging={false} // Technical visit reports typically don't need reordering
             onRowOrderChange={handleTechnicalVisitReportOrderChange}
           />

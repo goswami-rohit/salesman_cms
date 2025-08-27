@@ -30,16 +30,38 @@ export async function GET() {
     // Fetch Permanent Journey Plans for the current user's company
     const permanentJourneyPlans = await prisma.permanentJourneyPlan.findMany({
       where: {
-        user: { // Access the User relation to filter by the user's company
+        // Filter by the user's company who is assigned to the plan
+        user: { 
           companyId: currentUser.companyId,
         },
       },
       include: {
-        user: { // Include salesman details to get their name
+        // Include salesman details to get their name
+        user: { 
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        // Include creator details
+        createdBy: {
           select: {
             firstName: true,
             lastName: true,
             email: true,
+            role: true,
+          },
+        },
+        // Also include the daily tasks associated with the PJP
+        dailyTasks: {
+          select: {
+            id: true,
+            status: true,
+            visitType: true,
+            relatedDealerId: true,
+            siteName: true,
           },
         },
       },
@@ -49,13 +71,27 @@ export async function GET() {
     });
 
     // Map the data to match the frontend's PermanentJourneyPlan schema
-    const formattedPlans = permanentJourneyPlans.map(plan => ({
-      id: plan.id,
-      salesmanName: `${plan.user.firstName || ''} ${plan.user.lastName || ''}`.trim() || plan.user.email,
-      areaToBeVisited: plan.areaToBeVisited,
-      date: plan.planDate.toISOString().split('T')[0], // Format date as YYYY-MM-DD string
-      description: plan.description,
-    }));
+    const formattedPlans = permanentJourneyPlans.map(plan => {
+      // Construct salesman and creator names, handling potential nulls
+      const salesmanName = `${plan.user.firstName || ''} ${plan.user.lastName || ''}`.trim() || plan.user.email;
+      const createdByName = `${plan.createdBy.firstName || ''} ${plan.createdBy.lastName || ''}`.trim() || plan.createdBy.email;
+
+      // Extract only the IDs of the tasks
+      const taskIds = plan.dailyTasks.map(task => task.id);
+
+      return {
+        id: plan.id,
+        salesmanName: salesmanName,
+        userId: plan.userId,
+        createdByName: createdByName,
+        createdByRole: plan.createdBy.role,
+        areaToBeVisited: plan.areaToBeVisited,
+        planDate: plan.planDate.toISOString().split('T')[0], // Format date as YYYY-MM-DD string
+        description: plan.description,
+        status: plan.status,
+        taskIds: taskIds,
+      };
+    });
 
     return NextResponse.json(formattedPlans, { status: 200 });
   } catch (error) {

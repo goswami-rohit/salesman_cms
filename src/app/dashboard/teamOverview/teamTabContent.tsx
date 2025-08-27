@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { PencilIcon, EyeIcon, UsersIcon, Loader2, StoreIcon } from 'lucide-react';
 import { MultiSelect } from '@/components/multi-select';
 import { ROLE_HIERARCHY, canAssignRole } from '@/lib/roleHierarchy';
+import { areas, regions } from '@/lib/area-region';
 
 interface TeamMember {
   id: number;
@@ -29,6 +30,8 @@ interface TeamMember {
   managedById: number | null;
   managesIds: number[];
   managesReports: { name: string; role: string }[];
+  area?: string | null;
+  region?: string | null;
 }
 
 const allRoles = ROLE_HIERARCHY;
@@ -248,28 +251,50 @@ function EditDealerMappingCell({
   const [isLoading, setIsLoading] = useState(true);
   const [dealerOptions, setDealerOptions] = useState<{ value: string; label: string }[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  // New state for area and region filters
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const ALL = "all";
 
   // Fetch dealers for this user when popover opens
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      // Reset filters when the popover closes
+      setSelectedArea(null);
+      setSelectedRegion(null);
+      return;
+    }
     (async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editDealerMapping?userId=${member.id}`
-        );
+        // Construct the URL with area and region query parameters
+        const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editDealerMapping`);
+        url.searchParams.append('userId', String(member.id));
+        // Use selected filters instead of member's area/region
+        if (selectedArea) {
+          url.searchParams.append('area', selectedArea);
+        }
+        if (selectedRegion) {
+          url.searchParams.append('region', selectedRegion);
+        }
+
+        const res = await fetch(url.toString());
         if (res.ok) {
           const data = await res.json();
           setDealerOptions(data.dealers.map((d: any) => ({ value: d.id, label: d.name })));
           setSelectedDealerIds(data.assignedDealerIds ?? []);
+        } else {
+          console.error("Failed to fetch dealers", res.status);
+          toast.error("Failed to load dealers. Please try again.");
         }
       } catch (e) {
         console.error("Failed to fetch dealers", e);
+        toast.error("An error occurred while loading dealers.");
       } finally {
         setIsLoading(false);
       }
     })();
-  }, [isOpen, member.id]);
+  }, [isOpen, member.id, selectedArea, selectedRegion]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -279,6 +304,11 @@ function EditDealerMappingCell({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleClearFilters = () => {
+    setSelectedArea(null);
+    setSelectedRegion(null);
   };
 
   return (
@@ -291,6 +321,52 @@ function EditDealerMappingCell({
       <PopoverContent className="w-96">
         <h4 className="font-bold mb-2">Edit Dealer Mapping</h4>
         <p className="text-sm text-gray-500 mb-4">Salesman: {member.name}</p>
+
+        {/* Dropdown selectors for Area and Region */}
+        <div className="flex gap-2 mb-4">
+          {/* Area */}
+          <Select
+            value={selectedArea ?? ALL}
+            onValueChange={(val) => setSelectedArea(val === ALL ? null : val)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Area" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All Areas</SelectItem>
+              {areas.map((area) => (
+                <SelectItem key={area} value={area}>
+                  {area}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Region */}
+          <Select
+            value={selectedRegion ?? ALL}
+            onValueChange={(val) => setSelectedRegion(val === ALL ? null : val)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Region" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All Regions</SelectItem>
+              {regions.map((region) => (
+                <SelectItem key={region} value={region}>
+                  {region}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clear Filters Button */}
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" onClick={handleClearFilters} disabled={!selectedArea && !selectedRegion}>
+            Clear Filters
+          </Button>
+        </div>
 
         {isLoading ? (
           <div className="py-4 text-center text-gray-500">Loading dealers...</div>

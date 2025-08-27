@@ -51,20 +51,6 @@ export default function SlmLeavesPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
 
-  // Auth check remains the same
-  // React.useEffect(() => {
-  //   async function checkAuth() {
-  //     const claims = await getTokenClaims();
-  //     if (!claims || !claims.sub) {
-  //       redirect('/login');
-  //     }
-  //     if (!claims.org_id) {
-  //       redirect('/dashboard');
-  //     }
-  //   }
-  //   checkAuth();
-  // }, []);
-
   // --- Data Fetching Logic ---
   const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-leaves`
   const fetchLeaveApplications = React.useCallback(async () => {
@@ -163,10 +149,6 @@ export default function SlmLeavesPage() {
     }
   };
 
-  // const dummyDownloadFunction = async (format: 'csv' | 'xlsx') => {
-  //   console.log(`Download for ${format} requested, but download functionality is avialbe on Download Reports page.`);
-  // };
-
 
   React.useEffect(() => {
     setCurrentPage(1); // Reset page to 1 when search query changes
@@ -208,55 +190,7 @@ export default function SlmLeavesPage() {
     { accessorKey: "adminRemarks", header: "Admin Remarks",
       cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.adminRemarks || "N/A"}</span>,
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        const leave = row.original;
-        const isPending = leave.status === "Pending";
-
-        // const handleIndividualDownload = async (format: 'csv' | 'xlsx') => {
-        //   toast.info(`Downloading leave report for ${leave.salesmanName} (${leave.startDate} to ${leave.endDate}) as ${format.toUpperCase()}...`);
-        //   console.log(`Simulating individual download for ${leave.id} in ${format}`);
-        //   // In a real scenario, you'd call an API endpoint here to generate and download the file.
-        // };
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <IconDotsVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              {isPending && ( // Show Approve/Reject only if status is Pending
-                <>
-                  <DropdownMenuItem onClick={() => handleLeaveAction(leave.id, "Approved", "Approved by admin.")}>
-                    Approve
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleLeaveAction(leave.id, "Rejected", "Rejected by admin.")}>
-                    Reject
-                  </DropdownMenuItem>
-                </>
-              )}
-              {!isPending && ( // Show status if not pending
-                <DropdownMenuItem className="text-muted-foreground" disabled>
-                  {leave.status}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
   ];
-
-  // --- Master Download Function for Salesman Leave Applications ---
-  // const handleDownloadAllSalesmanLeaves = async (format: 'csv' | 'xlsx') => {
-  //   toast.info(`Preparing to download all Salesman Leave Applications as ${format.toUpperCase()}...`);
-  //   console.log(`Simulating master download for all Salesman Leave Applications in ${format}`);
-  // };
 
   const handleSalesmanLeaveOrderChange = (newOrder: SalesmanLeaveApplication[]) => {
     console.log("New salesman leave report order:", newOrder.map(r => r.id));
@@ -286,9 +220,6 @@ export default function SlmLeavesPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Salesman Leave Applications</h2>
-          {/* <Button onClick={() => handleDownloadAllSalesmanLeaves('xlsx')} className="flex items-center gap-2">
-            <IconDownload size={20} /> Download All
-          </Button> */}
         </div>
 
         {/* Search Input */}
@@ -310,10 +241,8 @@ export default function SlmLeavesPage() {
               <DataTableReusable
                 columns={salesmanLeaveColumns}
                 data={paginatedApplications}
-                //reportTitle="Salesman Leave Applications"
                 //filterColumnAccessorKey="salesmanName" // Filter by salesman name
-                //onDownloadAll={dummyDownloadFunction}
-                enableRowDragging={false} // Leave applications typically don't need reordering
+                enableRowDragging={false}
                 onRowOrderChange={handleSalesmanLeaveOrderChange}
               />
               <Pagination className="mt-6">

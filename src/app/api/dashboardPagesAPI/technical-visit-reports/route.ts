@@ -61,19 +61,31 @@ export async function GET() {
         .filter(Boolean) // Filters out any null or undefined parts
         .join(' ') || 'N/A'; // Joins remaining parts with a space, defaults to 'N/A' if empty
 
-      return {
+     return {
         id: report.id,
         salesmanName: salesmanName,
         role: report.user.role,
         visitType: report.visitType,
         siteNameConcernedPerson: report.siteNameConcernedPerson,
         phoneNo: report.phoneNo,
-        date: report.reportDate.toISOString().split('T')[0], // Format date to YYYY-MM-DD
-        emailId: report.emailId || '', // Ensure emailId is a string, default to empty
+        date: report.reportDate.toISOString().split('T')[0], 
+        emailId: report.emailId || '', 
         clientsRemarks: report.clientsRemarks,
         salespersonRemarks: report.salespersonRemarks,
-        checkInTime: report.checkInTime.toISOString(), // Keep as ISO string for full timestamp
-        checkOutTime: report.checkOutTime?.toISOString() || '', // Optional checkout time
+        checkInTime: report.checkInTime.toISOString(), 
+        checkOutTime: report.checkOutTime?.toISOString() || '', 
+        //new cols added
+        siteVisitBrandInUse: report.siteVisitBrandInUse || '',
+        siteVisitStage: report.siteVisitStage || '',
+        conversionFromBrand: report.conversionFromBrand || '',
+        conversionQuantityValue: report.conversionQuantityValue?.toString() || '',
+        conversionQuantityUnit: report.conversionQuantityUnit || '',
+        associatedPartyName: report.associatedPartyName || '',
+        influencerType: report.influencerType || '',
+        serviceType: report.serviceType || '',
+        qualityComplaint: report.qualityComplaint || '',
+        promotionalActivity: report.promotionalActivity || '',
+        channelPartnerVisit: report.channelPartnerVisit || '',
       };
     });
 

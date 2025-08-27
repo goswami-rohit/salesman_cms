@@ -180,7 +180,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     teamOverview: true,
     users: true,
     assignTasks: true,
-    addDealers: false,
+    addDealers: true,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
@@ -205,7 +205,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     teamOverview: true,
     users: true,
     assignTasks: true,
-    addDealers: false, // Managers can't add dealers directly
+    addDealers: true, // Managers can't add dealers directly
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
@@ -230,7 +230,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     teamOverview: true,
     users: true,
     assignTasks: true,
-    addDealers: false,
+    addDealers: true,
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,

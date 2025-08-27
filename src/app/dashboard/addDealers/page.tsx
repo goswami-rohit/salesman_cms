@@ -30,6 +30,9 @@ import {
 } from '@/components/ui/dialog';
 import { MultiSelect } from '@/components/multi-select';
 import { DataTableReusable } from '@/components/data-table-reusable';
+// Define the valid regions and areas
+import {areas, regions} from '@/lib/area-region'
+
 
 // --- Zod Schema for GET response validation (DUPLICATED FOR CLIENT-SIDE) ---
 // This schema is now defined directly in the client component to avoid server-side imports.
@@ -100,8 +103,6 @@ export default function AddDealersPage() {
 
     // Dropdown Options (Hardcoded as per request)
     const dealerTypes = ["Dealer-Best", "Sub Dealer-Best", "Dealer-Non Best", "Sub Dealer-Non Best"];
-    const regions = ["Kamrup M", "Kamrup", "Karbi Anglong", "Dehmaji"];
-    const areas = ["Guwahati", "Tezpur", "Diphu", "Nagaon", "Barpeta"];
     const brands = ["Star", "Amrit", "Dalmia", "Topcem", "Black Tiger", "Surya Gold", "Max", "Taj", "Specify in remarks"];
 
     const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/add-dealers`;
