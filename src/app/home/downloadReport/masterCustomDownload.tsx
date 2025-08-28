@@ -44,7 +44,8 @@ const tables = [
   {
     id: 'dealers',
     title: 'Dealers',
-    columns: ["id", "name", "email", "address", "city", "state", "pincode", "phoneNumber",
+    columns: ["id", "name", "region", "area", "address", "phoneNo",
+      "totalPotential", "bestPotential", "brandSelling", "feedbacks", "remarks",
       "salesmanName", "createdAt", "updatedAt"],
   },
   {
