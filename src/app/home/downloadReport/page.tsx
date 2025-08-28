@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Download, 
+import {
+  Download,
   Car,
   MapPin,
   PencilRuler,
@@ -22,14 +22,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { MasterCustomDownload } from '@/app/home/downloadReport/masterCustomDownload';
 
 type ReportFormat = 'csv' | 'xlsx';
 
@@ -44,7 +45,7 @@ interface ReportCardProps {
 
 const ReportCard: React.FC<ReportCardProps> = ({ id, title, description, icon: Icon, disabled, onDownload }) => {
   const [selectedFormat, setSelectedFormat] = useState<ReportFormat>('csv');
-  
+
   const handleDownloadClick = () => {
     onDownload(id, selectedFormat);
   };
@@ -69,13 +70,13 @@ const ReportCard: React.FC<ReportCardProps> = ({ id, title, description, icon: I
               <SelectValue placeholder="Select format" />
             </SelectTrigger>
             <SelectContent>
+              {/*CSV & XLSX downloadable needs to be set in lib/download-utils.ts and here */}
               <SelectItem value="csv">CSV</SelectItem>
-              {/*XLSX downloadable needs to be set later in lib/download-utils.ts and here */}
-              {/*<SelectItem value="xlsx">XLSX</SelectItem>*/}
+              <SelectItem value="xlsx">XLSX</SelectItem>
             </SelectContent>
           </Select>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             onClick={handleDownloadClick}
             disabled={disabled}
             className="flex-1"
@@ -89,9 +90,65 @@ const ReportCard: React.FC<ReportCardProps> = ({ id, title, description, icon: I
   );
 };
 
-
 export default function DownloadsPage() {
   const [downloadingReport, setDownloadingReport] = useState<string | null>(null);
+
+  const masterCustomDownloadURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/downloads/masterCustomDownload`;
+  const downloadURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/downloads`;
+
+  // A new dedicated handler for the master custom download
+  const handleMasterDownload = async (format: ReportFormat, 
+                                      selections: { table: string, column: string }[]) => {
+    setDownloadingReport('masterCustomDownload');
+    try {
+      const res = await fetch(masterCustomDownloadURI, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format, selections }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Download failed');
+      }
+
+      // stream as file
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || `report.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingReport(null);
+    }
+  }
+
+  const handleDownload = async (reportId: string, format: ReportFormat) => {
+    setDownloadingReport(reportId);
+    try {
+      const response = await fetch(`${downloadURI}?reportType=${reportId}&format=${format}`);
+      if (!response.ok) {
+        throw new Error('Failed to download file.');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `${reportId}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      // In a real app, you would show a user-facing error message here.
+    } finally {
+      setDownloadingReport(null);
+    }
+  };
 
   const reports = [
     {
@@ -190,32 +247,8 @@ export default function DownloadsPage() {
       description: 'A comrehensive report of scores of dealers/sub-delaers for their timely orders and payments etc.',
       icon: Award,
     },
-   
-  ];
 
-  const handleDownload = async (reportId: string, format: ReportFormat) => {
-    setDownloadingReport(reportId);
-    try {
-      const response = await fetch(`/api/downloads?reportType=${reportId}&format=${format}`);
-      if (!response.ok) {
-        throw new Error('Failed to download file.');
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `${reportId}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download error:', error);
-      // In a real app, you would show a user-facing error message here.
-    } finally {
-      setDownloadingReport(null);
-    }
-  };
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -223,6 +256,10 @@ export default function DownloadsPage() {
         <div>
           <h1 className="text-3xl font-bold">Downloads</h1>
           <p className="text-muted-foreground">Download comprehensive reports for various data tables.</p>
+        </div>
+        <div className="text-gray-900 bg-white rounded-lg hover:bg-gray-900 hover:text-white">
+          <MasterCustomDownload onDownload={handleMasterDownload} 
+                                isDownloading={downloadingReport === 'masterCustomDownload'} />
         </div>
       </div>
       <Separator className="my-6" />
@@ -236,7 +273,7 @@ export default function DownloadsPage() {
             description={report.description}
             icon={report.icon}
             onDownload={handleDownload}
-            disabled={downloadingReport === report.id}
+            disabled={downloadingReport === report.id || downloadingReport === 'masterCustomDownload'}
           />
         ))}
       </div>

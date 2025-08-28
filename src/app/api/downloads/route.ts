@@ -1,7 +1,7 @@
 // src/app/api/downloads/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getAuthClaims, generateAndStreamCsv } from '@/lib/download-utils';
+import { getAuthClaims, generateAndStreamCsv, generateAndStreamXlsx } from '@/lib/download-utils';
 
 const allowedRoles = [
   'president',
@@ -14,23 +14,6 @@ const allowedRoles = [
   'assistant-manager',
 ];
 
-// Helper function to mock XLSX generation. In a real application, you would use a library like 'exceljs' or 'xlsx'.
-const generateAndStreamXlsx = (data: string[][], filename: string) => {
-  // This is a placeholder. A real implementation would convert the data to an XLSX file buffer.
-  const content = `This is a placeholder for your XLSX file.
-A real implementation would use a library like 'exceljs' to convert the data to a spreadsheet.
-Data provided was:
-${data.map(row => row.join(',')).join('\n')}`;
-
-  const headers = new Headers();
-  headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  headers.set('Content-Disposition', `attachment; filename="${filename}"`);
-
-  return new NextResponse(content, {
-    status: 200,
-    headers: headers,
-  });
-};
 
 // Generic helper to format any table data into CSV rows
 const formatTableDataForCsv = (data: any[]) => {
@@ -817,11 +800,16 @@ async function getDealerReportsAndScoresForCsv(companyId: number) {
   return formatTableDataForCsv(formattedScores);
 }
 
+//Master Custom Download
+//imported from masterCustomDownload.ts
+
 export async function GET(request: NextRequest) {
   try {
+    //1. Auth check
     const claims = await getAuthClaims();
     if (claims instanceof NextResponse) return claims;
 
+    // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
       include: { company: true }
@@ -835,6 +823,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const reportType = searchParams.get('reportType');
     const format = searchParams.get('format');
+    //const selectionsParam = searchParams.get('selections');
 
     if (!reportType || !format) {
       return NextResponse.json({ error: 'Missing reportType or format query parameter' }, { status: 400 });
@@ -844,6 +833,15 @@ export async function GET(request: NextRequest) {
     let filename = '';
 
     switch (reportType) {
+      // case 'masterCustomDownload':
+      //   if (!selectionsParam) {
+      //     return NextResponse.json(
+      //       { error: 'Missing selections parameter for master custom download' }, { status: 400 });
+      //   }
+      //   const selections = JSON.parse(selectionsParam);
+      //   csvData = await getMasterCustomDownloadData(currentUser.companyId, selections);
+      //   filename = `master-custom-download-${Date.now()}`;
+      //   break;
       case 'dailyVisitReports':
         csvData = await getDailyVisitReportsForCsv(currentUser.companyId);
         filename = `daily-visit-reports-${Date.now()}`;
@@ -916,7 +914,10 @@ export async function GET(request: NextRequest) {
     if (format === 'csv') {
       return generateAndStreamCsv(csvData, `${filename}.csv`);
     } else if (format === 'xlsx') {
-      return generateAndStreamXlsx(csvData, `${filename}.xlsx`);
+      // csvData is [headers, ...rows]
+      const headers = (csvData[0] ?? []) as string[];
+      const rows = csvData.slice(1);
+      return generateAndStreamXlsx(rows, headers, `${filename}.xlsx`);
     } else {
       return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
     }
