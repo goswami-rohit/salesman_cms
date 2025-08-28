@@ -139,17 +139,17 @@ model TechnicalVisitReport {
   updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   //Added fields from the pdf
-  siteVisitBrandInUse String? @map("site_visit_brand_in_use") // e.g., "Star/Dalmia/Ultratech" [cite: 99]
-  siteVisitStage      String? @map("site_visit_stage")      // e.g., "Foundation/column/slab casting" [cite: 100]
+  siteVisitBrandInUse     String[] @map("site_visit_brand_in_use") // e.g., "Star/Dalmia/Ultratech" [cite: 99]
+  siteVisitStage          String? @map("site_visit_stage")      // e.g., "Foundation/column/slab casting" [cite: 100]
   conversionFromBrand     String?  @map("conversion_from_brand")      // e.g., "Dalmia/Star" [cite: 102]
   conversionQuantityValue Decimal? @map("conversion_quantity_value") @db.Decimal(10, 2)
   conversionQuantityUnit  String?  @map("conversion_quantity_unit")  @db.VarChar(20) // "Bag" or "MT" [cite: 103]
   associatedPartyName     String?  @map("associated_party_name")     // Dealer, Sub dealer name [cite: 104]
-  influencerType String? @map("influencer_type") // e.g., "Contractor", "Engineer" etc. [cite: 106, 107, 108, 109, 110, 111]
-  serviceType String? @map("service_type") // e.g., "Dhalai Attend" [cite: 113]
-  qualityComplaint String? @map("quality_complaint") // e.g., "Slow Setting", "Cracks" etc. [cite: 116, 117, 118, 119]
-  promotionalActivity String? @map("promotional_activity") // e.g., "Mason Meet" [cite: 122]
-  channelPartnerVisit String? @map("channel_partner_visit") // e.g., "Dealer Visit" [cite: 129]
+  influencerType          String[] @map("influencer_type") // e.g., "Contractor", "Engineer" etc. [cite: 106, 107, 108, 109, 110, 111]
+  serviceType             String? @map("service_type") // e.g., "Dhalai Attend" [cite: 113]
+  qualityComplaint        String? @map("quality_complaint") // e.g., "Slow Setting", "Cracks" etc. [cite: 116, 117, 118, 119]
+  promotionalActivity     String? @map("promotional_activity") // e.g., "Mason Meet" [cite: 122]
+  channelPartnerVisit     String? @map("channel_partner_visit") // e.g., "Dealer Visit" [cite: 129]
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
