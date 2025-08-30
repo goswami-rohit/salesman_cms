@@ -49,11 +49,11 @@ const iconSvgString = encodeURIComponent(renderToStaticMarkup(
 
 // A separate component to render the map and markers
 const LeafletMap = dynamic(
-  () => import('react-leaflet').then(mod => {
-    const { MapContainer, TileLayer, Marker, Popup, useMap } = mod;
-    const L = require('leaflet');
+  async () => {
+    const { MapContainer, TileLayer, Marker, Popup, useMap } = await import('react-leaflet');
+    // FIX: Use ES module dynamic import for leaflet
+    const L = (await import('leaflet')).default;
 
-    // L is only imported here, where the code runs client-side
     const salesmanIcon = L.divIcon({
       html: `<div style="transform: translateY(-50%)">${decodeURIComponent(iconSvgString)}</div>`,
       iconSize: [36, 36],
@@ -62,7 +62,6 @@ const LeafletMap = dynamic(
       className: "bg-transparent border-none"
     });
 
-    // A nested component to handle map invalidation
     const MapReset = () => {
       const map = useMap();
       useEffect(() => {
@@ -73,7 +72,8 @@ const LeafletMap = dynamic(
       return null;
     };
 
-    return ({ locations }: { locations: LiveLocationData[] }) => {
+    // FIX: Give the component a name
+    const MapComponent = ({ locations }: { locations: LiveLocationData[] }) => {
       const initialPosition: [number, number] = [26.1445, 91.7362];
 
       return (
@@ -104,11 +104,12 @@ const LeafletMap = dynamic(
         </MapContainer>
       );
     };
-  }),
+
+    return MapComponent;
+  },
   { ssr: false }
 );
 
-// --- Main Salesman Live Location Component ---
 export function SalesmanLiveLocation() {
   const [locations, setLocations] = useState<LiveLocationData[]>([]);
   const [filteredLocations, setFilteredLocations] = useState<LiveLocationData[]>([]);
@@ -122,8 +123,6 @@ export function SalesmanLiveLocation() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    // API Fetching last known location. No SocketIO here.
-    // Keep this part if we want to initially load last known location.. or comment out
     const fetchLocations = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/slmLiveLocation`);
@@ -139,8 +138,7 @@ export function SalesmanLiveLocation() {
     };
     fetchLocations();
 
-    // SocketIO Fetching latest updated location from server.ts 
-    socketRef.current = io(`${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL}`);
+    socketRef.current = io(`${process.env.NEXT_PUBLIC_APP_URL}`);
 
     socketRef.current.on('locationUpdate', (update: LiveLocationData) => {
       setLocations(prevLocations => {
@@ -161,7 +159,6 @@ export function SalesmanLiveLocation() {
     };
   }, []);
 
-  // Filtering logic for Area, Region, Role and User's Name.
   useEffect(() => {
     const applyFilters = () => {
       const filtered = locations.filter(loc => {
