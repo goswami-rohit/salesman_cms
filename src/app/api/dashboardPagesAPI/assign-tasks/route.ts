@@ -235,7 +235,6 @@ export async function POST(request: NextRequest) {
     // Set to start of day to avoid timezone issues with @db.Date in Prisma
     parsedTaskDate.setUTCHours(0, 0, 0, 0);
 
-
     // Create tasks in a transaction for atomicity
     const createdTasks = await prisma.$transaction(
       salesmanUserIds.map(userId =>

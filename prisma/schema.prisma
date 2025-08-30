@@ -368,7 +368,7 @@ model GeoTracking {
   @@map("geo_tracking") // Table name in DB
 }
 
-// DailyTask model for admin to salesman task assignment
+// DailyTask model for admin to salesman task assignment + self assignment of tasks by salesmen
 model DailyTask {
   id                String    @id @default(uuid()) @db.VarChar(255)
   userId            Int       @map("user_id") // Salesman to whom the task is assigned

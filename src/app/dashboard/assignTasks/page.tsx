@@ -53,7 +53,7 @@ const dealerSchema = z.object({
   type: z.string(),
 });
 
-// Schema for fetching daily tasks (from GET response)
+// Schema for fetching daily tasks (from GET response) 
 const dailyTaskSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
