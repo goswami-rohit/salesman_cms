@@ -3,21 +3,21 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { io, Socket } from 'socket.io-client';
 import { z } from 'zod';
-import dynamic from 'next/dynamic';
 
-import 'leaflet/dist/leaflet.css'; 
+import 'leaflet/dist/leaflet.css';
 //import L from 'leaflet'; // This is an CSR import inside const LeafletMap()
 import { MapPin } from 'lucide-react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { io, Socket } from 'socket.io-client';
 import { areas, regions } from '@/lib/Reusable-constants';
 
-// Define the roles as per your updated request
+
 const roles = ['senior-executive', 'executive', 'junior-executive'];
 
 // --- Zod Schema Validation ---
@@ -43,7 +43,9 @@ type LiveLocationData = z.infer<typeof liveLocationSchema>;
 
 // Move the icon creation outside the dynamic import block
 // but keep L object usage inside a dynamic context
-const iconSvgString = encodeURIComponent(renderToStaticMarkup(<MapPin className="text-red-500 bg-white rounded-full p-1" size={36} />));
+const iconSvgString = encodeURIComponent(renderToStaticMarkup(
+  <MapPin className="text-gray-100 bg-cyan-700 rounded-full p-1" size={36} />
+));
 
 // A separate component to render the map and markers
 const LeafletMap = dynamic(
@@ -120,6 +122,8 @@ export function SalesmanLiveLocation() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    // API Fetching last known location. No SocketIO here.
+    // Keep this part if we want to initially load last known location.. or comment out
     const fetchLocations = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/slmLiveLocation`);
@@ -135,7 +139,8 @@ export function SalesmanLiveLocation() {
     };
     fetchLocations();
 
-    socketRef.current = io(`${process.env.NEXT_PUBLIC_APP_URL}`);
+    // SocketIO Fetching latest updated location from server.ts 
+    socketRef.current = io(`${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL}`);
 
     socketRef.current.on('locationUpdate', (update: LiveLocationData) => {
       setLocations(prevLocations => {
@@ -156,6 +161,7 @@ export function SalesmanLiveLocation() {
     };
   }, []);
 
+  // Filtering logic for Area, Region, Role and User's Name.
   useEffect(() => {
     const applyFilters = () => {
       const filtered = locations.filter(loc => {
@@ -178,6 +184,7 @@ export function SalesmanLiveLocation() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+
             {/* Salesman Name Filter */}
             <div className="space-y-2">
               <Label htmlFor="salesman-name">Salesman Name</Label>
@@ -196,12 +203,12 @@ export function SalesmanLiveLocation() {
                 <SelectTrigger id="role">
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    <SelectItem value="all">All Roles</SelectItem>
-                    {roles.map(role => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
-                    ))}
-                  </SelectContent>
+                <SelectContent className="z-[9999]">
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {roles.map(role => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
 
@@ -236,6 +243,7 @@ export function SalesmanLiveLocation() {
                 </SelectContent>
               </Select>
             </div>
+
           </div>
         </CardContent>
       </Card>

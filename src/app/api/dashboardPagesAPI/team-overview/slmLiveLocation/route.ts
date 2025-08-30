@@ -34,6 +34,7 @@ export async function GET() {
   try {
     const claims = await getTokenClaims();
 
+    // Auth check
     if (!claims || !claims.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
