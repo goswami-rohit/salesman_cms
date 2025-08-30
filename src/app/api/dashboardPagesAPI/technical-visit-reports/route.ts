@@ -38,7 +38,7 @@ export async function GET() {
           companyId: currentUser.companyId, // Filter by the admin/manager's company
         },
       },
-       include: {
+      include: {
         // --- CORRECTED PRISMA QUERY: Use `select` within `include` to fetch specific user fields ---
         user: {
           select: {
@@ -61,24 +61,23 @@ export async function GET() {
         .filter(Boolean) // Filters out any null or undefined parts
         .join(' ') || 'N/A'; // Joins remaining parts with a space, defaults to 'N/A' if empty
 
-     return {
+      return {
         id: report.id,
         salesmanName: salesmanName,
         role: report.user.role,
         visitType: report.visitType,
         siteNameConcernedPerson: report.siteNameConcernedPerson,
         phoneNo: report.phoneNo,
-        date: report.reportDate.toISOString().split('T')[0], 
-        emailId: report.emailId || '', 
+        date: report.reportDate.toISOString().split('T')[0],
+        emailId: report.emailId || '',
         clientsRemarks: report.clientsRemarks,
-        salespersonRemarks: report.salespersonRemarks,
-        checkInTime: report.checkInTime.toISOString(), 
-        checkOutTime: report.checkOutTime?.toISOString() || '', 
-        //new cols added
+        salespersonRemarks: report.salespersonRemarks, // This is already a string
+        checkInTime: report.checkInTime.toISOString(),
+        checkOutTime: report.checkOutTime?.toISOString() || '',
         siteVisitBrandInUse: report.siteVisitBrandInUse,
         siteVisitStage: report.siteVisitStage || '',
         conversionFromBrand: report.conversionFromBrand || '',
-        conversionQuantityValue: report.conversionQuantityValue,
+        conversionQuantityValue: report.conversionQuantityValue ? parseFloat(report.conversionQuantityValue.toString()) : null, // Convert Decimal to number
         conversionQuantityUnit: report.conversionQuantityUnit || '',
         associatedPartyName: report.associatedPartyName || '',
         influencerType: report.influencerType,

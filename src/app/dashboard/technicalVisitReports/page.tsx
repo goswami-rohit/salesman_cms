@@ -17,24 +17,24 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 const technicalVisitReportSchema = z.object({
   id: z.string() as z.ZodType<UniqueIdentifier>,
   salesmanName: z.string(),
+  role: z.string(), // Added missing field
   visitType: z.string(),
   siteNameConcernedPerson: z.string(),
   phoneNo: z.string(),
   date: z.string(),
   emailId: z.string().email().or(z.literal('')),
   clientsRemarks: z.string(),
-  salespersonRemarks: z.array(z.string()),
+  salespersonRemarks: z.string(), // CORRECTED to a string
   checkInTime: z.string(),
   checkOutTime: z.string(),
-  //new fields from pdf
-  siteVisitBrandInUse: z.array(z.string()).nonempty(),
-  siteVisitStage: z.string().min(1),
+  siteVisitBrandInUse: z.array(z.string()), // CORRECTED to allow empty array
+  siteVisitStage: z.string().optional(), // CORRECTED to optional
   conversionFromBrand: z.string().optional(),
-  conversionQuantityValue: z.string().optional(),
+  conversionQuantityValue: z.number().optional().nullable(), // CORRECTED to number, as sent from the API
   conversionQuantityUnit: z.string().optional(),
-  associatedPartyName: z.string(),
-  influencerType: z.array(z.string()).nonempty(),
-  serviceType: z.string(),
+  associatedPartyName: z.string().optional(), // CORRECTED to optional
+  influencerType: z.array(z.string()), // CORRECTED to allow empty array
+  serviceType: z.string().optional(), // CORRECTED to optional
   qualityComplaint: z.string().optional(),
   promotionalActivity: z.string().optional(),
   channelPartnerVisit: z.string().optional(),
@@ -82,10 +82,12 @@ export default function TechnicalVisitReportsPage() {
     { accessorKey: "date", header: "Visit Date" },
     { accessorKey: "checkInTime", header: "Check-in" },
     { accessorKey: "checkOutTime", header: "Check-out" },
-    { accessorKey: "clientsRemarks", header: "Client Remarks",
+    {
+      accessorKey: "clientsRemarks", header: "Client Remarks",
       cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.clientsRemarks}</span>,
     },
-    { accessorKey: "salespersonRemarks", header: "Salesman Remarks",
+    {
+      accessorKey: "salespersonRemarks", header: "Salesman Remarks",
       cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.salespersonRemarks}</span>,
     },
     { accessorKey: "siteVisitBrandInUse", header: "Brand in Use" },

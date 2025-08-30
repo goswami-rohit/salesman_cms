@@ -32,35 +32,40 @@ const modelMap = {
             include: { user: { select: { firstName: true, lastName: true, email: true } } },
             orderBy: { reportDate: 'desc' },
         });
-        return rows.map(r => ({
-            id: r.id,
-            reportDate: r.reportDate?.toISOString().slice(0, 10) ?? null,
-            visitType: r.visitType ?? null,
-            siteNameConcernedPerson: r.siteNameConcernedPerson ?? null,
-            phoneNo: r.phoneNo ?? null,
-            emailId: r.emailId ?? null,
-            clientsRemarks: r.clientsRemarks ?? null,
-            salespersonRemarks: r.salespersonRemarks ?? null,
-            checkInTime: r.checkInTime?.toISOString() ?? null,
-            checkOutTime: r.checkOutTime?.toISOString() ?? null,
-            inTimeImageUrl: r.inTimeImageUrl ?? null,
-            outTimeImageUrl: r.outTimeImageUrl ?? null,
-            siteVisitBrandInUse: r.siteVisitBrandInUse ?? null,
-            siteVisitStage: r.siteVisitStage ?? null,
-            conversionFromBrand: r.conversionFromBrand ?? null,
-            conversionQuantityValue: r.conversionQuantityValue?.toNumber() ?? null,
-            conversionQuantityUnit: r.conversionQuantityUnit ?? null,
-            associatedPartyName: r.associatedPartyName ?? null,
-            influencerType: r.influencerType ?? null,
-            serviceType: r.serviceType ?? null,
-            qualityComplaint: r.qualityComplaint ?? null,
-            promotionalActivity: r.promotionalActivity ?? null,
-            channelPartnerVisit: r.channelPartnerVisit ?? null,
-            createdAt: r.createdAt?.toISOString() ?? null,
-            updatedAt: r.updatedAt?.toISOString() ?? null,
-            salesmanName: `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.user?.email || null,
-            salesmanEmail: r.user?.email ?? null,
-        }));
+        return rows.map(r => {
+            const salesmanName = `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim();
+
+            return {
+                id: r.id,
+                reportDate: r.reportDate.toISOString().slice(0, 10),
+                visitType: r.visitType,
+                siteNameConcernedPerson: r.siteNameConcernedPerson,
+                phoneNo: r.phoneNo,
+                emailId: r.emailId,
+                clientsRemarks: r.clientsRemarks,
+                salespersonRemarks: r.salespersonRemarks,
+                checkInTime: r.checkInTime.toISOString(),
+                checkOutTime: r.checkOutTime?.toISOString() ?? null,
+                inTimeImageUrl: r.inTimeImageUrl ?? null,
+                outTimeImageUrl: r.outTimeImageUrl ?? null,
+                // new cols added from pdf
+                siteVisitBrandInUse: r.siteVisitBrandInUse, // Non-nullable, array
+                siteVisitStage: r.siteVisitStage ?? null,
+                conversionFromBrand: r.conversionFromBrand ?? null,
+                conversionQuantityValue: r.conversionQuantityValue?.toNumber() ?? null,
+                conversionQuantityUnit: r.conversionQuantityUnit ?? null,
+                associatedPartyName: r.associatedPartyName ?? null,
+                influencerType: r.influencerType, // Non-nullable, array
+                serviceType: r.serviceType ?? null,
+                qualityComplaint: r.qualityComplaint ?? null,
+                promotionalActivity: r.promotionalActivity ?? null,
+                channelPartnerVisit: r.channelPartnerVisit ?? null,
+                createdAt: r.createdAt.toISOString(),
+                updatedAt: r.updatedAt.toISOString(),
+                salesmanName: salesmanName || r.user?.email || null, // Cleaner logic
+                salesmanEmail: r.user?.email ?? null,
+            };
+        });
     },
 
     salesmanAttendance: async (companyId: number) => {
@@ -99,26 +104,35 @@ const modelMap = {
 
     permanentJourneyPlans: async (companyId: number) => {
         const rows = await prisma.permanentJourneyPlan.findMany({
-            where: { OR: [{ user: { companyId } }, { createdBy: { companyId } }] },
+            where: { OR: 
+                [{ user: { companyId } }, 
+                    { createdBy: { companyId } }
+                ] },
             include: {
                 user: { select: { firstName: true, lastName: true, email: true } },
                 createdBy: { select: { firstName: true, lastName: true, email: true } },
             },
             orderBy: { createdAt: 'desc' },
         });
-        return rows.map(r => ({
-            id: r.id,
-            planDate: r.planDate?.toISOString().slice(0, 10) ?? null,
-            areaToBeVisited: r.areaToBeVisited ?? null,
-            description: r.description ?? null,
-            status: r.status ?? null,
-            createdAt: r.createdAt?.toISOString() ?? null,
-            updatedAt: r.updatedAt?.toISOString() ?? null,
-            assignedToName: `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.user?.email || null,
-            assignedToEmail: r.user?.email ?? null,
-            creatorName: `${r.createdBy?.firstName ?? ''} ${r.createdBy?.lastName ?? ''}`.trim() || r.createdBy?.email || null,
-            creatorEmail: r.createdBy?.email ?? null,
-        }));
+
+        return rows.map(r => {
+            const assignedToName = `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim();
+            const creatorName = `${r.createdBy?.firstName || ''} ${r.createdBy?.lastName || ''}`.trim();
+
+            return {
+                id: r.id,
+                planDate: r.planDate.toISOString().slice(0, 10), 
+                areaToBeVisited: r.areaToBeVisited,
+                description: r.description, 
+                status: r.status,
+                createdAt: r.createdAt.toISOString(), 
+                updatedAt: r.updatedAt.toISOString(), 
+                assignedToName: assignedToName || r.user.email, // Use email as fallback
+                assignedToEmail: r.user.email, 
+                creatorName: creatorName || r.createdBy.email, // Use email as fallback
+                creatorEmail: r.createdBy.email, 
+            };
+        });
     },
 
     dealers: async (companyId: number) => {
@@ -127,23 +141,27 @@ const modelMap = {
             include: { user: { select: { firstName: true, lastName: true, email: true } } },
             orderBy: { createdAt: 'desc' },
         });
-        return rows.map(r => ({
-            id: r.id,
-            name: r.name ?? null,
-            // dealer model has region/area/phoneNo/address etc. (no city/state/pincode/email/phoneNumber fields)
-            address: r.address ?? null,
-            region: r.region ?? null,
-            area: r.area ?? null,
-            phoneNo: r.phoneNo ?? null,
-            totalPotential: r.totalPotential?.toNumber() ?? null,
-            bestPotential: r.bestPotential?.toNumber() ?? null,
-            brandSelling: (r.brandSelling ?? []).join(', '),
-            feedbacks: r.feedbacks ?? null,
-            remarks: r.remarks ?? null,
-            salesmanName: `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.user?.email || null,
-            createdAt: r.createdAt?.toISOString() ?? null,
-            updatedAt: r.updatedAt?.toISOString() ?? null,
-        }));
+        return rows.map(r => {
+            const salesmanName = `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim();
+
+            return {
+                id: r.id,
+                name: r.name,
+                address: r.address,
+                region: r.region,
+                area: r.area,
+                phoneNo: r.phoneNo,
+                totalPotential: r.totalPotential.toNumber(),
+                bestPotential: r.bestPotential.toNumber(),
+                brandSelling: r.brandSelling.join(', '), // Correctly handles the array
+                feedbacks: r.feedbacks,
+                remarks: r.remarks ?? null,
+                salesmanName: salesmanName || r.user?.email || null, // Cleaner logic
+                createdAt: r.createdAt.toISOString(),
+                updatedAt: r.updatedAt.toISOString(),
+                salesmanEmail: r.user?.email ?? null,
+            };
+        });
     },
 
     salesmanLeaveApplications: async (companyId: number) => {

@@ -100,7 +100,7 @@ async function getDailyVisitReportsForCsv(companyId: number) {
 }
 
 async function getTechnicalVisitReportsForCsv(companyId: number) {
-   const reports = await prisma.technicalVisitReport.findMany({
+  const reports = await prisma.technicalVisitReport.findMany({
     where: {
       user: {
         companyId: companyId
@@ -144,13 +144,13 @@ async function getTechnicalVisitReportsForCsv(companyId: number) {
     report.checkOutTime?.toISOString() || '',
     report.inTimeImageUrl || '',
     report.outTimeImageUrl || '',
-    report.siteVisitBrandInUse || '',
+    (report.siteVisitBrandInUse && report.siteVisitBrandInUse.length > 0) ? report.siteVisitBrandInUse.join(', ') : '',
     report.siteVisitStage || '',
     report.conversionFromBrand || '',
     report.conversionQuantityValue?.toString() || '',
     report.conversionQuantityUnit || '',
     report.associatedPartyName || '',
-    report.influencerType || '',
+    (report.influencerType && report.influencerType.length > 0) ? report.influencerType.join(', ') : '',
     report.serviceType || '',
     report.qualityComplaint || '',
     report.promotionalActivity || '',
@@ -168,16 +168,8 @@ async function getPermanentJourneyPlansForCsv(companyId: number) {
       // Find plans where either the assigned user or the creator user belongs to the company.
       // This ensures all relevant plans are captured.
       OR: [
-        {
-          user: {
-            companyId: companyId
-          }
-        },
-        {
-          createdBy: {
-            companyId: companyId
-          }
-        }
+        { user: { companyId: companyId } },
+        { createdBy: { companyId: companyId } }
       ]
     },
     include: {
@@ -448,39 +440,39 @@ async function getGeoTrackingForCsv(companyId: number) {
 
 async function getDailyTasksForCsv(companyId: number) {
   const tasks = await prisma.dailyTask.findMany({
-    where: { 
-      user: { 
-        companyId: companyId 
-      } 
+    where: {
+      user: {
+        companyId: companyId
+      }
     },
     include: {
-      user: { 
-        select: { 
-          firstName: true, 
-          lastName: true, 
-          email: true 
-        } 
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true
+        }
       },
-      assignedBy: { 
-        select: { 
-          firstName: true, 
-          lastName: true, 
-          email: true 
-        } 
+      assignedBy: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true
+        }
       },
-      relatedDealer: { 
-        select: { 
-          name: true 
-        } 
+      relatedDealer: {
+        select: {
+          name: true
+        }
       },
     },
     orderBy: { createdAt: 'desc' },
   });
 
   const headers = [
-    "Task ID", "Assigned To (Name)", "Assigned To (Email)", "Assigned By (Name)", "Assigned By (Email)", 
-    "Task Date", "Visit Type", "Related Dealer", "Site Name", "Description", 
-    "Status", "PJP Plan ID",  "Created At", "Updated At"
+    "Task ID", "Assigned To (Name)", "Assigned To (Email)", "Assigned By (Name)", "Assigned By (Email)",
+    "Task Date", "Visit Type", "Related Dealer", "Site Name", "Description",
+    "Status", "PJP Plan ID", "Created At", "Updated At"
   ];
 
   const dataForCsv = tasks.map(task => [
@@ -906,7 +898,7 @@ export async function GET(request: NextRequest) {
         csvData = await getDealerReportsAndScoresForCsv(currentUser.companyId);
         filename = `dealer-reports-and-scores-${Date.now()}`;
         break;
-      
+
       default:
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });
     }
