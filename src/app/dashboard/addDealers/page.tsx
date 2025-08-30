@@ -6,8 +6,6 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
 
-// Removed: import { getDealerResponseSchema } from '@/app/api/dashboardPagesAPI/add-dealers/route';
-
 // Shadcn UI Components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +29,7 @@ import {
 import { MultiSelect } from '@/components/multi-select';
 import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
-import {areas, regions} from '@/lib/area-region'
+import {areas, regions, dealerTypes, brands} from '@/lib/Reusable-constants'
 
 
 // --- Zod Schema for GET response validation (DUPLICATED FOR CLIENT-SIDE) ---
@@ -100,11 +98,7 @@ export default function AddDealersPage() {
     // --- State for Delete Confirmation Dialog ---
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [dealerToDeleteId, setDealerToDeleteId] = useState<string | null>(null);
-
-    // Dropdown Options (Hardcoded as per request)
-    const dealerTypes = ["Dealer-Best", "Sub Dealer-Best", "Dealer-Non Best", "Sub Dealer-Non Best"];
-    const brands = ["Star", "Amrit", "Dalmia", "Topcem", "Black Tiger", "Surya Gold", "Max", "Taj", "Specify in remarks"];
-
+    
     const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/add-dealers`;
 
     // --- Fetch Dealers for the Table ---

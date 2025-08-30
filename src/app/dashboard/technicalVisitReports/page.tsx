@@ -6,10 +6,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { UniqueIdentifier } from '@dnd-kit/core';
-// Import your Shadcn UI components
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical } from '@tabler/icons-react';
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 

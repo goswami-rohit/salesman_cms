@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { PencilIcon, EyeIcon, UsersIcon, Loader2, StoreIcon } from 'lucide-react';
 import { MultiSelect } from '@/components/multi-select';
 import { ROLE_HIERARCHY, canAssignRole } from '@/lib/roleHierarchy';
-import { areas, regions } from '@/lib/area-region';
+import { areas, regions } from '@/lib/Reusable-constants';
 
 interface TeamMember {
   id: number;

@@ -4,9 +4,8 @@ import { withAuth } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
 import { z } from 'zod';
-import { WorkOSRole } from '@/lib/permissions';
 // Define the valid regions and areas
-import {areas, regions} from '@/lib/area-region'
+import {areas, regions} from '@/lib/Reusable-constants'
 const workos = new WorkOS(process.env.WORKOS_API_KEY as string);
 
 // Schema for the POST request body

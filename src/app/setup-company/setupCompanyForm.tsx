@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 // Define the valid regions and areas
-import {areas, regions} from '@/lib/area-region'
+import {areas, regions} from '@/lib/Reusable-constants'
 
 export default function SetupCompanyForm() {
   const [companyName, setCompanyName] = useState('');
@@ -47,7 +47,7 @@ export default function SetupCompanyForm() {
     setError('');
 
     try {
-      const response = await fetch('/api/setup-company', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/setup-company`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -10,11 +10,12 @@ import { Input } from '@/components/ui/input';
 import { io, Socket } from 'socket.io-client';
 import { z } from 'zod';
 import dynamic from 'next/dynamic';
-import { areas, regions } from '@/lib/area-region';
-import 'leaflet/dist/leaflet.css'; // This import needs to be at the top level
+
+import 'leaflet/dist/leaflet.css'; 
 //import L from 'leaflet'; // This is an CSR import inside const LeafletMap()
 import { MapPin } from 'lucide-react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { areas, regions } from '@/lib/Reusable-constants';
 
 // Define the roles as per your updated request
 const roles = ['senior-executive', 'executive', 'junior-executive'];

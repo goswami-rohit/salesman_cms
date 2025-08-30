@@ -49,7 +49,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 // Define the valid regions and areas
-import {areas, regions} from '@/lib/area-region'
+import {areas, regions} from '@/lib/Reusable-constants'
 
 interface User {
   id: number;
