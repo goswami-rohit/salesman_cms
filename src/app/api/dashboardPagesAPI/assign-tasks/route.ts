@@ -9,8 +9,8 @@ const assignTaskSchema = z.object({
   salesmanUserIds: z.array(z.number().int()).min(1, "At least one salesman must be selected."),
   taskDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Task date must be in YYYY-MM-DD format."),
   visitType: z.string(),
-  relatedDealerId: z.string().uuid().optional().nullable(), // Only for Client Visit
-  siteName: z.string().min(1, "Site name is required for Technical Visit.").optional().nullable(), // Only for Technical Visit
+  relatedDealerIds: z.array(z.string().uuid()).optional().nullable(), // ✅ accept multiple dealers
+  siteName: z.string().min(1, "Site name is required for Technical Visit.").optional().nullable(),
   description: z.string().optional().nullable(),
 });
 
@@ -166,87 +166,103 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const claims = await getTokenClaims();
-
-    // 1. Authentication Check
     if (!claims || !claims.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Fetch Current User to get the assignedByUserId and geographical data
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
       select: { id: true, role: true, companyId: true, area: true, region: true }
     });
 
-    // 3. Role-based Authorization: Check if user's role is in the allowedAssignerRoles array
     if (!currentUser || !allowedAssignerRoles.includes(currentUser.role)) {
-      return NextResponse.json({ error: `Forbidden: Only the following roles can assign tasks: ${allowedAssignerRoles.join(', ')}` }, { status: 403 });
+      return NextResponse.json(
+        { error: `Forbidden: Only the following roles can assign tasks: ${allowedAssignerRoles.join(', ')}` },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
     const parsedBody = assignTaskSchema.safeParse(body);
-
     if (!parsedBody.success) {
-      return NextResponse.json({ message: 'Invalid request body', errors: parsedBody.error.format() }, { status: 400 });
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsedBody.error.format() },
+        { status: 400 }
+      );
     }
 
-    const { salesmanUserIds, taskDate, visitType, relatedDealerId, siteName, description } = parsedBody.data;
+    const { salesmanUserIds, taskDate, visitType, relatedDealerIds, siteName, description } = parsedBody.data;
 
-    // Additional validation based on visitType
-    if (visitType === "Client Visit" && !relatedDealerId) {
-      return NextResponse.json({ message: 'relatedDealerId is required for Client Visit.' }, { status: 400 });
+    // Extra validation
+    if (visitType === "Client Visit" && (!relatedDealerIds || relatedDealerIds.length === 0)) {
+      return NextResponse.json({ message: 'At least one relatedDealerId is required for Client Visit.' }, { status: 400 });
     }
     if (visitType === "Technical Visit" && !siteName) {
       return NextResponse.json({ message: 'siteName is required for Technical Visit.' }, { status: 400 });
     }
-    // Ensure relatedDealerId and siteName are mutually exclusive for clarity
     if (visitType === "Client Visit" && siteName) {
       return NextResponse.json({ message: 'Site name should not be provided for Client Visit.' }, { status: 400 });
     }
-    if (visitType === "Technical Visit" && relatedDealerId) {
-      return NextResponse.json({ message: 'Related dealer should not be provided for Technical Visit.' }, { status: 400 });
+    if (visitType === "Technical Visit" && relatedDealerIds && relatedDealerIds.length > 0) {
+      return NextResponse.json({ message: 'Related dealers should not be provided for Technical Visit.' }, { status: 400 });
     }
 
-    // 4. Validate that the assigned users are of the correct role and in the same area/region as the assigner
+    // Validate salesman IDs
     const assignedUsers = await prisma.user.findMany({
       where: {
         id: { in: salesmanUserIds },
         role: { in: allowedAssigneeRoles },
         companyId: currentUser.companyId,
-        // Filter by the current user's area and region if they exist
         ...(currentUser.area && { area: currentUser.area }),
         ...(currentUser.region && { region: currentUser.region }),
       },
-      select: { id: true, firstName: true, lastName: true },
+      select: { id: true },
     });
 
     if (assignedUsers.length !== salesmanUserIds.length) {
-      // Find the invalid user IDs
       const assignedUserIdsSet = new Set(assignedUsers.map(u => u.id));
       const invalidUserIds = salesmanUserIds.filter(id => !assignedUserIdsSet.has(id));
-      return NextResponse.json({ error: `Forbidden: The following user IDs are not valid assignees for your role and area/region: ${invalidUserIds.join(', ')}` }, { status: 403 });
+      return NextResponse.json(
+        { error: `Forbidden: Invalid user IDs: ${invalidUserIds.join(', ')}` },
+        { status: 403 }
+      );
     }
 
-    // Convert taskDate string to Date object
     const parsedTaskDate = new Date(taskDate);
-    // Set to start of day to avoid timezone issues with @db.Date in Prisma
     parsedTaskDate.setUTCHours(0, 0, 0, 0);
 
-    // Create tasks in a transaction for atomicity
+    // Create tasks for each salesman × dealer (or single tech visit)
     const createdTasks = await prisma.$transaction(
-      salesmanUserIds.map(userId =>
-        prisma.dailyTask.create({
-          data: {
-            userId: userId,
-            assignedByUserId: currentUser.id, // The admin/manager creating the task
-            taskDate: parsedTaskDate,
-            visitType,
-            relatedDealerId: visitType === "Client Visit" ? relatedDealerId : null,
-            siteName: visitType === "Technical Visit" ? siteName : null,
-            description: description,
-            status: "Assigned", // Default status
-          },
-        })
+      salesmanUserIds.flatMap(userId =>
+        (visitType === "Client Visit"
+          ? relatedDealerIds!.map(dealerId =>
+              prisma.dailyTask.create({
+                data: {
+                  userId,
+                  assignedByUserId: currentUser.id,
+                  taskDate: parsedTaskDate,
+                  visitType,
+                  relatedDealerId: dealerId,
+                  siteName: null,
+                  description,
+                  status: "Assigned",
+                },
+              })
+            )
+          : [
+              prisma.dailyTask.create({
+                data: {
+                  userId,
+                  assignedByUserId: currentUser.id,
+                  taskDate: parsedTaskDate,
+                  visitType,
+                  relatedDealerId: null,
+                  siteName,
+                  description,
+                  status: "Assigned",
+                },
+              }),
+            ])
       )
     );
 
