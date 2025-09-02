@@ -59,7 +59,7 @@ const dailyTaskSchema = z.object({
   salesmanName: z.string(),
   assignedByUserName: z.string(),
   taskDate: z.string(), // YYYY-MM-DD
-  visitType: z.enum(["Client Visit", "Technical Visit"]),
+  visitType: z.string(),
   relatedDealerName: z.string().nullable().optional(), // For Client Visit
   siteName: z.string().nullable().optional(), // For Technical Visit
   description: z.string().nullable().optional(),
@@ -77,9 +77,7 @@ const assignTaskFormSchema = z.object({
   taskDate: z.date({
     error: "A task date is required.",
   }),
-  visitType: z.enum(["Client Visit", "Technical Visit"], {
-    error: "Please select a visit type.",
-  }),
+  visitType: z.enum(["Client Visit", "Technical Visit"]),  // strict types when assigning tasks
   relatedDealerIds: z.array(z.string().uuid()).optional(), // Changed to array for multi-select
   siteName: z.string().min(1, "Site name is required for Technical Visit.").optional(),
   description: z.string().optional(),

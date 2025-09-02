@@ -8,9 +8,7 @@ import { z } from 'zod';
 const assignTaskSchema = z.object({
   salesmanUserIds: z.array(z.number().int()).min(1, "At least one salesman must be selected."),
   taskDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Task date must be in YYYY-MM-DD format."),
-  visitType: z.enum(["Client Visit", "Technical Visit"], {
-    error: "Visit type must be 'Client Visit' or 'Technical Visit'."
-  }),
+  visitType: z.string(),
   relatedDealerId: z.string().uuid().optional().nullable(), // Only for Client Visit
   siteName: z.string().min(1, "Site name is required for Technical Visit.").optional().nullable(), // Only for Technical Visit
   description: z.string().optional().nullable(),
@@ -22,7 +20,7 @@ const dailyTaskSchema = z.object({
   salesmanName: z.string(),
   assignedByUserName: z.string(),
   taskDate: z.string(), // YYYY-MM-DD
-  visitType: z.enum(["Client Visit", "Technical Visit"]),
+  visitType: z.string(),
   relatedDealerName: z.string().nullable().optional(), // For Client Visit
   siteName: z.string().nullable().optional(), // For Technical Visit
   description: z.string().nullable().optional(),
@@ -43,21 +41,6 @@ const allowedAssigneeRoles = [
   'junior-executive',
   'executive',
 ];
-
-// --- VisitType Mapping Helpers ---
-// for GET()
-function mapVisitType(dbValue: string): "Client Visit" | "Technical Visit" {
-  if (dbValue === "CLIENT_VISIT") return "Client Visit";
-  if (dbValue === "TECHNICAL_VISIT") return "Technical Visit";
-  throw new Error(`Unknown visitType from DB: ${dbValue}`);
-}
-
-// for POST()
-function unmapVisitType(value: "Client Visit" | "Technical Visit"): "CLIENT_VISIT" | "TECHNICAL_VISIT" {
-  if (value === "Client Visit") return "CLIENT_VISIT";
-  if (value === "Technical Visit") return "TECHNICAL_VISIT";
-  throw new Error(`Unknown visitType from frontend: ${value}`);
-}
 
 export async function GET() {
   try {
@@ -161,7 +144,7 @@ export async function GET() {
         salesmanName: salesmanName,
         assignedByUserName: assignedByUserName,
         taskDate: task.taskDate.toISOString().split('T')[0], // YYYY-MM-DD
-        visitType: mapVisitType(task.visitType),
+        visitType: task.visitType,
         relatedDealerName: task.relatedDealer?.name || null,
         siteName: task.siteName || null,
         description: task.description,
@@ -257,7 +240,7 @@ export async function POST(request: NextRequest) {
             userId: userId,
             assignedByUserId: currentUser.id, // The admin/manager creating the task
             taskDate: parsedTaskDate,
-            visitType: unmapVisitType(visitType),
+            visitType,
             relatedDealerId: visitType === "Client Visit" ? relatedDealerId : null,
             siteName: visitType === "Technical Visit" ? siteName : null,
             description: description,
