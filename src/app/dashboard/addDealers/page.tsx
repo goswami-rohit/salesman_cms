@@ -1,7 +1,6 @@
-// src/app/dashboard/addDealers/page.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
@@ -29,7 +28,7 @@ import {
 import { MultiSelect } from '@/components/multi-select';
 import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
-import {areas, regions, dealerTypes, brands} from '@/lib/Reusable-constants'
+import { areas, regions, dealerTypes, brands } from '@/lib/Reusable-constants'
 
 
 // --- Zod Schema for GET response validation (DUPLICATED FOR CLIENT-SIDE) ---
@@ -40,471 +39,485 @@ const dealerSchema = z.object({
     type: z.string().min(1, "Dealer type is required."),
     region: z.string().min(1, "Region is required."),
     area: z.string().min(1, "Area is required."),
-    phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
-    address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    totalPotential: z.number().positive("Total potential must be a positive number."),
-    bestPotential: z.number().positive("Best potential must be a positive number."),
-    brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
-    feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
-    remarks: z.string().nullable().optional(),
+    phoneNumber: z.string().min(1, "Phone number is required."),
+    contactPerson: z.string().min(1, "Contact person is required."),
+    contactPersonPhone: z.string().min(1, "Contact person phone is required."),
+    fullAddress: z.string().min(1, "Full address is required."),
+    brand: z.string().nullable().optional(),
+    subBrand: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
 
-
-// Schema for form submission, which transforms string inputs to numbers.
-const addDealerFormSchema = z.object({
+// --- Zod Schema for POST request validation (DUPLICATED FOR CLIENT-SIDE) ---
+const addDealerSchema = z.object({
     name: z.string().min(1, "Dealer name is required."),
     type: z.string().min(1, "Dealer type is required."),
     region: z.string().min(1, "Region is required."),
     area: z.string().min(1, "Area is required."),
-    phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
-    address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
-        message: "Total potential must be a positive number.",
-    }),
-    bestPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
-        message: "Best potential must be a positive number.",
-    }),
-    brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
-    feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
-    remarks: z.string().nullable().optional(),
+    phoneNumber: z.string().min(1, "Phone number is required."),
+    contactPerson: z.string().min(1, "Contact person is required."),
+    contactPersonPhone: z.string().min(1, "Contact person phone is required."),
+    fullAddress: z.string().min(1, "Full address is required."),
+    brand: z.string().optional().nullable(),
+    subBrand: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
 });
 
+type Dealer = z.infer<typeof dealerSchema>;
+type AddDealerFormState = z.infer<typeof addDealerSchema> & {
+    formErrors?: {
+        [key: string]: string;
+    }
+};
 
-type AddDealerFormData = z.infer<typeof addDealerFormSchema>;
-type DealerRecord = z.infer<typeof dealerSchema>;
+const emptyForm: AddDealerFormState = {
+    name: "",
+    type: "",
+    region: "",
+    area: "",
+    phoneNumber: "",
+    contactPerson: "",
+    contactPersonPhone: "",
+    fullAddress: "",
+    brand: null,
+    subBrand: null,
+    description: null,
+    formErrors: {},
+};
+
+ const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/add-dealers`;
 
 export default function AddDealersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formErrors, setFormErrors] = useState<z.ZodIssue[]>([]);
-    const [dealers, setDealers] = useState<DealerRecord[]>([]);
+    const [form, setForm] = useState<AddDealerFormState>(emptyForm);
+    const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loadingDealers, setLoadingDealers] = useState(true);
     const [errorDealers, setErrorDealers] = useState<string | null>(null);
-
-    // Form State
-    const [name, setName] = useState<string>('');
-    const [type, setType] = useState<string>('');
-    const [region, setRegion] = useState<string>('');
-    const [area, setArea] = useState<string>('');
-    const [phoneNo, setPhoneNo] = useState<string>('');
-    const [address, setAddress] = useState<string>('');
-    const [totalPotential, setTotalPotential] = useState<string>('');
-    const [bestPotential, setBestPotential] = useState<string>('');
-    const [brandSelling, setBrandSelling] = useState<string[]>([]);
-    const [feedbacks, setFeedbacks] = useState<string>('');
-    const [remarks, setRemarks] = useState<string>('');
-    // --- State for Delete Confirmation Dialog ---
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [dealerToDeleteId, setDealerToDeleteId] = useState<string | null>(null);
-    
-    const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/add-dealers`;
+    const [dealerToDelete, setDealerToDelete] = useState<string | null>(null);
 
-    // --- Fetch Dealers for the Table ---
-    const fetchDealers = useCallback(async () => {
-        setLoadingDealers(true);
-        setErrorDealers(null);
+    // --- State for new filters ---
+    const [areaFilter, setAreaFilter] = useState("all");
+    const [regionFilter, setRegionFilter] = useState("all");
+
+    const fetchData = useCallback(async () => {
         try {
+            setLoadingDealers(true);
             const response = await fetch(apiURI);
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('API Response Error Text:', errorText);
-                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-            }
             const data = await response.json();
             const validatedDealers = z.array(dealerSchema).parse(data);
             setDealers(validatedDealers);
-            toast.success('Dealers loaded successfully!');
-        } catch (e: any) {
-            console.error("Failed to fetch dealers:", e);
-            toast.error(`Failed to load dealers: ${e.message || "An unknown error occurred."}`);
-            setErrorDealers(e.message);
+            setErrorDealers(null);
+        } catch (error) {
+            console.error("Error fetching dealers:", error);
+            setErrorDealers("Failed to fetch dealer data. Please try again.");
+            setDealers([]);
         } finally {
             setLoadingDealers(false);
         }
-    }, [apiURI]);
+    }, []);
 
     useEffect(() => {
-        fetchDealers();
-    }, [fetchDealers]);
+        fetchData();
+    }, [fetchData]);
 
-    // --- Form Submission Handler ---
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target;
+        setForm(prev => ({ ...prev, [id]: value }));
+    };
+
+    const findFormError = (field: string) => {
+        return form.formErrors?.[field];
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setFormErrors([]);
         setIsSubmitting(true);
-
-        const formData = {
-            name,
-            type,
-            region,
-            area,
-            phoneNo,
-            address,
-            totalPotential,
-            bestPotential,
-            brandSelling,
-            feedbacks,
-            remarks: remarks || undefined,
-        };
-
-        const validationResult = addDealerFormSchema.safeParse(formData);
-
-        if (!validationResult.success) {
-            setFormErrors(validationResult.error.issues);
-            toast.error("Please correct the form errors.");
-            setIsSubmitting(false);
-            return;
-        }
+        setForm(prev => ({ ...prev, formErrors: {} })); // Clear previous errors
 
         try {
+            const validatedData = addDealerSchema.parse(form);
+
             const response = await fetch(apiURI, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(validationResult.data),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(validatedData),
             });
 
+            const result = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || "Failed to add dealer.");
+                // If the response is not ok, it's an API error
+                if (result.errors) {
+                    setForm(prev => ({ ...prev, formErrors: result.errors }));
+                    toast.error("Please correct the form errors.");
+                } else {
+                    toast.error(result.error || "Failed to add dealer.");
+                }
+                return;
             }
 
             toast.success("Dealer added successfully!");
             setIsFormOpen(false);
-            fetchDealers();
-
-            // Reset form state
-            setName('');
-            setType('');
-            setRegion('');
-            setArea('');
-            setPhoneNo('');
-            setAddress('');
-            setTotalPotential('');
-            setBestPotential('');
-            setBrandSelling([]);
-            setFeedbacks('');
-            setRemarks('');
-
-        } catch (e: any) {
-            console.error("Error adding dealer:", e);
-            toast.error(e.message || "An unexpected error occurred.");
+            setForm(emptyForm);
+            fetchData();
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                const newErrors = error.issues.reduce((acc, issue) => {
+                    const key = issue.path[0];
+                    if (typeof key === 'string') {
+                        acc[key] = issue.message;
+                    }
+                    return acc;
+                }, {} as Record<string, string>);
+                setForm(prev => ({ ...prev, formErrors: newErrors }));
+                toast.error("Validation failed. Please check your inputs.");
+            } else {
+                toast.error("An unexpected error occurred.");
+            }
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // --- Delete Handler ---
     const handleDelete = async () => {
-        if (!dealerToDeleteId) return;
-
+        if (!dealerToDelete) return;
         try {
-            const response = await fetch(`${apiURI}?id=${dealerToDeleteId}`, {
-                method: "DELETE",
+            const response = await fetch(`${apiURI}/${dealerToDelete}`, {
+                method: 'DELETE',
             });
-
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || "Failed to delete dealer.");
+                const error = await response.json();
+                throw new Error(error.error || "Failed to delete dealer.");
             }
-
             toast.success("Dealer deleted successfully!");
             setIsDeleteDialogOpen(false);
-            setDealerToDeleteId(null);
-            fetchDealers(); // Re-fetch the dealers to update the table
-        } catch (e: any) {
-            console.error("Error deleting dealer:", e);
-            toast.error(e.message || "An unexpected error occurred.");
+            setDealerToDelete(null);
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting dealer:", error);
+            toast.error(error instanceof Error ? error.message : "An unexpected error occurred.");
         }
     };
 
-    // Helper to find and display form errors
-    const findFormError = (path: string) => {
-        return formErrors.find(error => error.path[0] === path)?.message;
-    };
-
-    // Columns for the Dealers table
-    const dealerColumns: ColumnDef<DealerRecord>[] = [
-        { accessorKey: 'name', header: 'Name' },
-        { accessorKey: 'type', header: 'Type' },
-        { accessorKey: 'region', header: 'Region' },
-        { accessorKey: 'area', header: 'Area' },
-        { accessorKey: 'address', header: 'Address' },
-        { accessorKey: 'phoneNo', header: 'Phone No.' },
-        { accessorKey: 'totalPotential', header: 'Total Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
-        { accessorKey: 'bestPotential', header: 'Best Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
-        { accessorKey: 'brandSelling', header: 'Brands', cell: info => (info.getValue() as string[]).join(', ') },
-        { accessorKey: 'createdAt', header: 'Added On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
+    const dealerColumns: ColumnDef<Dealer>[] = useMemo(() => [
+        {
+            accessorKey: "name",
+            header: "Name",
+        },
+        {
+            accessorKey: "type",
+            header: "Type",
+        },
+        {
+            accessorKey: "region",
+            header: "Region",
+        },
+        {
+            accessorKey: "area",
+            header: "Area",
+        },
+        {
+            accessorKey: "contactPerson",
+            header: "Contact Person",
+        },
+        {
+            accessorKey: "contactPersonPhone",
+            header: "Contact Phone",
+        },
         {
             id: 'actions',
             header: 'Actions',
             cell: ({ row }) => (
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                        setDealerToDeleteId(row.original.id);
-                        setIsDeleteDialogOpen(true);
-                    }}
-                >
-                    Delete
-                </Button>
+                <div className="flex space-x-2">
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                            setDealerToDelete(row.original.id);
+                            setIsDeleteDialogOpen(true);
+                        }}
+                    >
+                        Delete
+                    </Button>
+                </div>
             ),
         },
-    ];
+    ], []);
+
+    // Memoized filtered dealers list based on state
+    const filteredDealers = useMemo(() => {
+        return dealers.filter(dealer => {
+            const areaMatches = areaFilter === "all" || dealer.area === areaFilter;
+            const regionMatches = regionFilter === "all" || dealer.region === regionFilter;
+            return areaMatches && regionMatches;
+        });
+    }, [dealers, areaFilter, regionFilter]);
 
     return (
-        <div className="container mx-auto p-4">
-            <div className="flex items-center justify-between mb-6">
+        <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                 <h1 className="text-3xl font-bold">Manage Dealers</h1>
-                <Button onClick={() => setIsFormOpen(true)}>+ Add New Dealer</Button>
+                <Button onClick={() => setIsFormOpen(true)}>
+                    Add New Dealer
+                </Button>
             </div>
 
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Add new dealer or sub-dealer records to your system.
-            </p>
+            {/* Filter and column controls */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                {/* Area Filter */}
+                <div className="flex-1">
+                    <Select
+                        onValueChange={(value) => setAreaFilter(value)}
+                        value={areaFilter}
+                    >
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="Filter by Area" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Areas</SelectItem>
+                            {areas.map((area) => (
+                                <SelectItem key={area} value={area}>
+                                    {area}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Region Filter */}
+                <div className="flex-1">
+                    <Select
+                        onValueChange={(value) => setRegionFilter(value)}
+                        value={regionFilter}
+                    >
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="Filter by Region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Regions</SelectItem>
+                            {regions.map((region) => (
+                                <SelectItem key={region} value={region}>
+                                    {region}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
 
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-[425px] overflow-y-auto max-h-[90vh]">
                     <DialogHeader>
                         <DialogTitle>Add New Dealer</DialogTitle>
                         <DialogDescription>
-                            Fill in the details to add a new dealer or sub-dealer.
+                            Fill in the details to add a new dealer record.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-                        {/* Dealer Name */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="name" className="text-right">
-                                Dealer Name <span className="text-red-500">*</span>
+                                Name <span className="text-red-500">*</span>
                             </Label>
-                            <div className="col-span-3">
-                                <Input
-                                    id="name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Enter dealer name"
-                                />
-                                {findFormError('name') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('name')}</p>
-                                )}
-                            </div>
+                            <Input
+                                id="name"
+                                value={form.name}
+                                onChange={handleFormChange}
+                                className="col-span-3"
+                            />
+                            {findFormError('name') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('name')}</p>
+                            )}
                         </div>
-
-                        {/* Type */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="type" className="text-right">
                                 Type <span className="text-red-500">*</span>
                             </Label>
-                            <div className="col-span-3">
-                                <Select value={type} onValueChange={setType}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select dealer type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {dealerTypes.map(dType => (
-                                            <SelectItem key={dType} value={dType}>
-                                                {dType}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {findFormError('type') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('type')}</p>
-                                )}
-                            </div>
+                            <Select
+                                onValueChange={(value) => setForm(prev => ({ ...prev, type: value }))}
+                                value={form.type || ''}
+                            >
+                                <SelectTrigger id="type" className="col-span-3">
+                                    <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {dealerTypes.map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                            {type}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {findFormError('type') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('type')}</p>
+                            )}
                         </div>
-
-                        {/* Region */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="region" className="text-right">
                                 Region <span className="text-red-500">*</span>
                             </Label>
-                            <div className="col-span-3">
-                                <Select value={region} onValueChange={setRegion}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select region" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {regions.map(reg => (
-                                            <SelectItem key={reg} value={reg}>
-                                                {reg}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {findFormError('region') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('region')}</p>
-                                )}
-                            </div>
+                            <Select
+                                onValueChange={(value) => setForm(prev => ({ ...prev, region: value }))}
+                                value={form.region || ''}
+                            >
+                                <SelectTrigger id="region" className="col-span-3">
+                                    <SelectValue placeholder="Select region" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {regions.map((region) => (
+                                        <SelectItem key={region} value={region}>
+                                            {region}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {findFormError('region') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('region')}</p>
+                            )}
                         </div>
-
-                        {/* Area */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="area" className="text-right">
                                 Area <span className="text-red-500">*</span>
                             </Label>
-                            <div className="col-span-3">
-                                <Select value={area} onValueChange={setArea}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select area" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {areas.map(ar => (
-                                            <SelectItem key={ar} value={ar}>
-                                                {ar}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {findFormError('area') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('area')}</p>
-                                )}
-                            </div>
+                            <Select
+                                onValueChange={(value) => setForm(prev => ({ ...prev, area: value }))}
+                                value={form.area || ''}
+                            >
+                                <SelectTrigger id="area" className="col-span-3">
+                                    <SelectValue placeholder="Select area" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {areas.map((area) => (
+                                        <SelectItem key={area} value={area}>
+                                            {area}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {findFormError('area') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('area')}</p>
+                            )}
                         </div>
-
-                        {/* Phone Number */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="phoneNo" className="text-right">
-                                Phone No. <span className="text-red-500">*</span>
+                            <Label htmlFor="phoneNumber" className="text-right">
+                                Phone <span className="text-red-500">*</span>
                             </Label>
-                            <div className="col-span-3">
-                                <Input
-                                    id="phoneNo"
-                                    value={phoneNo}
-                                    onChange={(e) => setPhoneNo(e.target.value)}
-                                    placeholder="Enter phone number"
-                                />
-                                {findFormError('phoneNo') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('phoneNo')}</p>
-                                )}
-                            </div>
+                            <Input
+                                id="phoneNumber"
+                                value={form.phoneNumber}
+                                onChange={handleFormChange}
+                                className="col-span-3"
+                                type="tel"
+                            />
+                            {findFormError('phoneNumber') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('phoneNumber')}</p>
+                            )}
                         </div>
-
-                        {/* Address */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="address" className="text-right">
+                            <Label htmlFor="contactPerson" className="text-right">
+                                Contact Person <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="contactPerson"
+                                value={form.contactPerson}
+                                onChange={handleFormChange}
+                                className="col-span-3"
+                            />
+                            {findFormError('contactPerson') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('contactPerson')}</p>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="contactPersonPhone" className="text-right">
+                                Contact Phone <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="contactPersonPhone"
+                                value={form.contactPersonPhone}
+                                onChange={handleFormChange}
+                                className="col-span-3"
+                                type="tel"
+                            />
+                            {findFormError('contactPersonPhone') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('contactPersonPhone')}</p>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="fullAddress" className="text-right">
                                 Address <span className="text-red-500">*</span>
                             </Label>
-                            <div className="col-span-3">
-                                <Textarea
-                                    id="address"
-                                    value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
-                                    placeholder="Enter full address"
-                                    className="h-24"
-                                />
-                                {findFormError('address') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('address')}</p>
-                                )}
-                            </div>
+                            <Textarea
+                                id="fullAddress"
+                                value={form.fullAddress}
+                                onChange={handleFormChange}
+                                className="col-span-3"
+                            />
+                            {findFormError('fullAddress') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('fullAddress')}</p>
+                            )}
                         </div>
-
-                        {/* Total Potential */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="totalPotential" className="text-right">
-                                Total Potential <span className="text-red-500">*</span>
+                            <Label htmlFor="brand" className="text-right">
+                                Brand
                             </Label>
-                            <div className="col-span-3">
-                                <Input
-                                    id="totalPotential"
-                                    type="number"
-                                    step="0.01"
-                                    value={totalPotential}
-                                    onChange={(e) => setTotalPotential(e.target.value)}
-                                    placeholder="Enter total potential"
-                                />
-                                {findFormError('totalPotential') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('totalPotential')}</p>
-                                )}
-                            </div>
+                            <Select
+                                onValueChange={(value) => setForm(prev => ({ ...prev, brand: value }))}
+                                value={form.brand || ''}
+                            >
+                                <SelectTrigger id="brand" className="col-span-3">
+                                    <SelectValue placeholder="Select brand" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">None</SelectItem>
+                                    {brands.map((brand) => (
+                                        <SelectItem key={brand} value={brand}>
+                                            {brand}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {findFormError('brand') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('brand')}</p>
+                            )}
                         </div>
-
-                        {/* Best Potential */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="bestPotential" className="text-right">
-                                Best Potential <span className="text-red-500">*</span>
+                            <Label htmlFor="subBrand" className="text-right">
+                                Sub-Brand
                             </Label>
-                            <div className="col-span-3">
-                                <Input
-                                    id="bestPotential"
-                                    type="number"
-                                    step="0.01"
-                                    value={bestPotential}
-                                    onChange={(e) => setBestPotential(e.target.value)}
-                                    placeholder="Enter best potential"
-                                />
-                                {findFormError('bestPotential') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('bestPotential')}</p>
-                                )}
-                            </div>
+                            <Input
+                                id="subBrand"
+                                value={form.subBrand || ''}
+                                onChange={handleFormChange}
+                                className="col-span-3"
+                            />
+                            {findFormError('subBrand') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('subBrand')}</p>
+                            )}
                         </div>
-
-                        {/* Brand Selling */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="brandSelling" className="text-right">
-                                Brands Selling <span className="text-red-500">*</span>
+                            <Label htmlFor="description" className="text-right">
+                                Description
                             </Label>
-                            <div className="col-span-3">
-                                <MultiSelect
-                                    options={brands.map(brand => ({ label: brand, value: brand }))}
-                                    selectedValues={brandSelling}
-                                    onValueChange={setBrandSelling}
-                                    placeholder="Select brands"
-                                />
-                                {findFormError('brandSelling') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('brandSelling')}</p>
-                                )}
-                            </div>
+                            <Textarea
+                                id="description"
+                                value={form.description || ''}
+                                onChange={handleFormChange}
+                                placeholder="Optional description..."
+                                className="col-span-3"
+                            />
+                            {findFormError('description') && (
+                                <p className="text-red-500 text-sm col-span-4 text-right">{findFormError('description')}</p>
+                            )}
                         </div>
-
-                        {/* Feedbacks */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="feedbacks" className="text-right">
-                                Feedbacks <span className="text-red-500">*</span>
-                            </Label>
-                            <div className="col-span-3">
-                                <Textarea
-                                    id="feedbacks"
-                                    value={feedbacks}
-                                    onChange={(e) => setFeedbacks(e.target.value)}
-                                    placeholder="Enter feedbacks"
-                                    className="h-24"
-                                />
-                                {findFormError('feedbacks') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('feedbacks')}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Remarks (Optional) */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="remarks" className="text-right">
-                                Remarks
-                            </Label>
-                            <div className="col-span-3">
-                                <Textarea
-                                    id="remarks"
-                                    value={remarks}
-                                    onChange={(e) => setRemarks(e.target.value)}
-                                    placeholder="Optional: Add any remarks"
-                                    className="h-24"
-                                />
-                                {findFormError('remarks') && (
-                                    <p className="text-red-500 text-sm mt-1">{findFormError('remarks')}</p>
-                                )}
-                            </div>
-                        </div>
-
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
                                 Cancel
                             </Button>
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Adding..." : "Add Dealer"}
+                                {isSubmitting ? "Saving..." : "Save Dealer"}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -542,7 +555,7 @@ export default function AddDealersPage() {
                 <div className="bg-card p-6 rounded-lg border border-border">
                     <DataTableReusable
                         columns={dealerColumns}
-                        data={dealers}
+                        data={filteredDealers}
                         enableRowDragging={false}
                         onRowOrderChange={() => { }}
                     />

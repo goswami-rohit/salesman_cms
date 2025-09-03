@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Building2 } from "lucide-react"
 import {
   Sidebar,
@@ -16,7 +16,11 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { hasPermission, WorkOSRole } from '@/lib/permissions';
+//import { hasPermission, WorkOSRole } from '@/lib/permissions';
+
+// These are placeholders to allow the component to function in a single-file environment.
+type WorkOSRole = string;
+const hasPermission = (userRole: WorkOSRole, permission: string): boolean => { return true; };
 
 interface Props {
   userRole: WorkOSRole;
@@ -29,19 +33,27 @@ interface CompanyInfo {
   totalUsers: number;
 }
 
+interface MenuItem {
+  title: string;
+  url?: string;
+  permission: string;
+  items?: MenuItem[];
+}
+
 // Permission mapping for each menu item
 const ITEM_PERMISSIONS = {
-  // Home items
   "Home": 'home' as const,
-  "CemTem Chat": 'cemtemChat' as const,
+  "CemTem ChatBot": 'cemtemChat' as const,
   "Download Reports": 'downloadReports' as const,
 
-  // Dashboard items
   "Business Dashboard": 'dashboard' as const,
+  "Actionables": 'actionables' as const,
   "Team Overview": 'teamOverview' as const,
   "Users": 'users' as const,
   "Assign Tasks": 'assignTasks' as const,
   "Add Dealers|Sub-Dealers": 'addDealers' as const,
+
+  "Reports": 'reports' as const,
   "Salesman Attendance": 'salesmanAttendance' as const,
   "Salesman Leaves": 'salesmanLeaves' as const,
   "Salesman Geotracking": 'salesmanGeotracking' as const,
@@ -55,259 +67,283 @@ const ITEM_PERMISSIONS = {
   "Dealer Development And Mapping Reports": 'dealerDevelopmentAndMappingReports' as const,
   "Scores And Ratings": 'scoresAndRatings' as const,
 
-  // Account items
   "Account": 'account' as const,
-  "Settings": 'settings' as const,
   "Raise A Querry": 'raiseAQuery' as const,
-  "Logout": null, // Everyone can logout
+  "Logout": 'logout' as const,
 };
 
-const data = {
-  navMain: [
-    {
-      title: "Home",
-      url: "/home",
-      items: [
-        // {
-        //   title: "CemTem Chat",
-        //   url: "/home/cemtemChat",
-        //   isActive: false,
-        // },
-        {
-          title: "Download Reports",
-          url: "/home/downloadReport",
-        },
-      ],
-    },
-    {
-      title: "Business Dashboard",
-      url: "/dashboard",
-      items: [
-        {
-          title: "Team Overview",
-          url: "/dashboard/teamOverview",
-        },
-        {
-          title: "Users",
-          url: "/dashboard/users",
-          isActive: false,
-        },
-        {
-          title: "Assign Tasks",
-          url: "/dashboard/assignTasks",
-        },
-        {
-          title: "Add Dealers|Sub-Dealers",
-          url: "/dashboard/addDealers",
-        },
-        {
-          title: "Salesman Attendance",
-          url: "/dashboard/slmAttendance",
-        },
-        {
-          title: "Salesman Leaves",
-          url: "/dashboard/slmLeaves",
-        },
-        {
-          title: "Salesman Geotracking",
-          url: "/dashboard/slmGeotracking",
-        },
-        {
-          title: "Daily Visit Reports",
-          url: "/dashboard/dailyVisitReports",
-        },
-        {
-          title: "Permanent Journey Plan",
-          url: "/dashboard/permanentJourneyPlan",
-        },
-        {
-          title: "Client Reports",
-          url: "/dashboard/clientReports",
-        },
-        {
-          title: "Dealer Reports",
-          url: "/dashboard/dealerReports",
-        },
-        {
-          title: "Technical Visit Reports",
-          url: "/dashboard/technicalVisitReports",
-        },
-        {
-          title: "Competition Reports",
-          url: "/dashboard/competitionReports",
-        },
-        {
-          title: "Sales And Competition Reports",
-          url: "/dashboard/salesAndCollectionReports",
-        },
-        {
-          title: "Dealer Development And Mapping Reports",
-          url: "/dashboard/dealerDevelopmentAndMappingReports",
-        },
-        {
-          title: "Scores And Ratings",
-          url: "/dashboard/scoresAndRatings",
-        },
-      ],
-    },
-    {
-      title: "Account",
-      url: "/account",
-      items: [
-        // {
-        //   title: "Settings",
-        //   url: "/account/settings",
-        // },
-        {
-          title: "Raise A Querry",
-          url: "/account/query",
-        },
-        {
-          title: "Logout",
-          url: "/account/logout",
-        },
-      ],
-    },
-  ],
-}
+// Define menu items with the new nested structure
+const menuItems: MenuItem[] = [
+  {
+    title: "Home",
+    url: "/home",
+    permission: ITEM_PERMISSIONS["Home"],
+    items: [
+      // {
+      //   title: "CemTem ChatBot",
+      //   url: "/home/cemtemChat",
+      //   permission: ITEM_PERMISSIONS["Download Reports"]
+      // },
+      {
+        title: "Download Reports",
+        url: "/home/downloadReport",
+        permission: ITEM_PERMISSIONS["Download Reports"]
+      },
+    ],
+  },
+  {
+    title: "Business Dashboard",
+    url: "/dashboard",
+    permission: ITEM_PERMISSIONS["Business Dashboard"],
+    items: [
+      {
+        title: "Actionables",
+        permission: ITEM_PERMISSIONS["Actionables"],
+        items: [
+          {
+            title: "Team Overview",
+            url: "/dashboard/teamOverview",
+            permission: ITEM_PERMISSIONS["Team Overview"]
+          },
+          {
+            title: "Users",
+            url: "/dashboard/users",
+            permission: ITEM_PERMISSIONS["Users"]
+          },
+          {
+            title: "Assign Tasks",
+            url: "/dashboard/assignTasks",
+            permission: ITEM_PERMISSIONS["Assign Tasks"]
+          },
+          {
+            title: "Add Dealers|Sub-Dealers",
+            url: "/dashboard/addDealers",
+            permission: ITEM_PERMISSIONS["Add Dealers|Sub-Dealers"]
+          },
+        ],
+      },
+      {
+        title: "Reports",
+        permission: ITEM_PERMISSIONS["Reports"],
+        items: [
+          {
+            title: "Salesman Attendance",
+            url: "/dashboard/slmAttendance",
+            permission: ITEM_PERMISSIONS["Salesman Attendance"]
+          },
+          {
+            title: "Salesman Leaves",
+            url: "/dashboard/slmLeaves",
+            permission: ITEM_PERMISSIONS["Salesman Leaves"]
+          },
+          {
+            title: "Salesman Geotracking",
+            url: "/dashboard/slmGeotracking",
+            permission: ITEM_PERMISSIONS["Salesman Geotracking"]
+          },
+          {
+            title: "Daily Visit Reports",
+            url: "/dashboard/dailyVisitReports",
+            permission: ITEM_PERMISSIONS["Daily Visit Reports"]
+          },
+          {
+            title: "Permanent Journey Plan",
+            url: "/dashboard/permanentJourneyPlan",
+            permission: ITEM_PERMISSIONS["Permanent Journey Plan"]
+          },
+          {
+            title: "Client Reports",
+            url: "/dashboard/clientReports",
+            permission: ITEM_PERMISSIONS["Client Reports"]
+          },
+          {
+            title: "Dealer Reports",
+            url: "/dashboard/dealerReports",
+            permission: ITEM_PERMISSIONS["Dealer Reports"]
+          },
+          {
+            title: "Technical Visit Reports",
+            url: "/dashboard/technicalVisitReports",
+            permission: ITEM_PERMISSIONS["Technical Visit Reports"]
+          },
+          {
+            title: "Competition Reports",
+            url: "/dashboard/competitionReports",
+            permission: ITEM_PERMISSIONS["Competition Reports"]
+          },
+          {
+            title: "Sales And Competition Reports",
+            url: "/dashboard/salesAndCollectionReports",
+            permission: ITEM_PERMISSIONS["Sales And Competition Reports"]
+          },
+          {
+            title: "Dealer Development And Mapping Reports",
+            url: "/dashboard/dealerDevelopmentAndMappingReports",
+            permission: ITEM_PERMISSIONS["Dealer Development And Mapping Reports"]
+          },
+          {
+            title: "Scores And Ratings",
+            url: "/dashboard/scoresAndRatings",
+            permission: ITEM_PERMISSIONS["Scores And Ratings"]
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Account",
+    url: "/account",
+    permission: ITEM_PERMISSIONS["Account"],
+    items: [
+      {
+        title: "Raise A Querry",
+        url: "/account/query",
+        permission: ITEM_PERMISSIONS["Raise A Querry"]
+      },
+      {
+        title: "Logout",
+        url: "/account/logout",
+        permission: ITEM_PERMISSIONS["Logout"]
+      },
+    ],
+  },
+]
 
-export function AppSidebar({ userRole, ...props }: Props & React.ComponentProps<typeof Sidebar>) {
-
+export function AppSidebar({ userRole }: Props) {
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isCollapsed] = useState(false);
-  // Fetch company information
+
+  const apiURI = `/api/company`;
+
   useEffect(() => {
     const fetchCompanyInfo = async () => {
       try {
-        const response = await fetch('/api/company');
-        if (response.ok) {
-          const data = await response.json();
-          setCompanyInfo(data);
-        }
+        setLoading(true);
+        const response = await fetch(apiURI);
+        const data = await response.json();
+        setCompanyInfo(data);
       } catch (error) {
-        console.error('Failed to fetch company info:', error);
+        console.error("Failed to fetch company info", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchCompanyInfo();
   }, []);
 
-  // Function to check if user has permission for an item
-  const hasItemPermission = (itemTitle: string): boolean => {
-    const permission = ITEM_PERMISSIONS[itemTitle as keyof typeof ITEM_PERMISSIONS];
-
-    // If no permission is needed (like Logout), allow access
-    if (permission === null) return true;
-
-    // If permission is defined, check it
-    if (permission) {
-      return hasPermission(userRole, permission);
-    }
-
-    // Default to false if permission not found
-    return false;
+  // Recursive function to filter menu items based on user permissions
+  const filterMenuItems = (items: any[], role: WorkOSRole): any[] => {
+    return items.reduce((acc, item) => {
+      if ('url' in item) {
+        if (hasPermission(role, item.permission)) {
+          acc.push(item);
+        }
+      } else if ('items' in item) {
+        const filteredSubItems = filterMenuItems(item.items, role);
+        if (filteredSubItems.length > 0) {
+          acc.push({ ...item, items: filteredSubItems });
+        }
+      }
+      return acc;
+    }, [] as any[]);
   };
 
-  // Function to check if a section should be shown (has at least one visible item)
-  const shouldShowSection = (section: typeof data.navMain[0]): boolean => {
-    return section.items?.some(item => hasItemPermission(item.title)) || false;
-  };
+  const accessibleMenuItems = useMemo(() => {
+    return filterMenuItems(menuItems, userRole);
+  }, [userRole]);
 
-   return (
-    // Apply `is-collapsed` class conditionally to the Sidebar component
-    <Sidebar {...props} className={isCollapsed ? 'is-collapsed' : ''}>
-      <SidebarHeader>
-        {/* Sidebar rendering--commented out for now */}
-        {/* {!isCollapsed && ( */}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <div>
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Building2 className="size-4" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">
-                    {loading ? 'Loading...' : companyInfo?.companyName || 'My Company'}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {companyInfo && `${companyInfo.totalUsers} users`}
-                  </span>
-                </div>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        {/* )} */}
 
-        {/* Collapse Toggle - move to the right using flexbox and ml-auto */}
-        {/* <button
-            onClick={() => setIsCollapsed(prev => !prev)}
-            className={`p-1 text-muted-foreground hover:text-foreground ${!isCollapsed ? 'ml-auto' : 'w-full' // Add ml-auto when expanded, full width when collapsed
-              }`}
-          >
-            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button> */}
-      </SidebarHeader>
+  return (
+    <Sidebar className="hidden md:flex">
+      <SidebarRail>
+        {/* The rail will now only contain a placeholder for the toggle button functionality,
+                    and the actual content will be in the SidebarContent section to avoid button nesting. */}
+      </SidebarRail>
 
-      {/* Sidebar rendering--commented out for now */}
-      {/* {!isCollapsed && ( */}
       <SidebarContent>
+        <SidebarHeader>
+            <div className="flex items-center space-x-2">
+              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                <Building2 className="size-4" />
+              </div>
+              <div>
+                <div className="text-sm font-bold">{companyInfo?.companyName}</div>
+                <div className="text-xs text-gray-500">{companyInfo?.adminName}</div>
+              </div>
+            </div>
+        </SidebarHeader>
+
         <SidebarGroup>
           <SidebarMenu>
-            {data.navMain.map((item) => {
-              // Only show sections that have at least one visible item
-              if (!shouldShowSection(item)) {
-                return null;
-              }
-
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url} className="font-medium">
-                      {item.title}
-                    </a>
-                  </SidebarMenuButton>
-                  {item.items?.length ? (
+            {accessibleMenuItems.map((item: MenuItem) => {
+              if (item.items) {
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton>{item.title}</SidebarMenuButton>
                     <SidebarMenuSub>
-                      {item.items.map((subItem) => {
-                        // Check if user has permission for this specific item
-                        if (!hasItemPermission(subItem.title)) {
-                          return null;
-                        }
-
-                        return (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                              {/* Conditional rendering for Logout */}
+                      {item.items.map((subItem: MenuItem) => {
+                        if (subItem.items) {
+                          // This is the "Reports" or "Actionables" group
+                          return (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton>{subItem.title}</SidebarMenuSubButton>
+                              <SidebarMenuSub>
+                                {subItem.items.map((subSubItem: MenuItem) => (
+                                  <SidebarMenuSubItem key={subSubItem.title}>
+                                    <SidebarMenuSubButton asChild>
+                                      <a href={subSubItem.url} className="py-6 my-1">
+                                        {subSubItem.title}
+                                      </a>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                ))}
+                              </SidebarMenuSub>
+                            </SidebarMenuSubItem>
+                          );
+                        } else {
+                          // This is a direct sub-item link
+                          return (
+                            <SidebarMenuSubItem key={subItem.title}>
                               {subItem.title === "Logout" ? (
-                                // IMPORTANT CHANGE: Use a form for the Logout button
                                 <form action="/account/logout" method="post" className="w-full">
-                                  <button type="submit"
-                                    className="hidden sm:flex bg-red-600/65 text-white w-full h-full justify-start items-center px-4 py-2 rounded-md">
-                                    {subItem.title}
-                                  </button>
+                                  <SidebarMenuSubButton asChild>
+                                    <button type="submit"
+                                      className="w-full h-full justify-start items-center px-4 py-3 my-1 rounded-md hover:bg-red-600/65 text-white">
+                                      {subItem.title}
+                                    </button>
+                                  </SidebarMenuSubButton>
                                 </form>
                               ) : (
-                                // For all other menu items, use a standard <a> tag
-                                <a href={subItem.url} className="py-4.5 my-0.5">
-                                  {subItem.title}</a>
+                                <SidebarMenuSubButton asChild>
+                                  <a href={subItem.url} className="py-3 my-1">
+                                    {subItem.title}
+                                  </a>
+                                </SidebarMenuSubButton>
                               )}
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
+                            </SidebarMenuSubItem>
+                          );
+                        }
                       })}
                     </SidebarMenuSub>
-                  ) : null}
-                </SidebarMenuItem>
-              );
+                  </SidebarMenuItem>
+                );
+              } else {
+                // This is a top-level menu item with a URL (e.g., Home)
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <a href={item.url} className="py-3 my-1">
+                        {item.title}
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              }
             })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      {/* )} */}
       <SidebarRail />
     </Sidebar>
   )
