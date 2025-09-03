@@ -50,7 +50,6 @@ export default function DashboardShell({
     >
       <AppSidebar 
         userRole={workosRole as WorkOSRole}
-        variant="inset" 
       />
       <SidebarInset className="pl-4 pt-4 md:pl-6 md:pt-6">
         <SiteHeader />
