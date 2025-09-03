@@ -120,9 +120,11 @@ export function SalesmanLiveLocation() {
     region: 'all',
   });
 
+  // Data Fetching Section
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    // Last Known Location data fetching from api route from Neon DB
     const fetchLocations = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/slmLiveLocation`);
@@ -138,7 +140,8 @@ export function SalesmanLiveLocation() {
     };
     fetchLocations();
 
-    socketRef.current = io(`${process.env.NEXT_PUBLIC_APP_URL}`);
+    // SocketIO Live Location fetching from https://socketio-geolivetracking.onrender.com
+    socketRef.current = io(`${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL}`);
 
     socketRef.current.on('locationUpdate', (update: LiveLocationData) => {
       setLocations(prevLocations => {
