@@ -243,7 +243,7 @@ export default function AddDealersPage() {
             header: 'Actions',
             cell: ({ row }) => (
                 <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     onClick={() => {
                         setDealerToDeleteId(row.original.id);
