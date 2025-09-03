@@ -189,7 +189,7 @@ model PermanentJourneyPlan {
 model Dealer {
   id             String   @id @default(uuid()) @db.VarChar(255)
   userId         Int?      @map("user_id") // Primary user (salesman) associated
-  type           String   @db.VarChar(50) // "Dealer", "Sub Dealer"
+  type           String   @db.VarChar(50)
   parentDealerId String?  @map("parent_dealer_id") @db.VarChar(255) // Self-referencing FK for sub-dealers
   name           String   @db.VarChar(255) // Stores dealerName or subDealerName
   region         String   @db.VarChar(100)

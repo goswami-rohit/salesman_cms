@@ -38,7 +38,7 @@ const dealerSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1, "Dealer name is required."),
     type: z.string().min(1, "Dealer type is required."),
-    parentDealer: z.object({ name: z.string() }).nullable().optional(),
+    parentDealerName: z.string().nullable().optional(),
     region: z.string().min(1, "Region is required."),
     area: z.string().min(1, "Area is required."),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
@@ -51,7 +51,6 @@ const dealerSchema = z.object({
     createdAt: z.string(),
     updatedAt: z.string(),
 });
-
 
 // Schema for form submission, which transforms string inputs to numbers.
 const addDealerFormSchema = z.object({
@@ -245,7 +244,7 @@ export default function AddDealersPage() {
         { accessorKey: 'name', header: 'Name' },
         { accessorKey: 'type', header: 'Type' },
         {
-            accessorKey: 'parentDealer', header: 'Parent Dealer',
+            accessorKey: 'parentDealerName', header: 'Parent Dealer',
             cell: info => info.getValue() || '-'
         },
         { accessorKey: 'region', header: 'Region' },
