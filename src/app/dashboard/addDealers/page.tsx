@@ -38,6 +38,7 @@ const dealerSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1, "Dealer name is required."),
     type: z.string().min(1, "Dealer type is required."),
+    parentDealer: z.object({ name: z.string() }).nullable().optional(),
     region: z.string().min(1, "Region is required."),
     area: z.string().min(1, "Area is required."),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
@@ -243,14 +244,30 @@ export default function AddDealersPage() {
     const dealerColumns: ColumnDef<DealerRecord>[] = [
         { accessorKey: 'name', header: 'Name' },
         { accessorKey: 'type', header: 'Type' },
+        {
+            accessorKey: 'parentDealer', header: 'Parent Dealer',
+            cell: info => info.getValue() || '-'
+        },
         { accessorKey: 'region', header: 'Region' },
         { accessorKey: 'area', header: 'Area' },
         { accessorKey: 'address', header: 'Address' },
         { accessorKey: 'phoneNo', header: 'Phone No.' },
-        { accessorKey: 'totalPotential', header: 'Total Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
-        { accessorKey: 'bestPotential', header: 'Best Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
-        { accessorKey: 'brandSelling', header: 'Brands', cell: info => (info.getValue() as string[]).join(', ') },
-        { accessorKey: 'createdAt', header: 'Added On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
+        {
+            accessorKey: 'totalPotential', header: 'Total Potential',
+            cell: info => (info.getValue() as number)?.toFixed(2)
+        },
+        {
+            accessorKey: 'bestPotential', header: 'Best Potential',
+            cell: info => (info.getValue() as number)?.toFixed(2)
+        },
+        {
+            accessorKey: 'brandSelling', header: 'Brands',
+            cell: info => (info.getValue() as string[]).join(', ')
+        },
+        {
+            accessorKey: 'createdAt', header: 'Added On',
+            cell: info => new Date(info.getValue() as string).toLocaleDateString()
+        },
         {
             id: 'actions',
             header: 'Actions',

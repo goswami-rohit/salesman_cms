@@ -10,6 +10,8 @@ const getDealerResponseSchema = z.object({
     id: z.string().uuid(), // Expecting a UUID string
     name: z.string().min(1, "Dealer name is required."),
     type: z.string().min(1, "Dealer type is required."), // Flexible string for existing data
+    parentDealerId: z.string().uuid().optional().nullable(),
+    parentDealerName: z.string().nullable().optional(), // display the name of parent dealer in fetch
     region: z.string().min(1, "Region is required."),     // Flexible string for existing data
     area: z.string().min(1, "Area is required."),         // Flexible string for existing data
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
@@ -40,9 +42,9 @@ const postDealerSchema = z.object({
     remarks: z.string().nullable().optional(), // Optional field
 });
 
-const allowedRoles = ['area-sales-manager','regional-sales-manager',
-  'senior-manager','manager', 'assistant-manager',
-  'senior-executive', 'executive', 'junior-executive'];
+const allowedRoles = ['area-sales-manager', 'regional-sales-manager',
+    'senior-manager', 'manager', 'assistant-manager',
+    'senior-executive', 'executive', 'junior-executive'];
 
 export async function POST(request: NextRequest) {
     try {
@@ -185,6 +187,11 @@ export async function GET() {
                     companyId: currentUser.companyId,
                 },
             },
+            include: {
+                parentDealer: { // include relation to parent dealer
+                    select: { id: true, name: true },
+                },
+            },
             orderBy: {
                 createdAt: 'desc', // Order by latest added dealers first
             },
@@ -207,6 +214,7 @@ export async function GET() {
             remarks: dealer.remarks,
             createdAt: dealer.createdAt.toISOString(),
             updatedAt: dealer.updatedAt.toISOString(),
+            parentDealerName: dealer.parentDealer?.name || null,
         }));
 
         // 6. Validate the formatted data against the getDealerResponseSchema
