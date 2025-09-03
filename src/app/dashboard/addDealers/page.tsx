@@ -56,6 +56,7 @@ const dealerSchema = z.object({
 const addDealerFormSchema = z.object({
     name: z.string().min(1, "Dealer name is required."),
     type: z.string().min(1, "Dealer type is required."),
+    parentDealerId: z.string().uuid().optional().nullable(),
     region: z.string().min(1, "Region is required."),
     area: z.string().min(1, "Area is required."),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
@@ -99,7 +100,9 @@ export default function AddDealersPage() {
     //.    Dropdown filter by area and region
     const [filterRegion, setFilterRegion] = useState<string>('');
     const [filterArea, setFilterArea] = useState<string>('');
-
+    // Parent dealer setting for sub dealers
+    const [parentDealerId, setParentDealerId] = useState<string | null>(null);
+    const isSubDealer = type.startsWith("Sub Dealer");
 
     const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/add-dealers`;
 
@@ -149,6 +152,7 @@ export default function AddDealersPage() {
             brandSelling,
             feedbacks,
             remarks: remarks || undefined,
+            parentDealerId: isSubDealer ? parentDealerId : undefined,
         };
 
         const validationResult = addDealerFormSchema.safeParse(formData);
@@ -181,6 +185,7 @@ export default function AddDealersPage() {
             // Reset form state
             setName('');
             setType('');
+            setParentDealerId('');
             setRegion('');
             setArea('');
             setPhoneNo('');
@@ -287,7 +292,7 @@ export default function AddDealersPage() {
                         {/* Dealer Name */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="name" className="text-right">
-                                Dealer Name <span className="text-red-500">*</span>
+                                Dealer/Sub-Dealer Name <span className="text-red-500">*</span>
                             </Label>
                             <div className="col-span-3">
                                 <Input
@@ -325,6 +330,34 @@ export default function AddDealersPage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Parent Dealer (only if sub-dealer) */}
+                        {type.startsWith("Sub Dealer") && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="parentDealer" className="text-right">
+                                    Parent Dealer <span className="text-red-500">*</span>
+                                </Label>
+                                <div className="col-span-3">
+                                    <Select value={parentDealerId || ""} onValueChange={setParentDealerId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select parent dealer" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {dealers
+                                                .filter(d => d.type.startsWith("Dealer")) // only top-level dealers
+                                                .map(d => (
+                                                    <SelectItem key={d.id} value={d.id}>
+                                                        {d.name} ({d.type})
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {findFormError('parentDealerId') && (
+                                        <p className="text-red-500 text-sm mt-1">{findFormError('parentDealerId')}</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Region */}
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -540,7 +573,7 @@ export default function AddDealersPage() {
 
             <div className="flex items-center justify-between mb-4">
                 <div className="flex gap-4">
-                    
+
                     {/* Region Filter */}
                     <Select value={filterRegion} onValueChange={setFilterRegion}>
                         <SelectTrigger className="w-[180px]">

@@ -28,6 +28,7 @@ const getDealerResponseSchema = z.object({
 const postDealerSchema = z.object({
     name: z.string().min(1, "Dealer name is required."),
     type: z.string(),
+    parentDealerId: z.string().uuid().optional().nullable(),
     region: z.string(),
     area: z.string(),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
             brandSelling,
             feedbacks,
             remarks,
+            parentDealerId,
         } = parsedBody.data;
 
         // Geocoding API call to OpenCage Geocoding service
@@ -143,6 +145,7 @@ export async function POST(request: NextRequest) {
                 brandSelling: brandSelling,
                 feedbacks: feedbacks,
                 remarks: remarks,
+                parentDealerId: parentDealerId || null,
             },
         });
 
