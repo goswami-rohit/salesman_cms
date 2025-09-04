@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { generateAndStreamXlsxMulti, exportTablesToCSVZip } from '@/lib/download-utils';
 
 // Crucial Auth Check
-export async function getAuthClaims() {
+async function getAuthClaims() {
     const claims = await getTokenClaims();
     if (!claims || !claims.sub || !claims.org_id) {
         return new NextResponse('Unauthorized', { status: 401 });
@@ -528,12 +528,12 @@ function groupSelections(
     }
     return grouped;
 };
+
 // num
 function num(n: any): number | null {
     if (n == null) return null;
     return typeof n === "number" ? n : n?.toNumber?.() ?? Number(n);
 };
-
 
 // Excel formatting: one sheet per table
 function buildSheetsPayload(grouped: Record<string, string[]>, data: Record<string, any[]>) {

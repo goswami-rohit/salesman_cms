@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { generateAndStreamCsv, generateAndStreamXlsx } from '@/lib/download-utils';
 
 // Crucial Auth Check
-export async function getAuthClaims() {
+async function getAuthClaims() {
   const claims = await getTokenClaims();
   if (!claims || !claims.sub || !claims.org_id) {
     return new NextResponse('Unauthorized', { status: 401 });
