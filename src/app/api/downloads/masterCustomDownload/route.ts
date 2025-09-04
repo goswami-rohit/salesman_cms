@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
-import { generateAndStreamCsv, generateAndStreamXlsxMulti, exportTablesToCSVZip } from '@/lib/download-utils';
+import { generateAndStreamXlsxMulti, exportTablesToCSVZip } from '@/lib/download-utils';
 
 // Crucial Auth Check
 export async function getAuthClaims() {
@@ -162,6 +162,9 @@ const modelMap = {
                 region: r.region,
                 area: r.area,
                 phoneNo: r.phoneNo,
+                pinCode: r.pinCode,
+                dateOfBirth: r.dateOfBirth,
+                anniversaryDate: r.anniversaryDate,
                 totalPotential: r.totalPotential.toNumber(),
                 bestPotential: r.bestPotential.toNumber(),
                 brandSelling: r.brandSelling.join(', '), // Correctly handles the array
@@ -282,6 +285,51 @@ const modelMap = {
             createdAt: r.createdAt?.toISOString() ?? null,
             updatedAt: r.updatedAt?.toISOString() ?? null,
             salesmanEmail: r.user?.email ?? null,
+        }));
+    },
+
+    salesOrders: async (companyId: number) => {
+        const rows = await prisma.salesOrder.findMany({
+            where: { salesman: { companyId } },
+            include: {
+                salesman: {
+                    select: { firstName: true, lastName: true, email: true, role: true },
+                },
+                dealer: {
+                    select: {
+                        name: true,
+                        type: true,
+                        phoneNo: true,
+                        address: true,
+                        area: true,
+                        region: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 500,
+        });
+
+        return rows.map(r => ({
+            id: r.id,
+            salesmanName: `${r.salesman?.firstName || ''} ${r.salesman?.lastName || ''}`.trim() || null,
+            salesmanRole: r.salesman?.role ?? null,
+            salesmanEmail: r.salesman?.email ?? null,
+            dealerName: r.dealer?.name ?? null,
+            dealerType: r.dealer?.type ?? null,
+            dealerPhone: r.dealer?.phoneNo ?? null,
+            dealerAddress: r.dealer?.address ?? null,
+            area: r.dealer?.area ?? null,
+            region: r.dealer?.region ?? null,
+            quantity: r.quantity ?? null,
+            unit: r.unit ?? null,
+            orderTotal: r.orderTotal ?? null,
+            advancePayment: r.advancePayment ?? null,
+            pendingPayment: r.pendingPayment ?? null,
+            estimatedDelivery: r.estimatedDelivery ?? null,
+            remarks: r.remarks ?? null,
+            createdAt: r.createdAt?.toISOString() ?? null,
+            updatedAt: r.updatedAt?.toISOString() ?? null,
         }));
     },
 

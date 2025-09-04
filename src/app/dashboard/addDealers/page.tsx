@@ -43,6 +43,9 @@ const dealerSchema = z.object({
     area: z.string().min(1, "Area is required."),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
+    pinCode: z.string().nullable().optional(),
+    dateOfBirth: z.string().nullable().optional(),       // ISO date
+    anniversaryDate: z.string().nullable().optional(),   // ISO date
     totalPotential: z.number().positive("Total potential must be a positive number."),
     bestPotential: z.number().positive("Best potential must be a positive number."),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
@@ -61,6 +64,9 @@ const addDealerFormSchema = z.object({
     area: z.string().min(1, "Area is required."),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
+    pinCode: z.string().nullable().optional(),
+    dateOfBirth: z.string().nullable().optional(),       // ISO date
+    anniversaryDate: z.string().nullable().optional(),   // ISO date
     totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
         message: "Total potential must be a positive number.",
     }),
@@ -89,6 +95,9 @@ export default function AddDealersPage() {
     const [area, setArea] = useState<string>('');
     const [phoneNo, setPhoneNo] = useState<string>('');
     const [address, setAddress] = useState<string>('');
+    const [pinCode, setPinCode] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState('');
+    const [anniversaryDate, setAnniversaryDate] = useState('');
     const [totalPotential, setTotalPotential] = useState<string>('');
     const [bestPotential, setBestPotential] = useState<string>('');
     const [brandSelling, setBrandSelling] = useState<string[]>([]);
@@ -147,6 +156,9 @@ export default function AddDealersPage() {
             area,
             phoneNo,
             address,
+            pinCode: pinCode || undefined,
+            dateOfBirth: dateOfBirth || undefined,
+            anniversaryDate: anniversaryDate || undefined,
             totalPotential,
             bestPotential,
             brandSelling,
@@ -190,6 +202,9 @@ export default function AddDealersPage() {
             setArea('');
             setPhoneNo('');
             setAddress('');
+            setPinCode('');
+            setDateOfBirth('');
+            setAnniversaryDate('');
             setTotalPotential('');
             setBestPotential('');
             setBrandSelling([]);
@@ -250,6 +265,9 @@ export default function AddDealersPage() {
         { accessorKey: 'region', header: 'Region' },
         { accessorKey: 'area', header: 'Area' },
         { accessorKey: 'address', header: 'Address' },
+        { accessorKey: 'pinCode', header: 'Pin Code' },
+        { accessorKey: 'dateOfBirth', header: 'DOB', cell: info => info.getValue() || '-' },
+        { accessorKey: 'anniversaryDate', header: 'Anniversary', cell: info => info.getValue() || '-' },
         { accessorKey: 'phoneNo', header: 'Phone No.' },
         {
             accessorKey: 'totalPotential', header: 'Total Potential',
@@ -457,6 +475,30 @@ export default function AddDealersPage() {
                                 {findFormError('address') && (
                                     <p className="text-red-500 text-sm mt-1">{findFormError('address')}</p>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Pin Code */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="pinCode" className="text-right">Pin Code</Label>
+                            <div className="col-span-3">
+                                <Input id="pinCode" value={pinCode} onChange={(e) => setPinCode(e.target.value)} placeholder="Optional" />
+                            </div>
+                        </div>
+
+                        {/* DOB */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="dateOfBirth" className="text-right">Date of Birth</Label>
+                            <div className="col-span-3">
+                                <Input id="dateOfBirth" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Anniversary */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="anniversaryDate" className="text-right">Anniversary</Label>
+                            <div className="col-span-3">
+                                <Input id="anniversaryDate" type="date" value={anniversaryDate} onChange={(e) => setAnniversaryDate(e.target.value)} />
                             </div>
                         </div>
 

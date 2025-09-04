@@ -44,7 +44,7 @@ const tables = [
   {
     id: 'dealers',
     title: 'Dealers',
-    columns: ["id", "name", "region", "area", "address", "phoneNo",
+    columns: ["id", "name", "region", "area", "address", "phoneNo", "pinCode", "dateOfBirth", "anniversaryDate",
       "totalPotential", "bestPotential", "brandSelling", "feedbacks", "remarks",
       "salesmanName", "createdAt", "updatedAt"],
   },
@@ -73,6 +73,14 @@ const tables = [
       "locationType", "activityType", "appState", "batteryLevel", "isCharging", "networkStatus",
       "ipAddress", "siteName", "checkInTime", "checkOutTime", "totalDistanceTravelled",
       "journeyId", "isActive", "destLat", "destLng", "createdAt", "updatedAt", "salesmanEmail"],
+  },
+  {
+    id: 'salesOrders',
+    title: 'Sales Orders',
+    columns: [ "id", "salesmanName", "salesmanRole", "salesmanEmail",
+    "dealerName", "dealerType", "dealerPhone", "dealerAddress", "area", "region", "quantity", "unit",
+     "orderTotal", "advancePayment", "pendingPayment", "estimatedDelivery", 
+     "remarks", "createdAt", "updatedAt",],
   },
   {
     id: 'dailyTasks',

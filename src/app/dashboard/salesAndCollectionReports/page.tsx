@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import CollectionReportsTable from './collectionReports';
 import SalesReportsTable from './salesReports';
+import SalesOrderTable from './salesReports';
 
 /**
  * Main dashboard page for Sales and Collection reports.
@@ -23,12 +24,16 @@ const SalesAndCollectionReportsPage = () => {
         View and analyze sales and collection data from your team.
       </p>
 
-      <Tabs defaultValue="sales" className="space-y-4">
+      <Tabs defaultValue="sales-orders" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="sales">Sales Reports</TabsTrigger>
+          <TabsTrigger value="sales-orders">Sales Orders</TabsTrigger>
+          <TabsTrigger value="sales-reports">Sales Reports</TabsTrigger>
           <TabsTrigger value="collection">Collection Reports</TabsTrigger>
         </TabsList>
-        <TabsContent value="sales" className="space-y-4">
+        <TabsContent value="sales-orders" className="space-y-4">
+          <SalesOrderTable />
+        </TabsContent>
+        <TabsContent value="sales-reports" className="space-y-4">
           <SalesReportsTable />
         </TabsContent>
         <TabsContent value="collection" className="space-y-4">

@@ -19,6 +19,7 @@ import {
   Star,
   Award,
   Boxes,
+  TruckIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -204,6 +205,12 @@ export default function DownloadsPage() {
       title: 'Geo-Tracking Records',
       description: 'Historical geo-location data for all salesmen, including new distance traveled.',
       icon: MapPin,
+    },
+    {
+      id: 'salesOrders',
+      title: 'Sales Orders',
+      description: 'All orders placed by salesmen for cement.',
+      icon: TruckIcon,
     },
     {
       id: 'dailyTasks',

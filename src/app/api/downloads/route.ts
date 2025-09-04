@@ -1,7 +1,17 @@
 // src/app/api/downloads/route.ts
 import { NextResponse, NextRequest } from 'next/server';
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
-import { getAuthClaims, generateAndStreamCsv, generateAndStreamXlsx } from '@/lib/download-utils';
+import { generateAndStreamCsv, generateAndStreamXlsx } from '@/lib/download-utils';
+
+// Crucial Auth Check
+export async function getAuthClaims() {
+  const claims = await getTokenClaims();
+  if (!claims || !claims.sub || !claims.org_id) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+  return claims;
+}
 
 const allowedRoles = [
   'president',
@@ -438,6 +448,83 @@ async function getGeoTrackingForCsv(companyId: number) {
   return [headers, ...dataForCsv];
 }
 
+async function getSalesOrdersForCsv(companyId: number) {
+  const orders = await prisma.salesOrder.findMany({
+    where: {
+      salesman: {
+        companyId: companyId,
+      },
+    },
+    include: {
+      salesman: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+        },
+      },
+      dealer: {
+        select: {
+          name: true,
+          type: true,
+          phoneNo: true,
+          address: true,
+          area: true,
+          region: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  const headers = [
+    "Salesman Name",
+    "Salesman Role",
+    "Salesman Email",
+    "Dealer Name",
+    "Dealer Type",
+    "Dealer Phone",
+    "Dealer Address",
+    "Area",
+    "Region",
+    "Quantity",
+    "Unit",
+    "Order Total (₹)",
+    "Advance Payment (₹)",
+    "Pending Payment (₹)",
+    "Estimated Delivery",
+    "Remarks",
+    "Created At",
+    "Updated At",
+  ];
+
+  const dataForCsv = orders.map(order => [
+    `${order.salesman?.firstName || ''} ${order.salesman?.lastName || ''}`.trim(),
+    order.salesman?.role || '',
+    order.salesman?.email || '',
+    order.dealer?.name || '',
+    order.dealer?.type || '',
+    order.dealer?.phoneNo || '',
+    order.dealer?.address || '',
+    order.dealer?.area || '',
+    order.dealer?.region || '',
+    order.quantity?.toString() || '',
+    order.unit || '',
+    order.orderTotal?.toString() || '',
+    order.advancePayment?.toString() || '',
+    order.pendingPayment?.toString() || '',
+    order.estimatedDelivery ? order.estimatedDelivery.toISOString() : '',
+    order.remarks || '',
+    order.createdAt.toISOString(),
+    order.updatedAt.toISOString(),
+  ]);
+
+  return [headers, ...dataForCsv];
+}
+
 async function getDailyTasksForCsv(companyId: number) {
   const tasks = await prisma.dailyTask.findMany({
     where: {
@@ -825,15 +912,6 @@ export async function GET(request: NextRequest) {
     let filename = '';
 
     switch (reportType) {
-      // case 'masterCustomDownload':
-      //   if (!selectionsParam) {
-      //     return NextResponse.json(
-      //       { error: 'Missing selections parameter for master custom download' }, { status: 400 });
-      //   }
-      //   const selections = JSON.parse(selectionsParam);
-      //   csvData = await getMasterCustomDownloadData(currentUser.companyId, selections);
-      //   filename = `master-custom-download-${Date.now()}`;
-      //   break;
       case 'dailyVisitReports':
         csvData = await getDailyVisitReportsForCsv(currentUser.companyId);
         filename = `daily-visit-reports-${Date.now()}`;
@@ -869,6 +947,10 @@ export async function GET(request: NextRequest) {
       case 'geoTracking':
         csvData = await getGeoTrackingForCsv(currentUser.companyId);
         filename = `geo-tracking-${Date.now()}`;
+        break;
+      case 'salesOrders':
+        csvData = await getSalesOrdersForCsv(currentUser.companyId);
+        filename = `sales-orders-${Date.now()}`;
         break;
       case 'dailyTasks':
         csvData = await getDailyTasksForCsv(currentUser.companyId);

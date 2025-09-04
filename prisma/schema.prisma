@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("PRISMA_DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model Company {
@@ -69,6 +69,7 @@ model User {
   salesReports              SalesReport[]
   ddpRecords                DDP[]
   ratings                   Rating[]
+  salesOrders               SalesOrder[]
   // PJPs assigned to this user
   permanentJourneyPlansAssigned PermanentJourneyPlan[] @relation("PJP_AssignedUser")
   // PJPs created by this user
@@ -196,6 +197,9 @@ model Dealer {
   area           String   @db.VarChar(255)
   phoneNo        String   @map("phone_no") @db.VarChar(20)
   address        String   @db.VarChar(500)
+  pinCode        String?   @db.VarChar(20)
+  dateOfBirth    DateTime? @db.Date
+  anniversaryDate DateTime? @db.Date
   totalPotential Decimal  @map("total_potential") @db.Decimal(10, 2)
   bestPotential  Decimal  @map("best_potential") @db.Decimal(10, 2)
   brandSelling   String[] @map("brand_selling") // Array of strings
@@ -208,6 +212,7 @@ model Dealer {
   parentDealer    Dealer?  @relation("SubDealers", fields: [parentDealerId], references: [id], onDelete: SetNull)
   subDealers      Dealer[] @relation("SubDealers")
   dailyTasks      DailyTask[] @relation("DealerDailyTasks") // NEW: Tasks related to this dealer (Named relation)
+  salesOrders     SalesOrder[]
 
   reportsAndScores DealerReportsAndScores? @relation("DealerScores")
 
@@ -399,6 +404,32 @@ model DailyTask {
   @@map("daily_tasks")
 }
 
+//SalesOrder model for when salesman places sales orders
+model SalesOrder {
+  id              String   @id @default(uuid()) @db.VarChar(255)
+  // user table and dealer table references
+  salesmanId      Int?      @map("salesman_id")
+  salesman       User?     @relation(fields: [salesmanId], references: [id], onDelete: SetNull)
+  dealerId        String?   @map("dealer_id") @db.VarChar(255)
+  dealer          Dealer?   @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+
+  // Order details
+  quantity        Decimal  @db.Decimal(10, 2)
+  unit            String   @db.VarChar(50)
+  orderTotal      Decimal  @db.Decimal(12, 2)
+  advancePayment  Decimal  @db.Decimal(12, 2)
+  pendingPayment  Decimal  @db.Decimal(12, 2)
+  estimatedDelivery DateTime @db.Date
+  remarks         String?  @db.VarChar(500)
+
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([salesmanId], map: "idx_sales_orders_salesman_id")
+  @@index([dealerId], map: "idx_sales_orders_dealer_id")
+  @@map("sales_orders")
+}
+
 // Dealer Reports and Scores
 model DealerReportsAndScores {
   id                      String    @id @default(cuid()) @db.VarChar(255)
@@ -546,6 +577,7 @@ model MasterConnectedTable {
   clientReportId                  String?  @db.VarChar(255)
   competitionReportId             String?  @db.VarChar(255)
   geoTrackingId                   String?  @db.VarChar(255)
+  salesOrderId                    String?  @db.VarChar(255)
 
   dealerReportsAndScoresId        String?  @db.VarChar(255)
 
@@ -573,6 +605,7 @@ model MasterConnectedTable {
   @@index([clientReportId], map: "idx_mct_client_report_id")
   @@index([competitionReportId], map: "idx_mct_comp_report_id")
   @@index([geoTrackingId], map: "idx_mct_geotracking_id")
+  @@index([salesOrderId], map: "idx_mct_sales_order_id")
   @@index([dealerReportsAndScoresId], map: "idx_mct_dealer_scores_id")
   @@index([salesReportId], map: "idx_mct_sales_report_id")
   @@index([collectionReportId], map: "idx_mct_collection_report_id")

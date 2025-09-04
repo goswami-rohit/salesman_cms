@@ -16,6 +16,9 @@ const getDealerResponseSchema = z.object({
     area: z.string().min(1, "Area is required."),         // Flexible string for existing data
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
+    pinCode: z.string().nullable().optional(),
+    dateOfBirth: z.string().nullable().optional(),       // ISO string
+    anniversaryDate: z.string().nullable().optional(),   // ISO string
     totalPotential: z.number().positive("Total potential must be a positive number."),
     bestPotential: z.number().positive("Best potential must be a positive number."),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
@@ -35,6 +38,9 @@ const postDealerSchema = z.object({
     area: z.string(),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
+    pinCode: z.string().nullable().optional(),
+    dateOfBirth: z.string().nullable().optional(),       // ISO string
+    anniversaryDate: z.string().nullable().optional(),   // ISO string
     totalPotential: z.number().positive("Total potential must be a positive number."),
     bestPotential: z.number().positive("Best potential must be a positive number."),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
@@ -76,18 +82,10 @@ export async function POST(request: NextRequest) {
         }
 
         const {
-            name,
-            type,
-            region,
-            area,
-            phoneNo,
-            address,
-            totalPotential,
-            bestPotential,
-            brandSelling,
-            feedbacks,
-            remarks,
-            parentDealerId,
+            name, type, region, area, phoneNo, address,
+            pinCode, dateOfBirth, anniversaryDate,
+            totalPotential, bestPotential, brandSelling,
+            feedbacks, remarks, parentDealerId,
         } = parsedBody.data;
 
         // Geocoding API call to OpenCage Geocoding service
@@ -142,6 +140,9 @@ export async function POST(request: NextRequest) {
                 area: area,
                 phoneNo: phoneNo,
                 address: formattedAddress, //Address stored with Lat and Lon using || separator
+                pinCode,
+                dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+                anniversaryDate: anniversaryDate ? new Date(anniversaryDate) : null,
                 totalPotential: totalPotential,
                 bestPotential: bestPotential,
                 brandSelling: brandSelling,
@@ -207,6 +208,9 @@ export async function GET() {
             area: dealer.area,
             phoneNo: dealer.phoneNo,
             address: dealer.address,
+            pinCode: dealer.pinCode,
+            dateOfBirth: dealer.dateOfBirth ? dealer.dateOfBirth.toISOString().split('T')[0] : null,
+            anniversaryDate: dealer.anniversaryDate ? dealer.anniversaryDate.toISOString().split('T')[0] : null,
             totalPotential: dealer.totalPotential.toNumber(),
             bestPotential: dealer.bestPotential.toNumber(),
             brandSelling: dealer.brandSelling,
