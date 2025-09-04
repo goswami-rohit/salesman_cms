@@ -1,8 +1,17 @@
 // src/app/api/downloads/masterCustomDownload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
-import { getAuthClaims } from '@/lib/download-utils';
-import { generateAndStreamCsv, generateAndStreamXlsxMulti } from '@/lib/download-utils';
+import { generateAndStreamCsv, generateAndStreamXlsxMulti, exportTablesToCSVZip } from '@/lib/download-utils';
+
+// Crucial Auth Check
+export async function getAuthClaims() {
+    const claims = await getTokenClaims();
+    if (!claims || !claims.sub || !claims.org_id) {
+        return new NextResponse('Unauthorized', { status: 401 });
+    }
+    return claims;
+}
 
 // map each table id to an async fetcher that returns full rows (rich objects) scoped by company
 const modelMap = {
@@ -104,10 +113,12 @@ const modelMap = {
 
     permanentJourneyPlans: async (companyId: number) => {
         const rows = await prisma.permanentJourneyPlan.findMany({
-            where: { OR: 
-                [{ user: { companyId } }, 
+            where: {
+                OR:
+                    [{ user: { companyId } },
                     { createdBy: { companyId } }
-                ] },
+                    ]
+            },
             include: {
                 user: { select: { firstName: true, lastName: true, email: true } },
                 createdBy: { select: { firstName: true, lastName: true, email: true } },
@@ -121,16 +132,16 @@ const modelMap = {
 
             return {
                 id: r.id,
-                planDate: r.planDate.toISOString().slice(0, 10), 
+                planDate: r.planDate.toISOString().slice(0, 10),
                 areaToBeVisited: r.areaToBeVisited,
-                description: r.description, 
+                description: r.description,
                 status: r.status,
-                createdAt: r.createdAt.toISOString(), 
-                updatedAt: r.updatedAt.toISOString(), 
+                createdAt: r.createdAt.toISOString(),
+                updatedAt: r.updatedAt.toISOString(),
                 assignedToName: assignedToName || r.user.email, // Use email as fallback
-                assignedToEmail: r.user.email, 
+                assignedToEmail: r.user.email,
                 creatorName: creatorName || r.createdBy.email, // Use email as fallback
-                creatorEmail: r.createdBy.email, 
+                creatorEmail: r.createdBy.email,
             };
         });
     },
@@ -475,35 +486,6 @@ function num(n: any): number | null {
     return typeof n === "number" ? n : n?.toNumber?.() ?? Number(n);
 };
 
-// CSV formatting helper with _table
-function buildCsvForTables(grouped: Record<string, string[]>, data: Record<string, any[]>): string[][] {
-    // union of all selected columns, but keep per-table headers when exporting excel
-    const allColsUnion = Array.from(
-        new Set(
-            Object.values(grouped).flat()
-        )
-    );
-
-    const headers = ['_table', ...allColsUnion];
-    const rows: string[][] = [headers];
-
-    for (const [table, cols] of Object.entries(grouped)) {
-        const tableRows = data[table] ?? [];
-        for (const r of tableRows) {
-            const row = [table, ...allColsUnion.map(c => {
-                // if the column wasn’t selected for this table, leave blank
-                if (!cols.includes(c)) return '';
-                const v = (r as any)[c];
-                if (v == null) return '';
-                if (Array.isArray(v)) return v.join(', ');
-                if (typeof v === 'object') return JSON.stringify(v);
-                return String(v);
-            })];
-            rows.push(row);
-        }
-    }
-    return rows;
-};
 
 // Excel formatting: one sheet per table
 function buildSheetsPayload(grouped: Record<string, string[]>, data: Record<string, any[]>) {
@@ -560,9 +542,27 @@ export async function POST(req: NextRequest) {
 
         const filenameBase = `master-custom-download-${Date.now()}`;
 
+        // Multiple csv files per table
         if (format === 'csv') {
-            const csvMatrix = buildCsvForTables(grouped, dataPerTable);
-            return generateAndStreamCsv(csvMatrix, `${filenameBase}.csv`);
+            const dataByTable = Object.entries(grouped).map(([table, cols]) => {
+                const rows = (dataPerTable[table] ?? []).map(r => {
+                    const obj: Record<string, any> = {};
+                    for (const c of cols) obj[c] = (r as any)[c] ?? null;
+                    return obj;
+                });
+                return { table, columns: cols, rows };
+            });
+
+            const zipBlob = await exportTablesToCSVZip(dataByTable);
+            const buffer = Buffer.from(await zipBlob.arrayBuffer());
+
+            return new NextResponse(buffer, {
+                status: 200,
+                headers: {
+                    "Content-Type": "application/zip",
+                    "Content-Disposition": `attachment; filename="${filenameBase}.zip"`,
+                },
+            });
         }
 
         // Excel: one sheet per table with only selected columns

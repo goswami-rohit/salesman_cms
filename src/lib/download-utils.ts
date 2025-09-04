@@ -1,19 +1,11 @@
 // src/lib/download-utils.ts
 import { NextResponse } from 'next/server';
-import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { stringify } from 'csv-stringify';
 import ExcelJS from 'exceljs';
-
-export async function getAuthClaims() {
-  const claims = await getTokenClaims();
-  if (!claims || !claims.sub || !claims.org_id) {
-    return new NextResponse('Unauthorized', { status: 401 });
-  }
-  return claims;
-}
+import JSZip from "jszip";
 
 /**
- * Generates and streams a CSV file.
+ * Generates and streams a SINGLE BIG CSV file.
  * @param data The data to be written to the CSV, including headers.
  * @param filename The desired filename for the download.
  * @returns A NextResponse containing the CSV file.
@@ -33,6 +25,21 @@ export async function generateAndStreamCsv(data: any[][], filename: string): Pro
       'Content-Disposition': `attachment; filename="${filename}"`,
     },
   });
+}
+
+// Create a ZIP containing multiple CSVs
+export async function exportTablesToCSVZip(
+  dataByTable: { table: string; columns: string[]; rows: any[] }[]
+): Promise<Blob> {
+  const zip = new JSZip();
+
+  dataByTable.forEach(({ table, columns, rows }) => {
+    const csvContent = toCSV(columns, rows);
+    zip.file(`${table}.csv`, csvContent);
+  });
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  return blob;
 }
 
 /**
@@ -111,6 +118,7 @@ export async function generateAndStreamXlsxMulti(
 
 /* ----------------------------- helpers ----------------------------- */
 
+// Excel helpers
 function appendRows(ws: ExcelJS.Worksheet, data: any[], headers: string[]) {
   const isArrayRows = Array.isArray(data[0]);
   if (isArrayRows) {
@@ -192,4 +200,14 @@ function safeSheetName(name: string): string {
   const invalid = /[:\\/?*\[\]]/g;
   const sanitized = name.replace(invalid, ' ').trim();
   return sanitized.length > 31 ? sanitized.slice(0, 31) : sanitized || 'Sheet1';
+}
+
+// CSV helpers
+// Convert rows to CSV string
+function toCSV(columns: string[], rows: any[]): string {
+  const header = columns.join(",");
+  const csvRows = rows.map(row =>
+    columns.map(col => JSON.stringify(row[col] ?? "")).join(",")
+  );
+  return [header, ...csvRows].join("\n");
 }
