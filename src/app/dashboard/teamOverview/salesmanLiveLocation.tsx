@@ -125,8 +125,6 @@ export function SalesmanLiveLocation() {
 
   // Fetch from API every 10 seconds
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
     const fetchLocations = async () => {
       try {
         const response = await fetch(
@@ -143,7 +141,8 @@ export function SalesmanLiveLocation() {
     };
 
     fetchLocations(); // initial load
-    interval = setInterval(fetchLocations, 10000); // poll every 10s
+
+    const interval = setInterval(fetchLocations, 10000); // poll every 10s
 
     return () => clearInterval(interval);
   }, []);
