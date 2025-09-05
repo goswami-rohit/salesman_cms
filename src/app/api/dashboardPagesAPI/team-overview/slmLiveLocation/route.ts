@@ -5,7 +5,7 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
-// Zod schema for the live location data of a single salesman
+// --- Zod Schema ---
 const liveLocationSchema = z.object({
   userId: z.number(),
   salesmanName: z.string(),
@@ -17,7 +17,6 @@ const liveLocationSchema = z.object({
   longitude: z.number(),
   recordedAt: z.string(),
   isActive: z.boolean(),
-  // Optional fields
   accuracy: z.number().nullable(),
   speed: z.number().nullable(),
   heading: z.number().nullable(),
@@ -26,8 +25,11 @@ const liveLocationSchema = z.object({
 });
 
 const allowedRoles = [
-  'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive', 'executive'
+  'senior-manager',
+  'manager',
+  'assistant-manager',
+  'senior-executive',
+  'executive',
 ];
 
 export async function GET() {
@@ -44,75 +46,67 @@ export async function GET() {
     });
 
     if (!currentUser || !allowedRoles.includes(currentUser.role)) {
-      return NextResponse.json({ error: 'Forbidden: You do not have permission to view live locations.' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Forbidden: You do not have permission to view live locations.' },
+        { status: 403 }
+      );
     }
-    
-    // 1. Fetch the distinct salesmen who have the latest recorded location.
-    const latestLocations = await prisma.geoTracking.findMany({
-      where: {
-        user: {
-          companyId: currentUser.companyId,
-        },
-      },
-      distinct: ['userId'],
-      orderBy: {
-        recordedAt: 'desc',
-      },
-      select: {
-        userId: true,
-        recordedAt: true,
-      },
-    });
 
-    // 2. Map through the latest locations to get the full record for each user.
-    const liveLocations = await Promise.all(
-      latestLocations.map(async (location) => {
-        const latestRecord = await prisma.geoTracking.findFirst({
-          where: {
-            userId: location.userId,
-            recordedAt: location.recordedAt,
-          },
-          include: {
-            user: true, 
-          },
-          orderBy: {
-            recordedAt: 'desc',
-          },
-        });
+    // ✅ Fetch latest record per user in one query
+    const latestLocations: any[] = await prisma.$queryRawUnsafe(`
+      SELECT DISTINCT ON (gt.user_id)
+        gt.user_id,
+        gt.latitude,
+        gt.longitude,
+        gt.recorded_at,
+        gt.accuracy,
+        gt.speed,
+        gt.heading,
+        gt.altitude,
+        gt.battery_level,
+        gt.is_active,
+        u.first_name,
+        u.last_name,
+        u.salesman_login_id,
+        u.role,
+        u.region,
+        u.area
+      FROM geo_tracking gt
+      JOIN "users" u ON gt.user_id = u.id
+      WHERE u.company_id = $1
+      ORDER BY gt.user_id, gt.recorded_at DESC
+    `, currentUser.companyId);
 
-        if (!latestRecord) {
-          return null;
-        }
+    // ✅ Normalize + validate with Zod
+    const liveLocations = latestLocations.map((row) => ({
+      userId: Number(row.user_id),
+      salesmanName:
+        row.first_name && row.last_name
+          ? `${row.first_name} ${row.last_name}`
+          : 'N/A',
+      employeeId: row.salesman_login_id,
+      role: row.role,
+      region: row.region,
+      area: row.area,
+      latitude: Number(row.latitude),
+      longitude: Number(row.longitude),
+      recordedAt: row.recorded_at.toISOString(),
+      isActive: row.is_active,
+      accuracy: row.accuracy !== null ? Number(row.accuracy) : null,
+      speed: row.speed !== null ? Number(row.speed) : null,
+      heading: row.heading !== null ? Number(row.heading) : null,
+      altitude: row.altitude !== null ? Number(row.altitude) : null,
+      batteryLevel: row.battery_level !== null ? Number(row.battery_level) : null,
+    }));
 
-        const user = latestRecord.user;
-        const salesmanName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'N/A';
-
-        return {
-          userId: user.id,
-          salesmanName: salesmanName,
-          employeeId: user.salesmanLoginId,
-          role: user.role,
-          region: user.region,
-          area: user.area,
-          latitude: latestRecord.latitude.toNumber(),
-          longitude: latestRecord.longitude.toNumber(),
-          recordedAt: latestRecord.recordedAt.toISOString(),
-          isActive: latestRecord.isActive,
-          accuracy: latestRecord.accuracy?.toNumber() ?? null,
-          speed: latestRecord.speed?.toNumber() ?? null,
-          heading: latestRecord.heading?.toNumber() ?? null,
-          altitude: latestRecord.altitude?.toNumber() ?? null,
-          batteryLevel: latestRecord.batteryLevel?.toNumber() ?? null,
-        };
-      })
-    );
-
-    const validatedData = z.array(liveLocationSchema).parse(liveLocations.filter(Boolean));
+    const validatedData = z.array(liveLocationSchema).parse(liveLocations);
 
     return NextResponse.json(validatedData, { status: 200 });
-    
   } catch (error) {
     console.error('Error fetching live salesman locations:', error);
-    return NextResponse.json({ error: 'Failed to fetch live location data' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch live location data' },
+      { status: 500 }
+    );
   }
 }
