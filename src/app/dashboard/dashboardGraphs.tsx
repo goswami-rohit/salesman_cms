@@ -63,7 +63,7 @@ const geoTrackingColumns: ColumnDef<RawGeoTrackingRecord>[] = [
   { accessorKey: 'latitude', header: 'Latitude' },
   { accessorKey: 'longitude', header: 'Longitude' },
   { accessorKey: 'locationType', header: 'Location Type' },
-  { accessorKey: 'activityType', header: 'Activity Type' },
+  { accessorKey: 'appState', header: 'App State' },
 ];
 
 // DVR table columns
@@ -142,10 +142,10 @@ export default function DashboardGraphs() {
     fetchData();
   }, [fetchData]);
 
-  // Only 'journey_end' or 'end' for geo graph
   const journeyEndRecords = useMemo(
-    () => rawGeoTrackingRecords.filter(r => r.locationType === 'journey_end' || 
-      r.locationType === 'end' || r.locationType === 'completed' || r.locationType === 'journey_completed'),
+    () => rawGeoTrackingRecords.filter(
+      r => r.appState === 'completed' || r.appState === 'journey_completed'
+    ),
     [rawGeoTrackingRecords]
   );
 
@@ -188,7 +188,7 @@ export default function DashboardGraphs() {
     }
     const agg: Record<string, number> = {};
     filtered.forEach(item => {
-    const key = new Date(item.recordedAt).toISOString().slice(0, 10);
+      const key = new Date(item.recordedAt).toISOString().slice(0, 10);
       agg[key] = (agg[key] || 0) + (item.totalDistanceTravelled ?? 0);
     });
     return Object.keys(agg).sort().map(k => ({ name: k, distance: agg[k] }));

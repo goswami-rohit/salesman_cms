@@ -64,20 +64,20 @@ export default function SalesmanGeoTrackingPage() {
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'numeric', 
-      day: 'numeric', 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
     });
   };
-  
+
   const formatTime = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit', 
-      second: '2-digit', 
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
       hour12: true,
       timeZone: 'Asia/Kolkata'
     });
@@ -130,7 +130,7 @@ export default function SalesmanGeoTrackingPage() {
     const salesmanName = track.salesmanName || '';
     const journeyId = track.journeyId || '';
     const siteName = track.siteName || '';
-    
+
     return (
       salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       journeyId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -180,9 +180,14 @@ export default function SalesmanGeoTrackingPage() {
       cell: ({ row }) => (row.original.totalDistanceTravelled ? `${row.original.totalDistanceTravelled.toFixed(2)} km` : 'N/A'),
     },
     {
-      accessorKey: 'journeyId',
-      header: 'Journey ID',
-      cell: ({ row }) => row.original.journeyId ?? 'N/A',
+      accessorKey: 'locationType',
+      header: 'Location Type',
+      cell: ({ row }) => row.original.locationType ?? 'N/A',
+    },
+    {
+      accessorKey: 'appState',
+      header: 'App State',
+      cell: ({ row }) => row.original.appState ?? 'N/A'
     },
     {
       accessorKey: 'isActive',
@@ -219,7 +224,7 @@ export default function SalesmanGeoTrackingPage() {
                 columns={columns}
                 data={currentTracks}
                 enableRowDragging={false}
-                onRowOrderChange={() => {}}
+                onRowOrderChange={() => { }}
               />
               <Pagination className="mt-6">
                 <PaginationContent>

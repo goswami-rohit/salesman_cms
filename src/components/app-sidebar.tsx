@@ -263,15 +263,15 @@ export function AppSidebar({ userRole }: Props) {
 
       <SidebarContent>
         <SidebarHeader>
-            <div className="flex items-center space-x-2">
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <Building2 className="size-4" />
-              </div>
-              <div>
-                <div className="text-sm font-bold">{companyInfo?.companyName}</div>
-                <div className="text-xs text-gray-500">{companyInfo?.adminName}</div>
-              </div>
+          <div className="flex items-center space-x-2">
+            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+              <Building2 className="size-4" />
             </div>
+            <div>
+              <div className="text-sm font-bold">{companyInfo?.companyName}</div>
+              <div className="text-xs text-gray-500">{companyInfo?.adminName}</div>
+            </div>
+          </div>
         </SidebarHeader>
 
         <SidebarGroup>
@@ -280,19 +280,35 @@ export function AppSidebar({ userRole }: Props) {
               if (item.items) {
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton>{item.title}</SidebarMenuButton>
+                    {item.url ? (
+                      <SidebarMenuButton asChild>
+                        <a href={item.url} className="py-3 my-1">
+                          {item.title}
+                        </a>
+                      </SidebarMenuButton>
+                    ) : (
+                      <SidebarMenuButton>{item.title}</SidebarMenuButton>
+                    )}
                     <SidebarMenuSub>
                       {item.items.map((subItem: MenuItem) => {
                         if (subItem.items) {
-                          // This is the "Reports" or "Actionables" group
+                          // Nested group (Reports / Actionables)
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton>{subItem.title}</SidebarMenuSubButton>
+                              {subItem.url ? (
+                                <SidebarMenuSubButton asChild>
+                                  <a href={subItem.url} className="py-5 my-1">
+                                    {subItem.title}
+                                  </a>
+                                </SidebarMenuSubButton>
+                              ) : (
+                                <SidebarMenuSubButton>{subItem.title}</SidebarMenuSubButton>
+                              )}
                               <SidebarMenuSub>
                                 {subItem.items.map((subSubItem: MenuItem) => (
                                   <SidebarMenuSubItem key={subSubItem.title}>
                                     <SidebarMenuSubButton asChild>
-                                      <a href={subSubItem.url} className="py-6 my-1">
+                                      <a href={subSubItem.url} className="py-5 my-1">
                                         {subSubItem.title}
                                       </a>
                                     </SidebarMenuSubButton>
@@ -302,14 +318,16 @@ export function AppSidebar({ userRole }: Props) {
                             </SidebarMenuSubItem>
                           );
                         } else {
-                          // This is a direct sub-item link
+                          // Direct sub-item link
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               {subItem.title === "Logout" ? (
                                 <form action="/account/logout" method="post" className="w-full">
                                   <SidebarMenuSubButton asChild>
-                                    <button type="submit"
-                                      className="w-full h-full justify-start items-center px-4 py-3 my-1 rounded-md hover:bg-red-600/65 text-white">
+                                    <button
+                                      type="submit"
+                                      className="w-full h-full justify-start items-center px-4 py-3 my-1 rounded-md bg-red-600/65 text-white"
+                                    >
                                       {subItem.title}
                                     </button>
                                   </SidebarMenuSubButton>
@@ -329,7 +347,7 @@ export function AppSidebar({ userRole }: Props) {
                   </SidebarMenuItem>
                 );
               } else {
-                // This is a top-level menu item with a URL (e.g., Home)
+                // Top-level without children (e.g., standalone link)
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
