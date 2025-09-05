@@ -92,7 +92,7 @@ export async function GET() {
 
         const loc = t.user.lastLocation;
         return {
-          userId: user.id,
+          userId: String(user.id),
           salesmanName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "N/A",
           employeeId: user.salesmanLoginId,
           role: user.role,
