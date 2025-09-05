@@ -73,8 +73,9 @@ export async function GET() {
 
     // 2. Call Radar directly (bulk list trips by externalId)
     const res = await axios.get("https://api.radar.io/v1/trips", {
-      headers: { Authorization: process.env.RADAR_SECRET_KEY! }, // secrect key here
-      params: {
+      headers: {
+        Authorization: `Bearer ${process.env.RADAR_SECRET_KEY!}`,  // KEY FIXED
+      }, params: {
         externalId: externalIds.join(","),
         includeLocations: true,
       },
