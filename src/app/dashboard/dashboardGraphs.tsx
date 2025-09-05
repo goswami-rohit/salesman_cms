@@ -144,7 +144,8 @@ export default function DashboardGraphs() {
 
   // Only 'journey_end' or 'end' for geo graph
   const journeyEndRecords = useMemo(
-    () => rawGeoTrackingRecords.filter(r => r.locationType === 'journey_end' || r.locationType === 'end'),
+    () => rawGeoTrackingRecords.filter(r => r.locationType === 'journey_end' || 
+      r.locationType === 'end' || r.locationType === 'completed' || r.locationType === 'journey_completed'),
     [rawGeoTrackingRecords]
   );
 
