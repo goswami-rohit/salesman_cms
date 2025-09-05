@@ -9,14 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
-
 import 'leaflet/dist/leaflet.css';
 //import L from 'leaflet'; // This is an CSR import inside const LeafletMap()
 import { MapPin } from 'lucide-react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { io, Socket } from 'socket.io-client';
 import { areas, regions } from '@/lib/Reusable-constants';
-
 
 const roles = ['senior-executive', 'executive', 'junior-executive'];
 
@@ -254,11 +252,10 @@ export function SalesmanLiveLocation() {
           <CardTitle>Live Salesman Locations</CardTitle>
         </CardHeader>
         <CardContent>
-          {locations.length > 0 ? (
-            <LeafletMap locations={filteredLocations} />
-          ) : (
-            <div className="flex justify-center items-center h-[600px]">
-              <p className="text-gray-500">Loading map and location data...</p>
+          <LeafletMap locations={filteredLocations} />
+          {filteredLocations.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-gray-500">No salesman locations found</p>
             </div>
           )}
         </CardContent>
