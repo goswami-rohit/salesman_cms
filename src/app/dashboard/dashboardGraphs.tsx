@@ -188,7 +188,7 @@ export default function DashboardGraphs() {
     }
     const agg: Record<string, number> = {};
     filtered.forEach(item => {
-      const key = new Date(item.recordedAt).toLocaleDateString('en-US');
+    const key = new Date(item.recordedAt).toISOString().slice(0, 10);
       agg[key] = (agg[key] || 0) + (item.totalDistanceTravelled ?? 0);
     });
     return Object.keys(agg).sort().map(k => ({ name: k, distance: agg[k] }));
@@ -202,7 +202,7 @@ export default function DashboardGraphs() {
     }
     const agg: Record<string, number> = {};
     filtered.forEach(item => {
-      const key = item.reportDate; // already YYYY-MM-DD
+      const key = item.reportDate;
       agg[key] = (agg[key] || 0) + (item.todayCollectionRupees ?? 0);
     });
     return Object.keys(agg).sort().map(k => ({ name: k, collection: agg[k] }));

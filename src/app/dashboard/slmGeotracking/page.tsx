@@ -19,13 +19,13 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 // Updated schema to match the data structure from the API
 const geoTrackSchema = z.object({
   id: z.string(),
-  salesmanName: z.string().nullable(),
-  employeeId: z.string().nullable(),
-  workosOrganizationId: z.string().nullable(),
+  salesmanName: z.string().nullable(),         // backend returns null if no name
+  employeeId: z.string().nullable(),           // backend returns null if no empId
+  workosOrganizationId: z.string().nullable(), // backend returns null
   latitude: z.number(),
   longitude: z.number(),
   recordedAt: z.string(),
-  totalDistanceTravelled: z.number().nullable(),
+  totalDistanceTravelled: z.number().nullable().optional(), // backend may return null
   accuracy: z.number().nullable().optional(),
   speed: z.number().nullable().optional(),
   heading: z.number().nullable().optional(),

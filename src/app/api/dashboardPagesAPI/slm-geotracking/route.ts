@@ -5,30 +5,41 @@ import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 // Define Zod schema for the GeoTracking data returned by this API
-// This ensures that the data we return is properly structured and typed.
 const geoTrackingSchema = z.object({
   id: z.string(),
-  salesmanName: z.string(),
-  employeeId: z.string(),
-  workosOrganizationId: z.string(),
+  // User / company info
+  salesmanName: z.string().nullable().optional(),
+  employeeId: z.string().nullable().optional(),
+  workosOrganizationId: z.string().nullable().optional(),
+  // Required coords
   latitude: z.number(),
   longitude: z.number(),
-  recordedAt: z.string(), // ISO string from the database
-  totalDistanceTravelled: z.number(),
+  recordedAt: z.string(), // ISO string
+  // Nullable numeric fields
+  totalDistanceTravelled: z.number().nullable().optional(),
   accuracy: z.number().nullable().optional(),
   speed: z.number().nullable().optional(),
   heading: z.number().nullable().optional(),
   altitude: z.number().nullable().optional(),
+  // Nullable strings
   locationType: z.string().nullable().optional(),
   activityType: z.string().nullable().optional(),
   appState: z.string().nullable().optional(),
-  batteryLevel: z.number().nullable().optional(),
-  isCharging: z.boolean().nullable().optional(),
   networkStatus: z.string().nullable().optional(),
   ipAddress: z.string().nullable().optional(),
   siteName: z.string().nullable().optional(),
+  // Battery / charging
+  batteryLevel: z.number().nullable().optional(),
+  isCharging: z.boolean().nullable().optional(),
+  // Check-in/out
   checkInTime: z.string().nullable().optional(),
   checkOutTime: z.string().nullable().optional(),
+  // Extra fields you added in formatting
+  journeyId: z.string().nullable().optional(),
+  isActive: z.boolean(),
+  destLat: z.number().nullable().optional(),
+  destLng: z.number().nullable().optional(),
+  // Timestamps
   createdAt: z.string(),
   updatedAt: z.string(),
 });
