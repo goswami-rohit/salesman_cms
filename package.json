@@ -36,6 +36,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@workos-inc/authkit-nextjs": "^2.4.6",
     "@workos-inc/node": "^7.66.1",
+    "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
