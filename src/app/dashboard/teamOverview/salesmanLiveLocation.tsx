@@ -14,11 +14,18 @@ import { MapPin } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { areas, regions } from "@/lib/Reusable-constants";
 
-const roles = ["senior-executive", "executive", "junior-executive"];
+const roles = [
+  "senior-manager",
+  "manager",
+  "assistant-manager",
+  "senior-executive",
+  "executive",
+  "junior-executive",
+];
 
 // --- Zod Schema Validation ---
 const liveLocationSchema = z.object({
-  userId: z.number(),
+  userId: z.string(),
   salesmanName: z.string(),
   employeeId: z.string().nullable(),
   role: z.string(),
