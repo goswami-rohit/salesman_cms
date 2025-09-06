@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
-import "leaflet/dist/leaflet.css";
-import { MapPin } from "lucide-react";
+import { MapPin } from 'lucide-react';
 import { renderToStaticMarkup } from "react-dom/server";
+import "leaflet/dist/leaflet.css";
 import { areas, regions } from "@/lib/Reusable-constants";
 
 const roles = [
@@ -44,34 +44,48 @@ const liveLocationSchema = z.object({
 
 type LiveLocationData = z.infer<typeof liveLocationSchema>;
 
-// Icon for map pins
-const iconSvgString = encodeURIComponent(
-  renderToStaticMarkup(
-    <MapPin className="text-gray-100 bg-cyan-700 rounded-full p-1" size={36} />
-  )
-);
-
+// ============================
 // Map Component
 const LeafletMap = dynamic(
   async () => {
     const { MapContainer, TileLayer, Marker, Popup, useMap } = await import("react-leaflet");
     const L = (await import("leaflet")).default;
 
+    // Custom DivIcon so markers always render
+    const iconHtml = renderToStaticMarkup(
+      <div className="flex items-center justify-center w-9 h-9 rounded-full bg-cyan-700">
+        <MapPin size={20} className="text-white" />
+      </div>
+    );
+
     const salesmanIcon = L.divIcon({
-      html: `<div style="transform: translateY(-50%)">${decodeURIComponent(
-        iconSvgString
-      )}</div>`,
+      html: iconHtml,
+      className: "", // disable default leaflet styles
       iconSize: [36, 36],
-      iconAnchor: [18, 18],
-      popupAnchor: [0, -18],
-      className: "bg-transparent border-none",
+      iconAnchor: [18, 36],
+      popupAnchor: [0, -36],
     });
 
+    // Reset map size on mount
     const MapReset = () => {
       const map = useMap();
       useEffect(() => {
         if (map) map.invalidateSize();
       }, [map]);
+      return null;
+    };
+
+    // Auto-fit map to markers
+    const FitBounds = ({ locations }: { locations: LiveLocationData[] }) => {
+      const map = useMap();
+      useEffect(() => {
+        if (locations.length > 0) {
+          const bounds = L.latLngBounds(
+            locations.map((loc) => [loc.latitude, loc.longitude])
+          );
+          map.fitBounds(bounds, { padding: [50, 50] });
+        }
+      }, [locations, map]);
       return null;
     };
 
@@ -89,9 +103,10 @@ const LeafletMap = dynamic(
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
           {locations.map((location) => (
             <Marker
-              key={location.userId}
+              key={`${location.userId}-${location.recordedAt}`}
               position={[location.latitude, location.longitude]}
               icon={salesmanIcon}
             >
@@ -110,7 +125,9 @@ const LeafletMap = dynamic(
               </Popup>
             </Marker>
           ))}
+
           <MapReset />
+          <FitBounds locations={locations} />
         </MapContainer>
       );
     };
@@ -120,6 +137,8 @@ const LeafletMap = dynamic(
   { ssr: false }
 );
 
+// ============================
+// Main Component - Logic
 export function SalesmanLiveLocation() {
   const [locations, setLocations] = useState<LiveLocationData[]>([]);
   const [filteredLocations, setFilteredLocations] = useState<LiveLocationData[]>([]);
@@ -130,7 +149,7 @@ export function SalesmanLiveLocation() {
     region: "all",
   });
 
-  // Fetch from API every 10 seconds
+  // Fetch from API every 5 seconds
   useEffect(() => {
     const fetchLocations = async () => {
       try {
@@ -140,17 +159,17 @@ export function SalesmanLiveLocation() {
         if (!response.ok) throw new Error("Failed to fetch locations");
 
         const data = await response.json();
+        //console.log("Locations received from API:", data);
         const validatedData = z.array(liveLocationSchema).parse(data);
+        //console.log("Validated locations:", validatedData);
         setLocations(validatedData);
       } catch (error) {
         console.error("Error fetching locations:", error);
       }
     };
-
     fetchLocations(); // initial load
 
-    const interval = setInterval(fetchLocations, 10000); // poll every 10s
-
+    const interval = setInterval(fetchLocations, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -174,15 +193,22 @@ export function SalesmanLiveLocation() {
     setFilteredLocations(filtered);
   }, [locations, filters]);
 
+  //console.log("Filtered locations for map:", filteredLocations);
+  locations.forEach((loc) =>
+    console.log("Map pin:", loc.userId, loc.latitude, loc.longitude)
+  );
+
   return (
     <div className="p-6 space-y-6">
+      {/* Filters */}
       <Card className="rounded-xl shadow-lg">
         <CardHeader>
           <CardTitle>Salesman Live Location Filters</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
-            {/* Salesman Name Filter */}
+
+            {/* Salesman Name */}
             <div className="space-y-2">
               <Label htmlFor="salesman-name">Salesman Name</Label>
               <Input
@@ -193,7 +219,7 @@ export function SalesmanLiveLocation() {
               />
             </div>
 
-            {/* Role Filter */}
+            {/* Role */}
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <Select
@@ -214,7 +240,7 @@ export function SalesmanLiveLocation() {
               </Select>
             </div>
 
-            {/* Area Filter */}
+            {/* Area */}
             <div className="space-y-2">
               <Label htmlFor="area">Area</Label>
               <Select
@@ -235,7 +261,7 @@ export function SalesmanLiveLocation() {
               </Select>
             </div>
 
-            {/* Region Filter */}
+            {/* Region */}
             <div className="space-y-2">
               <Label htmlFor="region">Region</Label>
               <Select
@@ -259,12 +285,12 @@ export function SalesmanLiveLocation() {
         </CardContent>
       </Card>
 
-      {/* Map Area */}
+      {/* Map */}
       <Card className="rounded-xl shadow-lg">
         <CardHeader>
           <CardTitle>Live Salesman Locations</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <LeafletMap locations={filteredLocations} />
           {filteredLocations.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
