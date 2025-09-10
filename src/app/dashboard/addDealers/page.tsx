@@ -44,6 +44,8 @@ const dealerSchema = z.object({
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
     pinCode: z.string().nullable().optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO date
     anniversaryDate: z.string().nullable().optional(),   // ISO date
     totalPotential: z.number().positive("Total potential must be a positive number."),
@@ -65,6 +67,8 @@ const addDealerFormSchema = z.object({
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
     pinCode: z.string().nullable().optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO date
     anniversaryDate: z.string().nullable().optional(),   // ISO date
     totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
@@ -96,6 +100,8 @@ export default function AddDealersPage() {
     const [phoneNo, setPhoneNo] = useState<string>('');
     const [address, setAddress] = useState<string>('');
     const [pinCode, setPinCode] = useState('');
+    const [latitude, setLatitude] = useState('');
+    const [longitude, setLongitude] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [anniversaryDate, setAnniversaryDate] = useState('');
     const [totalPotential, setTotalPotential] = useState<string>('');
@@ -157,6 +163,8 @@ export default function AddDealersPage() {
             phoneNo,
             address,
             pinCode: pinCode || undefined,
+            latitude: latitude || undefined,
+            longitude: longitude || undefined,
             dateOfBirth: dateOfBirth || undefined,
             anniversaryDate: anniversaryDate || undefined,
             totalPotential,
@@ -203,6 +211,8 @@ export default function AddDealersPage() {
             setPhoneNo('');
             setAddress('');
             setPinCode('');
+            setLatitude('');
+            setLongitude('');
             setDateOfBirth('');
             setAnniversaryDate('');
             setTotalPotential('');
@@ -483,6 +493,24 @@ export default function AddDealersPage() {
                             <Label htmlFor="pinCode" className="text-right">Pin Code</Label>
                             <div className="col-span-3">
                                 <Input id="pinCode" value={pinCode} onChange={(e) => setPinCode(e.target.value)} placeholder="Optional" />
+                            </div>
+                        </div>
+
+                        {/* --- NEW LATITUDE FIELD --- */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="latitude" className="text-right">Latitude</Label>
+                            <div className="col-span-3">
+                                <Input id="latitude" type="number" step="any" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="Optional, e.g., 26.1445" />
+                                {findFormError('latitude') && <p className="text-red-500 text-sm mt-1">{findFormError('latitude')}</p>}
+                            </div>
+                        </div>
+
+                        {/* --- NEW LONGITUDE FIELD --- */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="longitude" className="text-right">Longitude</Label>
+                            <div className="col-span-3">
+                                <Input id="longitude" type="number" step="any" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="Optional, e.g., 91.7362" />
+                                {findFormError('longitude') && <p className="text-red-500 text-sm mt-1">{findFormError('longitude')}</p>}
                             </div>
                         </div>
 

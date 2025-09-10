@@ -17,6 +17,8 @@ const getDealerResponseSchema = z.object({
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
     pinCode: z.string().nullable().optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO string
     anniversaryDate: z.string().nullable().optional(),   // ISO string
     totalPotential: z.number().positive("Total potential must be a positive number."),
@@ -39,6 +41,8 @@ const postDealerSchema = z.object({
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
     address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
     pinCode: z.string().nullable().optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO string
     anniversaryDate: z.string().nullable().optional(),   // ISO string
     totalPotential: z.number().positive("Total potential must be a positive number."),
@@ -88,47 +92,32 @@ export async function POST(request: NextRequest) {
             feedbacks, remarks, parentDealerId,
         } = parsedBody.data;
 
-        // Geocoding API call to OpenCage Geocoding service
-        let latitude = null;
-        let longitude = null;
-        let formattedAddress = address; // Default to the original address
-        const apiKey = process.env.OPENCAGE_GEO_API; // <--- YOU MUST REPLACE THIS
+        // --- UPDATED GEOCODING SECTION ---
+        let latitude: number | null = null;
+        let longitude: number | null = null;
+        const apiKey = process.env.OPENCAGE_GEO_API;
 
-        // Build the URL for the geocoding request
-        const openCageApiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${apiKey}`;
-        console.log('OpenCage API URL:', openCageApiUrl);
-
-        try {
-            const geocodeResponse = await fetch(openCageApiUrl);
-
-            //console.log('OpenCage API response status:', geocodeResponse.status);
-
-            if (geocodeResponse.ok) {
-                const geocodeResults = await geocodeResponse.json();
-                //console.log('Geocoding results:', geocodeResults);
-
-                if (geocodeResults.results.length > 0) {
-                    latitude = geocodeResults.results[0].geometry.lat;
-                    longitude = geocodeResults.results[0].geometry.lng;
-                    formattedAddress = `${geocodeResults.results[0]} || ${latitude},${longitude}`;
-                    console.log('Successfully geocoded. Formatted address:', formattedAddress);
+        if (apiKey) {
+            const openCageApiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${apiKey}`;
+            try {
+                const geocodeResponse = await fetch(openCageApiUrl);
+                if (geocodeResponse.ok) {
+                    const geocodeResults = await geocodeResponse.json();
+                    if (geocodeResults.results.length > 0) {
+                        latitude = geocodeResults.results[0].geometry.lat;
+                        longitude = geocodeResults.results[0].geometry.lng;
+                        console.log(`Successfully geocoded address to: ${latitude}, ${longitude}`);
+                    }
                 } else {
-                    //console.warn('Geocoding failed: OpenCage returned no results.');
+                    console.error('Geocoding failed. HTTP Status:', geocodeResponse.status);
                 }
-            } else {
-                //console.error('Geocoding failed. HTTP Status:', geocodeResponse.status);
-                try {
-                    const errorText = await geocodeResponse.text();
-                    console.error('Geocoding Error Body:', errorText);
-                } catch (e) {
-                    console.error('Could not parse error body:', e);
-                }
+            } catch (geocodeError) {
+                console.error('An error occurred during geocoding:', geocodeError);
             }
-        } catch (geocodeError) {
-            console.error('An error occurred during geocoding:', geocodeError);
-            console.warn('Geocoding failed, storing address without coordinates.');
+        } else {
+            console.warn('OPENCAGE_GEO_API key not set. Skipping geocoding.');
         }
-        // End of Geocoding section
+        // --- END OF UPDATED GEOCODING SECTION ---
 
         // Create the new dealer in the database
         const newDealer = await prisma.dealer.create({
@@ -139,8 +128,10 @@ export async function POST(request: NextRequest) {
                 region: region,
                 area: area,
                 phoneNo: phoneNo,
-                address: formattedAddress, //Address stored with Lat and Lon using || separator
+                address: address,
                 pinCode,
+                latitude: latitude,
+                longitude: longitude,
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
                 anniversaryDate: anniversaryDate ? new Date(anniversaryDate) : null,
                 totalPotential: totalPotential,
@@ -209,6 +200,8 @@ export async function GET() {
             phoneNo: dealer.phoneNo,
             address: dealer.address,
             pinCode: dealer.pinCode,
+            latitude: dealer.latitude,
+            longitude: dealer.longitude,
             dateOfBirth: dealer.dateOfBirth ? dealer.dateOfBirth.toISOString().split('T')[0] : null,
             anniversaryDate: dealer.anniversaryDate ? dealer.anniversaryDate.toISOString().split('T')[0] : null,
             totalPotential: dealer.totalPotential.toNumber(),

@@ -198,6 +198,8 @@ model Dealer {
   phoneNo        String   @map("phone_no") @db.VarChar(20)
   address        String   @db.VarChar(500)
   pinCode        String?   @db.VarChar(20)
+  latitude       Decimal?   @db.Decimal(10, 7)
+  longitude      Decimal?   @db.Decimal(10, 7)
   dateOfBirth    DateTime? @db.Date
   anniversaryDate DateTime? @db.Date
   totalPotential Decimal  @map("total_potential") @db.Decimal(10, 2)
