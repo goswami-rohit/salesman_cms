@@ -127,6 +127,16 @@ const menuItems: MenuItem[] = [
         permission: ITEM_PERMISSIONS["Reports"],
         items: [
           {
+            title: "Daily Visit Reports",
+            url: "/dashboard/dailyVisitReports",
+            permission: ITEM_PERMISSIONS["Daily Visit Reports"]
+          },
+          {
+            title: "Technical Visit Reports",
+            url: "/dashboard/technicalVisitReports",
+            permission: ITEM_PERMISSIONS["Technical Visit Reports"]
+          },
+          {
             title: "Salesman Attendance",
             url: "/dashboard/slmAttendance",
             permission: ITEM_PERMISSIONS["Salesman Attendance"]
@@ -140,11 +150,6 @@ const menuItems: MenuItem[] = [
             title: "Salesman Geotracking",
             url: "/dashboard/slmGeotracking",
             permission: ITEM_PERMISSIONS["Salesman Geotracking"]
-          },
-          {
-            title: "Daily Visit Reports",
-            url: "/dashboard/dailyVisitReports",
-            permission: ITEM_PERMISSIONS["Daily Visit Reports"]
           },
           {
             title: "Permanent Journey Plan",
@@ -162,27 +167,22 @@ const menuItems: MenuItem[] = [
             permission: ITEM_PERMISSIONS["Dealer Reports"]
           },
           {
-            title: "Technical Visit Reports",
-            url: "/dashboard/technicalVisitReports",
-            permission: ITEM_PERMISSIONS["Technical Visit Reports"]
-          },
-          {
             title: "Competition Reports",
             url: "/dashboard/competitionReports",
             permission: ITEM_PERMISSIONS["Competition Reports"]
           },
           {
-            title: "Sales And Competition Reports",
+            title: "Sales & Collection Reports",
             url: "/dashboard/salesAndCollectionReports",
             permission: ITEM_PERMISSIONS["Sales And Competition Reports"]
           },
           {
-            title: "Dealer Development And Mapping Reports",
+            title: "Dealer Development & Mapping Reports",
             url: "/dashboard/dealerDevelopmentAndMappingReports",
             permission: ITEM_PERMISSIONS["Dealer Development And Mapping Reports"]
           },
           {
-            title: "Scores And Ratings",
+            title: "Scores & Ratings",
             url: "/dashboard/scoresAndRatings",
             permission: ITEM_PERMISSIONS["Scores And Ratings"]
           },
@@ -308,7 +308,7 @@ export function AppSidebar({ userRole }: Props) {
                                 {subItem.items.map((subSubItem: MenuItem) => (
                                   <SidebarMenuSubItem key={subSubItem.title}>
                                     <SidebarMenuSubButton asChild>
-                                      <a href={subSubItem.url} className="py-5 my-1">
+                                      <a href={subSubItem.url} className="py-6.5 my-1">
                                         {subSubItem.title}
                                       </a>
                                     </SidebarMenuSubButton>

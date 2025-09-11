@@ -29,7 +29,8 @@ import {
 import { MultiSelect } from '@/components/multi-select';
 import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
-import { areas, regions, dealerTypes, brands } from '@/lib/Reusable-constants'
+import { dealerTypes, brands } from '@/lib/Reusable-constants'
+import { useDealerLocations } from '@/components/reusable-dealer-locations';
 
 
 // --- Zod Schema for GET response validation (DUPLICATED FOR CLIENT-SIDE) ---
@@ -115,6 +116,7 @@ export default function AddDealersPage() {
     //.    Dropdown filter by area and region
     const [filterRegion, setFilterRegion] = useState<string>('');
     const [filterArea, setFilterArea] = useState<string>('');
+    const { locations, loading: locationsLoading, error: locationsError } = useDealerLocations();
     // Parent dealer setting for sub dealers
     const [parentDealerId, setParentDealerId] = useState<string | null>(null);
     const isSubDealer = type.startsWith("Sub Dealer");
@@ -264,6 +266,22 @@ export default function AddDealersPage() {
         (filterArea && filterArea !== "all" ? d.area === filterArea : true)
     );
 
+    if (loadingDealers || locationsLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                Loading dealer data...
+            </div>
+        );
+    }
+
+    if (errorDealers || locationsError) {
+        return (
+            <div className="text-center text-red-500 min-h-screen pt-10">
+                Error: {errorDealers || locationsError}
+            </div>
+        );
+    }
+
     // Columns for the Dealers table
     const dealerColumns: ColumnDef<DealerRecord>[] = [
         { accessorKey: 'name', header: 'Name' },
@@ -403,48 +421,36 @@ export default function AddDealersPage() {
                             </div>
                         )}
 
-                        {/* Region */}
+                        {/* Region - Converted to Input */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="region" className="text-right">
                                 Region <span className="text-red-500">*</span>
                             </Label>
                             <div className="col-span-3">
-                                <Select value={region} onValueChange={setRegion}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select region" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {regions.map(reg => (
-                                            <SelectItem key={reg} value={reg}>
-                                                {reg}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Input
+                                    id="region"
+                                    value={region}
+                                    onChange={(e) => setRegion(e.target.value)}
+                                    placeholder="Enter region"
+                                />
                                 {findFormError('region') && (
                                     <p className="text-red-500 text-sm mt-1">{findFormError('region')}</p>
                                 )}
                             </div>
                         </div>
 
-                        {/* Area */}
+                        {/* Area - Converted to Input */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="area" className="text-right">
                                 Area <span className="text-red-500">*</span>
                             </Label>
                             <div className="col-span-3">
-                                <Select value={area} onValueChange={setArea}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select area" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {areas.map(ar => (
-                                            <SelectItem key={ar} value={ar}>
-                                                {ar}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Input
+                                    id="area"
+                                    value={area}
+                                    onChange={(e) => setArea(e.target.value)}
+                                    placeholder="Enter area"
+                                />
                                 {findFormError('area') && (
                                     <p className="text-red-500 text-sm mt-1">{findFormError('area')}</p>
                                 )}
@@ -667,9 +673,9 @@ export default function AddDealersPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Regions</SelectItem>
-                            {regions.map(reg => (
-                                <SelectItem key={reg} value={reg}>
-                                    {reg}
+                            {locations.regions.sort().map(region => (
+                                <SelectItem key={region} value={region}>
+                                    {region}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -682,9 +688,9 @@ export default function AddDealersPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Areas</SelectItem>
-                            {areas.map(ar => (
-                                <SelectItem key={ar} value={ar}>
-                                    {ar}
+                            {locations.areas.sort().map(areas => (
+                                <SelectItem key={areas} value={areas}>
+                                    {areas}
                                 </SelectItem>
                             ))}
                         </SelectContent>

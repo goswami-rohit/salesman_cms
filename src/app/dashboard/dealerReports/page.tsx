@@ -40,7 +40,7 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 const dealerReportSchema = z.object({
   id: z.string() as z.ZodType<UniqueIdentifier>,
   salesmanName: z.string(),
-  type: z.enum(["Dealer", "Sub Dealer"]),
+  type: z.string(),
   dealerName: z.string().optional().nullable(),
   subDealerName: z.string().optional().nullable(),
   region: z.string(),

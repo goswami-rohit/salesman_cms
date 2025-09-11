@@ -34,7 +34,7 @@ import { format } from "date-fns";
 import { IconCalendar } from "@tabler/icons-react";
 import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
-import {areas, regions} from '@/lib/Reusable-constants'
+import { useDealerLocations } from '@/components/reusable-dealer-locations';
 
 // --- Zod Schemas for Data and Form Validation ---
 
@@ -137,6 +137,7 @@ export default function AssignTasksPage() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [siteName, setSiteName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
+  const { locations, loading: locationsLoading, error: locationsError } = useDealerLocations();
 
   const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/assign-tasks`;
 
@@ -275,18 +276,20 @@ export default function AssignTasksPage() {
     { accessorKey: 'createdAt', header: 'Assigned On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
   ];
 
-  if (loading) {
+  // Combine both loading states
+  if (loading || locationsLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        Loading form data and tasks...
+        Loading form data, tasks, and locations...
       </div>
     );
   }
 
-  if (errorFetchingData) {
+  // Handle error from the new hook
+  if (errorFetchingData || locationsError) {
     return (
       <div className="text-center text-red-500 min-h-screen pt-10">
-        Error: {errorFetchingData}
+        Error: {errorFetchingData || locationsError}
         <Button onClick={fetchAllData} className="ml-4">Retry</Button>
       </div>
     );
@@ -344,7 +347,7 @@ export default function AssignTasksPage() {
                     <SelectValue placeholder="Select an area" />
                   </SelectTrigger>
                   <SelectContent>
-                    {areas.map(area => (
+                    {locations.areas.map(area => (
                       <SelectItem key={area} value={area}>
                         {area}
                       </SelectItem>
@@ -365,7 +368,7 @@ export default function AssignTasksPage() {
                     <SelectValue placeholder="Select a region" />
                   </SelectTrigger>
                   <SelectContent>
-                    {regions.map(region => (
+                    {locations.regions.map(region => (
                       <SelectItem key={region} value={region}>
                         {region}
                       </SelectItem>
@@ -385,9 +388,8 @@ export default function AssignTasksPage() {
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
-                      className={`w-full justify-start text-left font-normal ${
-                        !taskDate && "text-muted-foreground"
-                      }`}
+                      className={`w-full justify-start text-left font-normal ${!taskDate && "text-muted-foreground"
+                        }`}
                     >
                       <IconCalendar className="mr-2 h-4 w-4" />
                       {taskDate ? format(taskDate, "PPP") : <span>Pick a date</span>}
@@ -433,8 +435,8 @@ export default function AssignTasksPage() {
                 </div>
               </RadioGroup>
               {findFormError('visitType') && (
-                  <p className="text-red-500 text-sm mt-1 col-start-2 col-span-3">{findFormError('visitType')}</p>
-                )}
+                <p className="text-red-500 text-sm mt-1 col-start-2 col-span-3">{findFormError('visitType')}</p>
+              )}
             </div>
 
             {/* Conditional Fields based on Visit Type */}
@@ -525,7 +527,7 @@ export default function AssignTasksPage() {
             columns={taskColumns}
             data={tasks}
             enableRowDragging={false}
-            onRowOrderChange={() => {}}
+            onRowOrderChange={() => { }}
           />
         </div>
       )}

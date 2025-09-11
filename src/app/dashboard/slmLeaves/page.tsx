@@ -11,7 +11,6 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge'; // For status badges
 import { Input } from '@/components/ui/input'; // For search input
 import {
@@ -22,7 +21,6 @@ import {
   PaginationLink,
   PaginationNext,
 } from "@/components/ui/pagination"; // For pagination
-import { IconDotsVertical, IconDownload } from '@tabler/icons-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';

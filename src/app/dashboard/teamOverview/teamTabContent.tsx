@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { PencilIcon, EyeIcon, UsersIcon, Loader2, StoreIcon } from 'lucide-react';
 import { MultiSelect } from '@/components/multi-select';
 import { ROLE_HIERARCHY, canAssignRole } from '@/lib/roleHierarchy';
-import { areas, regions } from '@/lib/Reusable-constants';
+import { useDealerLocations } from '@/components/reusable-dealer-locations';
 
 interface TeamMember {
   id: number;
@@ -251,6 +251,8 @@ function EditDealerMappingCell({
   const [isLoading, setIsLoading] = useState(true);
   const [dealerOptions, setDealerOptions] = useState<{ value: string; label: string }[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  const { locations, loading: locationsLoading } = useDealerLocations();
   // New state for area and region filters
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
@@ -262,6 +264,10 @@ function EditDealerMappingCell({
       // Reset filters when the popover closes
       setSelectedArea(null);
       setSelectedRegion(null);
+      return;
+    }
+    // Only fetch if locations are not loading
+    if (locationsLoading) {
       return;
     }
     (async () => {
@@ -294,7 +300,7 @@ function EditDealerMappingCell({
         setIsLoading(false);
       }
     })();
-  }, [isOpen, member.id, selectedArea, selectedRegion]);
+  }, [isOpen, member.id, selectedArea, selectedRegion, locationsLoading]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -334,7 +340,7 @@ function EditDealerMappingCell({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All Areas</SelectItem>
-              {areas.map((area) => (
+              {locations.areas.sort().map((area) => (
                 <SelectItem key={area} value={area}>
                   {area}
                 </SelectItem>
@@ -352,7 +358,7 @@ function EditDealerMappingCell({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All Regions</SelectItem>
-              {regions.map((region) => (
+              {locations.regions.sort().map((region) => (
                 <SelectItem key={region} value={region}>
                   {region}
                 </SelectItem>

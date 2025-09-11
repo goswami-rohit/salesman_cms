@@ -1,7 +1,7 @@
 // src/app/api/dashboardPagesAPI/dealer-reports/route.ts
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
+import prisma from '@/lib/prisma';  
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',

@@ -49,7 +49,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 // Define the valid regions and areas
-import {areas, regions} from '@/lib/Reusable-constants'
+import { useUserLocations } from '@/components/reusable-user-locations';
 
 interface User {
   id: number;
@@ -92,6 +92,7 @@ export default function UsersManagement({ adminUser }: Props) {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { locations, loading: locationsLoading, error: locationsError } = useUserLocations();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -99,9 +100,20 @@ export default function UsersManagement({ adminUser }: Props) {
     lastName: '',
     phoneNumber: '',
     role: 'junior-executive',
-    region: regions[0], // Initialize with a default value
-    area: areas[0],     // Initialize with a default value
+    region: '',
+    area: '',
   });
+
+  // New useEffect hook to set initial form data for user locations
+  useEffect(() => {
+    if (locations.regions.length > 0 && locations.areas.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        region: prev.region || locations.regions[0],
+        area: prev.area || locations.areas[0]
+      }));
+    }
+  }, [locations]);
 
   useEffect(() => {
     fetchUsers();
@@ -239,8 +251,8 @@ export default function UsersManagement({ adminUser }: Props) {
       lastName: user.lastName || '',
       phoneNumber: user.phoneNumber || '',
       role: user.role,
-      region: user.region || regions[0],
-      area: user.area || areas[0],
+      region: user.region || '',
+      area: user.area || '',
     });
   };
 
@@ -251,8 +263,8 @@ export default function UsersManagement({ adminUser }: Props) {
       lastName: '',
       phoneNumber: '',
       role: 'junior-executive',
-      region: regions[0],
-      area: areas[0],
+      region: '',
+      area: '',
     });
     setEditingUser(null);
     setError('');
@@ -292,15 +304,23 @@ export default function UsersManagement({ adminUser }: Props) {
     return workosUserId && !workosUserId.startsWith('pending_') && !workosUserId.startsWith('temp_');
   };
 
-  if (loading && users.length === 0) {
+  if (loading || locationsLoading) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground mt-4">Loading users...</p>
+            <p className="text-muted-foreground mt-4">Loading users and locations...</p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (locationsError) {
+    return (
+      <div className="min-h-screen bg-background p-6 text-center text-red-500">
+        <p>Error loading location data. Please try again.</p>
       </div>
     );
   }
@@ -372,7 +392,7 @@ export default function UsersManagement({ adminUser }: Props) {
                     type="tel"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="+91 9999900000"
                   />
                 </div>
 
@@ -401,42 +421,25 @@ export default function UsersManagement({ adminUser }: Props) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="region">Region</Label>
-                    <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {regions.map(region => (
-                          <SelectItem key={region} value={region}>{region}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="region"
+                      placeholder="Enter Region"
+                      value={formData.region}
+                      onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="area">Area</Label>
-                    <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {areas.map(area => (
-                          <SelectItem key={area} value={area}>{area}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="area"
+                      placeholder="Enter Area"
+                      value={formData.area}
+                      onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                    />
                   </div>
                 </div>
 
-                <div className="flex space-x-2 pt-4">
-                  <Button type="submit" disabled={loading} className="flex-1">
-                    <Mail className="w-4 h-4 mr-2" />
-                    {loading ? 'Creating & Inviting...' : 'Create & Invite User'}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
-                    Cancel
-                  </Button>
-                </div>
               </form>
             </DialogContent>
           </Dialog>
@@ -604,7 +607,8 @@ export default function UsersManagement({ adminUser }: Props) {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {regions.map(region => (
+                                      {/* Dynamic regions from the hook */}
+                                      {locations.regions.map(region => (
                                         <SelectItem key={region} value={region}>{region}</SelectItem>
                                       ))}
                                     </SelectContent>
@@ -618,7 +622,8 @@ export default function UsersManagement({ adminUser }: Props) {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {areas.map(area => (
+                                      {/* Dynamic areas from the hook */}
+                                      {locations.areas.map(area => (
                                         <SelectItem key={area} value={area}>{area}</SelectItem>
                                       ))}
                                     </SelectContent>

@@ -12,7 +12,7 @@ import { z } from "zod";
 import { MapPin } from 'lucide-react';
 import { renderToStaticMarkup } from "react-dom/server";
 import "leaflet/dist/leaflet.css";
-import { areas, regions } from "@/lib/Reusable-constants";
+import { useUserLocations } from '@/components/reusable-user-locations';
 
 const roles = [
   "senior-manager",
@@ -148,6 +148,7 @@ export function SalesmanLiveLocation() {
     area: "all",
     region: "all",
   });
+  const { locations: dynamicLocations, loading: locationsLoading } = useUserLocations();
 
   // Fetch from API every 5 seconds
   useEffect(() => {
@@ -252,7 +253,7 @@ export function SalesmanLiveLocation() {
                 </SelectTrigger>
                 <SelectContent className="z-[9999]">
                   <SelectItem value="all">All Areas</SelectItem>
-                  {areas.map((area) => (
+                  {dynamicLocations.areas.sort().map((area) => (
                     <SelectItem key={area} value={area}>
                       {area}
                     </SelectItem>
@@ -273,7 +274,7 @@ export function SalesmanLiveLocation() {
                 </SelectTrigger>
                 <SelectContent className="z-[9999]">
                   <SelectItem value="all">All Regions</SelectItem>
-                  {regions.map((region) => (
+                  {dynamicLocations.regions.sort().map((region) => (
                     <SelectItem key={region} value={region}>
                       {region}
                     </SelectItem>
