@@ -4,8 +4,7 @@ import { withAuth } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
 import { z } from 'zod';
-// Define the valid regions and areas
-import {areas, regions} from '@/lib/Reusable-constants'
+
 const workos = new WorkOS(process.env.WORKOS_API_KEY as string);
 
 // Schema for the POST request body
@@ -14,8 +13,8 @@ const SetupCompanySchema = z.object({
   officeAddress: z.string().min(1, "Office address is required."),
   isHeadOffice: z.boolean(),
   phoneNumber: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
-  region: z.enum(regions as [string, ...string[]]),
-  area: z.enum(areas as [string, ...string[]]),
+  region: z.string(),
+  area: z.string(),
 });
 
 
@@ -130,7 +129,7 @@ export async function POST(request: Request) {
         email: user.email,
         firstName: user.firstName || null,
         lastName: user.lastName || null,
-        role: 'senior-manager', // This is your internal database role
+        role: 'senior-manager', // This is your internal database role <Change this change default role here + WorkOS>
         region: region, // Save the new region
         area: area, // Save the new area
       },

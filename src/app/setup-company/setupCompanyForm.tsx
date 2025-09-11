@@ -1,3 +1,4 @@
+// src/app/setup-company/setupCompanyForm.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -14,8 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-// Define the valid regions and areas
-import {areas, regions} from '@/lib/Reusable-constants'
 
 export default function SetupCompanyForm() {
   const [companyName, setCompanyName] = useState('');
@@ -23,8 +22,8 @@ export default function SetupCompanyForm() {
   const [isHeadOffice, setIsHeadOffice] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   // New state for region and area
-  const [region, setRegion] = useState<string>(regions[0]);
-  const [area, setArea] = useState<string>(areas[0]);
+  const [region, setRegion] = useState<string>('');
+  const [area, setArea] = useState<string>('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -139,33 +138,25 @@ export default function SetupCompanyForm() {
           {/* New shadcn/ui Select components for Region and Area */}
           <div className="space-y-2">
             <Label htmlFor="region">Region</Label>
-            <Select onValueChange={setRegion} value={region}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a region" />
-              </SelectTrigger>
-              <SelectContent>
-                {regions.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="region"
+              type="text"
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              required
+              placeholder="e.g., Northeast"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="area">Area</Label>
-            <Select onValueChange={setArea} value={area}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select an area" />
-              </SelectTrigger>
-              <SelectContent>
-                {areas.map((a) => (
-                  <SelectItem key={a} value={a}>
-                    {a}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="area"
+              type="text"
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              required
+              placeholder="e.g., Boston"
+            />
           </div>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           <Button
