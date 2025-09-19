@@ -144,7 +144,7 @@ export default function DashboardGraphs() {
 
   const journeyEndRecords = useMemo(
     () => rawGeoTrackingRecords.filter(
-      r => r.appState === 'completed' || r.appState === 'journey_completed'
+      r => r.appState === 'foreground' || r.locationType === 'radar'
     ),
     [rawGeoTrackingRecords]
   );

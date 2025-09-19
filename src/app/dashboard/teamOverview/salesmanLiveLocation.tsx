@@ -160,7 +160,7 @@ export function SalesmanLiveLocation() {
         if (!response.ok) throw new Error("Failed to fetch locations");
 
         const data = await response.json();
-        //console.log("Locations received from API:", data);
+        //console.log("Locations received from API:", data); 
         const validatedData = z.array(liveLocationSchema).parse(data);
         //console.log("Validated locations:", validatedData);
         setLocations(validatedData);

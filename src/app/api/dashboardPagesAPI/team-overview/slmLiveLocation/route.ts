@@ -1,4 +1,3 @@
-// /api/dashboardPagesAPI/team-overview/slmLiveLocation/route.ts
 import { NextResponse } from "next/server";
 import { getTokenClaims } from "@workos-inc/authkit-nextjs";
 import prisma from "@/lib/prisma";
@@ -52,59 +51,61 @@ export async function GET() {
       );
     }
 
-    // 1. Get all active users from your DB for the current company
-    const activeUsers = await prisma.user.findMany({
+    // 1. Get all active permanent journey plans for the current company
+    const activePlans = await prisma.permanentJourneyPlan.findMany({
       where: {
-        companyId: currentUser.companyId,
+        // Filter by the user's company who is assigned to the plan
+        user: { 
+          companyId: currentUser.companyId,
+        },
+        // We'll assume the 'status' field exists and can be 'active'
         status: "active",
       },
-      select: { id: true, 
-        firstName: true, lastName: true, role: true, 
-        region: true, area: true, 
-        salesmanLoginId: true },
+      include: {
+        user: { 
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            salesmanLoginId: true,
+            region: true, // Assuming these fields are on the User model
+            area: true,   // Assuming these fields are on the User model
+          },
+        },
+      },
     });
-    //console.log("Active users for company:", activeUsers);
 
-    if (activeUsers.length === 0) {
+    // Extract the user IDs from the active plans
+    const activeSalesmen = activePlans.map(plan => plan.user);
+    const salesmanIds = activeSalesmen.map(s => String(s.id));
+
+    if (salesmanIds.length === 0) {
       return NextResponse.json([], { status: 200 });
     }
 
-    // --- NEW SIMPLIFIED RADAR API CALL ---
-    // 2. Fetch ALL active trips from Radar with a single request
-    const res = await axios.get("https://api.radar.io/v1/trips", {
+    // --- NEW RADAR LIVE TRACKING API CALL ---
+    // 2. Fetch ALL live locations from Radar for the specified user IDs
+    const res = await axios.get("https://api.radar.io/v1/live", {
       headers: { Authorization: process.env.RADAR_SECRET_KEY!.trim() },
       params: {
-        status: "started,approaching,arrived",
-        includeLocations: true,
+        userIds: salesmanIds.join(','),
       },
     });
-    const allActiveTrips = res.data.trips || [];
-    //console.log("Fetched all active trips from Radar:", allActiveTrips);
-    // --- END OF API CALL ---
 
-    // 3. Normalize and filter the trips against your DB users
-    const mapped = allActiveTrips
-      .map((trip: any) => {
-        // Find the user in YOUR database that matches the user in the Radar trip data
-        const user = activeUsers.find((u) => String(u.id) === trip.userId);
+    const liveLocations = res.data.locations || [];
+    console.log("Fetched live locations from Radar:", liveLocations);
 
-        // If the trip doesn't belong to a user in this company, skip it
+    // 3. Normalize and filter the live locations against your DB users
+    const mapped = liveLocations
+      .map((loc: any) => {
+        // Find the user in YOUR database that matches the user in the Radar live data
+        const user = activeSalesmen.find((u) => String(u.id) === loc.userId);
+
+        // If the location doesn't belong to a salesman in an active plan, skip it
         if (!user) return null;
 
-        // Logic to find the most current location
-        let locationData = null;
-        if (trip.locations && trip.locations.length > 0) {
-          // If the user has moved, use the last reported location
-          locationData = trip.locations[trip.locations.length - 1];
-        } else if (trip.metadata?.originLatitude && trip.metadata?.originLongitude) {
-          // If the trip just started, use the origin location from metadata
-          locationData = {
-            coordinates: [trip.metadata.originLongitude, trip.metadata.originLatitude],
-          };
-        }
-
-        // If no location data could be found, skip this trip
-        if (!locationData) return null;
+        if (!loc.location?.coordinates) return null;
 
         return {
           userId: String(user.id),
@@ -113,18 +114,19 @@ export async function GET() {
           role: user.role,
           region: user.region,
           area: user.area,
-          latitude: locationData.coordinates[1],
-          longitude: locationData.coordinates[0],
-          recordedAt: trip.updatedAt,
+          latitude: loc.location.coordinates[1],
+          longitude: loc.location.coordinates[0],
+          recordedAt: loc.location.recordedAt, // Use the timestamp from the Radar location object
           isActive: true,
-          accuracy: locationData.accuracy ?? null,
-          speed: locationData.speed ?? null,
-          heading: locationData.heading ?? null,
-          altitude: locationData.altitude ?? null,
-          batteryLevel: null,
+          accuracy: loc.location.accuracy ?? null,
+          speed: loc.location.speed ?? null,
+          heading: loc.location.heading ?? null,
+          altitude: loc.location.altitude ?? null,
+          batteryLevel: loc.location.batteryLevel ?? null,
         };
       })
       .filter(Boolean); // Remove any null entries
+
     //console.log("Mapped live locations before validation:", mapped);
 
     const validated = z.array(liveLocationSchema).parse(mapped);
