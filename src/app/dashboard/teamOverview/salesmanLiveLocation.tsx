@@ -170,7 +170,7 @@ export function SalesmanLiveLocation() {
     };
     fetchLocations(); // initial load
 
-    const interval = setInterval(fetchLocations, 5000);
+    const interval = setInterval(fetchLocations, 30000);
     return () => clearInterval(interval);
   }, []);
 
