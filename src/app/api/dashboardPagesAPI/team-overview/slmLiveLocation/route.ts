@@ -55,14 +55,14 @@ export async function GET() {
     const activePlans = await prisma.permanentJourneyPlan.findMany({
       where: {
         // Filter by the user's company who is assigned to the plan
-        user: { 
+        user: {
           companyId: currentUser.companyId,
         },
         // We'll assume the 'status' field exists and can be 'active'
         status: "active",
       },
       include: {
-        user: { 
+        user: {
           select: {
             id: true,
             firstName: true,
@@ -84,53 +84,68 @@ export async function GET() {
       return NextResponse.json([], { status: 200 });
     }
 
-    // --- NEW RADAR LIVE TRACKING API CALL ---
-    // 2. Fetch ALL live locations from Radar for the specified user IDs
-    const res = await axios.get("https://api.radar.io/v1/live", {
-      headers: { Authorization: process.env.RADAR_SECRET_KEY!.trim() },
-      params: {
-        userIds: salesmanIds.join(','),
-      },
-    });
+    const slmWebAppURL = process.env.NEXT_PUBLIC_SALESMAN_APP_URL; // actual salesman mobile webapp
+    const slmServerURL = process.env.NEXT_PUBLIC_SALESMAN_APP_SERVER_URL; // backend server for the mobile webapp
 
-    const liveLocations = res.data.locations || [];
-    console.log("Fetched live locations from Radar:", liveLocations);
+    // --- NEW: fetch latest points from the salesman app backend ---
+    if (!slmServerURL) {
+      console.error("SALESMAN_APP_SERVER_URL is not set");
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    }
 
-    // 3. Normalize and filter the live locations against your DB users
-    const mapped = liveLocations
-      .map((loc: any) => {
-        // Find the user in YOUR database that matches the user in the Radar live data
-        const user = activeSalesmen.find((u) => String(u.id) === loc.userId);
+    // Fetch latest endpoint for each active salesman concurrently (safe-fail)
+    type FetchResult = | { ok: true; data: any } | { ok: false; error: any };
 
-        // If the location doesn't belong to a salesman in an active plan, skip it
+    const fetchPromises: Promise<FetchResult>[] = salesmanIds.map((id) =>
+      axios
+        .get(`${slmServerURL}/api/geotracking/user/${id}/latest`, { timeout: 5000 })
+        .then((r) => ({ ok: true as const, data: r.data }))
+        .catch((e) => {
+          console.warn(`Failed to fetch latest for user ${id}:`, e?.message ?? e);
+          return { ok: false as const, error: e };
+        })
+    );
+
+    const settled: FetchResult[] = await Promise.all(fetchPromises);
+
+    // Normalize results into your frontend shape
+    const mapped = settled
+      .map((resItem, idx) => {
+        // Narrow safely: ensure this item has a `data` property
+        if (!resItem || !("data" in resItem)) return null;
+
+        const respBody = resItem.data; // now safe
+        if (!respBody || !respBody.success) return null;
+        const latest = respBody.data;
+        if (!latest) return null; // user has no points yet
+
+        // Find the user metadata from your DB list (activeSalesmen)
+        const user = activeSalesmen.find((u) => String(u.id) === String(salesmanIds[idx]));
         if (!user) return null;
 
-        if (!loc.location?.coordinates) return null;
-
+        // Map the latest DB row to the liveLocationSchema shape
         return {
           userId: String(user.id),
           salesmanName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "N/A",
-          employeeId: user.salesmanLoginId,
+          employeeId: user.salesmanLoginId ?? null,
           role: user.role,
-          region: user.region,
-          area: user.area,
-          latitude: loc.location.coordinates[1],
-          longitude: loc.location.coordinates[0],
-          recordedAt: loc.location.recordedAt, // Use the timestamp from the Radar location object
-          isActive: true,
-          accuracy: loc.location.accuracy ?? null,
-          speed: loc.location.speed ?? null,
-          heading: loc.location.heading ?? null,
-          altitude: loc.location.altitude ?? null,
-          batteryLevel: loc.location.batteryLevel ?? null,
+          region: user.region ?? null,
+          area: user.area ?? null,
+          latitude: Number(latest.latitude),
+          longitude: Number(latest.longitude),
+          recordedAt: latest.recordedAt ? String(latest.recordedAt) : new Date().toISOString(),
+          isActive: latest.isActive === undefined ? true : Boolean(latest.isActive),
+          accuracy: latest.accuracy ?? null,
+          speed: latest.speed ?? null,
+          heading: latest.heading ?? null,
+          altitude: latest.altitude ?? null,
+          batteryLevel: latest.batteryLevel ?? null,
         };
       })
-      .filter(Boolean); // Remove any null entries
+      .filter(Boolean) as unknown as Array<z.infer<typeof liveLocationSchema>>; // help TS understand type
 
-    //console.log("Mapped live locations before validation:", mapped);
-
+    // Validate whole array with Zod
     const validated = z.array(liveLocationSchema).parse(mapped);
-    //console.log("Validated live locations to return:", validated);
 
     return NextResponse.json(validated, { status: 200 });
   } catch (error: any) {
