@@ -191,6 +191,20 @@ export async function GET() {
         });
 
         // 5. Format the data to match the getDealerResponseSchema for the frontend
+        // helper in the same file above formattedDealers
+        function toNumberOrNull(val: any): number | null {
+            if (val === null || val === undefined || val === '') return null;
+
+            // Prisma Decimal has .toNumber()
+            if (typeof val === 'object' && typeof val.toNumber === 'function') {
+                return val.toNumber();
+            }
+
+            const n = Number(val);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        // Then in your mapping:
         const formattedDealers = dealers.map(dealer => ({
             id: dealer.id,
             name: dealer.name,
@@ -200,8 +214,8 @@ export async function GET() {
             phoneNo: dealer.phoneNo,
             address: dealer.address,
             pinCode: dealer.pinCode,
-            latitude: dealer.latitude,
-            longitude: dealer.longitude,
+            latitude: toNumberOrNull(dealer.latitude),
+            longitude: toNumberOrNull(dealer.longitude),
             dateOfBirth: dealer.dateOfBirth ? dealer.dateOfBirth.toISOString().split('T')[0] : null,
             anniversaryDate: dealer.anniversaryDate ? dealer.anniversaryDate.toISOString().split('T')[0] : null,
             totalPotential: dealer.totalPotential.toNumber(),
@@ -213,6 +227,7 @@ export async function GET() {
             updatedAt: dealer.updatedAt.toISOString(),
             parentDealerName: dealer.parentDealer?.name || null,
         }));
+
 
         // 6. Validate the formatted data against the getDealerResponseSchema
         const validatedDealers = z.array(getDealerResponseSchema).parse(formattedDealers); // Use the new GET schema

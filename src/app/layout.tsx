@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+//import Head from 'next/head';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConditionalSidebar } from "@/components/conditionalSidebar";
@@ -16,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BRIXTA SALES CMS",
   description: "Made by Mycoco",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -25,6 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+     
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
