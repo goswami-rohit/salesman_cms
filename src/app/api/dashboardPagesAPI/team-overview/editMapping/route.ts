@@ -8,16 +8,9 @@ import { z } from 'zod';
 import { canAssignRole } from '@/lib/roleHierarchy';
 
 // Define the allowed roles that can perform this action
-const allowedAdminRoles = [
-  'president',
-  'senior-general-manager',
-  'general-manager',
-  'regional-sales-manager',
-  'area-sales-manager',
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',];
 
 // Define a schema to validate the incoming request body
 const editMappingSchema = z.object({
@@ -33,7 +26,7 @@ export async function POST(request: NextRequest) {
     const workosOrganizationId = claims?.org_id;
 
     // Authentication and authorization check: ensure the user is an admin
-    if (!claims || !claims.sub || !workosOrganizationId || !allowedAdminRoles.includes(currentUserRole)) {
+    if (!claims || !claims.sub || !workosOrganizationId || !allowedRoles.includes(currentUserRole)) {
       console.warn('Unauthorized attempt to update user mapping by:', claims?.sub);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

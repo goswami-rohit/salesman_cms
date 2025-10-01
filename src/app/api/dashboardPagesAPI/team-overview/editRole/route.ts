@@ -11,23 +11,13 @@ import { canAssignRole } from '@/lib/roleHierarchy';
 // Initialize WorkOS with your API key
 const workos = new WorkOS(process.env.WORKOS_API_KEY);
 
-const allowedAdminRoles = [
-  'president',
-  'senior-general-manager',
-  'general-manager',
-  'regional-sales-manager',
-  'area-sales-manager',
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-  'senior-executive',
-  'executive',
-  'junior-executive',
-];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',];
 
 const editRoleSchema = z.object({
   userId: z.number(),
-  newRole: z.string().refine(role => allowedAdminRoles.includes(role), {
+  newRole: z.string().refine(role => allowedRoles.includes(role), {
     message: 'Invalid role provided. Role must be one of the allowed admin roles.',
   }),
 });
@@ -39,7 +29,7 @@ export async function POST(request: NextRequest) {
     const workosOrganizationId = claims?.org_id;
 
     // Authentication and authorization check
-    if (!claims || !claims.sub || !workosOrganizationId || !allowedAdminRoles.includes(currentUserRole)) {
+    if (!claims || !claims.sub || !workosOrganizationId || !allowedRoles.includes(currentUserRole)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

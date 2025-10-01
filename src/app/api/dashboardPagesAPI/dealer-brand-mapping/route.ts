@@ -8,18 +8,10 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 
 // A list of roles that are allowed to access this endpoint.
-const allowedRoles = [
-  'president',
-  'senior-general-manager',
-  'general-manager',
-  'assistant-sales-manager',
-  'area-sales-manager',
-  'regional-sales-manager',
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-  'senior-executive',
-];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive',];
 
 // Helper function to fetch all unique brand names for a given company.
 async function getAllBrandNames(companyId: number) {

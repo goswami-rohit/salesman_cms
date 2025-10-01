@@ -13,17 +13,10 @@ async function getAuthClaims() {
   return claims;
 }
 
-const allowedRoles = [
-  'president',
-  'senior-general-manager',
-  'general-manager',
-  'regional-sales-manager',
-  'area-sales-manager',
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-];
-
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive',];
 
 // Generic helper to format any table data into CSV rows
 const formatTableDataForCsv = (data: any[]) => {

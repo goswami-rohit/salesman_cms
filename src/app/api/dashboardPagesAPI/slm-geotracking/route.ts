@@ -44,9 +44,10 @@ const geoTrackingSchema = z.object({
   updatedAt: z.string(),
 });
 
-const allowedRoles = [
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive', 'executive'];
+  'senior-executive',];
 
 export async function GET() {
   try {

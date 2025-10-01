@@ -13,9 +13,9 @@ const updateLeaveApplicationSchema = z.object({
   adminRemarks: z.string().nullable().optional(), // Can be string, null, or undefined (if not sent)
 });
 
-const allowedRoles = [
-  'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive', 'executive'];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',];
 
 // GET /api/dashboardPagesAPI/salesman-leaves
 // Fetches all salesman leave applications from the database

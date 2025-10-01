@@ -36,7 +36,7 @@ const dailyVisitReportSchema = z.object({
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive', 'executive','junior-executive'];
+  'senior-executive','executive',];
 
 export async function GET() {
   try {

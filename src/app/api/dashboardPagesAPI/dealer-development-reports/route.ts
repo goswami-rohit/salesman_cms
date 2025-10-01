@@ -17,18 +17,10 @@ const dealerDevelopmentSchema = z.object({
 
 // A list of roles that are allowed to access this endpoint.
 // This should be adjusted based on your application's specific requirements.
-const allowedRoles = [
-  'president',
-  'senior-general-manager',
-  'general-manager',
-  'assistant-sales-manager',
-  'area-sales-manager',
-  'regional-sales-manager',
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-  'senior-executive',
-];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive',];
 
 export async function GET() {
   try {

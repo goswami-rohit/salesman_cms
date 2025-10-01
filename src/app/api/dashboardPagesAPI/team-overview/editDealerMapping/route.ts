@@ -4,17 +4,9 @@ import { getTokenClaims } from "@workos-inc/authkit-nextjs";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 
-const allowedAdminRoles = [
-  "president",
-  "senior-general-manager",
-  "general-manager",
-  "regional-sales-manager",
-  "area-sales-manager",
-  "senior-manager",
-  "manager",
-  "assistant-manager",
-  "senior-executive",
-];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',];
 
 const editDealerSchema = z.object({
   userId: z.number(),
@@ -49,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (!currentUser) {
       return NextResponse.json({ error: "Current user not found" }, { status: 404 });
     }
-    if (!allowedAdminRoles.includes(currentUser.role)) {
+    if (!allowedRoles.includes(currentUser.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -98,7 +90,7 @@ export async function POST(request: NextRequest) {
   try {
     const claims = await getTokenClaims();
     const currentRole = claims?.role as string;
-    if (!claims?.sub || !allowedAdminRoles.includes(currentRole)) {
+    if (!claims?.sub || !allowedRoles.includes(currentRole)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

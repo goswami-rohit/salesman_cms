@@ -144,7 +144,7 @@ export default function SetupCompanyForm() {
               value={region}
               onChange={(e) => setRegion(e.target.value)}
               required
-              placeholder="e.g., Northeast"
+              placeholder="e.g., Kamrup M"
             />
           </div>
           <div className="space-y-2">
@@ -155,7 +155,7 @@ export default function SetupCompanyForm() {
               value={area}
               onChange={(e) => setArea(e.target.value)}
               required
-              placeholder="e.g., Boston"
+              placeholder="e.g., Guwahati"
             />
           </div>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}

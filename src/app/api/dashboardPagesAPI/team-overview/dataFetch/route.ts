@@ -7,17 +7,10 @@ import { ROLE_HIERARCHY } from '@/lib/roleHierarchy';
 
 // Define the roles that are allowed to view the Team Overview page.
 // This list includes all roles except 'junior-executive' and 'executive'.
-const allowedRoles = [
-  'president',
-  'senior-general-manager',
-  'general-manager',
-  'regional-sales-manager',
-  'area-sales-manager',
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-  'senior-executive',
-];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive',];
 
 export async function GET(request: NextRequest) {
   try {

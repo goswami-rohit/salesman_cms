@@ -29,15 +29,13 @@ const dailyTaskSchema = z.object({
 });
 
 // Roles allowed to assign tasks
-const allowedAssignerRoles = [
-  'senior-manager',
-  'manager',
-  'assistant-manager',
-  'senior-executive',
-];
+const allowedAssignerRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',];
 
 // Roles that can be assigned tasks by a manager
 const allowedAssigneeRoles = [
+  'senior-executive',
   'junior-executive',
   'executive',
 ];

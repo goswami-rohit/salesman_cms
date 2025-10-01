@@ -23,13 +23,10 @@ const liveLocationSchema = z.object({
   batteryLevel: z.number().nullable(),
 });
 
-const allowedRoles = [
-  "senior-manager",
-  "manager",
-  "assistant-manager",
-  "senior-executive",
-  "executive",
-];
+const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+  'senior-manager', 'manager', 'assistant-manager',
+  'senior-executive',];
 
 export async function GET() {
   try {

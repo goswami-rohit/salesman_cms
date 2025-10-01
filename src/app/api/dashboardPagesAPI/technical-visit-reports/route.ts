@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive', 'executive', 'junior-executive'];
+  'senior-executive','executive',];
 
 // GET /api/dashboardPagesAPI/technical-reports
 // Fetches all technical visit reports from the database
