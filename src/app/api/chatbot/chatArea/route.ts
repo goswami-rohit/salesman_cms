@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // This is the URL for your new, separate MCP server.
 // You'll need to replace this with the actual URL when you deploy it.
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'https://your-mcp-server.com/chat';
+const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'https://brixta-mycoco-mcp.fastmcp.app/mcp';
 
 export async function POST(req: NextRequest) {
   try {

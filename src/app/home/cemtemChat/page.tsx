@@ -304,14 +304,21 @@ export default function ChatPage() {
     );
 
     return (
-         <div className="absolute inset-0 flex bg-background">
-            <div className="hidden md:block">
+        <div className="flex flex-col flex-1 h-full bg-background"> {/* <-- FIXED: Changed absolute inset-0 to flex flex-col flex-1 h-full */}
+            {/* The global AppSidebar from ConditionalSidebar is now handling the main navigation */}
+
+            {/* You currently have an internal ChatHistorySidebar here, which you may want to keep or remove.
+                If you keep it, you'll need to wrap this ChatPage in a container that supports two sidebars.
+                If you remove it (recommended if the global sidebar is enough), just delete the blocks below.
+            */}
+
+            {/* <div className="hidden md:block">
                 <ChatHistorySidebar />
-            </div>
-            {/*For mobile */}
+            </div> */}
+            {/* For mobile */}
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetContent side="left" className="w-80 p-0">
-                    <ChatHistorySidebar />
+                    {/* <ChatHistorySidebar /> */}
                 </SheetContent>
             </Sheet>
 

@@ -83,7 +83,7 @@ export default function SignedOutHomePage() {
               </div>
               <h3 className="text-xl font-semibold text-card-foreground mb-2">Smart Analytics</h3>
               <p className="text-muted-foreground">
-                DeepSeek-powered insights to optimize your business performance and decision-making
+                CemTemBot AI Chat-powered insights to optimize your business performance and decision-making
               </p>
             </div>
 
@@ -105,7 +105,7 @@ export default function SignedOutHomePage() {
               </div>
               <h3 className="text-xl font-semibold text-card-foreground mb-2">AI Automation</h3>
               <p className="text-muted-foreground">
-                Automate routine tasks and workflows with CemteBot's intelligent processing capabilities
+                Automate routine tasks and workflows with CemTemBot's intelligent processing capabilities
               </p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export default function SignedOutHomePage() {
         <div className="text-center">
           <p className="text-muted-foreground">
             © 2025 Company Management System.
-            <span className="text-primary"> Powered by DeepSeek AI</span>
+            <span className="text-primary"> Developed By MyCoco</span>
           </p>
         </div>
       </footer>

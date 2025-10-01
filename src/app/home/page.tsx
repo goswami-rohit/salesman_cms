@@ -9,6 +9,7 @@ import {
     User,
     ArrowRight,
     Bot,
+    BotMessageSquare
 } from 'lucide-react';
 
 interface CustomClaims {
@@ -73,7 +74,29 @@ export default async function SignedInHomePage() {
                 </div>
 
                 {/* Main Action Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8 mb-16">
+
+                    {/* CemTem AI Chat Card */}
+                    <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 cursor-pointer">
+                        <Link href="/home/cemtemChat" className="block h-full">
+                            <CardHeader className="text-center pb-4">
+                                <div className="w-16 h-16 bg-gradient-to-br from-chart-2 to-chart-4 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                    <BotMessageSquare className="w-8 h-8 text-white" />
+                                </div>
+                                <CardTitle className="text-2xl mb-2">CemTem AI Chat</CardTitle>
+                                <CardDescription className="text-base">
+                                    Chat with CemTem AI Chat Bot for quick analysis, report summarizations, data analysis and much more for your company.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="text-center pt-0">
+                                <Button>
+                                    Chat Now
+                                    <ArrowRight />
+                                </Button>
+                            </CardContent>
+                        </Link>
+                    </Card>
+
                     {/* Dashboard Card */}
                     <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 cursor-pointer">
                         <Link href="/dashboard" className="block h-full">

@@ -82,7 +82,7 @@ const menuItems: MenuItem[] = [
       // {
       //   title: "CemTem ChatBot",
       //   url: "/home/cemtemChat",
-      //   permission: ITEM_PERMISSIONS["Download Reports"]
+      //   permission: ITEM_PERMISSIONS["CemTem ChatBot"]
       // },
       {
         title: "Download Reports",

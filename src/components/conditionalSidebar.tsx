@@ -66,9 +66,9 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   // Don't show sidebar on home page, landing page, or auth pages
   const hideSidebar = pathname === '/home' 
                     || pathname === '/' 
-                    || pathname === '/home/cemtemChat'
+                    //|| pathname === '/home/cemtemChat'
                     || pathname.startsWith('/auth')
-                    || pathname.startsWith('/dashboard');
+                    || pathname.startsWith('/dashboard'); // dashboard doesnt auto apply sidebar everywhere. That decision is made by dashboardShell
   
   if (hideSidebar) {
     return <>{children}</>;
