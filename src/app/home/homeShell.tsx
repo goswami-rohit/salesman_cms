@@ -1,4 +1,4 @@
-// src/app/dashboard/dashboardShell.tsx
+// src/app/home/homeShell.tsx
 'use client';
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -24,7 +24,7 @@ interface User {
   company: Company;
 }
 
-interface DashboardShellProps {
+interface HomeShellProps {
   user: User;
   company: Company;
   children: React.ReactNode;
@@ -32,25 +32,14 @@ interface DashboardShellProps {
   permissions?: string[];
 }
 
-export default function DashboardShell({ 
-  //user, 
-  //company, 
-  children, 
+export default function HomeShell({
+  children,
   workosRole,
-  //permissions 
-}: DashboardShellProps) {
+}: HomeShellProps) {
   return (
-    <SidebarProvider
-      // style={
-      //   {
-      //     "--sidebar-width": "calc(var(--spacing) * 72)",
-      //     "--header-height": "calc(var(--spacing) * 12)",
-      //   } as React.CSSProperties
-      // }
-    >
-      <AppSidebar 
-        userRole={workosRole as WorkOSRole}
-      />
+    <SidebarProvider>
+      <AppSidebar userRole={workosRole as WorkOSRole} />
+      {/* exact same inset + padding rhythm as dashboardShell */}
       <SidebarInset className="pl-4 pt-4 md:pl-6 md:pt-6">
         <SiteHeader />
         <div className="flex flex-1 flex-col">

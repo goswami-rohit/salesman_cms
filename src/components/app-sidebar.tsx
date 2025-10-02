@@ -79,11 +79,11 @@ const menuItems: MenuItem[] = [
     url: "/home",
     permission: ITEM_PERMISSIONS["Home"],
     items: [
-      // {
-      //   title: "CemTem ChatBot",
-      //   url: "/home/cemtemChat",
-      //   permission: ITEM_PERMISSIONS["CemTem ChatBot"]
-      // },
+      {
+        title: "CemTem ChatBot",
+        url: "/home/cemtemChat",
+        permission: ITEM_PERMISSIONS["CemTem ChatBot"]
+      },
       {
         title: "Download Reports",
         url: "/home/downloadReport",
@@ -195,11 +195,11 @@ const menuItems: MenuItem[] = [
     url: "/account",
     permission: ITEM_PERMISSIONS["Account"],
     items: [
-      {
-        title: "Raise A Querry",
-        url: "/account/query",
-        permission: ITEM_PERMISSIONS["Raise A Querry"]
-      },
+      // {
+      //   title: "Raise A Querry",
+      //   url: "/account/query",
+      //   permission: ITEM_PERMISSIONS["Raise A Querry"]
+      // },
       {
         title: "Logout",
         url: "/account/logout",
@@ -255,11 +255,8 @@ export function AppSidebar({ userRole }: Props) {
 
 
   return (
-    <Sidebar className="hidden md:flex">
-      <SidebarRail>
-        {/* The rail will now only contain a placeholder for the toggle button functionality,
-                    and the actual content will be in the SidebarContent section to avoid button nesting. */}
-      </SidebarRail>
+    <Sidebar className="hidden md:flex w-64 shrink-0 border-r">
+      {/* <SidebarRail className="md:hidden" /> */}
 
       <SidebarContent>
         <SidebarHeader>
@@ -362,7 +359,6 @@ export function AppSidebar({ userRole }: Props) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarRail />
     </Sidebar>
   )
 }

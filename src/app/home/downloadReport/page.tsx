@@ -98,8 +98,8 @@ export default function DownloadsPage() {
   const downloadURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/downloads`;
 
   // A new dedicated handler for the master custom download
-  const handleMasterDownload = async (format: ReportFormat, 
-                                      selections: { table: string, column: string }[]) => {
+  const handleMasterDownload = async (format: ReportFormat,
+    selections: { table: string, column: string }[]) => {
     setDownloadingReport('masterCustomDownload');
     try {
       const res = await fetch(masterCustomDownloadURI, {
@@ -258,21 +258,28 @@ export default function DownloadsPage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="flex-1 min-w-0 flex flex-col px-4 md:px-6 py-8">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Downloads</h1>
-          <p className="text-muted-foreground">Download comprehensive reports for various data tables.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Downloads</h1>
+          <p className="text-sm text-muted-foreground">
+            Download comprehensive reports for various data tables.
+          </p>
         </div>
-        <div className="text-gray-900 bg-white rounded-lg hover:bg-gray-900 hover:text-white">
-          <MasterCustomDownload onDownload={handleMasterDownload} 
-                                isDownloading={downloadingReport === 'masterCustomDownload'} />
+        <div className="rounded-lg bg-white text-gray-900 shadow-sm hover:bg-gray-900 hover:text-white transition-colors">
+          <MasterCustomDownload
+            onDownload={handleMasterDownload}
+            isDownloading={downloadingReport === 'masterCustomDownload'}
+          />
         </div>
       </div>
+
       <Separator className="my-6" />
 
+      {/* Reports grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reports.map(report => (
+        {reports.map((report) => (
           <ReportCard
             key={report.id}
             id={report.id}
@@ -280,10 +287,14 @@ export default function DownloadsPage() {
             description={report.description}
             icon={report.icon}
             onDownload={handleDownload}
-            disabled={downloadingReport === report.id || downloadingReport === 'masterCustomDownload'}
+            disabled={
+              downloadingReport === report.id ||
+              downloadingReport === "masterCustomDownload"
+            }
           />
         ))}
       </div>
     </div>
-  );
+  )
+
 }
