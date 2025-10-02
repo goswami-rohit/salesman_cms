@@ -86,7 +86,7 @@ export default function CemtemChatPage() {
             setIsLoading(false);
         });
 
-        newSocket.on('error', (payload) => {
+        newSocket.on('server_error', (payload) => {
             console.error('server error', payload);
             setIsLoading(false);
         });
@@ -106,7 +106,7 @@ export default function CemtemChatPage() {
 
         newSocket.on('status', (data: { typing: boolean }) => setIsLoading(data.typing === true));
 
-        newSocket.on('message', (data: ChatMessage) => {
+        newSocket.on('bot_message', (data: ChatMessage) => {
             setAwaitingConfirmation(data.awaiting === true);
             setMessages(prev => [
                 ...prev,
@@ -184,14 +184,14 @@ export default function CemtemChatPage() {
                 <div className="flex items-end max-w-[80%]">
                     {!isUser && (
                         <Avatar className="h-8 w-8 mr-2">
-                            <AvatarFallback className="bg-primary/10 text-primary">
+                            <AvatarFallback className="bg-gray-500 text-primary">
                                 <Bot className="w-5 h-5" />
                             </AvatarFallback>
                         </Avatar>
                     )}
                     <div
                         className={`p-3 rounded-xl shadow-md transition-colors duration-200 ${isUser
-                            ? 'bg-primary text-primary-foreground rounded-br-none'
+                            ? 'bg-gray-300 text-primary-foreground rounded-br-none'
                             : 'bg-secondary text-secondary-foreground rounded-tl-none'
                             }`}
                     >
@@ -202,7 +202,7 @@ export default function CemtemChatPage() {
                     </div>
                     {isUser && (
                         <Avatar className="h-8 w-8 ml-2">
-                            <AvatarFallback className="bg-slate-200 text-black">
+                            <AvatarFallback className="bg-slate-300 text-black">
                                 <User className="w-5 h-5" />
                             </AvatarFallback>
                         </Avatar>
@@ -234,7 +234,7 @@ export default function CemtemChatPage() {
                     <div className="flex justify-start mb-4">
                         <div className="flex items-end">
                             <Avatar className="h-8 w-8 mr-3 mt-1 shadow-sm">
-                                <AvatarFallback className="bg-primary/10 text-primary">
+                                <AvatarFallback className="bg-gray-500 text-primary">
                                     <Bot className="w-5 h-5" />
                                 </AvatarFallback>
                             </Avatar>
