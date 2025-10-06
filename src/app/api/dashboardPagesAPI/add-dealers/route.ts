@@ -21,8 +21,8 @@ const getDealerResponseSchema = z.object({
     longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO string
     anniversaryDate: z.string().nullable().optional(),   // ISO string
-    totalPotential: z.number().positive("Total potential must be a positive number."),
-    bestPotential: z.number().positive("Best potential must be a positive number."),
+    totalPotential: z.number().nonnegative("Total potential must be 0 or positive."),
+    bestPotential: z.number().nonnegative("Best potential must be 0 or positive."),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
     remarks: z.string().nullable().optional(), // Optional field
@@ -45,8 +45,8 @@ const postDealerSchema = z.object({
     longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO string
     anniversaryDate: z.string().nullable().optional(),   // ISO string
-    totalPotential: z.number().positive("Total potential must be a positive number."),
-    bestPotential: z.number().positive("Best potential must be a positive number."),
+    totalPotential: z.number().nonnegative("Total potential must be 0 or positive."),
+    bestPotential: z.number().nonnegative("Best potential must be 0 or positive."),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
     remarks: z.string().nullable().optional(), // Optional field

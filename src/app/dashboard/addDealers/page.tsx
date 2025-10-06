@@ -49,8 +49,8 @@ const dealerSchema = z.object({
     longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO date
     anniversaryDate: z.string().nullable().optional(),   // ISO date
-    totalPotential: z.number().positive("Total potential must be a positive number."),
-    bestPotential: z.number().positive("Best potential must be a positive number."),
+    totalPotential: z.number().nonnegative("Total potential must be 0 or a positive number."),
+    bestPotential: z.number().nonnegative("Best potential must be 0 or positive number."),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
     remarks: z.string().nullable().optional(),
@@ -72,11 +72,11 @@ const addDealerFormSchema = z.object({
     longitude: z.number().nullable().optional(),
     dateOfBirth: z.string().nullable().optional(),       // ISO date
     anniversaryDate: z.string().nullable().optional(),   // ISO date
-    totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
-        message: "Total potential must be a positive number.",
+    totalPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val >= 0, {
+        message: "Total potential must be 0 or positive number.",
     }),
-    bestPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
-        message: "Best potential must be a positive number.",
+    bestPotential: z.string().transform(val => parseFloat(val)).refine(val => !isNaN(val) && val >= 0, {
+        message: "Best potential must be 0 or positive number.",
     }),
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
