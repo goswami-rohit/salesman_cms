@@ -471,6 +471,7 @@ export default function UsersManagement({ adminUser }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UserId</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
@@ -484,6 +485,7 @@ export default function UsersManagement({ adminUser }: Props) {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
+                    <TableCell>{user.id}</TableCell>
                     <TableCell className="font-medium">
                       {user.firstName} {user.lastName}
                     </TableCell>

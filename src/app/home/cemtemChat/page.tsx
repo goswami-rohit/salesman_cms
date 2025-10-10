@@ -56,7 +56,7 @@ export default function CemtemChatPage() {
     }, [isLoading]);
 
     useEffect(() => {
-        const WS_URL = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || 'http://localhost:5055';
+        const WS_URL = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || 'http://localhost:5055' || 'http://127.0.0.1:8000';
         const newSocket = io(WS_URL, {
             path: '/socket.io',
             transports: ['websocket', 'polling'],
