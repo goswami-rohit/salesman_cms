@@ -648,6 +648,28 @@ export default function UsersManagement({ adminUser }: Props) {
                                   Cancel
                                 </Button>
                               </div>
+
+                              <div className="flex justify-end space-x-2 pt-4">
+                                <Button
+                                  type="submit"
+                                  className="flex items-center"
+                                  disabled={loading}
+                                >
+                                  {loading ? 'Creating...' : 'Create User'}
+                                </Button>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setShowCreateModal(false);
+                                    resetForm();
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+
                             </form>
                           </DialogContent>
                         </Dialog>
