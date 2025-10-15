@@ -116,11 +116,17 @@ export default function DashboardGraphs() {
       if (!dailyRes.ok) throw new Error(`DVR API: ${dailyRes.status} - ${await dailyRes.text()}`);
       if (!usersRes.ok) throw new Error(`Users API: ${usersRes.status} - ${await usersRes.text()}`);
 
-      const [geoData, dailyData, usersData] = await Promise.all([geoRes.json(), dailyRes.json(), usersRes.json()]);
+      const [geoData, dailyDataRaw, usersData] = await Promise.all([geoRes.json(), dailyRes.json(), usersRes.json()]);
+
+      // Defensive: coerce id to string for any element that has a numeric id or missing id
+      const dailyData = Array.isArray(dailyDataRaw)
+        ? dailyDataRaw.map((d: any) => ({ ...d, id: d?.id == null ? '' : String(d.id) }))
+        : [];
 
       const validatedGeo = rawGeoTrackingSchema.array().parse(geoData);
       setRawGeoTrackingRecords(validatedGeo);
 
+      // Now parse with the relaxed schema (see data-format.ts change above)
       const validatedDaily = rawDailyVisitReportSchema.array().parse(dailyData);
       setRawDailyReports(validatedDaily);
 

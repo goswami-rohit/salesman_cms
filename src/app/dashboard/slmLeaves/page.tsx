@@ -105,7 +105,7 @@ export default function SlmLeavesPage() {
       }
 
       const updatedApplication: SalesmanLeaveApplication = await response.json();
-      
+
       // Update the local state with the returned updated application
       setLeaveApplications((prevApplications) =>
         prevApplications.map((app) =>
@@ -158,7 +158,8 @@ export default function SlmLeavesPage() {
     { accessorKey: "leaveType", header: "Leave Type" },
     { accessorKey: "startDate", header: "Start Date" },
     { accessorKey: "endDate", header: "End Date" },
-    { accessorKey: "reason", header: "Reason",
+    {
+      accessorKey: "reason", header: "Reason",
       cell: ({ row }) => <span className="max-w-[250px] truncate block">{row.original.reason}</span>,
     },
     {
@@ -185,8 +186,40 @@ export default function SlmLeavesPage() {
         );
       },
     },
-    { accessorKey: "adminRemarks", header: "Admin Remarks",
-      cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.adminRemarks || "N/A"}</span>,
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const app = row.original;
+        const isPending = app.status === 'Pending';
+
+        // Show buttons only when Pending, otherwise show a subtle dash
+        if (!isPending) {
+          return <span className="text-sm text-muted-foreground">—</span>;
+        }
+
+        const onAccept = async () => {
+          // call your handler
+          await handleLeaveAction(app.id, 'Approved');
+        };
+
+        const onReject = async () => {
+          // Ask for reason (often required)
+          const remark = window.prompt(`Reason for rejecting ${app.salesmanName}'s leave (optional):`, '');
+          await handleLeaveAction(app.id, 'Rejected', remark === null ? null : remark);
+        };
+
+        return (
+          <div className="flex gap-2">
+            <Button size="sm" onClick={onAccept} className="bg-green-600 hover:bg-green-700 text-white">
+              Accept
+            </Button>
+            <Button size="sm" variant="outline" onClick={onReject} className="border-red-500 text-red-600 hover:bg-red-50">
+              Reject
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 

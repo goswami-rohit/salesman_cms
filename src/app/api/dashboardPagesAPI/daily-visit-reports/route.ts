@@ -6,7 +6,7 @@ import { z } from 'zod'; // Import Zod for schema validation
 
 // Define Zod schema for the data returned by this API
 const dailyVisitReportSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   salesmanName: z.string(),
   role: z.string(),
   reportDate: z.string(), // YYYY-MM-DD string
@@ -85,7 +85,7 @@ export async function GET() {
       const salesmanName = `${report.user.firstName || ''} ${report.user.lastName || ''}`.trim() || report.user.email;
 
       return {
-        id: report.id,
+        id: String(report.id),
         salesmanName: salesmanName,
         role: report.user.role,
         reportDate: report.reportDate.toISOString().split('T')[0], // YYYY-MM-DD

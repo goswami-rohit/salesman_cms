@@ -1,4 +1,4 @@
-// src/app/api/dashboardPagesAPI/salesman-leaves/route.ts
+// src/app/api/dashboardPagesAPI/slm-leaves/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';

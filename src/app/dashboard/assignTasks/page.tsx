@@ -48,14 +48,14 @@ const salesmanSchema = z.object({
 });
 
 const dealerSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   type: z.string(),
 });
 
 // Schema for fetching daily tasks (from GET response) 
 const dailyTaskSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),
   taskDate: z.string(), // YYYY-MM-DD

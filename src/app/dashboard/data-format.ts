@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client'; // Import Prisma for Decimal type handl
 
 // Define the schemas for the API responses to ensure data integrity
 export const rawDailyVisitReportSchema = z.object({
-  id: z.string().uuid(),
+  id: z.union([z.string().uuid(), z.number(), z.string()]).transform((v) => String(v)),
   salesmanName: z.string(),
   role: z.string(),
   reportDate: z.string(), 

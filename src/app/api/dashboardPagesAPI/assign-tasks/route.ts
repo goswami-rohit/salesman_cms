@@ -16,7 +16,7 @@ const assignTaskSchema = z.object({
 
 // Zod schema for the GET response for daily tasks - DEFINED HERE
 const dailyTaskSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),
   taskDate: z.string(), // YYYY-MM-DD
