@@ -251,6 +251,7 @@ function EditDealerMappingCell({
   const [isLoading, setIsLoading] = useState(true);
   const [dealerOptions, setDealerOptions] = useState<{ value: string; label: string }[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [dealerSearchQuery, setDealerSearchQuery] = useState('');
 
   const { locations, loading: locationsLoading } = useDealerLocations();
   // New state for area and region filters
@@ -264,6 +265,7 @@ function EditDealerMappingCell({
       // Reset filters when the popover closes
       setSelectedArea(null);
       setSelectedRegion(null);
+      setDealerSearchQuery(''); // Clear search on close
       return;
     }
     // Only fetch if locations are not loading
@@ -301,6 +303,15 @@ function EditDealerMappingCell({
       }
     })();
   }, [isOpen, member.id, selectedArea, selectedRegion, locationsLoading]);
+
+  // Filter dealer options based on search query
+  const filteredDealerOptions = useMemo(() => {
+    if (!dealerSearchQuery) {
+      return dealerOptions;
+    }
+    const query = dealerSearchQuery.toLowerCase();
+    return dealerOptions.filter((option) => option.label.toLowerCase().includes(query));
+  }, [dealerOptions, dealerSearchQuery]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -378,7 +389,7 @@ function EditDealerMappingCell({
           <div className="py-4 text-center text-gray-500">Loading dealers...</div>
         ) : (
           <MultiSelect
-            options={dealerOptions}
+            options={filteredDealerOptions}
             selectedValues={selectedDealerIds}
             onValueChange={setSelectedDealerIds}
             placeholder="Assign dealers to salesmen.."
