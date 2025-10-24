@@ -22,7 +22,7 @@ export function useDealerLocations() {
   React.useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/add-dealers/dealer-locations`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement/dealer-locations`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

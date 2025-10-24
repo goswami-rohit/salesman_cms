@@ -207,13 +207,73 @@ model Dealer {
   brandSelling   String[] @map("brand_selling") // Array of strings
   feedbacks      String   @db.VarChar(500)
   remarks        String?  @db.VarChar(500)
+
+  // --- Verification Status ---
+  verificationStatus             String    @map("verification_status") @db.VarChar(50) @default("PENDING") // New Status Field
+
+  // --- Contact & Business Info ---
+  whatsappNo                     String?   @map("whatsapp_no") @db.VarChar(20)
+  emailId                        String?   @map("email_id") @db.VarChar(255)
+  businessType                   String?   @map("business_type") @db.VarChar(100)
+
+  // --- Statutory IDs ---
+  gstinNo                        String?   @map("gstin_no") @db.VarChar(20) // GSTIN no. (string)
+  panNo                          String?   @map("pan_no") @db.VarChar(20) // PAN no. (string)
+  tradeLicNo                     String?   @map("trade_lic_no") @db.VarChar(150) // Trade Lic (string)
+  aadharNo                       String?   @map("aadhar_no") @db.VarChar(20) // Aadhar No (string)
+
+  // --- Godown Details ---
+  godownSizeSqFt                 Int?      @map("godown_size_sqft") // Godown Size in sq ft
+  godownCapacityMTBags           String?   @map("godown_capacity_mt_bags") // Capacity in (MT/Bags)
+  godownAddressLine              String?   @map("godown_address_line") @db.VarChar(500) // Godown Address
+  godownLandMark                 String?   @map("godown_landmark") @db.VarChar(255) // LandMark
+  godownDistrict                 String?   @map("godown_district") @db.VarChar(100) // District
+  godownArea                     String?   @map("godown_area") @db.VarChar(255) // Area
+  godownRegion                   String?   @map("godown_region") @db.VarChar(100) // Region
+  godownPinCode                  String?   @map("godown_pincode") @db.VarChar(20) // PinCode
+
+  // --- Residential Address Details (Distinct from Godown/Primary) ---
+  residentialAddressLine         String?   @map("residential_address_line") @db.VarChar(500) // Residential Address of Dealer
+  residentialLandMark            String?   @map("residential_landmark") @db.VarChar(255) // landMark
+  residentialDistrict            String?   @map("residential_district") @db.VarChar(100) // District
+  residentialArea                String?   @map("residential_area") @db.VarChar(255) // Area
+  residentialRegion              String?   @map("residential_region") @db.VarChar(100) // Region
+  residentialPinCode             String?   @map("residential_pincode") @db.VarChar(20) // PinCode
+
+  // --- Bank Details (Individual fields as requested) ---
+  bankAccountName                String?   @map("bank_account_name") @db.VarChar(255) // Account Name
+  bankName                       String?   @map("bank_name") @db.VarChar(255) // Name of Bank
+  bankBranchAddress              String?   @map("bank_branch_address") @db.VarChar(500) // Branch Address
+  bankAccountNumber              String?   @map("bank_account_number") @db.VarChar(50) // Account Number
+  bankIfscCode                   String?   @map("bank_ifsc_code") @db.VarChar(50) // IFSC code
+
+  // --- Sales & Promoter Details ---
+  brandName                      String?   @map("brand_name") @db.VarChar(255) // Brands sold by the dealer
+  monthlySaleMT                  Decimal?  @map("monthly_sale_mt") @db.Decimal(10, 2) // Monthly Sale(MT)
+  noOfDealers                    Int?      @map("no_of_dealers") // No of Dealers
+  areaCovered                    String?   @map("area_covered") @db.VarChar(255) // Area Covered
+  projectedMonthlySalesBestCementMT Decimal? @map("projected_monthly_sales_best_cement_mt") @db.Decimal(10, 2) // projected Monthly sales of best Cement (MT per month)
+  noOfEmployeesInSales           Int?      @map("no_of_employees_in_sales") // No.of employees in sales
+
+  // --- Declaration ---
+  declarationName                String?   @map("declaration_name") @db.VarChar(255) // Name
+  declarationPlace               String?   @map("declaration_place") @db.VarChar(100) // Place
+  declarationDate                DateTime? @map("declaration_date") @db.Date // Date
+
+  // --- Document/Image URLs ---
+  tradeLicencePicUrl             String?   @map("trade_licence_pic_url") @db.VarChar(500)
+  shopPicUrl                     String?   @map("shop_pic_url") @db.VarChar(500)
+  dealerPicUrl                   String?   @map("dealer_pic_url") @db.VarChar(500)
+  blankChequePicUrl              String?   @map("blank_cheque_pic_url") @db.VarChar(500)
+  partnershipDeedPicUrl          String?   @map("partnership_deed_pic_url") @db.VarChar(500) // Optional
+
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   parentDealer    Dealer?  @relation("SubDealers", fields: [parentDealerId], references: [id], onDelete: SetNull)
   subDealers      Dealer[] @relation("SubDealers")
-  dailyTasks      DailyTask[] @relation("DealerDailyTasks") // NEW: Tasks related to this dealer (Named relation)
+  dailyTasks      DailyTask[] @relation("DealerDailyTasks")
   salesOrders     SalesOrder[]
 
   reportsAndScores DealerReportsAndScores? @relation("DealerScores")

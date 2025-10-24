@@ -1,4 +1,4 @@
-// src/app/api/dashboardPagesAPI/add-dealers/dealer-locations/route.ts
+// src/app/api/dashboardPagesAPI/dealerManagement/dealer-locations/route.ts
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';

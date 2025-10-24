@@ -9,5 +9,6 @@ export const brands = [
 
 export const dealerTypes = ["Dealer-Best", "Sub Dealer-Best", "Dealer-Non Best", "Sub Dealer-Non Best"];
 
+export const dealerVerification = ["PENDING", "VERIFIED", "REJECTED"]
 
 export const units = ["MT", "KG", "Bags"];

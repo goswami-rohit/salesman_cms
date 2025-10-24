@@ -51,7 +51,7 @@ const ITEM_PERMISSIONS = {
   "Team Overview": 'teamOverview' as const,
   "Users": 'users' as const,
   "Assign Tasks": 'assignTasks' as const,
-  "Add Dealers|Sub-Dealers": 'addDealers' as const,
+  "Dealer Management": 'dealerManagement' as const,
 
   "Reports": 'reports' as const,
   "Salesman Attendance": 'salesmanAttendance' as const,
@@ -116,9 +116,14 @@ const menuItems: MenuItem[] = [
             permission: ITEM_PERMISSIONS["Assign Tasks"]
           },
           {
-            title: "Add Dealers|Sub-Dealers",
-            url: "/dashboard/addDealers",
-            permission: ITEM_PERMISSIONS["Add Dealers|Sub-Dealers"]
+            title: "Dealer Management",
+            url: "/dashboard/dealerManagement",
+            permission: ITEM_PERMISSIONS["Dealer Management"]
+          },
+          {
+            title: "Salesman Leaves",
+            url: "/dashboard/slmLeaves",
+            permission: ITEM_PERMISSIONS["Salesman Leaves"]
           },
         ],
       },
@@ -140,11 +145,6 @@ const menuItems: MenuItem[] = [
             title: "Salesman Attendance",
             url: "/dashboard/slmAttendance",
             permission: ITEM_PERMISSIONS["Salesman Attendance"]
-          },
-          {
-            title: "Salesman Leaves",
-            url: "/dashboard/slmLeaves",
-            permission: ITEM_PERMISSIONS["Salesman Leaves"]
           },
           {
             title: "Salesman Geotracking",

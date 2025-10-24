@@ -1,4 +1,4 @@
-// src/app/dashboard/addDealers/page.tsx
+// src/app/dashboard/addDealers/addAndListDealers.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -56,6 +56,7 @@ const dealerSchema = z.object({
     remarks: z.string().nullable().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
+    verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']).optional(), // Include verification status
 });
 
 // Schema for form submission, which transforms string inputs to numbers.
@@ -85,7 +86,7 @@ const addDealerFormSchema = z.object({
 
 type DealerRecord = z.infer<typeof dealerSchema>;
 
-export default function AddDealersPage() {
+export default function AddAndListDealersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formErrors, setFormErrors] = useState<z.ZodIssue[]>([]);
@@ -121,14 +122,15 @@ export default function AddDealersPage() {
     const [parentDealerId, setParentDealerId] = useState<string | null>(null);
     const isSubDealer = type.startsWith("Sub Dealer");
 
-    const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/add-dealers`;
+    const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement`;
 
-    // --- Fetch Dealers for the Table ---
+    // --- Fetch Dealers for the Table (UPDATED to fetch ONLY VERIFIED dealers) ---
     const fetchDealers = useCallback(async () => {
         setLoadingDealers(true);
         setErrorDealers(null);
         try {
-            const response = await fetch(apiURI);
+            // Fetch ONLY VERIFIED dealers by passing a query parameter
+            const response = await fetch(`${apiURI}?status=VERIFIED`);
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('API Response Error Text:', errorText);
@@ -137,11 +139,14 @@ export default function AddDealersPage() {
             const data = await response.json();
             const validatedDealers = z.array(dealerSchema).parse(data);
             setDealers(validatedDealers);
-            toast.success('Dealers loaded successfully!');
+            toast.success('Verified dealers loaded successfully!');
         } catch (e: any) {
             console.error("Failed to fetch dealers:", e);
-            toast.error(`Failed to load dealers: ${e.message || "An unknown error occurred."}`);
-            setErrorDealers(e.message);
+            const message = e instanceof z.ZodError 
+                ? "Data validation failed. Schema mismatch with backend." 
+                : (e.message || "An unknown error occurred.");
+            toast.error(`Failed to load dealers: ${message}`);
+            setErrorDealers(message);
         } finally {
             setLoadingDealers(false);
         }
@@ -312,6 +317,10 @@ export default function AddDealersPage() {
         {
             accessorKey: 'createdAt', header: 'Added On',
             cell: info => new Date(info.getValue() as string).toLocaleDateString()
+        },
+        {
+            accessorKey: 'verificationStatus', header: 'Status',
+            cell: info => (info.getValue() as string[])
         },
         {
             id: 'actions',

@@ -1,11 +1,11 @@
-// src/app/api/dashboardPagesAPI/add-dealers/route.ts
+// src/app/api/dashboardPagesAPI/dealerManagement/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 import { z } from 'zod';
 
 // Schema for the data returned by the GET endpoint (full dealer record)
-// This schema includes 'id', 'createdAt', 'updatedAt'
+// This schema includes 'id', 'createdAt', 'updatedAt' 
 const getDealerResponseSchema = z.object({
     id: z.string().uuid(), // Expecting a UUID string
     name: z.string().min(1, "Dealer name is required."),
@@ -26,6 +26,7 @@ const getDealerResponseSchema = z.object({
     brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
     feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
     remarks: z.string().nullable().optional(), // Optional field
+    verificationStatus: z.string().optional(),
     createdAt: z.string(), // Expecting ISO string
     updatedAt: z.string(), // Expecting ISO string
 });
@@ -173,12 +174,13 @@ export async function GET() {
             return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
         }
 
-        // 4. Fetch Dealers for the current user's company
+        // 4. Fetch Dealers for the current user's company, filtering for 'Verified' status
         const dealers = await prisma.dealer.findMany({
             where: {
                 user: { // Filter dealers by the company of the user who created them
                     companyId: currentUser.companyId,
                 },
+                verificationStatus: 'VERIFIED', // <-- ADDED FILTER: Only fetch verified dealers
             },
             include: {
                 parentDealer: { // include relation to parent dealer
@@ -224,6 +226,7 @@ export async function GET() {
             brandSelling: dealer.brandSelling,
             feedbacks: dealer.feedbacks,
             remarks: dealer.remarks,
+            verificationStatus: dealer.verificationStatus,
             createdAt: dealer.createdAt.toISOString(),
             updatedAt: dealer.updatedAt.toISOString(),
             parentDealerName: dealer.parentDealer?.name || null,
