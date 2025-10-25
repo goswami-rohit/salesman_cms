@@ -326,35 +326,6 @@ async function getSalesmanLeaveApplicationsForCsv(companyId: number) {
   return formatTableDataForCsv(cleanedLeaves);
 }
 
-async function getClientReportsForCsv(companyId: number) {
-  const reports = await prisma.clientReport.findMany({
-    where: { user: { companyId: companyId } },
-    // Include the user to get their name and email
-    include: {
-      user: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true,
-        }
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  // Map the results to create a salesmanName field
-  const formattedReports = reports.map(report => ({
-    ...report,
-    salesmanName: `${report.user?.firstName || ''} ${report.user?.lastName || ''}`.trim(),
-    salesmanEmail: report.user?.email || '',
-  }));
-
-  // Remove the user object before formatting
-  const cleanedReports = formattedReports.map(({ user, ...rest }) => rest);
-
-  return formatTableDataForCsv(cleanedReports);
-}
-
 async function getCompetitionReportsForCsv(companyId: number) {
   const reports = await prisma.competitionReport.findMany({
     where: { user: { companyId: companyId } },
@@ -575,187 +546,6 @@ async function getDailyTasksForCsv(companyId: number) {
   return [headers, ...dataForCsv];
 }
 
-async function getSalesReportForCsv(companyId: number) {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  // 1. Fetch all users (salesmen) with their area/region
-  const users = await prisma.user.findMany({
-    where: { companyId },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      area: true,
-      region: true,
-      // If you're storing target separately:
-      // targets: {
-      //   where: { month: today.getMonth() + 1, year: today.getFullYear() },
-      //   select: { targetMt: true }
-      // }
-    }
-  });
-
-  const headers = [
-    "Salesman Name", "Area", "Region", "Dealer Type", "Dealer Name", "Sub-Dealer Name", "Monthly Target (MT)", "Till Date Achievement (MT)",
-    "Yesterday's Target (MT)", "Yesterday's Collection (₹)", //"Achievement %",
-    // "Balance Target (MT)", 
-  ];
-
-  const dataForCsv: string[][] = [];
-
-  for (const user of users) {
-    const salesmanName = `${user.firstName} ${user.lastName}`.trim();
-    const area = user.area || '';
-    const region = user.region || '';
-
-    // 2. Get monthly target (from Target table or DailyVisitReport if you hack it in)
-    //const monthlyTarget = user.targets[0]?.targetMt?.toNumber() || 0;
-
-    // 3. Till date achievement = sum of todayOrderMt for current month
-    const tillDate = await prisma.dailyVisitReport.aggregate({
-      where: {
-        userId: user.id,
-        reportDate: {
-          gte: new Date(today.getFullYear(), today.getMonth(), 1),
-          lte: today,
-        }
-      },
-      _sum: { todayOrderMt: true }
-    });
-
-    const tillDateAchievement = tillDate._sum.todayOrderMt?.toNumber() || 0;
-
-    // 3. Yesterday’s all dealer visits
-    const yesterdayReports = await prisma.dailyVisitReport.findMany({
-      where: {
-        userId: user.id,
-        reportDate: yesterday,
-      },
-      select: {
-        todayOrderMt: true,
-        todayCollectionRupees: true,
-        dealerName: true,
-        subDealerName: true,
-        dealerType: true,
-        //monthlyTarget: true, // only if you add this col in DailyVisitReport
-      }
-    });
-
-    if (yesterdayReports.length === 0) {
-      // still push one row for salesman even if no dealer entry
-      dataForCsv.push([
-        salesmanName,
-        area,
-        region,
-        "",             // DealerType
-        "",             // DealerName 
-        "",             // SubDealerName
-        "0",            // MonthlyTarget placeholder
-        tillDateAchievement.toString(),
-        "0",
-        "0"
-      ]);
-    } else {
-      // push one row per dealer entry
-      for (const report of yesterdayReports) {
-        dataForCsv.push([
-          salesmanName,
-          area,
-          region,
-          report.dealerType || "",
-          report.dealerName || "",
-          report.subDealerName || "",
-          //report.monthlyTarget?.toString() || "0",
-          tillDateAchievement.toString(),
-          report.todayOrderMt?.toString() || "0",
-          report.todayCollectionRupees?.toString() || "0",
-        ]);
-      }
-    }
-  }
-
-  return [headers, ...dataForCsv];
-}
-
-async function getCollectionReportsForCsv(companyId: number) {
-  const reports = await prisma.collectionReport.findMany({
-    where: { dealer: { user: { companyId: companyId } } },
-    include: {
-      dvr: {
-        select: {
-          id: true,
-          // You can include more fields from DailyVisitReport if needed later
-        },
-      },
-      dealer: {
-        select: {
-          id: true,
-          name: true,
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const formattedReports = reports.map(report => ({
-    id: report.id,
-    dvrId: report.dvrId,
-    dealerId: report.dealerId,
-    dealerName: report.dealer?.name || '',
-    salesmanName: `${report.dealer?.user?.firstName || ''} ${report.dealer?.user?.lastName || ''}`.trim(), // Get the salesman's name from the dealer's user relation
-    collectedAmount: report.collectedAmount,
-    collectedOnDate: report.collectedOnDate,
-    weeklyTarget: report.weeklyTarget,
-    tillDateAchievement: report.tillDateAchievement,
-    yesterdayTarget: report.yesterdayTarget,
-    yesterdayAchievement: report.yesterdayAchievement,
-    createdAt: report.createdAt,
-    updatedAt: report.updatedAt,
-  }));
-  return formatTableDataForCsv(formattedReports);
-}
-
-async function getDDPForCsv(companyId: number) {
-  const ddpRecords = await prisma.dDP.findMany({
-    where: { user: { companyId: companyId } },
-    include: {
-      user: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true,
-        },
-      },
-      dealer: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: { creationDate: 'desc' },
-  });
-
-  const formattedRecords = ddpRecords.map(record => ({
-    id: record.id,
-    creationDate: record.creationDate,
-    status: record.status,
-    obstacle: record.obstacle,
-    dealerName: record.dealer?.name || '',
-    salesmanName: `${record.user?.firstName || ''} ${record.user?.lastName || ''}`.trim(),
-    salesmanEmail: record.user?.email || '',
-  }));
-
-  return formatTableDataForCsv(formattedRecords);
-}
-
 async function getDealerBrandCapacitiesForCsv(companyId: number) {
   const mappings = await prisma.dealerBrandMapping.findMany({
     where: {
@@ -929,10 +719,6 @@ export async function GET(request: NextRequest) {
         csvData = await getSalesmanLeaveApplicationsForCsv(currentUser.companyId);
         filename = `salesman-leave-applications-${Date.now()}`;
         break;
-      case 'clientReports':
-        csvData = await getClientReportsForCsv(currentUser.companyId);
-        filename = `client-reports-${Date.now()}`;
-        break;
       case 'competitionReports':
         csvData = await getCompetitionReportsForCsv(currentUser.companyId);
         filename = `competition-reports-${Date.now()}`;
@@ -948,18 +734,6 @@ export async function GET(request: NextRequest) {
       case 'dailyTasks':
         csvData = await getDailyTasksForCsv(currentUser.companyId);
         filename = `daily-tasks-${Date.now()}`;
-        break;
-      case 'salesReport':
-        csvData = await getSalesReportForCsv(currentUser.companyId);
-        filename = `sales-reports-${Date.now()}`;
-        break;
-      case 'collectionReport':
-        csvData = await getCollectionReportsForCsv(currentUser.companyId);
-        filename = `collection-reports-${Date.now()}`;
-        break;
-      case 'ddpReport':
-        csvData = await getDDPForCsv(currentUser.companyId);
-        filename = `DDP-reports-${Date.now()}`;
         break;
       case 'dealerBrandCapacities':
         csvData = await getDealerBrandCapacitiesForCsv(currentUser.companyId);

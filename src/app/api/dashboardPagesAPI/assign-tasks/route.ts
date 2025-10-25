@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 // Zod schema for validating the POST request body when assigning tasks
-const assignTaskSchema = z.object({
+export const assignTaskSchema = z.object({
   salesmanUserIds: z.array(z.number().int()).min(1, "At least one salesman must be selected."),
   taskDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Task date must be in YYYY-MM-DD format."),
   visitType: z.string(),
@@ -15,7 +15,7 @@ const assignTaskSchema = z.object({
 });
 
 // Zod schema for the GET response for daily tasks - DEFINED HERE
-const dailyTaskSchema = z.object({
+export const dailyTaskSchema = z.object({
   id: z.string(),
   salesmanName: z.string(),
   assignedByUserName: z.string(),

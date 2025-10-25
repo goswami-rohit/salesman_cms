@@ -1,4 +1,4 @@
-// app/dashboard/salesAndCollectionReports/salesOrders.tsx
+// app/dashboard/salesCollectionReports.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -13,30 +13,9 @@ import {
   PaginationLink,
   PaginationNext,
 } from '@/components/ui/pagination';
-
 import { DataTableReusable } from '@/components/data-table-reusable';
+import { salesOrderSchema } from '@/app/api/dashboardPagesAPI/reports/sales-orders/route'
 
-// Zod schema for SalesOrder (matches API route)
-const salesOrderSchema = z.object({
-  id: z.string().uuid(),
-  salesmanName: z.string(),
-  salesmanRole: z.string(),
-  dealerName: z.string(),
-  dealerType: z.string(),
-  dealerPhone: z.string(),
-  dealerAddress: z.string(),
-  area: z.string(),
-  region: z.string(),
-  quantity: z.number(),
-  unit: z.string(),
-  orderTotal: z.number(),
-  advancePayment: z.number(),
-  pendingPayment: z.number(),
-  estimatedDelivery: z.string(), // YYYY-MM-DD
-  remarks: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
 type SalesOrder = z.infer<typeof salesOrderSchema>;
 
 // Column definitions for the sales order table
@@ -120,7 +99,7 @@ const SalesOrdersTable = () => {
   useEffect(() => {
     const fetchSalesOrders = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/sales-orders`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/sales-orders`);
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to fetch sales orders.');

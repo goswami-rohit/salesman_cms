@@ -31,33 +31,7 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
 import { dealerTypes, brands } from '@/lib/Reusable-constants'
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
-
-
-// --- Zod Schema for GET response validation (DUPLICATED FOR CLIENT-SIDE) ---
-// This schema is now defined directly in the client component to avoid server-side imports.
-const dealerSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1, "Dealer name is required."),
-    type: z.string().min(1, "Dealer type is required."),
-    parentDealerName: z.string().nullable().optional(),
-    region: z.string().min(1, "Region is required."),
-    area: z.string().min(1, "Area is required."),
-    phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
-    address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    pinCode: z.string().nullable().optional(),
-    latitude: z.number().nullable().optional(),
-    longitude: z.number().nullable().optional(),
-    dateOfBirth: z.string().nullable().optional(),       // ISO date
-    anniversaryDate: z.string().nullable().optional(),   // ISO date
-    totalPotential: z.number().nonnegative("Total potential must be 0 or a positive number."),
-    bestPotential: z.number().nonnegative("Best potential must be 0 or positive number."),
-    brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
-    feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
-    remarks: z.string().nullable().optional(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-    verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']).optional(), // Include verification status
-});
+import { getDealersSchema} from '@/app/api/dashboardPagesAPI/dealerManagement/route';
 
 // Schema for form submission, which transforms string inputs to numbers.
 const addDealerFormSchema = z.object({
@@ -84,7 +58,7 @@ const addDealerFormSchema = z.object({
     remarks: z.string().nullable().optional(),
 });
 
-type DealerRecord = z.infer<typeof dealerSchema>;
+type DealerRecord = z.infer<typeof getDealersSchema>;
 
 export default function AddAndListDealersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -137,7 +111,7 @@ export default function AddAndListDealersPage() {
                 throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
             const data = await response.json();
-            const validatedDealers = z.array(dealerSchema).parse(data);
+            const validatedDealers = z.array(getDealersSchema).parse(data);
             setDealers(validatedDealers);
             toast.success('Verified dealers loaded successfully!');
         } catch (e: any) {

@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 // Define Zod schema for the GeoTracking data returned by this API
-const geoTrackingSchema = z.object({
+export const geoTrackingSchema = z.object({
   id: z.string(),
   // User / company info
   salesmanName: z.string().nullable().optional(),

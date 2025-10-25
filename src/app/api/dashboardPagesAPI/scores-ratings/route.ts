@@ -11,7 +11,7 @@ import { z } from 'zod'; // Import Zod for schema validation
 // This ensures that the data sent to the frontend is correctly typed and validated.
 
 // Schema for Salesperson Ratings
-const salesmanRatingSchema = z.object({
+export const salesmanRatingSchema = z.object({
   id: z.number(),
   salesPersonName: z.string(),
   area: z.string(),
@@ -20,7 +20,7 @@ const salesmanRatingSchema = z.object({
 });
 
 // Schema for Dealer Scores
-const dealerScoreSchema = z.object({
+export const dealerScoreSchema = z.object({
   id: z.string(),
   dealerName: z.string(),
   dealerScore: z.number(),

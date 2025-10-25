@@ -16,15 +16,7 @@ import {
 
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-// Define the schema for the data fetched from the API
-const salesmanRatingSchema = z.object({
-  id: z.number(),
-  salesPersonName: z.string(),
-  area: z.string(),
-  region: z.string(),
-  rating: z.number().int(),
-});
+import { salesmanRatingSchema } from '@/app/api/dashboardPagesAPI/scores-ratings/route';
 
 // Infer the TypeScript type from the Zod schema
 type SalesmanRating = z.infer<typeof salesmanRatingSchema>;

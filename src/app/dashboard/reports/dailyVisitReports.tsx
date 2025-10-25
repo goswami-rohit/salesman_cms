@@ -1,4 +1,4 @@
-// src/app/dashboard/dailyVisitReports/page.tsx
+// src/app/dashboard/dailyVisitReports.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -19,34 +19,7 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
-
-// Zod schema
-const dailyVisitReportSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>,
-  salesmanName: z.string(),
-  reportDate: z.string(),
-  dealerType: z.string(),
-  dealerName: z.string().nullable(),
-  subDealerName: z.string().nullable(),
-  location: z.string(),
-  latitude: z.number(),
-  longitude: z.number(),
-  visitType: z.string(),
-  dealerTotalPotential: z.number(),
-  dealerBestPotential: z.number(),
-  brandSelling: z.array(z.string()),
-  contactPerson: z.string().nullable(),
-  contactPersonPhoneNo: z.string().nullable(),
-  todayOrderMt: z.number(),
-  todayCollectionRupees: z.number(),
-  feedbacks: z.string(),
-  solutionBySalesperson: z.string().nullable(),
-  anyRemarks: z.string().nullable(),
-  checkInTime: z.string(),
-  checkOutTime: z.string().nullable(),
-  inTimeImageUrl: z.string().nullable(),
-  outTimeImageUrl: z.string().nullable(),
-});
+import { dailyVisitReportSchema } from '@/app/api/dashboardPagesAPI/reports/daily-visit-reports/route'
 
 type DailyVisitReport = z.infer<typeof dailyVisitReportSchema>;
 const columnHelper = createColumnHelper<DailyVisitReport>();
@@ -64,7 +37,7 @@ export default function DailyVisitReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/daily-visit-reports`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/daily-visit-reports`);
       if (!response.ok) {
         if (response.status === 401) {
           toast.error('You are not authenticated. Redirecting to login.');
@@ -126,6 +99,10 @@ export default function DailyVisitReportsPage() {
     columnHelper.accessor('visitType', { header: 'Visit Type' }),
     columnHelper.accessor('todayOrderMt', { header: 'Order (MT)', cell: info => info.getValue().toFixed(2) }),
     columnHelper.accessor('todayCollectionRupees', { header: 'Collection (₹)', cell: info => info.getValue().toFixed(2) }),
+    columnHelper.accessor('overdueAmount', { 
+      header: 'Overdue (₹)', 
+      cell: info => info.getValue() ? info.getValue().toFixed(2) : '0.00' 
+    }),
     columnHelper.accessor('feedbacks', {
       header: 'Feedbacks',
       cell: info => <span className="max-w-[250px] truncate block">{info.getValue()}</span>

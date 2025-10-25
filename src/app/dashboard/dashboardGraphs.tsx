@@ -108,7 +108,7 @@ export default function DashboardGraphs() {
       // Pull geo, dvr, and users
       const [geoRes, dailyRes, usersRes] = await Promise.all([
         fetch(`${baseUrl}/api/dashboardPagesAPI/slm-geotracking`, { cache: 'no-store' }),
-        fetch(`${baseUrl}/api/dashboardPagesAPI/daily-visit-reports`, { cache: 'no-store' }),
+        fetch(`${baseUrl}/api/dashboardPagesAPI/reports/daily-visit-reports`, { cache: 'no-store' }),
         fetch(`${baseUrl}/api/users`, { cache: 'no-store' }),
       ]);
 

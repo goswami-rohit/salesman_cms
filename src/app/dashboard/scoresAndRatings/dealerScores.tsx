@@ -16,18 +16,7 @@ import {
 
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-// Define the schema for the data fetched from the API
-const dealerScoreSchema = z.object({
-  id: z.string(),
-  dealerName: z.string(),
-  dealerScore: z.number(),
-  trustWorthinessScore: z.number(),
-  creditWorthinessScore: z.number(),
-  orderHistoryScore: z.number(),
-  visitFrequencyScore: z.number(),
-  lastUpdatedDate: z.string().date(),
-});
+import { dealerScoreSchema } from '@/app/api/dashboardPagesAPI/scores-ratings/route';
 
 // Infer the TypeScript type from the Zod schema
 type DealerScore = z.infer<typeof dealerScoreSchema>;

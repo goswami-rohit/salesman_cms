@@ -1,8 +1,8 @@
 // src/app/users/userManagement.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, UserCheck, UserX, Mail } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,14 +20,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Card,
   CardContent,
@@ -48,8 +40,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-// Define the valid regions and areas
 import { useUserLocations } from '@/components/reusable-user-locations';
+
+// 1. Corrected Import: Using DataTableReusable as specified
+import { DataTableReusable } from '@/components/data-table-reusable';
+import { ColumnDef } from '@tanstack/react-table';
 
 interface User {
   id: number;
@@ -84,6 +79,39 @@ interface AdminUser {
 interface Props {
   adminUser: AdminUser;
 }
+
+// Helper function moved outside component to avoid re-creation
+const getRoleBadgeVariant = (role: string) => {
+  switch (role) {
+    case 'president':
+      return 'destructive';
+    case 'senior-general-manager':
+      return 'default';
+    case 'general-manager':
+      return 'secondary';
+    case 'regional-sales-manager':
+      return 'outline';
+    case 'area-sales-manager':
+      return 'destructive';
+    case 'senior-manager':
+      return 'default';
+    case 'manager':
+      return 'secondary';
+    case 'assistant-manager':
+      return 'outline';
+    case 'senior-executive':
+    case 'executive':
+    case 'junior-executive':
+      return 'outline';
+    default:
+      return 'outline';
+  }
+};
+
+const isUserActive = (workosUserId: string | null) => {
+  return workosUserId && !workosUserId.startsWith('pending_') && !workosUserId.startsWith('temp_');
+};
+
 
 export default function UsersManagement({ adminUser }: Props) {
   const [users, setUsers] = useState<User[]>([]);
@@ -270,39 +298,260 @@ export default function UsersManagement({ adminUser }: Props) {
     setError('');
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'president':
-        return 'destructive'; // A prominent red for the highest-level role
-      case 'senior-general-manager':
-        return 'default';
-      case 'general-manager':
-        return 'secondary';
-      case 'regional-sales-manager':
-        return 'outline';
-      case 'area-sales-manager':
-        return 'destructive'; // Reusing 'destructive' for a key sales role
-      case 'senior-manager':
-        return 'default';
-      case 'manager':
-        return 'secondary';
-      case 'assistant-manager':
-        return 'outline';
-      case 'senior-executive':
-        return 'default';
-      case 'executive':
-        return 'secondary';
-      case 'junior-executive':
-        return 'outline';
-      default:
-        return 'outline'; // A safe default for any unrecognized roles
-    }
-  };
 
+  // 2. Define Columns for the DataTable
+  const columns: ColumnDef<User>[] = useMemo(() => [
+    {
+      accessorKey: "id",
+      header: "User ID",
+      cell: ({ row }) => <span className="text-xs font-mono">{row.original.id}</span>
+    },
+    {
+      accessorKey: "fullName",
+      header: "Name",
+      // Custom sorting function based on firstName and lastName
+      sortingFn: (rowA, rowB, columnId) => {
+        const nameA = `${rowA.original.firstName} ${rowA.original.lastName}`;
+        const nameB = `${rowB.original.firstName} ${rowB.original.lastName}`;
+        return nameA.localeCompare(nameB);
+      },
+      cell: ({ row }) => (
+        <div className="font-medium">
+          {row.original.firstName} {row.original.lastName}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+    },
+    {
+      accessorKey: "phoneNumber",
+      header: "Phone",
+      cell: ({ row }) => row.original.phoneNumber || '-',
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ row }) => (
+        <Badge variant={getRoleBadgeVariant(row.original.role)}>
+          {row.original.role.replace(/-/g, ' ')}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "region",
+      header: "Region",
+      cell: ({ row }) => row.original.region || '-',
+    },
+    {
+      accessorKey: "area",
+      header: "Area",
+      cell: ({ row }) => row.original.area || '-',
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const user = row.original;
+        const isActive = isUserActive(user.workosUserId);
+        return (
+          <div className="flex items-center space-x-2">
+            {isActive ? (
+              <>
+                <UserCheck className="w-4 h-4 text-green-500" />
+                <span className="text-green-600 text-sm">Active</span>
+              </>
+            ) : (
+              <>
+                <UserX className="w-4 h-4 text-orange-500" />
+                <span className="text-orange-600 text-sm">Pending</span>
+              </>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex items-center space-x-2">
+            {/* Edit Dialog */}
+            <Dialog open={editingUser?.id === user.id} onOpenChange={(open) => !open && setEditingUser(null)}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => startEdit(user)}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit User</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleUpdateUser} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email Address</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="user@example.com"
+                      required
+                      disabled
+                    />
+                  </div>
 
-  const isUserActive = (workosUserId: string | null) => {
-    return workosUserId && !workosUserId.startsWith('pending_') && !workosUserId.startsWith('temp_');
-  };
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-firstName">First Name</Label>
+                      <Input
+                        id="edit-firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        placeholder="John"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-lastName">Last Name</Label>
+                      <Input
+                        id="edit-lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        placeholder="Doe"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phoneNumber">Phone Number</Label>
+                    <Input
+                      id="edit-phoneNumber"
+                      type="tel"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-role">Role</Label>
+                    <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="president">President</SelectItem>
+                        <SelectItem value="senior-general-manager">Senior General Manager</SelectItem>
+                        <SelectItem value="general-manager">General Manager</SelectItem>
+                        <SelectItem value="regional-sales-manager">Regional Sales Manager</SelectItem>
+                        <SelectItem value="area-sales-manager">Area Sales Manager</SelectItem>
+                        <SelectItem value="senior-manager">Senior Manager</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="assistant-manager">Assistant Manager</SelectItem>
+                        <SelectItem value="senior-executive">Senior Executive</SelectItem>
+                        <SelectItem value="executive">Executive</SelectItem>
+                        <SelectItem value="junior-executive">Junior Executive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-region">Region</Label>
+                      <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Dynamic regions from the hook */}
+                          {locations.regions.map(region => (
+                            <SelectItem key={region} value={region}>{region}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-area">Area</Label>
+                      <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Dynamic areas from the hook */}
+                          {locations.areas.map(area => (
+                            <SelectItem key={area} value={area}>{area}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2 pt-4">
+                    <Button type="submit" disabled={loading} className="flex-1">
+                      {loading ? 'Updating...' : 'Update User'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingUser(null);
+                        resetForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Dialog - Conditional Rendering */}
+            {user.id !== adminUser.id && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete User</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {user.firstName} {user.lastName}?
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDeleteUser(user.id, user.workosUserId)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        );
+      },
+    },
+  ], [editingUser, formData, loading, locations.areas, locations.regions, adminUser.id]);
+
 
   if (loading || locationsLoading) {
     return (
@@ -421,22 +670,30 @@ export default function UsersManagement({ adminUser }: Props) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="region">Region</Label>
-                    <Input
-                      id="region"
-                      placeholder="Enter Region"
-                      value={formData.region}
-                      onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                    />
+                    <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations.regions.map(region => (
+                          <SelectItem key={region} value={region}>{region}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="area">Area</Label>
-                    <Input
-                      id="area"
-                      placeholder="Enter Area"
-                      value={formData.area}
-                      onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                    />
+                    <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Area" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations.areas.map(area => (
+                          <SelectItem key={area} value={area}>{area}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -480,7 +737,7 @@ export default function UsersManagement({ adminUser }: Props) {
           </Alert>
         )}
 
-        {/* Users Table */}
+        {/* Users Table (now using DataTableReusable component) */}
         <Card>
           <CardHeader>
             <CardTitle>Team Members</CardTitle>
@@ -489,230 +746,12 @@ export default function UsersManagement({ adminUser }: Props) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>UserId</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Area</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell className="font-medium">
-                      {user.firstName} {user.lastName}
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phoneNumber || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.region || '-'}</TableCell>
-                    <TableCell>{user.area || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {isUserActive(user.workosUserId) ? (
-                          <>
-                            <UserCheck className="w-4 h-4 text-green-500" />
-                            <span className="text-green-600 text-sm">Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserX className="w-4 h-4 text-orange-500" />
-                            <span className="text-orange-600 text-sm">Pending</span>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {/* Edit Dialog */}
-                        <Dialog open={editingUser?.id === user.id} onOpenChange={(open) => !open && setEditingUser(null)}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => startEdit(user)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Edit User</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleUpdateUser} className="space-y-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="edit-email">Email Address</Label>
-                                <Input
-                                  id="edit-email"
-                                  type="email"
-                                  value={formData.email}
-                                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                  placeholder="user@example.com"
-                                  required
-                                />
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-firstName">First Name</Label>
-                                  <Input
-                                    id="edit-firstName"
-                                    value={formData.firstName}
-                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                    placeholder="John"
-                                    required
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-lastName">Last Name</Label>
-                                  <Input
-                                    id="edit-lastName"
-                                    value={formData.lastName}
-                                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                    placeholder="Doe"
-                                    required
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor="edit-phoneNumber">Phone Number</Label>
-                                <Input
-                                  id="edit-phoneNumber"
-                                  type="tel"
-                                  value={formData.phoneNumber}
-                                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                                  placeholder="+1 (555) 123-4567"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor="edit-role">Role</Label>
-                                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="president">President</SelectItem>
-                                    <SelectItem value="senior-general-manager">Senior General Manager</SelectItem>
-                                    <SelectItem value="general-manager">General Manager</SelectItem>
-                                    <SelectItem value="regional-sales-manager">Regional Sales Manager</SelectItem>
-                                    <SelectItem value="area-sales-manager">Area Sales Manager</SelectItem>
-                                    <SelectItem value="senior-manager">Senior Manager</SelectItem>
-                                    <SelectItem value="manager">Manager</SelectItem>
-                                    <SelectItem value="assistant-manager">Assistant Manager</SelectItem>
-                                    <SelectItem value="senior-executive">Senior Executive</SelectItem>
-                                    <SelectItem value="executive">Executive</SelectItem>
-                                    <SelectItem value="junior-executive">Junior Executive</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-region">Region</Label>
-                                  <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {/* Dynamic regions from the hook */}
-                                      {locations.regions.map(region => (
-                                        <SelectItem key={region} value={region}>{region}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-area">Area</Label>
-                                  <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {/* Dynamic areas from the hook */}
-                                      {locations.areas.map(area => (
-                                        <SelectItem key={area} value={area}>{area}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              <div className="flex space-x-2 pt-4">
-                                <Button type="submit" disabled={loading} className="flex-1">
-                                  {loading ? 'Updating...' : 'Update User'}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setEditingUser(null);
-                                    resetForm();
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-
-                        {/* Delete Dialog - Conditional Rendering */}
-                        {user.id !== adminUser.id && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete User</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete {user.firstName} {user.lastName}?
-                                  This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteUser(user.id, user.workosUserId)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {users.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No users found. Create your first user!</p>
-              </div>
-            )}
+            {/* 3. Using DataTableReusable component */}
+            <DataTableReusable 
+              data={users} 
+              columns={columns} 
+              //filterColumn="email" // Allow filtering by email
+            />
           </CardContent>
         </Card>
       </div>

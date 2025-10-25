@@ -1,4 +1,4 @@
-// src/app/dashboard/competitionReports/page.tsx
+// src/app/dashboard/competitionReports.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -31,20 +31,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DataTableReusable } from '@/components/data-table-reusable';
-
-// --- 1. Define Zod Schema for Competition Report Data ---
-const competitionReportSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>,
-  salesmanName: z.string(),
-  brandName: z.string(),
-  date: z.string(), // YYYY-MM-DD string from backend
-  billing: z.string(),
-  nod: z.string(),
-  retail: z.string(),
-  schemesYesNo: z.string(),
-  avgSchemeCost: z.number(),
-  remarks: z.string(),
-});
+import { competitionReportSchema } from '@/app/api/dashboardPagesAPI/reports/competition-reports/route'
 
 // Infer the TypeScript type from the Zod schema
 type CompetitionReport = z.infer<typeof competitionReportSchema>;
@@ -66,7 +53,7 @@ export default function CompetitionReportsPage() {
     setError(null);
     try {
       // Use the new, correct API endpoint
-      const response = await fetch("/api/dashboardPagesAPI/competition-reports");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/competition-reports`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -1,11 +1,43 @@
-// src/app/api/dashboardPagesAPI/dealer-brand-mapping/route.ts
+// src/app/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping/route.ts
 // This API route fetches and consolidates brand capacity data for dealers.
 // It combines information from the Dealer, Brand, and DealerBrandMapping tables
 // to create a single, comprehensive report.
-
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
+import { z } from 'zod'; // Added Zod Import
+
+// --- ZOD SCHEMA DEFINITION (for static fields) ---
+// Since the brand columns are dynamic, we define the required static fields
+// and use .passthrough() to allow any other keys (the brand names) which must be numbers (capacity).
+export const baseDealerBrandMappingSchema = z.object({
+  id: z.string(), // Dealer ID
+  dealerName: z.string(),
+  area: z.string(),
+  totalPotential: z.number(),
+});
+
+// We'll refine the schema later to ensure dynamic keys are numbers, but for a general check, .passthrough() is enough
+export const dealerBrandMappingSchema = baseDealerBrandMappingSchema.passthrough().refine(
+  (data) => {
+    // Custom check: ensure all extra properties (brand capacities) are non-negative numbers
+    for (const key in data) {
+      if (
+        !['id', 'dealerName', 'area', 'totalPotential'].includes(key) &&
+        (typeof data[key] !== 'number' || data[key] < 0)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  },
+  {
+    message: "Dynamic brand capacity fields must be non-negative numbers.",
+    path: ['dynamic_brand_fields'],
+  }
+);
+// -------------------------------------------------
+
 
 // A list of roles that are allowed to access this endpoint.
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
@@ -108,18 +140,25 @@ export async function GET() {
       }
 
       // Add the actual brand capacity to the correct column.
+      // NOTE: capacityMT is Decimal, but .toNumber() is called in aggregation
       aggregatedData[dealerId][brand.name] = capacityMT.toNumber();
     }
 
     // Convert the aggregated object back into a clean array for the frontend.
     const finalData = Object.values(aggregatedData);
 
+    // 6. Added Zod Validation
+    const validatedData = z.array(dealerBrandMappingSchema).parse(finalData);
+
     // Return a success response with the structured data.
-    return NextResponse.json(finalData);
+    return NextResponse.json(validatedData, { status: 200 });
 
   } catch (error) {
     console.error('API Error:', error);
     // Return a generic error message to the client, logging the specific error internally
-    return NextResponse.json({ error: 'Failed to fetch brand mapping data' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch brand mapping data', details: (error as Error).message }, 
+      { status: 500 }
+    );
   }
 }

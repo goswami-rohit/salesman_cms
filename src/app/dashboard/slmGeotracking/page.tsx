@@ -15,41 +15,10 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
-
-// Updated schema to match the data structure from the API
-const geoTrackSchema = z.object({
-  id: z.string(),
-  salesmanName: z.string().nullable(),         // backend returns null if no name
-  employeeId: z.string().nullable(),           // backend returns null if no empId
-  workosOrganizationId: z.string().nullable(), // backend returns null
-  latitude: z.number(),
-  longitude: z.number(),
-  recordedAt: z.string(),
-  totalDistanceTravelled: z.number().nullable().optional(), // backend may return null
-  accuracy: z.number().nullable().optional(),
-  speed: z.number().nullable().optional(),
-  heading: z.number().nullable().optional(),
-  altitude: z.number().nullable().optional(),
-  locationType: z.string().nullable().optional(),
-  activityType: z.string().nullable().optional(),
-  appState: z.string().nullable().optional(),
-  batteryLevel: z.number().nullable().optional(),
-  isCharging: z.boolean().nullable().optional(),
-  networkStatus: z.string().nullable().optional(),
-  ipAddress: z.string().nullable().optional(),
-  siteName: z.string().nullable().optional(),
-  checkInTime: z.string().nullable().optional(),
-  checkOutTime: z.string().nullable().optional(),
-  journeyId: z.string().nullable().optional(),
-  isActive: z.boolean(),
-  destLat: z.number().nullable().optional(),
-  destLng: z.number().nullable().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+import { geoTrackingSchema } from '@/app/api/dashboardPagesAPI/slm-geotracking/route';
 
 // Define a type for the transformed data that we will use in the table
-type GeoTrack = z.infer<typeof geoTrackSchema>;
+type GeoTrack = z.infer<typeof geoTrackingSchema>;
 type DisplayGeoTrack = GeoTrack & { displayDate: string; displayCheckInTime: string; displayCheckOutTime: string };
 
 const ITEMS_PER_PAGE = 10;
@@ -97,7 +66,7 @@ export default function SalesmanGeoTrackingPage() {
       const validatedData = rawData
         .map((item: unknown) => {
           try {
-            return geoTrackSchema.parse(item);
+            return geoTrackingSchema.parse(item);
           } catch (e) {
             console.error('Data validation failed for item:', item, 'ZodError', e);
             return null;

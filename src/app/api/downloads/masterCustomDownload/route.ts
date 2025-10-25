@@ -198,36 +198,6 @@ const modelMap = {
         }));
     },
 
-    clientReports: async (companyId: number) => {
-        const rows = await prisma.clientReport.findMany({
-            where: { user: { companyId } },
-            include: { user: { select: { firstName: true, lastName: true, email: true } } },
-            orderBy: { createdAt: 'desc' },
-        });
-        return rows.map(r => ({
-            id: r.id,
-            dealerType: r.dealerType ?? null,
-            dealerSubDealerName: r.dealerSubDealerName ?? null,
-            location: r.location ?? null,
-            typeBestNonBest: r.typeBestNonBest ?? null,
-            dealerTotalPotential: r.dealerTotalPotential?.toNumber() ?? null,
-            dealerBestPotential: r.dealerBestPotential?.toNumber() ?? null,
-            brandSelling: (r.brandSelling ?? []).join(', '),
-            contactPerson: r.contactPerson ?? null,
-            contactPersonPhoneNo: r.contactPersonPhoneNo ?? null,
-            todayOrderMT: r.todayOrderMT?.toNumber() ?? null,
-            todayCollection: r.todayCollection?.toNumber() ?? null,
-            feedbacks: r.feedbacks ?? null,
-            solutionsAsPerSalesperson: r.solutionsAsPerSalesperson ?? null,
-            anyRemarks: r.anyRemarks ?? null,
-            checkOutTime: r.checkOutTime?.toISOString() ?? null,
-            createdAt: r.createdAt?.toISOString() ?? null,
-            updatedAt: r.updatedAt?.toISOString() ?? null,
-            salesmanName: `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.user?.email || null,
-            salesmanEmail: r.user?.email ?? null,
-        }));
-    },
-
     competitionReports: async (companyId: number) => {
         const rows = await prisma.competitionReport.findMany({
             where: { user: { companyId } },
@@ -358,97 +328,6 @@ const modelMap = {
             assignedByName: `${r.assignedBy?.firstName ?? ''} ${r.assignedBy?.lastName ?? ''}`.trim() || r.assignedBy?.email || null,
             assignedByEmail: r.assignedBy?.email ?? null,
             relatedDealerName: r.relatedDealer?.name ?? null,
-        }));
-    },
-
-    salesReport: async (companyId: number) => {
-        const rows = await prisma.salesReport.findMany({
-            where: {
-                salesPerson: { companyId },
-            },
-            include: {
-                salesPerson: { select: { firstName: true, lastName: true, email: true } },
-                dealer: { select: { name: true, area: true, region: true, type: true, parentDealerId: true } },
-            },
-            orderBy: { date: "desc" },
-        });
-
-        return rows.map((r) => ({
-            id: r.id,
-            salesmanName:
-                `${r.salesPerson?.firstName ?? ""} ${r.salesPerson?.lastName ?? ""}`.trim() ||
-                r.salesPerson?.email ||
-                null,
-            area: r.dealer?.area ?? null,
-            region: r.dealer?.region ?? null,
-            dealerName: r.dealer?.name ?? null,
-            dealerType: r.dealer?.type ?? null,
-            subDealerName: r.dealer?.parentDealerId ? r.dealer?.name : null, // Assuming sub-dealer name is the dealer's name if they have a parent
-            // Convert Decimal types to numbers
-            monthlyTargetMT: r.monthlyTarget?.toNumber() ?? null,
-            tillDateAchievementMT: r.tillDateAchievement?.toNumber() ?? null,
-            yesterdaysTargetMT: r.yesterdayTarget?.toNumber() ?? null,
-            yesterdaysCollectionRupees: r.yesterdayAchievement?.toNumber() ?? null,
-            reportDate: r.date?.toISOString().slice(0, 10) ?? null,
-        }));
-    },
-
-    collectionReport: async (companyId: number) => {
-        const rows = await prisma.collectionReport.findMany({
-            where: { dealer: { userId: { equals: companyId } } },
-            include: {
-                dvr: {
-                    include: {
-                        user: { select: { firstName: true, lastName: true, email: true } },
-                    },
-                },
-                dealer: {
-                    select: { name: true },
-                },
-            },
-            orderBy: { collectedOnDate: "desc" },
-        });
-
-        return rows.map((r) => ({
-            id: r.id,
-            dvrId: r.dvrId ?? null,
-            dealerId: r.dealerId ?? null,
-            dealerName: r.dealer?.name ?? null,
-            salesmanName:
-                `${r.dvr?.user?.firstName ?? ""} ${r.dvr?.user?.lastName ?? ""}`.trim() ||
-                r.dvr?.user?.email ||
-                null,
-            collectedAmount: r.collectedAmount?.toNumber() ?? null,
-            collectedOnDate: r.collectedOnDate?.toISOString().slice(0, 10) ?? null,
-            weeklyTarget: r.weeklyTarget?.toNumber() ?? null,
-            tillDateAchievement: r.tillDateAchievement?.toNumber() ?? null,
-            yesterdayTarget: r.yesterdayTarget?.toNumber() ?? null,
-            yesterdayAchievement: r.yesterdayAchievement?.toNumber() ?? null,
-            createdAt: r.createdAt?.toISOString() ?? null,
-            updatedAt: r.updatedAt?.toISOString() ?? null,
-        }));
-    },
-
-    ddpReport: async (companyId: number) => {
-        const rows = await prisma.dDP.findMany({
-            where: { user: { companyId } },
-            include: {
-                dealer: { select: { name: true } },
-                user: { select: { firstName: true, lastName: true, email: true } },
-            },
-            orderBy: { creationDate: "desc" },
-        });
-        return rows.map((r) => ({
-            id: r.id,
-            creationDate: r.creationDate?.toISOString().slice(0, 10) ?? null,
-            status: r.status ?? null,
-            obstacle: r.obstacle ?? null,
-            dealerName: r.dealer?.name ?? null,
-            salesmanName:
-                `${r.user?.firstName ?? ""} ${r.user?.lastName ?? ""}`.trim() ||
-                r.user?.email ||
-                null,
-            salesmanEmail: r.user?.email ?? null,
         }));
     },
 

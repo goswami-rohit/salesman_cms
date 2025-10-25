@@ -58,13 +58,10 @@ const ITEM_PERMISSIONS = {
   "Salesman Leaves": 'salesmanLeaves' as const,
   "Salesman Geotracking": 'salesmanGeotracking' as const,
   "Daily Visit Reports": 'dailyVisitReports' as const,
-  "Permanent Journey Plan": 'permanentJourneyPlan' as const,
-  "Client Reports": 'clientReports' as const,
-  "Dealer Reports": 'dealerReports' as const,
   "Technical Visit Reports": 'technicalVisitReports' as const,
   "Competition Reports": 'competitionReports' as const,
-  "Sales And Competition Reports": 'salesAndCollectionReports' as const,
-  "Dealer Development And Mapping Reports": 'dealerDevelopmentAndMappingReports' as const,
+  "Sales Order Reports": 'salesAndCollectionReports' as const,
+  "Permanent Journey Plan": 'permanentJourneyPlan' as const,
   "Scores And Ratings": 'scoresAndRatings' as const,
 
   "Account": 'account' as const,
@@ -97,96 +94,54 @@ const menuItems: MenuItem[] = [
     permission: ITEM_PERMISSIONS["Business Dashboard"],
     items: [
       {
-        title: "Actionables",
-        permission: ITEM_PERMISSIONS["Actionables"],
-        items: [
-          {
-            title: "Team Overview",
-            url: "/dashboard/teamOverview",
-            permission: ITEM_PERMISSIONS["Team Overview"]
-          },
-          {
-            title: "Users",
-            url: "/dashboard/users",
-            permission: ITEM_PERMISSIONS["Users"]
-          },
-          {
-            title: "Assign Tasks",
-            url: "/dashboard/assignTasks",
-            permission: ITEM_PERMISSIONS["Assign Tasks"]
-          },
-          {
-            title: "Dealer Management",
-            url: "/dashboard/dealerManagement",
-            permission: ITEM_PERMISSIONS["Dealer Management"]
-          },
-          {
-            title: "Salesman Leaves",
-            url: "/dashboard/slmLeaves",
-            permission: ITEM_PERMISSIONS["Salesman Leaves"]
-          },
-        ],
+        title: "Team Overview",
+        url: "/dashboard/teamOverview",
+        permission: ITEM_PERMISSIONS["Team Overview"]
+      },
+      {
+        title: "Users",
+        url: "/dashboard/users",
+        permission: ITEM_PERMISSIONS["Users"]
+      },
+      {
+        title: "Assign Tasks",
+        url: "/dashboard/assignTasks",
+        permission: ITEM_PERMISSIONS["Assign Tasks"]
+      },
+      {
+        title: "Dealer Management",
+        url: "/dashboard/dealerManagement",
+        permission: ITEM_PERMISSIONS["Dealer Management"]
+      },
+      {
+        title: "Salesman Leaves",
+        url: "/dashboard/slmLeaves",
+        permission: ITEM_PERMISSIONS["Salesman Leaves"]
       },
       {
         title: "Reports",
-        permission: ITEM_PERMISSIONS["Reports"],
-        items: [
-          {
-            title: "Daily Visit Reports",
-            url: "/dashboard/dailyVisitReports",
-            permission: ITEM_PERMISSIONS["Daily Visit Reports"]
-          },
-          {
-            title: "Technical Visit Reports",
-            url: "/dashboard/technicalVisitReports",
-            permission: ITEM_PERMISSIONS["Technical Visit Reports"]
-          },
-          {
-            title: "Salesman Attendance",
-            url: "/dashboard/slmAttendance",
-            permission: ITEM_PERMISSIONS["Salesman Attendance"]
-          },
-          {
-            title: "Salesman Geotracking",
-            url: "/dashboard/slmGeotracking",
-            permission: ITEM_PERMISSIONS["Salesman Geotracking"]
-          },
-          {
-            title: "Permanent Journey Plan",
-            url: "/dashboard/permanentJourneyPlan",
-            permission: ITEM_PERMISSIONS["Permanent Journey Plan"]
-          },
-          {
-            title: "Client Reports",
-            url: "/dashboard/clientReports",
-            permission: ITEM_PERMISSIONS["Client Reports"]
-          },
-          {
-            title: "Dealer Reports",
-            url: "/dashboard/dealerReports",
-            permission: ITEM_PERMISSIONS["Dealer Reports"]
-          },
-          {
-            title: "Competition Reports",
-            url: "/dashboard/competitionReports",
-            permission: ITEM_PERMISSIONS["Competition Reports"]
-          },
-          {
-            title: "Sales & Collection Reports",
-            url: "/dashboard/salesAndCollectionReports",
-            permission: ITEM_PERMISSIONS["Sales And Competition Reports"]
-          },
-          {
-            title: "Dealer Development & Mapping Reports",
-            url: "/dashboard/dealerDevelopmentAndMappingReports",
-            permission: ITEM_PERMISSIONS["Dealer Development And Mapping Reports"]
-          },
-          {
-            title: "Scores & Ratings",
-            url: "/dashboard/scoresAndRatings",
-            permission: ITEM_PERMISSIONS["Scores And Ratings"]
-          },
-        ],
+        url: "/dashboard/reports",
+        permission: ITEM_PERMISSIONS["Reports"]
+      },
+      {
+        title: "Salesman Attendance",
+        url: "/dashboard/slmAttendance",
+        permission: ITEM_PERMISSIONS["Salesman Attendance"]
+      },
+      {
+        title: "Salesman Geotracking",
+        url: "/dashboard/slmGeotracking",
+        permission: ITEM_PERMISSIONS["Salesman Geotracking"]
+      },
+      {
+        title: "Permanent Journey Plan",
+        url: "/dashboard/permanentJourneyPlan",
+        permission: ITEM_PERMISSIONS["Permanent Journey Plan"]
+      },
+      {
+        title: "Scores & Ratings",
+        url: "/dashboard/scoresAndRatings",
+        permission: ITEM_PERMISSIONS["Scores And Ratings"]
       },
     ],
   },

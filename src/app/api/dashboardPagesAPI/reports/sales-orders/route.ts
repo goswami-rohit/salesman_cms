@@ -1,11 +1,11 @@
-// src/app/api/dashboardPagesAPI/sales-orders/route.ts
+// src/app/api/dashboardPagesAPI/reports/sales-orders/route.ts
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 // Zod schema for API response validation
-const salesOrderSchema = z.object({
+export const salesOrderSchema = z.object({
   id: z.string().uuid(),
   salesmanName: z.string(),
   salesmanRole: z.string(),
@@ -22,6 +22,7 @@ const salesOrderSchema = z.object({
   pendingPayment: z.number(),
   estimatedDelivery: z.string(), // YYYY-MM-DD
   remarks: z.string().nullable(),
+  dvrId: z.string().uuid().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -101,6 +102,7 @@ export async function GET() {
       pendingPayment: order.pendingPayment.toNumber(),
       estimatedDelivery: order.estimatedDelivery.toISOString().split('T')[0],
       remarks: order.remarks,
+      dvrId: order.dvrId,
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
     }));

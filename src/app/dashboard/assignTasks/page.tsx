@@ -35,6 +35,7 @@ import { IconCalendar } from "@tabler/icons-react";
 import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
+import { dailyTaskSchema } from "@/app/api/dashboardPagesAPI/assign-tasks/route";
 
 // --- Zod Schemas for Data and Form Validation ---
 
@@ -54,18 +55,18 @@ const dealerSchema = z.object({
 });
 
 // Schema for fetching daily tasks (from GET response) 
-const dailyTaskSchema = z.object({
-  id: z.string(),
-  salesmanName: z.string(),
-  assignedByUserName: z.string(),
-  taskDate: z.string(), // YYYY-MM-DD
-  visitType: z.string(),
-  relatedDealerName: z.string().nullable().optional(), // For Client Visit
-  siteName: z.string().nullable().optional(), // For Technical Visit
-  description: z.string().nullable().optional(),
-  status: z.string(),
-  createdAt: z.string(),
-});
+// const dailyTaskSchema = z.object({
+//   id: z.string(),
+//   salesmanName: z.string(),
+//   assignedByUserName: z.string(),
+//   taskDate: z.string(), // YYYY-MM-DD
+//   visitType: z.string(),
+//   relatedDealerName: z.string().nullable().optional(), // For Client Visit
+//   siteName: z.string().nullable().optional(), // For Technical Visit
+//   description: z.string().nullable().optional(),
+//   status: z.string(),
+//   createdAt: z.string(),
+// });
 
 type Salesman = z.infer<typeof salesmanSchema>;
 type Dealer = z.infer<typeof dealerSchema>;

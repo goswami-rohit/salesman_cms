@@ -18,7 +18,7 @@ const allowedRoles = [
 ];
 
 // Zod Schema for the data returned by the GET endpoint (minimal fields for verification)
-const DealerVerificationSchema = z.object({
+export const DealerVerificationSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1),
     phoneNo: z.string().min(1),

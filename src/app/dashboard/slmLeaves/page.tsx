@@ -24,18 +24,7 @@ import {
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
-
-// --- 1. Define Zod Schema for Salesman Leave Application Data ---
-const salesmanLeaveApplicationSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>, // Unique ID for the leave entry
-  salesmanName: z.string(),
-  leaveType: z.string(), // e.g., "Sick Leave", "Casual Leave", "Annual Leave"
-  startDate: z.string(), // e.g., "2025-08-01" (ISO string or YYYY-MM-DD)
-  endDate: z.string(),   // e.g., "2025-08-03" (ISO string or YYYY-MM-DD)
-  reason: z.string(),
-  status: z.enum(["Pending", "Approved", "Rejected"]), // Key status field
-  adminRemarks: z.string().optional().nullable(), // For admin's notes on approval/rejection
-});
+import { salesmanLeaveApplicationSchema } from '@/app/api/dashboardPagesAPI/slm-leaves/route';
 
 // Infer the TypeScript type from the Zod schema
 type SalesmanLeaveApplication = z.infer<typeof salesmanLeaveApplicationSchema>;

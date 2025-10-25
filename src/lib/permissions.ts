@@ -29,17 +29,13 @@ export interface DashboardPermissions {
   salesmanGeotracking: boolean;
   dailyVisitReports: boolean;
   permanentJourneyPlan: boolean;
-  clientReports: boolean;
-  dealerReports: boolean;
   technicalVisitReports: boolean;
   competitionReports: boolean;
-  salesAndCollectionReports: boolean;
   dealerDevelopmentAndMappingReports: boolean;
   scoresAndRatings: boolean;
 
   // Account section
   account: boolean;
-  settings: boolean;
   raiseAQuery: boolean;
 }
 
@@ -59,15 +55,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   'senior-general-manager': {
@@ -84,15 +76,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   'general-manager': {
@@ -109,15 +97,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
 
@@ -136,15 +120,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   'area-sales-manager': {
@@ -161,15 +141,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   'senior-manager': {     //Default role assigned when company is created(has all permissions)
@@ -186,15 +162,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   manager: {
@@ -211,15 +183,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   'assistant-manager': {
@@ -236,15 +204,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: true,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
 
@@ -263,15 +227,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: true,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: true,
-    dealerReports: true,
     technicalVisitReports: true,
     competitionReports: false,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: true,
     scoresAndRatings: true,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   executive: {
@@ -288,15 +248,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: false,
     dailyVisitReports: true,
     permanentJourneyPlan: true,
-    clientReports: false,
-    dealerReports: false,
     technicalVisitReports: true,
     competitionReports: false,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: false,
     scoresAndRatings: false,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
   'junior-executive': {
@@ -313,15 +269,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanGeotracking: false,
     dailyVisitReports: false,
     permanentJourneyPlan: false,
-    clientReports: false,
-    dealerReports: false,
     technicalVisitReports: false,
     competitionReports: false,
-    salesAndCollectionReports: true,
     dealerDevelopmentAndMappingReports: false,
     scoresAndRatings: false,
     account: true,
-    settings: true,
     raiseAQuery: true,
   },
 };

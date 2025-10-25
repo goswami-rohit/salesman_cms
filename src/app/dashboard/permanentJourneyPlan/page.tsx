@@ -18,23 +18,8 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 
-
-// Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
-
-// --- 1. Define Zod Schema for Permanent Journey Plan Data with new fields ---
-const permanentJourneyPlanSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>,
-  salesmanName: z.string(),
-  userId: z.number().int(), // Added userId
-  createdByName: z.string(), // Added createdByName
-  createdByRole: z.string(), // Added createdByRole
-  areaToBeVisited: z.string(),
-  planDate: z.string(), // Renamed to planDate to match backend
-  description: z.string().optional().nullable(),
-  status: z.string(), // Added status
-  taskIds: z.array(z.string()), // Added taskIds
-});
+import { permanentJourneyPlanSchema } from '@/app/api/dashboardPagesAPI/permanent-journey-plan/route';
 
 // Infer the TypeScript type from the Zod schema
 type PermanentJourneyPlan = z.infer<typeof permanentJourneyPlanSchema>;

@@ -1,4 +1,4 @@
-// src/app/dashboard/technicalVisitReports/page.tsx
+// src/app/dashboard/technicalVisitReports.tsx
 'use client';
 
 import * as React from 'react';
@@ -8,33 +8,7 @@ import { z } from 'zod';
 import { UniqueIdentifier } from '@dnd-kit/core';
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
-
-// --- 1. Define Zod Schema for Technical Visit Report Data ---
-const technicalVisitReportSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>,
-  salesmanName: z.string(),
-  role: z.string(), // Added missing field
-  visitType: z.string(),
-  siteNameConcernedPerson: z.string(),
-  phoneNo: z.string(),
-  date: z.string(),
-  emailId: z.string().email().or(z.literal('')),
-  clientsRemarks: z.string(),
-  salespersonRemarks: z.string(), // CORRECTED to a string
-  checkInTime: z.string(),
-  checkOutTime: z.string(),
-  siteVisitBrandInUse: z.array(z.string()), // CORRECTED to allow empty array
-  siteVisitStage: z.string().optional(), // CORRECTED to optional
-  conversionFromBrand: z.string().optional(),
-  conversionQuantityValue: z.number().optional().nullable(), // CORRECTED to number, as sent from the API
-  conversionQuantityUnit: z.string().optional(),
-  associatedPartyName: z.string().optional(), // CORRECTED to optional
-  influencerType: z.array(z.string()), // CORRECTED to allow empty array
-  serviceType: z.string().optional(), // CORRECTED to optional
-  qualityComplaint: z.string().optional(),
-  promotionalActivity: z.string().optional(),
-  channelPartnerVisit: z.string().optional(),
-});
+import { technicalVisitReportSchema } from '@/app/api/dashboardPagesAPI/reports/technical-visit-reports/route'
 
 // Infer the TypeScript type from the Zod schema
 type TechnicalVisitReport = z.infer<typeof technicalVisitReportSchema>;
@@ -48,7 +22,7 @@ export default function TechnicalVisitReportsPage() {
     setIsLoading(true);
     try {
       // Fetch from the API path
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/technical-visit-reports`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/technical-visit-reports`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

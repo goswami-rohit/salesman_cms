@@ -2,6 +2,25 @@
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
+import { z } from 'zod'; // Added Zod Import
+
+// --- ZOD SCHEMA DEFINITION ---
+export const permanentJourneyPlanSchema = z.object({
+  id: z.string().uuid(),
+  salesmanName: z.string(),
+  userId: z.number().int(),
+  createdByName: z.string(),
+  createdByRole: z.string(),
+  areaToBeVisited: z.string(),
+  planDate: z.string(), // Mapped to YYYY-MM-DD
+  description: z.string().nullable().optional(), // Mapped to String? in schema
+  status: z.string(),
+  taskIds: z.array(z.string()), // Array of DailyTask IDs
+  // We'll also include the timestamps, as these are useful in most reports
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+// -----------------------------
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
@@ -20,12 +39,12 @@ export async function GET() {
     // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
-      include: { company: true } // Include company to get companyId
+      select: { id: true, role: true, companyId: true } // Optimized selection
     });
 
     // --- UPDATED ROLE-BASED AUTHORIZATION ---
     if (!currentUser || !allowedRoles.includes(currentUser.role)) {
-      return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
+      return NextResponse.json({ error: `Forbidden: Only the following roles can access PJP data: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
 
     // Fetch Permanent Journey Plans for the current user's company
@@ -91,12 +110,17 @@ export async function GET() {
         description: plan.description,
         status: plan.status,
         taskIds: taskIds,
+        createdAt: plan.createdAt.toISOString(),
+        updatedAt: plan.updatedAt.toISOString(),
       };
     });
 
-    return NextResponse.json(formattedPlans, { status: 200 });
+    // 3. Zod Validation
+    const validatedData = z.array(permanentJourneyPlanSchema).parse(formattedPlans);
+
+    return NextResponse.json(validatedData, { status: 200 });
   } catch (error) {
     console.error('Error fetching permanent journey plans:', error);
-    return NextResponse.json({ error: 'Failed to fetch permanent journey plans' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch permanent journey plans', details: (error as Error).message }, { status: 500 });
   }
 }

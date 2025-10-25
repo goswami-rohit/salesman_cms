@@ -1,9 +1,51 @@
-// src/app/api/dashboardPagesAPI/technical-visit-reports/route.ts
+// src/app/api/dashboardPagesAPI/reports/technical-visit-reports/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+import prisma from '@/lib/prisma'; // Use shared prisma instance
+import { z } from 'zod'; // Import Zod
 
-const prisma = new PrismaClient();
+// --- ZOD SCHEMA DEFINITION ---
+export const technicalVisitReportSchema = z.object({
+  id: z.string(),
+  salesmanName: z.string(),
+  role: z.string(),
+  visitType: z.string(),
+  siteNameConcernedPerson: z.string(),
+  phoneNo: z.string(),
+  date: z.string(), // Mapped to YYYY-MM-DD
+  emailId: z.string(), // Formatted to '' if null
+  clientsRemarks: z.string(),
+  salespersonRemarks: z.string(),
+  checkInTime: z.string(), // ISO String
+  checkOutTime: z.string(), // ISO String or ''
+  
+  // NEW/MISSING FIELDS from formatting logic - MUST BE NULLABLE if they are optional in Prisma
+  inTimeImageUrl: z.string().nullable(),
+  outTimeImageUrl: z.string().nullable(),
+  siteVisitType: z.string().nullable(), // FIX: Added .nullable()
+  dhalaiVerificationCode: z.string().nullable(), // FIX: Added .nullable()
+  isVerificationStatus: z.string().nullable(), // FIX: Added .nullable()
+  meetingId: z.string().nullable(), // FIX: Added .nullable()
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string(), // ISO String
+
+  // Array fields
+  siteVisitBrandInUse: z.array(z.string()),
+  influencerType: z.array(z.string()),
+
+  // Optional string fields formatted to ''
+  siteVisitStage: z.string(),
+  conversionFromBrand: z.string(),
+  conversionQuantityUnit: z.string(),
+  associatedPartyName: z.string(),
+  serviceType: z.string(),
+  qualityComplaint: z.string(),
+  promotionalActivity: z.string(),
+  channelPartnerVisit: z.string(),
+
+  // Numeric field, converted to number or null
+  conversionQuantityValue: z.number().nullable(), // FIX: Confirms it can be null
+});
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
@@ -24,12 +66,12 @@ export async function GET() {
     // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
-      include: { company: true } // Include company to get companyId
+      select: { id: true, role: true, companyId: true } // Optimized selection
     });
 
     // --- UPDATED ROLE-BASED AUTHORIZATION ---
     if (!currentUser || !allowedRoles.includes(currentUser.role)) {
-      return NextResponse.json({ error: `Forbidden: Only the following roles can add dealers: ${allowedRoles.join(', ')}` }, { status: 403 });
+      return NextResponse.json({ error: `Forbidden: Only the following roles can view technical reports: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
 
     const technicalReports = await prisma.technicalVisitReport.findMany({
@@ -68,32 +110,50 @@ export async function GET() {
         visitType: report.visitType,
         siteNameConcernedPerson: report.siteNameConcernedPerson,
         phoneNo: report.phoneNo,
-        date: report.reportDate.toISOString().split('T')[0],
+        date: report.reportDate.toISOString().split('T')[0] || '',
         emailId: report.emailId || '',
         clientsRemarks: report.clientsRemarks,
-        salespersonRemarks: report.salespersonRemarks, // This is already a string
-        checkInTime: report.checkInTime.toISOString(),
+        salespersonRemarks: report.salespersonRemarks,
+        checkInTime: report.checkInTime.toISOString() || '',
         checkOutTime: report.checkOutTime?.toISOString() || '',
+        
+        // Mapped optional fields that can be null
+        inTimeImageUrl: report.inTimeImageUrl,
+        outTimeImageUrl: report.outTimeImageUrl,
+        siteVisitType: report.siteVisitType, // Maps to String | null
+        dhalaiVerificationCode: report.dhalaiVerificationCode, // Maps to String | null
+        isVerificationStatus: report.isVerificationStatus, // Maps to String | null
+        meetingId: report.meetingId, // Maps to String | null
+        createdAt: report.createdAt.toISOString(),
+        updatedAt: report.updatedAt.toISOString(),
+
+        // Array fields (should be empty array [] if no data, not null)
         siteVisitBrandInUse: report.siteVisitBrandInUse,
+        influencerType: report.influencerType,
+
+        // Optional string fields formatted to '' if null (match the non-nullable z.string() in Zod)
         siteVisitStage: report.siteVisitStage || '',
         conversionFromBrand: report.conversionFromBrand || '',
-        conversionQuantityValue: report.conversionQuantityValue ? parseFloat(report.conversionQuantityValue.toString()) : null, // Convert Decimal to number
         conversionQuantityUnit: report.conversionQuantityUnit || '',
         associatedPartyName: report.associatedPartyName || '',
-        influencerType: report.influencerType,
         serviceType: report.serviceType || '',
         qualityComplaint: report.qualityComplaint || '',
         promotionalActivity: report.promotionalActivity || '',
         channelPartnerVisit: report.channelPartnerVisit || '',
+
+        // Decimal field conversion to number or null
+        conversionQuantityValue: report.conversionQuantityValue ? parseFloat(report.conversionQuantityValue.toString()) : null,
       };
     });
 
-    return NextResponse.json(formattedReports);
+    // 6. Validate response array with Zod
+    const validated = z.array(technicalVisitReportSchema).parse(formattedReports);
+
+    return NextResponse.json(validated);
   } catch (error) {
     console.error('Error fetching technical visit reports:', error);
     // Return a 500 status with an error message in case of failure
     return NextResponse.json({ message: 'Failed to fetch technical visit reports', error: (error as Error).message }, { status: 500 });
-  } finally {
-    //await prisma.$disconnect();
-  }
+  } 
+  // Removed finally block for consistency with Next.js pattern
 }

@@ -1,11 +1,11 @@
-// src/app/api/dashboardPagesAPI/daily-visit-reports/route.ts
+// src/app/api/dashboardPagesAPI/routes/daily-visit-reports/route.ts
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 import { z } from 'zod'; // Import Zod for schema validation
 
 // Define Zod schema for the data returned by this API
-const dailyVisitReportSchema = z.object({
+export const dailyVisitReportSchema = z.object({
   id: z.string(),
   salesmanName: z.string(),
   role: z.string(),
@@ -24,6 +24,7 @@ const dailyVisitReportSchema = z.object({
   contactPersonPhoneNo: z.string().nullable(),
   todayOrderMt: z.number(),
   todayCollectionRupees: z.number(),
+  overdueAmount: z.number().nullable(),
   feedbacks: z.string(),
   solutionBySalesperson: z.string().nullable(),
   anyRemarks: z.string().nullable(),
@@ -103,6 +104,7 @@ export async function GET() {
         contactPersonPhoneNo: report.contactPersonPhoneNo,
         todayOrderMt: report.todayOrderMt.toNumber(),
         todayCollectionRupees: report.todayCollectionRupees.toNumber(),
+        overdueAmount: report.overdueAmount?.toNumber() || null,
         feedbacks: report.feedbacks,
         solutionBySalesperson: report.solutionBySalesperson,
         anyRemarks: report.anyRemarks,

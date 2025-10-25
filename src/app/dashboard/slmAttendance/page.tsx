@@ -37,34 +37,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from '@/lib/utils';
 
-// --- 1. Define Zod Schema for Salesman Attendance Report Data ---
-const salesmanAttendanceReportSchema = z.object({
-  id: z.string() as z.ZodType<UniqueIdentifier>,
-  salesmanName: z.string(),
-  date: z.string(), // YYYY-MM-DD string
-  location: z.string(), // Corresponds to locationName
-  inTime: z.string().nullable(),
-  outTime: z.string().nullable(),
-  inTimeImageCaptured: z.boolean(),
-  outTimeImageCaptured: z.boolean(),
-  inTimeImageUrl: z.string().optional().nullable(),
-  outTimeImageUrl: z.string().optional().nullable(),
-  inTimeLatitude: z.number().optional().nullable(),
-  inTimeLongitude: z.number().optional().nullable(),
-  inTimeAccuracy: z.number().optional().nullable(),
-  inTimeSpeed: z.number().optional().nullable(),
-  inTimeHeading: z.number().optional().nullable(),
-  inTimeAltitude: z.number().optional().nullable(),
-  outTimeLatitude: z.number().optional().nullable(),
-  outTimeLongitude: z.number().optional().nullable(),
-  outTimeAccuracy: z.number().optional().nullable(),
-  outTimeSpeed: z.number().optional().nullable(),
-  outTimeHeading: z.number().optional().nullable(),
-  outTimeAltitude: z.number().optional().nullable(),
-});
+import { salesmanAttendanceSchema } from '@/app/api/dashboardPagesAPI/slm-attendance/route';
 
 // Infer the TypeScript type from the Zod schema
-type SalesmanAttendanceReport = z.infer<typeof salesmanAttendanceReportSchema>;
+type SalesmanAttendanceReport = z.infer<typeof salesmanAttendanceSchema>;
 
 const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
@@ -98,7 +74,7 @@ export default function SlmAttendancePage() {
       const data: SalesmanAttendanceReport[] = await response.json();
       const validatedData = data.map((item) => {
         try {
-          return salesmanAttendanceReportSchema.parse(item);
+          return salesmanAttendanceSchema.parse(item);
         } catch (e) {
           console.error("Validation error for item:", item, e);
           toast.error("Invalid salesman attendance data received from server.");

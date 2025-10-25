@@ -17,35 +17,10 @@ import {
 } from '@/components/ui/card';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { dealerVerification } from '@/lib/Reusable-constants';
+import { DealerVerificationSchema } from '@/app/api/dashboardPagesAPI/dealerManagement/dealer-verify/route';
 
-// --- Zod Schema for Dealer Records (MUST match the backend's API response) ---
-const dealerSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1),
-    type: z.string().min(1),
-    region: z.string().min(1),
-    area: z.string().min(1),
-    phoneNo: z.string().min(1).max(20),
-    
-    // --- VERIFICATION FIELDS (Matched to API's DealerVerificationSchema/Prisma Select) ---
-    verificationStatus: z.enum(dealerVerification), 
-    
-    // Corrected fields to match API/Prisma names
-    gstinNo: z.string().nullable().optional(), 
-    panNo: z.string().nullable().optional(),
-    aadharNo: z.string().nullable().optional(),
-    tradeLicNo: z.string().nullable().optional(),
-    
-    // Corrected Image URL fields
-    tradeLicencePicUrl: z.string().url().nullable().optional(),
-    shopPicUrl: z.string().url().nullable().optional(),
-    dealerPicUrl: z.string().url().nullable().optional(),
-    blankChequePicUrl: z.string().url().nullable().optional(),
-    partnershipDeedPicUrl: z.string().url().nullable().optional(),
-    remarks: z.string().nullable().optional(),
-});
 
-type DealerRecord = z.infer<typeof dealerSchema>;
+type DealerRecord = z.infer<typeof DealerVerificationSchema>;
 
 export default function VerifyDealersPage() {
     const [pendingDealers, setPendingDealers] = useState<DealerRecord[]>([]);
@@ -69,7 +44,7 @@ export default function VerifyDealersPage() {
             
             const dealersArray = Array.isArray(data) ? data : data.dealers;
 
-            const validatedDealers = z.array(dealerSchema).parse(dealersArray);
+            const validatedDealers = z.array(DealerVerificationSchema).parse(dealersArray);
             setPendingDealers(validatedDealers);
             toast.success(`Loaded ${validatedDealers.length} pending dealers.`, { duration: 2000 });
         } catch (e: any) {
