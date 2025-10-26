@@ -16,7 +16,7 @@ export interface DashboardPermissions {
   // Home section
   home: boolean;
   cemtemChat: boolean;
-  downloadReports: boolean;
+  customReportGenerator: boolean;
 
   // Business Dashboard section
   dashboard: boolean;
@@ -44,7 +44,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   president: {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: true,
@@ -65,7 +65,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'senior-general-manager': {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: true,
@@ -86,7 +86,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'general-manager': {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: true,
@@ -109,7 +109,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'regional-sales-manager': {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: true,
@@ -130,7 +130,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'area-sales-manager': {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: false,
@@ -151,7 +151,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'senior-manager': {     //Default role assigned when company is created(has all permissions)
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: true,
@@ -172,7 +172,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   manager: {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: true,
@@ -193,7 +193,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'assistant-manager': {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: true,
     users: true,
@@ -216,7 +216,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'senior-executive': {
     home: true,
     cemtemChat: true,
-    downloadReports: true,
+    customReportGenerator: true,
     dashboard: true,
     teamOverview: false,
     users: false,
@@ -237,7 +237,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   executive: {
     home: true,
     cemtemChat: true,
-    downloadReports: false,
+    customReportGenerator: false,
     dashboard: true,
     teamOverview: false,
     users: false,
@@ -258,7 +258,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   'junior-executive': {
     home: true,
     cemtemChat: true,
-    downloadReports: false,
+    customReportGenerator: false,
     dashboard: true,
     teamOverview: false,
     users: false,

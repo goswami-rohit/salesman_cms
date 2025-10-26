@@ -522,7 +522,7 @@ model SalesOrder {
   remarks         String?  @db.VarChar(500)
   paymentMethod   String? @map("payment_method") @db.VarChar(50)
 
-  // NEW FIELD: Link back to the DVR where the order was taken
+  // Link back to the DVR where the order was taken
   dvrId           String?  @map("dvr_id") @db.VarChar(255)
   dailyVisitReport DailyVisitReport? @relation("OrderDVR", fields: [dvrId], references: [id], onDelete: SetNull)
 

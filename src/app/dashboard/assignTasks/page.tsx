@@ -54,20 +54,6 @@ const dealerSchema = z.object({
   type: z.string(),
 });
 
-// Schema for fetching daily tasks (from GET response) 
-// const dailyTaskSchema = z.object({
-//   id: z.string(),
-//   salesmanName: z.string(),
-//   assignedByUserName: z.string(),
-//   taskDate: z.string(), // YYYY-MM-DD
-//   visitType: z.string(),
-//   relatedDealerName: z.string().nullable().optional(), // For Client Visit
-//   siteName: z.string().nullable().optional(), // For Technical Visit
-//   description: z.string().nullable().optional(),
-//   status: z.string(),
-//   createdAt: z.string(),
-// });
-
 type Salesman = z.infer<typeof salesmanSchema>;
 type Dealer = z.infer<typeof dealerSchema>;
 type DailyTaskRecord = z.infer<typeof dailyTaskSchema>; // Type for records fetched from GET API

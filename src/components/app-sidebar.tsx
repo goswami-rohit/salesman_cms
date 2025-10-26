@@ -44,7 +44,7 @@ interface MenuItem {
 const ITEM_PERMISSIONS = {
   "Home": 'home' as const,
   "CemTem ChatBot": 'cemtemChat' as const,
-  "Download Reports": 'downloadReports' as const,
+  "Custom Report Generator": 'customReportGenerator' as const,
 
   "Business Dashboard": 'dashboard' as const,
   "Actionables": 'actionables' as const,
@@ -82,9 +82,9 @@ const menuItems: MenuItem[] = [
         permission: ITEM_PERMISSIONS["CemTem ChatBot"]
       },
       {
-        title: "Download Reports",
-        url: "/home/downloadReport",
-        permission: ITEM_PERMISSIONS["Download Reports"]
+        title: "Custom Report Generator",
+        url: "/home/customReportGenerator",
+        permission: ITEM_PERMISSIONS["Custom Report Generator"]
       },
     ],
   },

@@ -172,7 +172,7 @@ export default function UsersManagement({ adminUser }: Props) {
 
     try {
       // invitation for new users is set in /api/user
-      const response = await fetch('/api/users', {
+      const response = await fetch(apiURI, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData) // formData now includes region and area
@@ -207,7 +207,7 @@ export default function UsersManagement({ adminUser }: Props) {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/${editingUser.id}`, {
+      const response = await fetch(`${apiURI}/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData) // formData now includes region and area
@@ -235,7 +235,7 @@ export default function UsersManagement({ adminUser }: Props) {
     setSuccess('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/${userId}`, {
+      const response = await fetch(`${apiURI}/${userId}`, {
         method: 'DELETE'
       });
 

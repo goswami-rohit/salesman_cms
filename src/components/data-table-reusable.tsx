@@ -32,7 +32,7 @@ import {
   IconChevronsRight,
   IconGripVertical,
   IconLayoutColumns,
-} from '@tabler/icons-react'; // Kept essential icons
+} from '@tabler/icons-react';
 
 import {
   ColumnDef,
@@ -47,18 +47,16 @@ import {
   Row,
   SortingState,
   useReactTable,
-  VisibilityState, // Renamed from ColumnVisibility as per previous correction
+  VisibilityState,
 } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
-//import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-//import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -126,20 +124,14 @@ function DraggableRow<TData extends { id: UniqueIdentifier }>({ row }: { row: Ro
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  //reportTitle: string; // Title for download notifications/filtering
-  //filterColumnAccessorKey?: string; // Optional key for the column to filter by (e.g., "clientName")
-  //onDownloadAll: (format: 'csv' | 'xlsx') => Promise<void>;
-  enableRowDragging?: boolean; // New prop to enable/disable row dragging
-  onRowOrderChange?: (newOrder: TData[]) => void; // Callback for when row order changes
+  enableRowDragging?: boolean; 
+  onRowOrderChange?: (newOrder: TData[]) => void;
 }
 
 export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue>({
   columns,
-  data: initialData, // Renamed to initialData as internal state will manage it
-  //reportTitle,
-  //filterColumnAccessorKey,
-  //onDownloadAll,
-  enableRowDragging = false, // Default to false
+  data: initialData,
+  enableRowDragging = false,
   onRowOrderChange,
 }: DataTableProps<TData, TValue>) {
   const [data, setData] = React.useState(() => initialData); // Internal state for data to support drag-and-drop
@@ -208,52 +200,10 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
     }
   }
 
-  // const handleDownload = async (format: 'csv' | 'xlsx') => {
-  //   try {
-  //     await onDownloadAll(format);
-  //     toast.success('Download Initiated', {
-  //       description: `Your ${reportTitle} report in ${format.toUpperCase()} format is being prepared.`,
-  //     });
-  //   } catch (error) {
-  //     console.error('Download failed:', error);
-  //     toast.error('Download Failed', {
-  //       description: 'There was an error preparing your download. Please try again.',
-  //     });
-  //   }
-  // };
-
-
   return (
     <div className="w-full flex-col justify-start gap-6"> 
       <div className="flex items-center py-4 justify-between">
-        {/* Data Filtering logic beside Master Download All button */}
-        {/* {filterColumnAccessorKey && table.getColumn(filterColumnAccessorKey) && (
-          <Input
-            placeholder={`Filter ${reportTitle} by ${filterColumnAccessorKey}...`}
-            value={(table.getColumn(filterColumnAccessorKey)?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn(filterColumnAccessorKey)?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm bg-input text-foreground border-border placeholder:text-muted-foreground"
-          />
-        )} */}
         <div className="flex items-center gap-2 ml-auto"> {/* Aligned right */}
-          {/* Master Download Button */}
-          {/* <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="bg-secondary text-secondary-foreground border-border hover:bg-secondary/80">
-                <IconDownload className="mr-2 h-4 w-4" /> Download All <IconChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-              <DropdownMenuItem onClick={() => handleDownload('csv')}>
-                Download as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownload('xlsx')}>
-                Download as XLSX
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu> */}
 
           {/* Column Visibility Toggle */}
           <DropdownMenu>
@@ -290,11 +240,6 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* Assuming "Add Salesperson" button is for a specific page, not generic DataTable */}
-          {/* <Button variant="outline" size="sm">
-            <IconPlus />
-            <span className="hidden lg:inline">Add Salesperson</span>
-          </Button> */}
         </div>
       </div>
 
