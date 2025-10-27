@@ -1,12 +1,9 @@
-// src/app/dashboard/permanentJourneyPlan/page.tsx
 'use client';
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { UniqueIdentifier } from '@dnd-kit/core';
-// Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +14,7 @@ import {
   PaginationLink,
   PaginationNext,
 } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { permanentJourneyPlanSchema } from '@/app/api/dashboardPagesAPI/permanent-journey-plan/route';
@@ -33,13 +31,34 @@ export default function PermanentJourneyPlanPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
 
+  // NEW: filters for role and status
+  const [selectedRoleFilter, setSelectedRoleFilter] = React.useState<string>('all');
+  const [selectedStatusFilter, setSelectedStatusFilter] = React.useState<string>('all');
+
+  // Derived lists for filter dropdowns
+  const roleOptions = React.useMemo(() => {
+    const setRoles = new Set<string>();
+    pjps.forEach(p => {
+      if (p.createdByRole) setRoles.add(p.createdByRole);
+    });
+    return ['all', ...Array.from(setRoles).sort()];
+  }, [pjps]);
+
+  const statusOptions = React.useMemo(() => {
+    const setStatus = new Set<string>();
+    pjps.forEach(p => {
+      if (p.status) setStatus.add(p.status);
+    });
+    return ['all', ...Array.from(setStatus).sort()];
+  }, [pjps]);
+
   // --- Data Fetching Logic ---
   const fetchPjps = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       // Use the new, correct API endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/dashboardPagesAPI/permanent-journey-plan`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -69,22 +88,25 @@ export default function PermanentJourneyPlanPage() {
   }, [fetchPjps]);
 
   // --- Filtering and Pagination Logic ---
-  const filteredPjps = pjps.filter((pjp) => {
-    const matchesSearch =
-      pjp.salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pjp.areaToBeVisited.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (pjp.description && pjp.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      pjp.planDate.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pjp.createdByName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredPjps = React.useMemo(() => {
+    return pjps.filter((pjp) => {
+      const matchesSearch =
+        (pjp.salesmanName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pjp.areaToBeVisited || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pjp.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pjp.planDate || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pjp.createdByName || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-  const totalPages = Math.ceil(filteredPjps.length / ITEMS_PER_PAGE);
+      const matchesRole = selectedRoleFilter === 'all' ? true : (pjp.createdByRole === selectedRoleFilter);
+      const matchesStatus = selectedStatusFilter === 'all' ? true : (pjp.status === selectedStatusFilter);
+
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  }, [pjps, searchQuery, selectedRoleFilter, selectedStatusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPjps.length / ITEMS_PER_PAGE));
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentPjps = filteredPjps.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
+  const currentPjps = filteredPjps.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -93,9 +115,9 @@ export default function PermanentJourneyPlanPage() {
   };
 
   React.useEffect(() => {
-    // Reset page to 1 when search query changes
+    // Reset page to 1 when filters/search change
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedRoleFilter, selectedStatusFilter]);
 
   // --- 3. Define Columns for Permanent Journey Plan DataTable ---
   const permanentJourneyPlanColumns: ColumnDef<PermanentJourneyPlan>[] = [
@@ -111,7 +133,7 @@ export default function PermanentJourneyPlanPage() {
       cell: ({ row }) => <span className="max-w-[300px] truncate block">{row.original.description || "N/A"}</span>,
     },
     { accessorKey: "taskIds", header: "Task IDs",
-      cell: ({ row }) => <span className="max-w-[300px] truncate block">{row.original.taskIds.join(', ')}</span>,
+      cell: ({ row }) => <span className="max-w-[300px] truncate block">{(row.original.taskIds || []).join(', ')}</span>,
     },
   ];
 
@@ -144,14 +166,42 @@ export default function PermanentJourneyPlanPage() {
           <h2 className="text-3xl font-bold tracking-tight">Permanent Journey Plans</h2>
         </div>
 
-        {/* Search Input */}
-        <div className="flex justify-end mb-4">
-          <Input
-            placeholder="Search plans..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
+        {/* Controls: Search + Filters */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Input
+              placeholder="Search plans..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Role filter */}
+            <Select value={selectedRoleFilter} onValueChange={(v) => setSelectedRoleFilter(v)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by Role" />
+              </SelectTrigger>
+              <SelectContent>
+                {roleOptions.map(role => (
+                  <SelectItem key={role} value={role}>{role === 'all' ? 'All Roles' : role}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Status filter */}
+            <Select value={selectedStatusFilter} onValueChange={(v) => setSelectedStatusFilter(v)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map(status => (
+                  <SelectItem key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Data Table Section */}
@@ -163,7 +213,6 @@ export default function PermanentJourneyPlanPage() {
               <DataTableReusable
                 columns={permanentJourneyPlanColumns}
                 data={currentPjps}
-                //filterColumnAccessorKey="areaToBeVisited"
                 enableRowDragging={false}
                 onRowOrderChange={handlePermanentJourneyPlanOrderChange}
               />
