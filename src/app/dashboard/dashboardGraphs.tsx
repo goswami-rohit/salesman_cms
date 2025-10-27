@@ -1,4 +1,3 @@
-// src/app/dashboard/dashboardGraphs.tsx
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -16,9 +15,11 @@ import {
   RawDailyVisitReportRecord,
   rawGeoTrackingSchema,
   rawDailyVisitReportSchema,
+  RawSalesOrderReportRecord,
+  rawSalesOrderSchema,
 } from './data-format';
 
-// Sales roles after your migration
+// Sales roles
 const SALES_ROLES = ['junior-executive', 'executive', 'senior-executive'] as const;
 type SalesRole = (typeof SALES_ROLES)[number] | 'all';
 
@@ -27,7 +28,7 @@ type SlimUser = {
   firstName: string | null;
   lastName: string | null;
   email: string;
-  role: string;               // lowercased in your API
+  role: string;
   salesmanLoginId: string | null;
 };
 
@@ -36,7 +37,7 @@ type UsersApiResponse = {
   currentUser: { role: string; companyName?: string | null; region?: string | null; area?: string | null };
 };
 
-// Geo table columns
+// --- Table Columns ---
 const geoTrackingColumns: ColumnDef<RawGeoTrackingRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
   {
@@ -66,7 +67,6 @@ const geoTrackingColumns: ColumnDef<RawGeoTrackingRecord>[] = [
   { accessorKey: 'appState', header: 'App State' },
 ];
 
-// DVR table columns
 const dailyReportsColumns: ColumnDef<RawDailyVisitReportRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
   { accessorKey: 'role', header: 'Role' },
@@ -85,17 +85,61 @@ const dailyReportsColumns: ColumnDef<RawDailyVisitReportRecord>[] = [
   },
 ];
 
+const salesOrderColumns: ColumnDef<RawSalesOrderReportRecord>[] = [
+  { accessorKey: 'salesmanName', header: 'Salesman' },
+  {
+    accessorKey: 'createdAt',
+    header: 'Order Date',
+    cell: ({ row }) =>
+      new Date(row.original.createdAt).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }),
+  },
+  { accessorKey: 'dealerName', header: 'Dealer' },
+  {
+    accessorKey: 'quantity',
+    header: 'Quantity',
+    cell: ({ row }) => `${row.original.quantity ?? 0} ${row.original.unit ?? ''}`,
+  },
+  {
+    accessorKey: 'orderTotal',
+    header: 'Order Total (₹)',
+    cell: ({ row }) => `₹${Number(row.original.orderTotal ?? 0).toFixed(2)}`,
+  },
+  {
+    accessorKey: 'advancePayment',
+    header: 'Advance (₹)',
+    cell: ({ row }) => `₹${Number(row.original.advancePayment ?? 0).toFixed(2)}`,
+  },
+  {
+    accessorKey: 'pendingPayment',
+    header: 'Pending (₹)',
+    cell: ({ row }) => `₹${Number(row.original.pendingPayment ?? 0).toFixed(2)}`,
+  },
+  {
+    accessorKey: 'estimatedDelivery',
+    header: 'Est. Delivery',
+    cell: ({ row }) => new Date(row.original.estimatedDelivery).toLocaleDateString('en-IN'),
+  },
+  { accessorKey: 'paymentMethod', header: 'Payment Method' },
+  { accessorKey: 'remarks', header: 'Remarks', cell: info => <span className="max-w-[250px] truncate block">{info.getValue() as string}</span> },
+];
+
+// --- Graph Data Types ---
 type GeoTrackingData = { name: string; distance: number };
 type DailyCollectionData = { name: string; collection: number };
+type SalesQuantityData = { name: string; quantity: number };
 
 export default function DashboardGraphs() {
   const [rawGeoTrackingRecords, setRawGeoTrackingRecords] = useState<RawGeoTrackingRecord[]>([]);
   const [rawDailyReports, setRawDailyReports] = useState<RawDailyVisitReportRecord[]>([]);
-  const [users, setUsers] = useState<SlimUser[]>([]); // ← source of truth for the dropdown
+  const [rawSalesOrders, setRawSalesOrders] = useState<RawSalesOrderReportRecord[]>([]);
+  const [users, setUsers] = useState<SlimUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Global filters
   const [selectedRole, setSelectedRole] = useState<SalesRole>('all');
   const [selectedSalesman, setSelectedSalesman] = useState<string | 'all'>('all');
 
@@ -105,33 +149,33 @@ export default function DashboardGraphs() {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
 
-      // Pull geo, dvr, and users
-      const [geoRes, dailyRes, usersRes] = await Promise.all([
+      const [geoRes, dailyRes, salesRes, usersRes] = await Promise.all([
         fetch(`${baseUrl}/api/dashboardPagesAPI/slm-geotracking`, { cache: 'no-store' }),
         fetch(`${baseUrl}/api/dashboardPagesAPI/reports/daily-visit-reports`, { cache: 'no-store' }),
+        fetch(`${baseUrl}/api/dashboardPagesAPI/reports/sales-orders`, { cache: 'no-store' }),
         fetch(`${baseUrl}/api/users`, { cache: 'no-store' }),
       ]);
 
-      if (!geoRes.ok) throw new Error(`Geo API: ${geoRes.status} - ${await geoRes.text()}`);
-      if (!dailyRes.ok) throw new Error(`DVR API: ${dailyRes.status} - ${await dailyRes.text()}`);
-      if (!usersRes.ok) throw new Error(`Users API: ${usersRes.status} - ${await usersRes.text()}`);
+      if (!geoRes.ok) throw new Error(`Geo API: ${geoRes.status}`);
+      if (!dailyRes.ok) throw new Error(`DVR API: ${dailyRes.status}`);
+      if (!salesRes.ok) throw new Error(`Sales API: ${salesRes.status}`);
+      if (!usersRes.ok) throw new Error(`Users API: ${usersRes.status}`);
 
-      const [geoData, dailyDataRaw, usersData] = await Promise.all([geoRes.json(), dailyRes.json(), usersRes.json()]);
-
-      // Defensive: coerce id to string for any element that has a numeric id or missing id
-      const dailyData = Array.isArray(dailyDataRaw)
-        ? dailyDataRaw.map((d: any) => ({ ...d, id: d?.id == null ? '' : String(d.id) }))
-        : [];
+      const [geoData, dailyData, salesData, usersData] = await Promise.all([
+        geoRes.json(),
+        dailyRes.json(),
+        salesRes.json(),
+        usersRes.json(),
+      ]);
 
       const validatedGeo = rawGeoTrackingSchema.array().parse(geoData);
-      setRawGeoTrackingRecords(validatedGeo);
-
-      // Now parse with the relaxed schema (see data-format.ts change above)
       const validatedDaily = rawDailyVisitReportSchema.array().parse(dailyData);
-      setRawDailyReports(validatedDaily);
+      const validatedSales = rawSalesOrderSchema.array().parse(salesData);
 
-      const u = (usersData as UsersApiResponse).users ?? [];
-      setUsers(u);
+      setRawGeoTrackingRecords(validatedGeo);
+      setRawDailyReports(validatedDaily);
+      setRawSalesOrders(validatedSales);
+      setUsers((usersData as UsersApiResponse).users ?? []);
 
       toast.success('Dashboard data loaded');
     } catch (e) {
@@ -149,13 +193,13 @@ export default function DashboardGraphs() {
   }, [fetchData]);
 
   const journeyEndRecords = useMemo(
-    () => rawGeoTrackingRecords.filter(
-      r => r.appState === 'foreground' || r.locationType === 'FINAL_STOP_SUMMARY'
-    ),
+    () =>
+      rawGeoTrackingRecords.filter(
+        r => r.appState === 'foreground' || r.locationType === 'FINAL_STOP_SUMMARY'
+      ),
     [rawGeoTrackingRecords]
   );
 
-  // Build salesman list from USERS endpoint, filtered by selected role
   const salesmenList = useMemo(() => {
     const pool = users.filter(u =>
       selectedRole === 'all'
@@ -165,33 +209,32 @@ export default function DashboardGraphs() {
 
     const unique = new Map<string, { id: string; name: string }>();
     pool.forEach(u => {
-      const name = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email || u.salesmanLoginId || `User-${u.id}`;
-      // id by name is fine for dropdown; graphs filter by name too
+      const name =
+        `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() ||
+        u.email ||
+        u.salesmanLoginId ||
+        `User-${u.id}`;
       unique.set(name, { id: name, name });
     });
 
     return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [users, selectedRole]);
 
-  // If current selectedSalesman is not present after role change, reset to 'all'
   useEffect(() => {
     if (selectedSalesman !== 'all' && !salesmenList.some(s => s.id === selectedSalesman)) {
       setSelectedSalesman('all');
     }
   }, [salesmenList, selectedSalesman]);
 
-  // Filter DVR by selected role for the collection graph aggregation
+  // Filter & aggregate
   const roleFilteredDailyReports = useMemo(() => {
     if (selectedRole === 'all') return rawDailyReports;
     return rawDailyReports.filter(r => r.role?.toLowerCase() === selectedRole);
   }, [rawDailyReports, selectedRole]);
 
-  // Geo graph data filtered by selected salesman (by name)
   const geoGraphData: GeoTrackingData[] = useMemo(() => {
     let filtered = journeyEndRecords;
-    if (selectedSalesman !== 'all') {
-      filtered = filtered.filter(r => r.salesmanName === selectedSalesman);
-    }
+    if (selectedSalesman !== 'all') filtered = filtered.filter(r => r.salesmanName === selectedSalesman);
     const agg: Record<string, number> = {};
     filtered.forEach(item => {
       const key = new Date(item.recordedAt).toISOString().slice(0, 10);
@@ -200,12 +243,9 @@ export default function DashboardGraphs() {
     return Object.keys(agg).sort().map(k => ({ name: k, distance: agg[k] }));
   }, [journeyEndRecords, selectedSalesman]);
 
-  // Daily collection graph data filtered by role + salesman
   const collectionGraphData: DailyCollectionData[] = useMemo(() => {
     let filtered = roleFilteredDailyReports;
-    if (selectedSalesman !== 'all') {
-      filtered = filtered.filter(r => r.salesmanName === selectedSalesman);
-    }
+    if (selectedSalesman !== 'all') filtered = filtered.filter(r => r.salesmanName === selectedSalesman);
     const agg: Record<string, number> = {};
     filtered.forEach(item => {
       const key = item.reportDate;
@@ -214,33 +254,44 @@ export default function DashboardGraphs() {
     return Object.keys(agg).sort().map(k => ({ name: k, collection: agg[k] }));
   }, [roleFilteredDailyReports, selectedSalesman]);
 
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-[400px]">Loading dashboard data...</div>;
-  }
-  if (error) {
+  const salesQuantityGraphData: SalesQuantityData[] = useMemo(() => {
+    let filtered = rawSalesOrders;
+    if (selectedSalesman !== 'all') filtered = filtered.filter(r => r.salesmanName === selectedSalesman);
+    const agg: Record<string, number> = {};
+    filtered.forEach(item => {
+      const key = new Date(item.createdAt).toISOString().slice(0, 10);
+      const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity ?? 0;
+      agg[key] = (agg[key] || 0) + quantity;
+    });
+    return Object.keys(agg).sort().map(k => ({ name: k, quantity: agg[k] }));
+  }, [rawSalesOrders, selectedSalesman]);
+
+  if (loading) return <div className="flex justify-center items-center min-h-[400px]">Loading dashboard data...</div>;
+  if (error)
     return (
       <div className="text-center text-red-500 py-8">
         Error: {error}
-        <Button onClick={fetchData} className="ml-4">Retry</Button>
+        <Button onClick={fetchData} className="ml-4">
+          Retry
+        </Button>
       </div>
     );
-  }
 
   return (
     <Tabs defaultValue="graphs" className="space-y-4">
       <TabsList>
         <TabsTrigger value="graphs">Graphs</TabsTrigger>
         <TabsTrigger value="geo-table">Geo-Tracking Table</TabsTrigger>
+        <TabsTrigger value="sales-orders-table">Sales Orders Table</TabsTrigger>
         <TabsTrigger value="daily-reports-table">Daily Reports Table</TabsTrigger>
       </TabsList>
 
-      {/* UNIVERSAL FILTERS */}
+      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-wrap gap-3 items-center justify-between">
             <span>Filters</span>
             <div className="flex flex-wrap gap-3">
-              {/* Role */}
               <Select value={selectedRole} onValueChange={v => setSelectedRole(v as SalesRole)}>
                 <SelectTrigger className="w-[220px]">
                   <SelectValue placeholder="Role" />
@@ -253,29 +304,25 @@ export default function DashboardGraphs() {
                 </SelectContent>
               </Select>
 
-              {/* Salesman from USERS list */}
               <Select value={selectedSalesman} onValueChange={setSelectedSalesman}>
                 <SelectTrigger className="w-[260px]">
                   <SelectValue placeholder="Select Salesman" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Salesmen</SelectItem>
-                  {salesmenList.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">No salesmen for selected role</div>
-                  ) : (
-                    salesmenList.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))
-                  )}
+                  {salesmenList.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </CardTitle>
-          <CardDescription>Role and Salesman filters apply to all graphs below.</CardDescription>
         </CardHeader>
       </Card>
 
-      {/* GRAPHS */}
+      {/* Graphs */}
       <TabsContent value="graphs" className="space-y-4">
         {/* Daily Collection */}
         <Card>
@@ -284,9 +331,18 @@ export default function DashboardGraphs() {
             <CardDescription>Total collection (₹) per day.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div>
-              <ChartAreaInteractive data={collectionGraphData} dataKey="collection" />
-            </div>
+            <ChartAreaInteractive data={collectionGraphData} dataKey="collection" title="Daily Collection (₹)" />
+          </CardContent>
+        </Card>
+
+        {/* Sales Quantity */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales Order Quantity</CardTitle>
+            <CardDescription>Total quantity ordered per day.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartAreaInteractive data={salesQuantityGraphData} dataKey="quantity" title="Sales Order Quantity" />
           </CardContent>
         </Card>
 
@@ -297,14 +353,12 @@ export default function DashboardGraphs() {
             <CardDescription>Total distance travelled per day.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div>
-              <ChartAreaInteractive data={geoGraphData} dataKey="distance" />
-            </div>
+            <ChartAreaInteractive data={geoGraphData} dataKey="distance" title="Distance Travelled (km)" />
           </CardContent>
         </Card>
       </TabsContent>
 
-      {/* TABLES */}
+      {/* Tables */}
       <TabsContent value="geo-table">
         <Card>
           <CardHeader>
@@ -312,11 +366,19 @@ export default function DashboardGraphs() {
             <CardDescription>Most recent geo-tracking data.</CardDescription>
           </CardHeader>
           <CardContent>
-            {journeyEndRecords.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">No geo-tracking reports found.</div>
-            ) : (
-              <DataTableReusable columns={geoTrackingColumns} data={journeyEndRecords} />
-            )}
+            <DataTableReusable columns={geoTrackingColumns} data={journeyEndRecords} />
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="sales-orders-table">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales Orders Table</CardTitle>
+            <CardDescription>All sales orders submitted by the team.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DataTableReusable columns={salesOrderColumns} data={rawSalesOrders} />
           </CardContent>
         </Card>
       </TabsContent>
@@ -328,11 +390,7 @@ export default function DashboardGraphs() {
             <CardDescription>All submitted daily visit reports.</CardDescription>
           </CardHeader>
           <CardContent>
-            {rawDailyReports.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">No daily visit reports found.</div>
-            ) : (
-              <DataTableReusable columns={dailyReportsColumns} data={rawDailyReports} />
-            )}
+            <DataTableReusable columns={dailyReportsColumns} data={rawDailyReports} />
           </CardContent>
         </Card>
       </TabsContent>

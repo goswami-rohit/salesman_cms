@@ -114,14 +114,19 @@ const menuItems: MenuItem[] = [
         permission: ITEM_PERMISSIONS["Dealer Management"]
       },
       {
-        title: "Salesman Leaves",
-        url: "/dashboard/slmLeaves",
-        permission: ITEM_PERMISSIONS["Salesman Leaves"]
+        title: "Permanent Journey Plan",
+        url: "/dashboard/permanentJourneyPlan",
+        permission: ITEM_PERMISSIONS["Permanent Journey Plan"]
       },
       {
         title: "Reports",
         url: "/dashboard/reports",
         permission: ITEM_PERMISSIONS["Reports"]
+      },
+      {
+        title: "Salesman Leaves",
+        url: "/dashboard/slmLeaves",
+        permission: ITEM_PERMISSIONS["Salesman Leaves"]
       },
       {
         title: "Salesman Attendance",
@@ -132,11 +137,6 @@ const menuItems: MenuItem[] = [
         title: "Salesman Geotracking",
         url: "/dashboard/slmGeotracking",
         permission: ITEM_PERMISSIONS["Salesman Geotracking"]
-      },
-      {
-        title: "Permanent Journey Plan",
-        url: "/dashboard/permanentJourneyPlan",
-        permission: ITEM_PERMISSIONS["Permanent Journey Plan"]
       },
       {
         title: "Scores & Ratings",
@@ -234,7 +234,7 @@ export function AppSidebar({ userRole }: Props) {
                   <SidebarMenuItem key={item.title}>
                     {item.url ? (
                       <SidebarMenuButton asChild>
-                        <a href={item.url} className="py-3 my-1">
+                        <a href={item.url} className="py-4 my-2.5">
                           {item.title}
                         </a>
                       </SidebarMenuButton>
@@ -249,7 +249,7 @@ export function AppSidebar({ userRole }: Props) {
                             <SidebarMenuSubItem key={subItem.title}>
                               {subItem.url ? (
                                 <SidebarMenuSubButton asChild>
-                                  <a href={subItem.url} className="py-5 my-1">
+                                  <a href={subItem.url} className="py-5 my-2">
                                     {subItem.title}
                                   </a>
                                 </SidebarMenuSubButton>
@@ -260,7 +260,7 @@ export function AppSidebar({ userRole }: Props) {
                                 {subItem.items.map((subSubItem: MenuItem) => (
                                   <SidebarMenuSubItem key={subSubItem.title}>
                                     <SidebarMenuSubButton asChild>
-                                      <a href={subSubItem.url} className="py-6.5 my-1">
+                                      <a href={subSubItem.url} className="py-6.5 my-2">
                                         {subSubItem.title}
                                       </a>
                                     </SidebarMenuSubButton>
@@ -286,7 +286,7 @@ export function AppSidebar({ userRole }: Props) {
                                 </form>
                               ) : (
                                 <SidebarMenuSubButton asChild>
-                                  <a href={subItem.url} className="py-3 my-1">
+                                  <a href={subItem.url} className="py-4 my-1">
                                     {subItem.title}
                                   </a>
                                 </SidebarMenuSubButton>
