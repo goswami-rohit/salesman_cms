@@ -88,6 +88,8 @@ export async function GET() {
             lastName: true,
             role: true, // Now we are correctly selecting the user's role
             email: true,
+            area: true,
+            region: true,
           },
         },
       },
@@ -107,6 +109,8 @@ export async function GET() {
         id: report.id,
         salesmanName: salesmanName,
         role: report.user.role,
+        area: report.user.area,
+        region: report.user.region,
         visitType: report.visitType,
         siteNameConcernedPerson: report.siteNameConcernedPerson,
         phoneNo: report.phoneNo,

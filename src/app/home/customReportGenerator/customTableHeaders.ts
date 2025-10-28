@@ -1,7 +1,8 @@
 // src/app/home/customReportGenerator/customTableHeaders.ts
 
-import { LucideIcon, User, Car, BadgeIndianRupeeIcon, ListTodo, ClipboardCheck, BandageIcon,
-    CalendarCheck, PencilRuler, ChartNoAxesCombined, MapPin, Award, Star, Boxes, 
+import {
+    LucideIcon, User, Car, BadgeIndianRupeeIcon, ListTodo, ClipboardCheck, BandageIcon,
+    CalendarCheck, PencilRuler, ChartNoAxesCombined, MapPin, Award, Star, Boxes,
     Building, Briefcase,
     Building2
 } from 'lucide-react';
@@ -19,30 +20,30 @@ export interface TableMeta {
 }
 
 export const tablesMetadata: TableMeta[] = [
-    { 
-        id: 'users', 
-        title: 'User (Salesman)', 
-        icon: User, 
-        columns: ['id', 'email', 'firstName', 'lastName', 'role', 'phoneNo', 'address', 'region', 'area', 'isActive', 'createdAt'] 
+    {
+        id: 'users',
+        title: 'User (Salesman)',
+        icon: User,
+        columns: ['id', 'email', 'firstName', 'lastName', 'role', 'phoneNo', 'address', 'region', 'area', 'isActive', 'createdAt']
     },
-    { 
-        id: 'dealers', 
-        title: 'Dealers', 
-        icon: Building2, 
+    {
+        id: 'dealers',
+        title: 'Dealers',
+        icon: Building2,
         columns: [
-            'id', 'type', 'name', 'region', 'area', 'phoneNo', 'address', 'pinCode', 
-            'feedbacks', 'remarks', 'dealerDevelopmentStatus', 'dealerDevelopmentObstacle', 
-            'verificationStatus', 'whatsappNo', 'emailId', 'businessType', 'gstinNo', 
-            'panNo', 'tradeLicNo', 'aadharNo', 'godownSizeSqFt', 'godownCapacityMTBags', 
-            'godownAddressLine', 'godownLandMark', 'godownDistrict', 'godownArea', 
-            'godownRegion', 'godownPinCode', 'residentialAddressLine', 'residentialLandMark', 
-            'residentialDistrict', 'residentialArea', 'residentialRegion', 'residentialPinCode', 
-            'bankAccountName', 'bankName', 'bankBranchAddress', 'bankAccountNumber', 
-            'bankIfscCode', 'brandName', 'noOfDealers', 'areaCovered', 'noOfEmployeesInSales', 
-            'declarationName', 'declarationPlace', 'tradeLicencePicUrl', 'shopPicUrl', 
-            'dealerPicUrl', 'blankChequePicUrl', 'partnershipDeedPicUrl', 'latitude', 
-            'longitude', 'dateOfBirth', 'anniversaryDate', 'totalPotential', 'bestPotential', 
-            'monthlySaleMT', 'projectedMonthlySalesBestCementMT', 'brandSelling', 
+            'id', 'type', 'name', 'region', 'area', 'phoneNo', 'address', 'pinCode',
+            'feedbacks', 'remarks', 'dealerDevelopmentStatus', 'dealerDevelopmentObstacle',
+            'verificationStatus', 'whatsappNo', 'emailId', 'businessType', 'gstinNo',
+            'panNo', 'tradeLicNo', 'aadharNo', 'godownSizeSqFt', 'godownCapacityMTBags',
+            'godownAddressLine', 'godownLandMark', 'godownDistrict', 'godownArea',
+            'godownRegion', 'godownPinCode', 'residentialAddressLine', 'residentialLandMark',
+            'residentialDistrict', 'residentialArea', 'residentialRegion', 'residentialPinCode',
+            'bankAccountName', 'bankName', 'bankBranchAddress', 'bankAccountNumber',
+            'bankIfscCode', 'brandName', 'noOfDealers', 'areaCovered', 'noOfEmployeesInSales',
+            'declarationName', 'declarationPlace', 'tradeLicencePicUrl', 'shopPicUrl',
+            'dealerPicUrl', 'blankChequePicUrl', 'partnershipDeedPicUrl', 'latitude',
+            'longitude', 'dateOfBirth', 'anniversaryDate', 'totalPotential', 'bestPotential',
+            'monthlySaleMT', 'projectedMonthlySalesBestCementMT', 'brandSelling',
             'declarationDate', 'createdAt', 'updatedAt', 'associatedSalesmanName'
         ],
     },
@@ -51,11 +52,11 @@ export const tablesMetadata: TableMeta[] = [
         title: 'Daily Visit Reports',
         icon: CalendarCheck,
         columns: [
-            'id', 'reportDate', 'dealerType', 'dealerName', 'subDealerName', 'location', 
-            'latitude', 'longitude', 'visitType', 'dealerTotalPotential', 'dealerBestPotential', 
-            'brandSelling', 'contactPerson', 'contactPersonPhoneNo', 'todayOrderMt', 
-            'todayCollectionRupees', 'overdueAmount', 'feedbacks', 'solutionBySalesperson', 
-            'anyRemarks', 'checkInTime', 'checkOutTime', 'inTimeImageUrl', 'outTimeImageUrl', 
+            'id', 'reportDate', 'dealerType', 'dealerName', 'subDealerName', 'location',
+            'latitude', 'longitude', 'visitType', 'dealerTotalPotential', 'dealerBestPotential',
+            'brandSelling', 'contactPerson', 'contactPersonPhoneNo', 'todayOrderMt',
+            'todayCollectionRupees', 'overdueAmount', 'feedbacks', 'solutionBySalesperson',
+            'anyRemarks', 'checkInTime', 'checkOutTime', 'inTimeImageUrl', 'outTimeImageUrl',
             'createdAt', 'updatedAt', 'salesmanName', 'salesmanEmail'
         ],
     },
@@ -64,13 +65,13 @@ export const tablesMetadata: TableMeta[] = [
         title: 'Technical Visit Reports',
         icon: PencilRuler,
         columns: [
-            'id', 'reportDate', 'visitType', 'siteNameConcernedPerson', 'phoneNo', 'emailId', 
-            'clientsRemarks', 'salespersonRemarks', 'checkInTime', 'checkOutTime', 
-            'inTimeImageUrl', 'outTimeImageUrl', 'siteVisitBrandInUse', 'siteVisitStage', 
-            'conversionFromBrand', 'conversionQuantityValue', 'conversionQuantityUnit', 
-            'associatedPartyName', 'influencerType', 'serviceType', 'qualityComplaint', 
-            'promotionalActivity', 'channelPartnerVisit', 'siteVisitType', 
-            'dhalaiVerificationCode', 'isVerificationStatus', 'meetingId', 'createdAt', 
+            'id', 'reportDate', 'visitType', 'siteNameConcernedPerson', 'phoneNo', 'emailId',
+            'clientsRemarks', 'salespersonRemarks', 'checkInTime', 'checkOutTime',
+            'inTimeImageUrl', 'outTimeImageUrl', 'siteVisitBrandInUse', 'siteVisitStage',
+            'conversionFromBrand', 'conversionQuantityValue', 'conversionQuantityUnit',
+            'associatedPartyName', 'influencerType', 'serviceType', 'qualityComplaint',
+            'promotionalActivity', 'channelPartnerVisit', 'siteVisitType',
+            'dhalaiVerificationCode', 'isVerificationStatus', 'meetingId', 'createdAt',
             'updatedAt', 'salesmanName', 'salesmanEmail'
         ],
     },
@@ -84,7 +85,20 @@ export const tablesMetadata: TableMeta[] = [
         id: 'salesOrders',
         title: 'Sales Orders',
         icon: BadgeIndianRupeeIcon,
-        columns: ['id', 'quantity', 'unit', 'orderTotal', 'advancePayment', 'pendingPayment', 'estimatedDelivery', 'paymentMethod', 'salesmanName', 'dealerName', 'dealerRegion', 'createdAt'],
+        columns: [
+            'id', 'userId', 'dealerId', 'dvrId', 'pjpId',
+            'salesmanName', 'salesmanRole',
+            'dealerName', 'dealerType', 'dealerPhone', 'dealerAddress', 'area', 'region',
+            'orderDate', 'orderPartyName',
+            'partyPhoneNo', 'partyArea', 'partyRegion', 'partyAddress',
+            'deliveryDate', 'deliveryArea', 'deliveryRegion', 'deliveryAddress', 'deliveryLocPincode',
+            'paymentMode', 'paymentTerms', 'paymentAmount', 'receivedPayment', 'receivedPaymentDate', 'pendingPayment',
+            'orderQty', 'orderUnit',
+            'itemPrice', 'discountPercentage', 'itemPriceAfterDiscount',
+            'itemType', 'itemGrade',
+            'orderTotal', 'estimatedDelivery', 'remarks',
+            'createdAt', 'updatedAt',
+        ],
     },
     {
         id: 'dailyTasks',
@@ -134,6 +148,6 @@ export const tablesMetadata: TableMeta[] = [
         icon: Star,
         columns: ['id', 'area', 'region', 'rating', 'salesmanName', 'salesmanEmail'],
     },
-    
+
 ];
 export type ReportFormat = 'csv' | 'xlsx';

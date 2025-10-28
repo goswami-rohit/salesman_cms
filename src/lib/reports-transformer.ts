@@ -105,7 +105,7 @@ export type FlattenedDealer = {
     dealerPicUrl: string | null;
     blankChequePicUrl: string | null;
     partnershipDeedPicUrl: string | null;
-    
+
     // Fields that require Type Conversion (Decimal, DateTime, Array)
     latitude: number | null; // Decimal -> number
     longitude: number | null; // Decimal -> number
@@ -117,7 +117,7 @@ export type FlattenedDealer = {
     projectedMonthlySalesBestCementMT: number | null; // Decimal -> number
     brandSelling: string; // String[] -> string (joined)
     declarationDate: string | null; // DateTime -> string
-    
+
     // Auto-generated fields (for full report)
     createdAt: string;
     updatedAt: string;
@@ -132,26 +132,26 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
         where: { user: { companyId: companyId } },
         select: {
             // Include all scalar fields by explicitly listing them:
-            id: true, userId: true, type: true, parentDealerId: true, name: true, region: true, area: true, 
-            phoneNo: true, address: true, pinCode: true, latitude: true, longitude: true, 
-            dateOfBirth: true, anniversaryDate: true, totalPotential: true, bestPotential: true, 
-            brandSelling: true, feedbacks: true, remarks: true, dealerDevelopmentStatus: true, 
-            dealerDevelopmentObstacle: true, verificationStatus: true, whatsappNo: true, emailId: true, 
-            businessType: true, gstinNo: true, panNo: true, tradeLicNo: true, aadharNo: true, 
-            godownSizeSqFt: true, godownCapacityMTBags: true, godownAddressLine: true, godownLandMark: true, 
-            godownDistrict: true, godownArea: true, godownRegion: true, godownPinCode: true, 
-            residentialAddressLine: true, residentialLandMark: true, residentialDistrict: true, 
-            residentialArea: true, residentialRegion: true, residentialPinCode: true, bankAccountName: true, 
-            bankName: true, bankBranchAddress: true, bankAccountNumber: true, bankIfscCode: true, 
-            brandName: true, monthlySaleMT: true, noOfDealers: true, areaCovered: true, 
-            projectedMonthlySalesBestCementMT: true, noOfEmployeesInSales: true, declarationName: true, 
-            declarationPlace: true, declarationDate: true, tradeLicencePicUrl: true, shopPicUrl: true, 
+            id: true, userId: true, type: true, parentDealerId: true, name: true, region: true, area: true,
+            phoneNo: true, address: true, pinCode: true, latitude: true, longitude: true,
+            dateOfBirth: true, anniversaryDate: true, totalPotential: true, bestPotential: true,
+            brandSelling: true, feedbacks: true, remarks: true, dealerDevelopmentStatus: true,
+            dealerDevelopmentObstacle: true, verificationStatus: true, whatsappNo: true, emailId: true,
+            businessType: true, gstinNo: true, panNo: true, tradeLicNo: true, aadharNo: true,
+            godownSizeSqFt: true, godownCapacityMTBags: true, godownAddressLine: true, godownLandMark: true,
+            godownDistrict: true, godownArea: true, godownRegion: true, godownPinCode: true,
+            residentialAddressLine: true, residentialLandMark: true, residentialDistrict: true,
+            residentialArea: true, residentialRegion: true, residentialPinCode: true, bankAccountName: true,
+            bankName: true, bankBranchAddress: true, bankAccountNumber: true, bankIfscCode: true,
+            brandName: true, monthlySaleMT: true, noOfDealers: true, areaCovered: true,
+            projectedMonthlySalesBestCementMT: true, noOfEmployeesInSales: true, declarationName: true,
+            declarationPlace: true, declarationDate: true, tradeLicencePicUrl: true, shopPicUrl: true,
             dealerPicUrl: true, blankChequePicUrl: true, partnershipDeedPicUrl: true,
             createdAt: true, updatedAt: true,
 
             // Relations for flattening:
-            user: { 
-                select: { firstName: true, lastName: true } 
+            user: {
+                select: { firstName: true, lastName: true }
             },
         },
         orderBy: { createdAt: 'desc' },
@@ -160,21 +160,21 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
     // 2. Transformation/Flattening Logic
     return rawDealers.map(d => ({
         // Scalar Fields (Default Mapping)
-        id: d.id, type: d.type, name: d.name, region: d.region, area: d.area, phoneNo: d.phoneNo, 
-        address: d.address, pinCode: d.pinCode ?? null, feedbacks: d.feedbacks, remarks: d.remarks ?? null, 
+        id: d.id, type: d.type, name: d.name, region: d.region, area: d.area, phoneNo: d.phoneNo,
+        address: d.address, pinCode: d.pinCode ?? null, feedbacks: d.feedbacks, remarks: d.remarks ?? null,
         dealerDevelopmentStatus: d.dealerDevelopmentStatus ?? null, dealerDevelopmentObstacle: d.dealerDevelopmentObstacle ?? null,
-        verificationStatus: d.verificationStatus, whatsappNo: d.whatsappNo ?? null, emailId: d.emailId ?? null, 
-        businessType: d.businessType ?? null, gstinNo: d.gstinNo ?? null, panNo: d.panNo ?? null, tradeLicNo: d.tradeLicNo ?? null, 
+        verificationStatus: d.verificationStatus, whatsappNo: d.whatsappNo ?? null, emailId: d.emailId ?? null,
+        businessType: d.businessType ?? null, gstinNo: d.gstinNo ?? null, panNo: d.panNo ?? null, tradeLicNo: d.tradeLicNo ?? null,
         aadharNo: d.aadharNo ?? null, godownSizeSqFt: d.godownSizeSqFt ?? null, godownCapacityMTBags: d.godownCapacityMTBags ?? null,
-        godownAddressLine: d.godownAddressLine ?? null, godownLandMark: d.godownLandMark ?? null, godownDistrict: d.godownDistrict ?? null, 
-        godownArea: d.godownArea ?? null, godownRegion: d.godownRegion ?? null, godownPinCode: d.godownPinCode ?? null, 
-        residentialAddressLine: d.residentialAddressLine ?? null, residentialLandMark: d.residentialLandMark ?? null, 
-        residentialDistrict: d.residentialDistrict ?? null, residentialArea: d.residentialArea ?? null, residentialRegion: d.residentialRegion ?? null, 
-        residentialPinCode: d.residentialPinCode ?? null, bankAccountName: d.bankAccountName ?? null, bankName: d.bankName ?? null, 
-        bankBranchAddress: d.bankBranchAddress ?? null, bankAccountNumber: d.bankAccountNumber ?? null, bankIfscCode: d.bankIfscCode ?? null, 
-        brandName: d.brandName ?? null, noOfDealers: d.noOfDealers ?? null, areaCovered: d.areaCovered ?? null, 
-        noOfEmployeesInSales: d.noOfEmployeesInSales ?? null, declarationName: d.declarationName ?? null, 
-        declarationPlace: d.declarationPlace ?? null, tradeLicencePicUrl: d.tradeLicencePicUrl ?? null, shopPicUrl: d.shopPicUrl ?? null, 
+        godownAddressLine: d.godownAddressLine ?? null, godownLandMark: d.godownLandMark ?? null, godownDistrict: d.godownDistrict ?? null,
+        godownArea: d.godownArea ?? null, godownRegion: d.godownRegion ?? null, godownPinCode: d.godownPinCode ?? null,
+        residentialAddressLine: d.residentialAddressLine ?? null, residentialLandMark: d.residentialLandMark ?? null,
+        residentialDistrict: d.residentialDistrict ?? null, residentialArea: d.residentialArea ?? null, residentialRegion: d.residentialRegion ?? null,
+        residentialPinCode: d.residentialPinCode ?? null, bankAccountName: d.bankAccountName ?? null, bankName: d.bankName ?? null,
+        bankBranchAddress: d.bankBranchAddress ?? null, bankAccountNumber: d.bankAccountNumber ?? null, bankIfscCode: d.bankIfscCode ?? null,
+        brandName: d.brandName ?? null, noOfDealers: d.noOfDealers ?? null, areaCovered: d.areaCovered ?? null,
+        noOfEmployeesInSales: d.noOfEmployeesInSales ?? null, declarationName: d.declarationName ?? null,
+        declarationPlace: d.declarationPlace ?? null, tradeLicencePicUrl: d.tradeLicencePicUrl ?? null, shopPicUrl: d.shopPicUrl ?? null,
         dealerPicUrl: d.dealerPicUrl ?? null, blankChequePicUrl: d.blankChequePicUrl ?? null, partnershipDeedPicUrl: d.partnershipDeedPicUrl ?? null,
 
         // DateTime Fields (Conversion to Date string)
@@ -183,18 +183,18 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
         declarationDate: d.declarationDate?.toISOString().slice(0, 10) ?? null,
         createdAt: d.createdAt.toISOString(),
         updatedAt: d.updatedAt.toISOString(),
-        
+
         // Decimal Fields (Conversion to number)
         latitude: d.latitude?.toNumber() ?? null,
         longitude: d.longitude?.toNumber() ?? null,
-        totalPotential: d.totalPotential.toNumber(), 
-        bestPotential: d.bestPotential.toNumber(), 
+        totalPotential: d.totalPotential.toNumber(),
+        bestPotential: d.bestPotential.toNumber(),
         monthlySaleMT: d.monthlySaleMT?.toNumber() ?? null,
         projectedMonthlySalesBestCementMT: d.projectedMonthlySalesBestCementMT?.toNumber() ?? null,
 
         // Array Field (Conversion to comma-separated string)
-        brandSelling: d.brandSelling.join(', '), 
-        
+        brandSelling: d.brandSelling.join(', '),
+
         // Flattened Relation Field
         associatedSalesmanName: d.user ? `${d.user.firstName} ${d.user.lastName}` : null,
     }));
@@ -231,7 +231,7 @@ export type FlattenedDailyVisitReport = {
     updatedAt: string; // Converted from DateTime (Timestamp)
 
     // Flattened fields from the related User model (salesperson)
-    salesmanName: string; 
+    salesmanName: string;
     salesmanEmail: string;
 };
 
@@ -239,18 +239,18 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
     // 2a. Prisma Query: Select all fields and the necessary 'user' relation
     const rawReports = await prisma.dailyVisitReport.findMany({
         where: { user: { companyId } },
-        select: { 
+        select: {
             // All scalar fields included explicitly
-            id: true, userId: true, reportDate: true, dealerType: true, dealerName: true, subDealerName: true, 
-            location: true, latitude: true, longitude: true, visitType: true, dealerTotalPotential: true, 
-            dealerBestPotential: true, brandSelling: true, contactPerson: true, contactPersonPhoneNo: true, 
-            todayOrderMt: true, todayCollectionRupees: true, overdueAmount: true, feedbacks: true, 
-            solutionBySalesperson: true, anyRemarks: true, checkInTime: true, checkOutTime: true, 
+            id: true, userId: true, reportDate: true, dealerType: true, dealerName: true, subDealerName: true,
+            location: true, latitude: true, longitude: true, visitType: true, dealerTotalPotential: true,
+            dealerBestPotential: true, brandSelling: true, contactPerson: true, contactPersonPhoneNo: true,
+            todayOrderMt: true, todayCollectionRupees: true, overdueAmount: true, feedbacks: true,
+            solutionBySalesperson: true, anyRemarks: true, checkInTime: true, checkOutTime: true,
             inTimeImageUrl: true, outTimeImageUrl: true, createdAt: true, updatedAt: true,
-            
+
             // Nested query for the relation:
-            user: { 
-                select: { firstName: true, lastName: true, email: true } 
+            user: {
+                select: { firstName: true, lastName: true, email: true }
             },
         },
         orderBy: { reportDate: 'desc' },
@@ -277,7 +277,7 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
         checkOutTime: r.checkOutTime?.toISOString() ?? null,
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Decimal Fields (Conversion to number)
         latitude: r.latitude.toNumber(),
         longitude: r.longitude.toNumber(),
@@ -289,8 +289,8 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
         overdueAmount: r.overdueAmount?.toNumber() ?? null,
 
         // Array Field (Conversion to comma-separated string)
-        brandSelling: r.brandSelling.join(', '), 
-        
+        brandSelling: r.brandSelling.join(', '),
+
         // Custom, flattened fields:
         salesmanName: `${r.user.firstName} ${r.user.lastName}`,
         salesmanEmail: r.user.email,
@@ -329,28 +329,28 @@ export type FlattenedTechnicalVisitReport = {
     meetingId: string | null;
     createdAt: string; // Converted from DateTime (Timestamp)
     updatedAt: string; // Converted from DateTime (Timestamp)
-    
+
     // Flattened fields from the related User model (salesperson)
-    salesmanName: string; 
+    salesmanName: string;
     salesmanEmail: string;
 };
 
 export async function getFlattenedTechnicalVisitReports(companyId: number): Promise<FlattenedTechnicalVisitReport[]> {
     const rawReports = await prisma.technicalVisitReport.findMany({
         where: { user: { companyId } },
-        select: { 
+        select: {
             // All scalar fields included explicitly
-            id: true, userId: true, reportDate: true, visitType: true, siteNameConcernedPerson: true, phoneNo: true, 
-            emailId: true, clientsRemarks: true, salespersonRemarks: true, checkInTime: true, checkOutTime: true, 
+            id: true, userId: true, reportDate: true, visitType: true, siteNameConcernedPerson: true, phoneNo: true,
+            emailId: true, clientsRemarks: true, salespersonRemarks: true, checkInTime: true, checkOutTime: true,
             inTimeImageUrl: true, outTimeImageUrl: true, createdAt: true, updatedAt: true,
-            siteVisitBrandInUse: true, siteVisitStage: true, conversionFromBrand: true, conversionQuantityValue: true, 
-            conversionQuantityUnit: true, associatedPartyName: true, influencerType: true, serviceType: true, 
-            qualityComplaint: true, promotionalActivity: true, channelPartnerVisit: true, siteVisitType: true, 
+            siteVisitBrandInUse: true, siteVisitStage: true, conversionFromBrand: true, conversionQuantityValue: true,
+            conversionQuantityUnit: true, associatedPartyName: true, influencerType: true, serviceType: true,
+            qualityComplaint: true, promotionalActivity: true, channelPartnerVisit: true, siteVisitType: true,
             dhalaiVerificationCode: true, isVerificationStatus: true, meetingId: true,
 
             // Nested query for the relation:
-            user: { 
-                select: { firstName: true, lastName: true, email: true } 
+            user: {
+                select: { firstName: true, lastName: true, email: true }
             },
         },
         orderBy: { reportDate: 'desc' },
@@ -386,14 +386,14 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
         checkOutTime: r.checkOutTime?.toISOString() ?? null,
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Decimal Fields (Conversion to number)
         conversionQuantityValue: r.conversionQuantityValue?.toNumber() ?? null,
 
         // Array Fields (Conversion to comma-separated string)
-        siteVisitBrandInUse: r.siteVisitBrandInUse.join(', '), 
+        siteVisitBrandInUse: r.siteVisitBrandInUse.join(', '),
         influencerType: r.influencerType.join(', '),
-        
+
         // Custom, flattened fields:
         salesmanName: `${r.user.firstName} ${r.user.lastName}`,
         salesmanEmail: r.user.email,
@@ -409,7 +409,7 @@ export type FlattenedPermanentJourneyPlan = {
     status: string;
     createdAt: string; // Converted from DateTime (Timestamp)
     updatedAt: string; // Converted from DateTime (Timestamp)
-    
+
     // Flattened Assigned User
     assignedSalesmanName: string;
     assignedSalesmanEmail: string;
@@ -437,12 +437,12 @@ export async function getFlattenedPermanentJourneyPlans(companyId: number): Prom
         areaToBeVisited: r.areaToBeVisited,
         description: r.description ?? null,
         status: r.status,
-        
+
         // DateTime Conversions
         planDate: r.planDate.toISOString().slice(0, 10),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Flattened Relations
         assignedSalesmanName: `${r.user.firstName} ${r.user.lastName}`,
         assignedSalesmanEmail: r.user.email,
@@ -464,7 +464,7 @@ export type FlattenedCompetitionReport = {
     remarks: string | null;
     createdAt: string; // Converted from DateTime (Timestamp)
     updatedAt: string; // Converted from DateTime (Timestamp)
-    
+
     // Flattened Salesman
     salesmanName: string;
     salesmanEmail: string;
@@ -491,13 +491,13 @@ export async function getFlattenedCompetitionReports(companyId: number): Promise
         retail: r.retail,
         schemesYesNo: r.schemesYesNo,
         remarks: r.remarks ?? null,
-        
+
         // Conversions
         reportDate: r.reportDate.toISOString().slice(0, 10),
         avgSchemeCost: r.avgSchemeCost.toNumber(),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Flattened Relations
         salesmanName: `${r.user.firstName} ${r.user.lastName}`,
         salesmanEmail: r.user.email,
@@ -516,7 +516,7 @@ export type FlattenedDailyTask = {
     pjpId: string | null;
     createdAt: string; // Converted from DateTime (Timestamp)
     updatedAt: string; // Converted from DateTime (Timestamp)
-    
+
     // Flattened Relations
     assignedSalesmanName: string;
     assignedSalesmanEmail: string;
@@ -532,7 +532,7 @@ export async function getFlattenedDailyTasks(companyId: number): Promise<Flatten
             // All scalar fields
             id: true, taskDate: true, visitType: true, relatedDealerId: true, siteName: true, description: true, status: true,
             pjpId: true, createdAt: true, updatedAt: true,
-            
+
             // Relations
             user: { select: { firstName: true, lastName: true, email: true } }, // Assigned Salesman
             assignedBy: { select: { firstName: true, lastName: true, email: true } }, // Creator/Manager
@@ -554,7 +554,7 @@ export async function getFlattenedDailyTasks(companyId: number): Promise<Flatten
         taskDate: r.taskDate.toISOString().slice(0, 10),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Flattened Relations
         assignedSalesmanName: `${r.user.firstName} ${r.user.lastName}`,
         assignedSalesmanEmail: r.user.email,
@@ -590,24 +590,24 @@ export type FlattenedSalesmanAttendance = {
     outTimeAltitude: number | null; // Converted from Decimal
     createdAt: string; // Converted from Timestamp
     updatedAt: string; // Converted from Timestamp
-    
+
     // Flattened Salesman
-    salesmanName: string; 
+    salesmanName: string;
     salesmanEmail: string;
 };
 
 export async function getFlattenedSalesmanAttendance(companyId: number): Promise<FlattenedSalesmanAttendance[]> {
     const rawReports = await prisma.salesmanAttendance.findMany({
         where: { user: { companyId } },
-        select: { 
+        select: {
             // All scalar fields
-            id: true, attendanceDate: true, locationName: true, inTimeTimestamp: true, outTimeTimestamp: true, 
-            inTimeImageCaptured: true, outTimeImageCaptured: true, inTimeImageUrl: true, outTimeImageUrl: true, 
-            inTimeLatitude: true, inTimeLongitude: true, inTimeAccuracy: true, inTimeSpeed: true, 
-            inTimeHeading: true, inTimeAltitude: true, outTimeLatitude: true, outTimeLongitude: true, 
+            id: true, attendanceDate: true, locationName: true, inTimeTimestamp: true, outTimeTimestamp: true,
+            inTimeImageCaptured: true, outTimeImageCaptured: true, inTimeImageUrl: true, outTimeImageUrl: true,
+            inTimeLatitude: true, inTimeLongitude: true, inTimeAccuracy: true, inTimeSpeed: true,
+            inTimeHeading: true, inTimeAltitude: true, outTimeLatitude: true, outTimeLongitude: true,
             outTimeAccuracy: true, outTimeSpeed: true, outTimeHeading: true, outTimeAltitude: true,
             createdAt: true, updatedAt: true,
-            
+
             // Relation
             user: { select: { firstName: true, lastName: true, email: true } },
         },
@@ -629,7 +629,7 @@ export async function getFlattenedSalesmanAttendance(companyId: number): Promise
         outTimeTimestamp: r.outTimeTimestamp?.toISOString() ?? null,
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Decimal Fields (Conversion to number)
         inTimeLatitude: r.inTimeLatitude.toNumber(),
         inTimeLongitude: r.inTimeLongitude.toNumber(),
@@ -643,7 +643,7 @@ export async function getFlattenedSalesmanAttendance(companyId: number): Promise
         outTimeSpeed: r.outTimeSpeed?.toNumber() ?? null,
         outTimeHeading: r.outTimeHeading?.toNumber() ?? null,
         outTimeAltitude: r.outTimeAltitude?.toNumber() ?? null,
-        
+
         // Flattened Relation
         salesmanName: `${r.user.firstName} ${r.user.lastName}`,
         salesmanEmail: r.user.email,
@@ -661,7 +661,7 @@ export type FlattenedSalesmanLeaveApplication = {
     adminRemarks: string | null;
     createdAt: string; // Converted from Timestamp
     updatedAt: string; // Converted from Timestamp
-    
+
     // Flattened Salesman
     salesmanName: string;
     salesmanEmail: string;
@@ -672,7 +672,7 @@ export async function getFlattenedSalesmanLeaveApplication(companyId: number): P
         where: { user: { companyId } },
         select: {
             // All scalar fields
-            id: true, leaveType: true, startDate: true, endDate: true, reason: true, status: true, 
+            id: true, leaveType: true, startDate: true, endDate: true, reason: true, status: true,
             adminRemarks: true, createdAt: true, updatedAt: true,
             // Relation
             user: { select: { firstName: true, lastName: true, email: true } },
@@ -687,13 +687,13 @@ export async function getFlattenedSalesmanLeaveApplication(companyId: number): P
         reason: r.reason,
         status: r.status,
         adminRemarks: r.adminRemarks ?? null,
-        
+
         // DateTime Conversions
         startDate: r.startDate.toISOString().slice(0, 10),
         endDate: r.endDate.toISOString().slice(0, 10),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Flattened Relations
         salesmanName: `${r.user.firstName} ${r.user.lastName}`,
         salesmanEmail: r.user.email,
@@ -702,70 +702,156 @@ export async function getFlattenedSalesmanLeaveApplication(companyId: number): P
 
 // Sales Order
 export type FlattenedSalesOrder = {
+    // IDs
     id: string;
-    quantity: number; // Converted from Decimal
-    unit: string;
-    orderTotal: number; // Converted from Decimal
-    advancePayment: number; // Converted from Decimal
-    pendingPayment: number; // Converted from Decimal
-    estimatedDelivery: string; // Converted from DateTime (Date)
-    remarks: string | null;
-    paymentMethod: string | null;
+    userId: number | null;
+    dealerId: string | null;
     dvrId: string | null;
-    createdAt: string; // Converted from Timestamp
-    updatedAt: string; // Converted from Timestamp
+    pjpId: string | null;
 
-    // Flattened Relations
+    // Denormalized display
     salesmanName: string | null;
     salesmanEmail: string | null;
+    salesmanRole: string | null;
     dealerName: string | null;
     dealerRegion: string | null;
     dealerArea: string | null;
+    dealerPhone: string | null;
+    dealerAddress: string | null;
+
+    // Business fields (raw)
+    orderDate: string;                 // YYYY-MM-DD
+    orderPartyName: string;
+
+    partyPhoneNo: string | null;
+    partyArea: string | null;
+    partyRegion: string | null;
+    partyAddress: string | null;
+
+    deliveryDate: string | null;       // YYYY-MM-DD
+    deliveryArea: string | null;
+    deliveryRegion: string | null;
+    deliveryAddress: string | null;
+    deliveryLocPincode: string | null;
+
+    paymentMode: string | null;
+    paymentTerms: string | null;
+    paymentAmount: number | null;
+    receivedPayment: number | null;
+    receivedPaymentDate: string | null; // YYYY-MM-DD
+    pendingPayment: number | null;
+
+    orderQty: number | null;
+    orderUnit: string | null;
+
+    itemPrice: number | null;
+    discountPercentage: number | null;
+    itemPriceAfterDiscount: number | null;
+
+    itemType: string | null;
+    itemGrade: string | null;
+
+    // Convenience/computed
+    orderTotal: number;                // qty * effective price
+    estimatedDelivery: string | null;  // alias of deliveryDate
+    remarks: string | null;            // you don't have this column; stays null
+
+    // Timestamps
+    createdAt: string; // ISO
+    updatedAt: string; // ISO
 };
 
 export async function getFlattenedSalesOrders(companyId: number): Promise<FlattenedSalesOrder[]> {
-    const rawReports = await prisma.salesOrder.findMany({
-        // Filter by the salesman's company ID
-        where: { salesman: { companyId } },
-        select: { 
-            // All scalar fields
-            id: true, quantity: true, unit: true, orderTotal: true, advancePayment: true, 
-            pendingPayment: true, estimatedDelivery: true, remarks: true, paymentMethod: true,
-            dvrId: true, createdAt: true, updatedAt: true,
-            
-            // Relations
-            salesman: { select: { firstName: true, lastName: true, email: true } },
-            dealer: { select: { name: true, region: true, area: true } }, // Fetching key dealer fields
+    const orders = await prisma.salesOrder.findMany({
+        where: { user: { companyId } },           // link via SalesOrder.user
+        include: {
+            user: { select: { id: true, firstName: true, lastName: true, email: true, role: true } },
+            dealer: {
+                select: {
+                    id: true, name: true, region: true, area: true, phoneNo: true, address: true,
+                },
+            },
         },
         orderBy: { createdAt: 'desc' },
     });
 
-    return rawReports.map(r => ({
-        // Map scalar fields (String)
-        id: r.id,
-        unit: r.unit,
-        remarks: r.remarks ?? null,
-        paymentMethod: r.paymentMethod ?? null,
-        dvrId: r.dvrId ?? null,
+    const toNum = (v: any): number | null => (v == null ? null : Number(v));
+    const toDate = (d: any): string | null => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
-        // DateTime Conversions
-        estimatedDelivery: r.estimatedDelivery.toISOString().slice(0, 10),
-        createdAt: r.createdAt.toISOString(),
-        updatedAt: r.updatedAt.toISOString(),
-        
-        // Decimal Conversions
-        quantity: r.quantity.toNumber(),
-        orderTotal: r.orderTotal.toNumber(),
-        advancePayment: r.advancePayment.toNumber(),
-        pendingPayment: r.pendingPayment.toNumber(),
-        
-        // Flattened Relations
-        salesmanName: r.salesman ? `${r.salesman.firstName} ${r.salesman.lastName}` : null,
-        salesmanEmail: r.salesman?.email ?? null,
-        dealerName: r.dealer?.name ?? null,
-        dealerRegion: r.dealer?.region ?? null,
-        dealerArea: r.dealer?.area ?? null,
-    }));
+    return orders.map(o => {
+        const qty = toNum(o.orderQty) ?? 0;
+        // Prefer price after discount; fall back to base price; else 0
+        const unitPrice = (toNum(o.itemPriceAfterDiscount) ?? toNum(o.itemPrice) ?? 0);
+        const orderTotal = Number((qty * unitPrice).toFixed(2));
+
+        const receivedPayment = toNum(o.receivedPayment);
+        const pendingPayment =
+            o.pendingPayment != null ? toNum(o.pendingPayment) : Number((orderTotal - (receivedPayment ?? 0)).toFixed(2));
+
+        const salesmanName =
+            `${o.user?.firstName ?? ''} ${o.user?.lastName ?? ''}`.trim() ||
+            o.user?.email || null;
+
+        return {
+            // IDs
+            id: o.id,
+            userId: o.userId ?? null,
+            dealerId: o.dealerId ?? null,
+            dvrId: o.dvrId ?? null,
+            pjpId: o.pjpId ?? null,
+
+            // Denormalized
+            salesmanName,
+            salesmanEmail: o.user?.email ?? null,
+            salesmanRole: o.user?.role ?? null,
+            dealerName: o.dealer?.name ?? null,
+            dealerRegion: o.dealer?.region ?? null,
+            dealerArea: o.dealer?.area ?? null,
+            dealerPhone: o.dealer?.phoneNo ?? null,
+            dealerAddress: o.dealer?.address ?? null,
+
+            // Business (raw)
+            orderDate: toDate(o.orderDate)!, // not null by schema
+            orderPartyName: o.orderPartyName,
+
+            partyPhoneNo: o.partyPhoneNo ?? null,
+            partyArea: o.partyArea ?? null,
+            partyRegion: o.partyRegion ?? null,
+            partyAddress: o.partyAddress ?? null,
+
+            deliveryDate: toDate(o.deliveryDate),
+            deliveryArea: o.deliveryArea ?? null,
+            deliveryRegion: o.deliveryRegion ?? null,
+            deliveryAddress: o.deliveryAddress ?? null,
+            deliveryLocPincode: o.deliveryLocPincode ?? null,
+
+            paymentMode: o.paymentMode ?? null,
+            paymentTerms: o.paymentTerms ?? null,
+            paymentAmount: toNum(o.paymentAmount),
+            receivedPayment,
+            receivedPaymentDate: toDate(o.receivedPaymentDate),
+            pendingPayment,
+
+            orderQty: toNum(o.orderQty),
+            orderUnit: o.orderUnit ?? null,
+
+            itemPrice: toNum(o.itemPrice),
+            discountPercentage: toNum(o.discountPercentage),
+            itemPriceAfterDiscount: toNum(o.itemPriceAfterDiscount),
+
+            itemType: o.itemType ?? null,
+            itemGrade: o.itemGrade ?? null,
+
+            // Convenience/computed
+            orderTotal,
+            estimatedDelivery: toDate(o.deliveryDate),
+            remarks: null,
+
+            // Timestamps
+            createdAt: o.createdAt.toISOString(),
+            updatedAt: o.updatedAt.toISOString(),
+        };
+    });
 }
 
 // Geo-tracking
@@ -806,10 +892,10 @@ export async function getFlattenedGeoTracking(companyId: number): Promise<Flatte
         where: { user: { companyId } },
         select: {
             // All scalar fields
-            id: true, latitude: true, longitude: true, recordedAt: true, accuracy: true, speed: true, 
-            heading: true, altitude: true, locationType: true, activityType: true, appState: true, 
-            batteryLevel: true, isCharging: true, networkStatus: true, ipAddress: true, siteName: true, 
-            checkInTime: true, checkOutTime: true, totalDistanceTravelled: true, journeyId: true, 
+            id: true, latitude: true, longitude: true, recordedAt: true, accuracy: true, speed: true,
+            heading: true, altitude: true, locationType: true, activityType: true, appState: true,
+            batteryLevel: true, isCharging: true, networkStatus: true, ipAddress: true, siteName: true,
+            checkInTime: true, checkOutTime: true, totalDistanceTravelled: true, journeyId: true,
             isActive: true, destLat: true, destLng: true, createdAt: true, updatedAt: true,
 
             // Relation
@@ -837,7 +923,7 @@ export async function getFlattenedGeoTracking(companyId: number): Promise<Flatte
         checkOutTime: r.checkOutTime?.toISOString() ?? null,
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Decimal Conversions (all are nullable or required)
         latitude: r.latitude.toNumber(),
         longitude: r.longitude.toNumber(),
@@ -849,7 +935,7 @@ export async function getFlattenedGeoTracking(companyId: number): Promise<Flatte
         totalDistanceTravelled: r.totalDistanceTravelled?.toNumber() ?? null,
         destLat: r.destLat?.toNumber() ?? null,
         destLng: r.destLng?.toNumber() ?? null,
-        
+
         // Flattened Relation
         salesmanName: `${r.user.firstName} ${r.user.lastName}`,
         salesmanEmail: r.user.email,
@@ -867,7 +953,7 @@ export type FlattenedDealerReportsAndScores = {
     lastUpdatedDate: string; // Converted from Timestamp
     createdAt: string; // Converted from Timestamp
     updatedAt: string; // Converted from Timestamp
-    
+
     // Flattened Dealer
     dealerName: string;
     dealerRegion: string;
@@ -876,19 +962,19 @@ export type FlattenedDealerReportsAndScores = {
 
 export async function getFlattenedDealerReportsAndScores(companyId: number): Promise<FlattenedDealerReportsAndScores[]> {
     const rawReports = await prisma.dealerReportsAndScores.findMany({
-        where: { 
-            dealer: { 
-                user: { 
-                    companyId: companyId 
-                } 
-            } 
+        where: {
+            dealer: {
+                user: {
+                    companyId: companyId
+                }
+            }
         },
         select: {
             // All scalar fields
             id: true, dealerScore: true, trustWorthinessScore: true, creditWorthinessScore: true,
             orderHistoryScore: true, visitFrequencyScore: true, lastUpdatedDate: true,
             createdAt: true, updatedAt: true,
-            
+
             // Relation: Fetching key dealer fields
             dealer: { select: { name: true, region: true, area: true } },
         },
@@ -897,12 +983,12 @@ export async function getFlattenedDealerReportsAndScores(companyId: number): Pro
 
     return rawReports.map(r => ({
         id: r.id,
-        
+
         // DateTime Conversions
         lastUpdatedDate: r.lastUpdatedDate.toISOString(),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        
+
         // Decimal Conversions
         dealerScore: r.dealerScore.toNumber(),
         trustWorthinessScore: r.trustWorthinessScore.toNumber(),
@@ -923,7 +1009,7 @@ export type FlattenedRating = {
     area: string;
     region: string;
     rating: number;
-    
+
     // Flattened Salesman
     salesmanName: string;
     salesmanEmail: string;
@@ -945,7 +1031,7 @@ export async function getFlattenedRatings(companyId: number): Promise<FlattenedR
         area: r.area,
         region: r.region,
         rating: r.rating,
-        
+
         // Flattened User
         salesmanName: `${r.user.firstName} ${r.user.lastName}`,
         salesmanEmail: r.user.email,
@@ -956,12 +1042,12 @@ export async function getFlattenedRatings(companyId: number): Promise<FlattenedR
 export type FlattenedDealerBrandMapping = {
     id: string;
     capacityMT: number; // Converted from Decimal
-    
+
     // Flattened Brand
     brandName: string;
-    
+
     // Flattened Dealer
-    dealerId: string; 
+    dealerId: string;
     dealerName: string;
     dealerRegion: string;
     dealerArea: string;
@@ -969,18 +1055,18 @@ export type FlattenedDealerBrandMapping = {
 
 export async function getFlattenedDealerBrandCapacities(companyId: number): Promise<FlattenedDealerBrandMapping[]> {
     const rawReports = await prisma.dealerBrandMapping.findMany({
-        where: { 
+        where: {
             // Filter via Dealer -> User -> Company
-            dealer: { 
-                user: { 
-                    companyId: companyId 
-                } 
-            } 
+            dealer: {
+                user: {
+                    companyId: companyId
+                }
+            }
         },
         select: {
             // Scalar fields
             id: true, capacityMT: true, dealerId: true,
-            
+
             // Relations
             brand: { select: { name: true } },
             dealer: { select: { name: true, region: true, area: true } },
@@ -991,10 +1077,10 @@ export async function getFlattenedDealerBrandCapacities(companyId: number): Prom
     return rawReports.map(r => ({
         id: r.id,
         dealerId: r.dealerId,
-        
+
         // Decimal Conversions
         capacityMT: r.capacityMT.toNumber(),
-        
+
         // Flattened Relations
         brandName: r.brand.name,
         dealerName: r.dealer.name,
@@ -1011,15 +1097,15 @@ export const transformerMap = {
     technicalVisitReports: getFlattenedTechnicalVisitReports,
     salesOrders: getFlattenedSalesOrders,
     competitionReports: getFlattenedCompetitionReports,
-    
+
     // Planning & Task Models
     permanentJourneyPlans: getFlattenedPermanentJourneyPlans,
     dailyTasks: getFlattenedDailyTasks,
-    
+
     salesmanAttendance: getFlattenedSalesmanAttendance,
     salesmanLeaveApplications: getFlattenedSalesmanLeaveApplication,
     geoTracking: getFlattenedGeoTracking,
-    
+
     dealerReportsAndScores: getFlattenedDealerReportsAndScores,
     salesmanRating: getFlattenedRatings,
     dealerBrandCapacities: getFlattenedDealerBrandCapacities,

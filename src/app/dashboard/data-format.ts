@@ -47,17 +47,17 @@ export type DailyCollectionData = {
 };
 
 export type SalesOrderQuantityData = {
-    name: string; // Date or Day
-    quantity: number; // Sum of quantity (MT/Bags)
+  name: string;   // Date
+  quantity: number; // Sum of orderQty (MT/Bags units handled in UI)
 };
 
 export type TechnicalConversionData = {
-    name: string; // Date or Day
-    conversionQuantity: number; // Sum of conversionQuantityValue
+  name: string; // Date or Day
+  conversionQuantity: number; // Sum of conversionQuantityValue
 };
 
 // Competition Report Graph (Competition Brand Counts - for Pie/Bar Chart)
 export type CompetitionBrandCount = {
-    name: string; // Brand Name
-    count: number;
+  name: string; // Brand Name
+  count: number;
 };

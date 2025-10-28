@@ -25,15 +25,15 @@ import { Search, Loader2 } from 'lucide-react';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`; 
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`; 
+const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
   regions: string[];
 }
 interface RolesResponse {
-    roles: string[]; 
+  roles: string[];
 }
 
 // SalesOrder type is extended from the schema inference
@@ -42,69 +42,221 @@ type SalesOrder = z.infer<typeof salesOrderSchema>;
 // Column definitions for the sales order table
 const columnHelper = createColumnHelper<SalesOrder>();
 
-const salesOrderColumns: ColumnDef<SalesOrder, any>[] = [
+// Assuming you have:
+// import { ColumnDef } from '@tanstack/react-table';
+// const columnHelper = createColumnHelper<SalesOrder>();
+
+const num = (v: number | null | undefined) =>
+  new Intl.NumberFormat('en-IN').format(v ?? 0);
+
+const dateStr = (v: string | null | undefined) => v || '-';
+
+export const salesOrderColumns: ColumnDef<SalesOrder, any>[] = [
+  // IDs & foreign keys
+  columnHelper.accessor('id', {
+    header: 'Order ID',
+    cell: info => info.getValue(),
+    meta: { filterType: 'search' },
+  }),
+  columnHelper.accessor('userId', {
+    header: 'User ID',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('dealerId', {
+    header: 'Dealer ID',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('dvrId', {
+    header: 'DVR ID',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('pjpId', {
+    header: 'PJP ID',
+    cell: info => info.getValue() ?? '-',
+  }),
+
+  // Denormalized display
   columnHelper.accessor('salesmanName', {
     header: 'Salesman',
-    cell: (info) => info.getValue(),
+    cell: info => info.getValue(),
     meta: { filterType: 'search' },
   }),
   columnHelper.accessor('salesmanRole', {
     header: 'Role',
-    cell: (info) => info.getValue(),
+    cell: info => info.getValue(),
   }),
   columnHelper.accessor('dealerName', {
     header: 'Dealer',
-    cell: (info) => info.getValue(),
+    cell: info => info.getValue(),
     meta: { filterType: 'search' },
   }),
   columnHelper.accessor('dealerType', {
     header: 'Dealer Type',
-    cell: (info) => info.getValue(),
+    cell: info => info.getValue(),
   }),
   columnHelper.accessor('dealerPhone', {
     header: 'Phone',
-    cell: (info) => info.getValue(),
+    cell: info => info.getValue(),
   }),
   columnHelper.accessor('dealerAddress', {
-    header: 'Address',
-    cell: (info) => info.getValue(),
+    header: 'Dealer Address',
+    cell: info => info.getValue(),
   }),
   columnHelper.accessor('area', {
     header: 'Area',
-    cell: (info) => info.getValue(),
+    cell: info => info.getValue(),
   }),
   columnHelper.accessor('region', {
     header: 'Region',
-    cell: (info) => info.getValue(),
+    cell: info => info.getValue(),
   }),
-  columnHelper.accessor('quantity', {
-    header: 'Quantity',
-    cell: (info) => `${info.getValue()} ${info.row.original.unit}`,
+
+  // Business fields (raw)
+  columnHelper.accessor('orderDate', {
+    header: 'Order Date',
+    cell: info => dateStr(info.getValue()),
+    meta: { filterType: 'date' },
   }),
-  columnHelper.accessor('orderTotal', {
-    header: 'Order Total (₹)',
-    cell: (info) => new Intl.NumberFormat('en-IN').format(info.getValue()),
+  columnHelper.accessor('orderPartyName', {
+    header: 'Order Party',
+    cell: info => info.getValue(),
+    meta: { filterType: 'search' },
   }),
-  columnHelper.accessor('advancePayment', {
-    header: 'Advance (₹)',
-    cell: (info) => new Intl.NumberFormat('en-IN').format(info.getValue()),
+
+  // Party details
+  columnHelper.accessor('partyPhoneNo', {
+    header: 'Party Phone',
+    cell: info => info.getValue() ?? '-',
   }),
-  columnHelper.accessor('pendingPayment', {
-    header: 'Pending (₹)',
-    cell: (info) => new Intl.NumberFormat('en-IN').format(info.getValue()),
+  columnHelper.accessor('partyArea', {
+    header: 'Party Area',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('partyRegion', {
+    header: 'Party Region',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('partyAddress', {
+    header: 'Party Address',
+    cell: info => info.getValue() ?? '-',
+  }),
+
+  // Delivery details
+  columnHelper.accessor('deliveryDate', {
+    header: 'Delivery Date',
+    cell: info => dateStr(info.getValue()),
+    meta: { filterType: 'date' },
   }),
   columnHelper.accessor('estimatedDelivery', {
     header: 'Delivery ETA',
-    cell: (info) => info.getValue(),
+    cell: info => dateStr(info.getValue()), // alias of deliveryDate from API
     meta: { filterType: 'date' },
+  }),
+  columnHelper.accessor('deliveryArea', {
+    header: 'Delivery Area',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('deliveryRegion', {
+    header: 'Delivery Region',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('deliveryAddress', {
+    header: 'Delivery Address',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('deliveryLocPincode', {
+    header: 'Delivery PIN',
+    cell: info => info.getValue() ?? '-',
+  }),
+
+  // Payment
+  columnHelper.accessor('paymentMode', {
+    header: 'Payment Mode',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('paymentTerms', {
+    header: 'Payment Terms',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('paymentAmount', {
+    header: 'Payment Amount (₹)',
+    cell: info => num(info.getValue()),
+  }),
+  columnHelper.accessor('receivedPayment', {
+    header: 'Received (₹)',
+    cell: info => num(info.getValue()),
+  }),
+  columnHelper.accessor('receivedPaymentDate', {
+    header: 'Received On',
+    cell: info => dateStr(info.getValue()),
+    meta: { filterType: 'date' },
+  }),
+  columnHelper.accessor('pendingPayment', {
+    header: 'Pending (₹)',
+    cell: info => num(info.getValue()),
+  }),
+
+  // Order qty & unit
+  columnHelper.accessor('orderQty', {
+    header: 'Quantity',
+    cell: info => {
+      const qty = info.getValue();
+      const unit = info.row.original.orderUnit || '';
+      return qty != null ? `${qty} ${unit}` : '-';
+    },
+  }),
+  columnHelper.accessor('orderUnit', {
+    header: 'Unit',
+    cell: info => info.getValue() ?? '-',
+  }),
+
+  // Pricing & discounts
+  columnHelper.accessor('itemPrice', {
+    header: 'Item Price (₹)',
+    cell: info => num(info.getValue()),
+  }),
+  columnHelper.accessor('discountPercentage', {
+    header: 'Discount (%)',
+    cell: info => {
+      const v = info.getValue();
+      return v == null ? '-' : `${v}`;
+    },
+  }),
+  columnHelper.accessor('itemPriceAfterDiscount', {
+    header: 'Price After Discount (₹)',
+    cell: info => num(info.getValue()),
+  }),
+
+  // Product classification
+  columnHelper.accessor('itemType', {
+    header: 'Item Type',
+    cell: info => info.getValue() ?? '-',
+  }),
+  columnHelper.accessor('itemGrade', {
+    header: 'Item Grade',
+    cell: info => info.getValue() ?? '-',
+  }),
+
+  // Computed/convenience
+  columnHelper.accessor('orderTotal', {
+    header: 'Order Total (₹)',
+    cell: info => num(info.getValue()),
   }),
   columnHelper.accessor('remarks', {
     header: 'Remarks',
-    cell: (info) => info.getValue() || '-',
+    cell: info => info.getValue() ?? '-',
   }),
+
+  // Timestamps
   columnHelper.accessor('createdAt', {
     header: 'Created On',
-    cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+    cell: info => new Date(info.getValue()).toLocaleDateString(),
+    meta: { filterType: 'date' },
+  }),
+  columnHelper.accessor('updatedAt', {
+    header: 'Updated On',
+    cell: info => new Date(info.getValue()).toLocaleDateString(),
+    meta: { filterType: 'date' },
   }),
 ];
 
@@ -161,10 +313,10 @@ const SalesOrdersTable = () => {
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [availableAreas, setAvailableAreas] = useState<string[]>([]);
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
-  
+
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
-  
+
   const [locationError, setLocationError] = useState<string | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
 
@@ -216,13 +368,13 @@ const SalesOrdersTable = () => {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data: LocationsResponse = await response.json();
-      
+
       const safeAreas = Array.isArray(data.areas) ? data.areas.filter(Boolean) : [];
       const safeRegions = Array.isArray(data.regions) ? data.regions.filter(Boolean) : [];
-      
+
       setAvailableAreas(safeAreas);
       setAvailableRegions(safeRegions);
-      
+
     } catch (err: any) {
       console.error('Failed to fetch filter locations:', err);
       setLocationError('Failed to load Area/Region filters.');
@@ -243,11 +395,11 @@ const SalesOrdersTable = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      const data: RolesResponse = await response.json(); 
+      const data: RolesResponse = await response.json();
       const roles = data.roles && Array.isArray(data.roles) ? data.roles : [];
-      
+
       const safeRoles = roles.filter(Boolean);
-      
+
       setAvailableRoles(safeRoles);
     } catch (err: any) {
       console.error('Failed to fetch filter roles:', err);
@@ -271,8 +423,8 @@ const SalesOrdersTable = () => {
     // Note: We deliberately reset the page here, but the state update
     // should happen outside of useMemo if possible. However, setting the page 
     // to 1 here ensures correct pagination when filters change.
-    setCurrentPage(1); 
-    
+    setCurrentPage(1);
+
     const lowerCaseSearch = searchQuery.toLowerCase();
 
     return data.filter((order) => {
@@ -282,17 +434,17 @@ const SalesOrdersTable = () => {
       const searchMatch = !lowerCaseSearch || salesmanMatch || dealerMatch;
 
       // 2. Role Filter 
-      const roleMatch = roleFilter === 'all' || 
-        order.salesmanRole?.toLowerCase() === roleFilter.toLowerCase(); 
+      const roleMatch = roleFilter === 'all' ||
+        order.salesmanRole?.toLowerCase() === roleFilter.toLowerCase();
 
       // 3. Area Filter 
-      const areaMatch = areaFilter === 'all' || 
-        order.area?.toLowerCase() === areaFilter.toLowerCase(); 
+      const areaMatch = areaFilter === 'all' ||
+        order.area?.toLowerCase() === areaFilter.toLowerCase();
 
       // 4. Region Filter 
-      const regionMatch = regionFilter === 'all' || 
+      const regionMatch = regionFilter === 'all' ||
         order.region?.toLowerCase() === regionFilter.toLowerCase();
-      
+
       // Combine all conditions
       return searchMatch && roleMatch && areaMatch && regionMatch;
     });
@@ -321,10 +473,10 @@ const SalesOrdersTable = () => {
 
   if (error) {
     return (
-        <div className="text-center text-red-500 py-8">
-            Error loading sales orders: {error}
-            <Button onClick={fetchSalesOrders} className="ml-4">Retry</Button>
-        </div>
+      <div className="text-center text-red-500 py-8">
+        Error loading sales orders: {error}
+        <Button onClick={fetchSalesOrders} className="ml-4">Retry</Button>
+      </div>
     );
   }
 
@@ -348,31 +500,31 @@ const SalesOrdersTable = () => {
 
         {/* 2. Role Filter */}
         {renderSelectFilter(
-          'Role', 
-          roleFilter, 
-          (v) => { setRoleFilter(v); }, 
-          availableRoles, 
+          'Role',
+          roleFilter,
+          (v) => { setRoleFilter(v); },
+          availableRoles,
           isLoadingRoles
         )}
 
         {/* 3. Area Filter */}
         {renderSelectFilter(
-          'Area', 
-          areaFilter, 
-          (v) => { setAreaFilter(v); }, 
-          availableAreas, 
+          'Area',
+          areaFilter,
+          (v) => { setAreaFilter(v); },
+          availableAreas,
           isLoadingLocations
         )}
 
         {/* 4. Region Filter */}
         {renderSelectFilter(
-          'Region', 
-          regionFilter, 
-          (v) => { setRegionFilter(v); }, 
-          availableRegions, 
+          'Region',
+          regionFilter,
+          (v) => { setRegionFilter(v); },
+          availableRegions,
           isLoadingLocations
         )}
-        
+
         {/* Display filter option errors if any */}
         {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
         {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
@@ -381,22 +533,22 @@ const SalesOrdersTable = () => {
 
       {/* Data Table */}
       {filteredOrders.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            No sales orders found matching the selected filters.
-          </div>
+        <div className="text-center text-gray-500 py-8">
+          No sales orders found matching the selected filters.
+        </div>
       ) : (
         <>
           <DataTableReusable
             columns={salesOrderColumns}
             data={currentOrders} // Use filtered and paginated data
             enableRowDragging={false}
-            onRowOrderChange={() => {}}
+            onRowOrderChange={() => { }}
           />
           <Pagination className="mt-6">
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => handlePageChange(currentPage - 1)} 
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
                   aria-disabled={currentPage === 1}
                   tabIndex={currentPage === 1 ? -1 : undefined}
                 />
@@ -412,8 +564,8 @@ const SalesOrdersTable = () => {
                 </PaginationItem>
               ))}
               <PaginationItem>
-                <PaginationNext 
-                  onClick={() => handlePageChange(currentPage + 1)} 
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
                   aria-disabled={currentPage === totalPages}
                   tabIndex={currentPage === totalPages ? -1 : undefined}
                 />

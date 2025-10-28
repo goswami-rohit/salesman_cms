@@ -89,20 +89,17 @@ const dailyReportsColumns: ColumnDef<RawDailyVisitReportRecord>[] = [
 const salesOrderColumns: ColumnDef<RawSalesOrderReportRecord>[] = [
   { accessorKey: 'salesmanName', header: 'Salesman' },
   {
-    accessorKey: 'createdAt',
+    accessorKey: 'orderDate',
     header: 'Order Date',
-    cell: ({ row }) =>
-      new Date(row.original.createdAt).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      }),
+    cell: ({ row }) => row.original.orderDate, // already YYYY-MM-DD from API
+    meta: { filterType: 'date' },
   },
   { accessorKey: 'dealerName', header: 'Dealer' },
+
   {
-    accessorKey: 'quantity',
+    accessorKey: 'orderQty',
     header: 'Quantity',
-    cell: ({ row }) => `${row.original.quantity ?? 0} ${row.original.unit ?? ''}`,
+    cell: ({ row }) => `${row.original.orderQty ?? 0} ${row.original.orderUnit ?? ''}`,
   },
   {
     accessorKey: 'orderTotal',
@@ -110,9 +107,9 @@ const salesOrderColumns: ColumnDef<RawSalesOrderReportRecord>[] = [
     cell: ({ row }) => `₹${Number(row.original.orderTotal ?? 0).toFixed(2)}`,
   },
   {
-    accessorKey: 'advancePayment',
-    header: 'Advance (₹)',
-    cell: ({ row }) => `₹${Number(row.original.advancePayment ?? 0).toFixed(2)}`,
+    accessorKey: 'receivedPayment',
+    header: 'Received (₹)',
+    cell: ({ row }) => `₹${Number(row.original.receivedPayment ?? 0).toFixed(2)}`,
   },
   {
     accessorKey: 'pendingPayment',
@@ -120,12 +117,48 @@ const salesOrderColumns: ColumnDef<RawSalesOrderReportRecord>[] = [
     cell: ({ row }) => `₹${Number(row.original.pendingPayment ?? 0).toFixed(2)}`,
   },
   {
-    accessorKey: 'estimatedDelivery',
-    header: 'Est. Delivery',
-    cell: ({ row }) => new Date(row.original.estimatedDelivery).toLocaleDateString('en-IN'),
+    accessorKey: 'deliveryDate',
+    header: 'Delivery Date',
+    cell: ({ row }) => row.original.deliveryDate ? new Date(row.original.deliveryDate).toLocaleDateString('en-IN') : '-',
+    meta: { filterType: 'date' },
   },
-  { accessorKey: 'paymentMethod', header: 'Payment Method' },
-  { accessorKey: 'remarks', header: 'Remarks', cell: info => <span className="max-w-[250px] truncate block">{info.getValue() as string}</span> },
+  { accessorKey: 'paymentMode', header: 'Payment Mode' },
+
+  // Optional: show price and discount columns since you “want all the fields”
+  {
+    accessorKey: 'itemPrice',
+    header: 'Item Price (₹)',
+    cell: ({ row }) => row.original.itemPrice == null ? '-' : `₹${Number(row.original.itemPrice).toFixed(2)}`,
+  },
+  {
+    accessorKey: 'discountPercentage',
+    header: 'Discount (%)',
+    cell: ({ row }) => row.original.discountPercentage == null ? '-' : `${Number(row.original.discountPercentage)}%`,
+  },
+  {
+    accessorKey: 'itemPriceAfterDiscount',
+    header: 'Price After Discount (₹)',
+    cell: ({ row }) =>
+      row.original.itemPriceAfterDiscount == null
+        ? '-'
+        : `₹${Number(row.original.itemPriceAfterDiscount).toFixed(2)}`,
+  },
+  { accessorKey: 'itemType', header: 'Item Type' },
+  { accessorKey: 'itemGrade', header: 'Item Grade' },
+
+  // Timestamps
+  {
+    accessorKey: 'createdAt',
+    header: 'Created On',
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('en-IN'),
+    meta: { filterType: 'date' },
+  },
+  {
+    accessorKey: 'updatedAt',
+    header: 'Updated On',
+    cell: ({ row }) => new Date(row.original.updatedAt).toLocaleDateString('en-IN'),
+    meta: { filterType: 'date' },
+  },
 ];
 
 // --- Graph Data Types ---
@@ -260,9 +293,9 @@ export default function DashboardGraphs() {
     if (selectedSalesman !== 'all') filtered = filtered.filter(r => r.salesmanName === selectedSalesman);
     const agg: Record<string, number> = {};
     filtered.forEach(item => {
-      const key = new Date(item.createdAt).toISOString().slice(0, 10);
-      const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity ?? 0;
-      agg[key] = (agg[key] || 0) + quantity;
+      const key = item.orderDate; // already YYYY-MM-DD
+      const qty = typeof item.orderQty === 'string' ? parseFloat(item.orderQty as any) : (item.orderQty ?? 0);
+      agg[key] = (agg[key] || 0) + (isNaN(qty) ? 0 : qty);
     });
     return Object.keys(agg).sort().map(k => ({ name: k, quantity: agg[k] }));
   }, [rawSalesOrders, selectedSalesman]);

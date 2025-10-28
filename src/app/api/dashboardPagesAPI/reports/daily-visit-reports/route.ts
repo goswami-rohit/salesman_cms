@@ -73,6 +73,8 @@ export async function GET() {
             lastName: true,
             email: true,
             role: true,
+            area: true,
+            region: true,
           },
         },
       },
@@ -89,6 +91,8 @@ export async function GET() {
         id: String(report.id),
         salesmanName: salesmanName,
         role: report.user.role,
+        area: report.user.area,
+        region: report.user.region,
         reportDate: report.reportDate.toISOString().split('T')[0], // YYYY-MM-DD
         dealerType: report.dealerType,
         dealerName: report.dealerName,
