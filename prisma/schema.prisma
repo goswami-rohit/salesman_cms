@@ -214,6 +214,8 @@ model DailyVisitReport {
 
   user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
   salesOrders           SalesOrder[] @relation("OrderDVR") //relation back to sales_orders
+  pjpId                 String?   @map("pjp_id") @db.VarChar(255)
+  permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_DVR", fields: [pjpId], references: [id], onDelete: SetNull)
 
   @@index([userId], map: "idx_daily_visit_reports_user_id")
   @@map("daily_visit_reports")
@@ -256,6 +258,8 @@ model TechnicalVisitReport {
   meeting                 TSOMeeting?  @relation("TVRMeeting", fields: [meetingId], references: [id])
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pjpId                 String?   @map("pjp_id") @db.VarChar(255)
+  permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_TVR", fields: [pjpId], references: [id], onDelete: SetNull)
 
   @@index([userId], map: "idx_technical_visit_reports_user_id")
   @@index([meetingId], map: "idx_technical_visit_reports_meeting_id")
@@ -346,6 +350,9 @@ model PermanentJourneyPlan {
 
   // Ensure the name here matches DailyTask (see below)
   dailyTasks      DailyTask[] @relation("PJPTasks")
+  dailyVisitReports       DailyVisitReport[] @relation("PJPReports_DVR")
+  technicalVisitReports   TechnicalVisitReport[] @relation("PJPReports_TVR")
+  salesOrders             SalesOrder[] @relation("PJP_Sales_Orders")
 
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -525,6 +532,8 @@ model SalesOrder {
   // Link back to the DVR where the order was taken
   dvrId           String?  @map("dvr_id") @db.VarChar(255)
   dailyVisitReport DailyVisitReport? @relation("OrderDVR", fields: [dvrId], references: [id], onDelete: SetNull)
+  pjpId                 String?   @map("pjp_id") @db.VarChar(255)
+  permanentJourneyPlan  PermanentJourneyPlan? @relation("PJP_Sales_Orders", fields: [pjpId], references: [id], onDelete: SetNull)
 
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

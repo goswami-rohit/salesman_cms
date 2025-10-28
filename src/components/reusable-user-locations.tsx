@@ -1,5 +1,5 @@
 // src/components/reusable-user-locations.tsx
-'use client';
+//'use client';
 
 import * as React from 'react';
 import { toast } from 'sonner';

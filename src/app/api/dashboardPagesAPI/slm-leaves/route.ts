@@ -17,6 +17,10 @@ export const salesmanLeaveApplicationSchema = z.object({
   adminRemarks: z.string().nullable(),
   createdAt: z.string(), // ISO string
   updatedAt: z.string(), // ISO string
+
+  salesmanRole: z.string().optional(),
+  area: z.string().optional(),
+  region: z.string().optional(),
 });
 
 // Zod schema for validating PATCH request body
@@ -64,6 +68,9 @@ export async function GET() {
             firstName: true,
             lastName: true,
             email: true,
+            role: true,
+            area: true,
+            region: true,
           }
         }, // Include the associated User record to get salesman details
       },
@@ -90,6 +97,9 @@ export async function GET() {
         adminRemarks: app.adminRemarks,
         createdAt: app.createdAt.toISOString(),
         updatedAt: app.updatedAt.toISOString(),
+        salesmanRole: app.user.role?? '',
+        area: app.user?.area ?? '',
+        region: app.user?.region ?? '',
       };
     });
 

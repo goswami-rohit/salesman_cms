@@ -17,10 +17,7 @@ export default function SignedOutHomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-                <Bot className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground">Company CMS</span>
+              <span className="text-xl font-bold text-foreground">Best Cement CMS</span>
             </div>
             {/* The login button from the old design */}
             <Button
@@ -116,8 +113,7 @@ export default function SignedOutHomePage() {
       <footer className="border-t border-border py-12">
         <div className="text-center">
           <p className="text-muted-foreground">
-            © 2025 Company Management System.
-            <span className="text-primary"> Developed By MyCoco</span>
+            © 2025 Made By Brixta
           </p>
         </div>
       </footer>

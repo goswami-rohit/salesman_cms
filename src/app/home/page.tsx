@@ -44,10 +44,7 @@ export default async function SignedInHomePage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-                                <Bot className="w-4 h-4 text-primary-foreground" />
-                            </div>
-                            <span className="text-xl font-bold text-foreground">MyCoco CMS</span>
+                            <span className="text-xl font-bold text-foreground">Best Cement CMS</span>
                         </div>
                         <div className="flex items-center space-x-4">
                             <Link
@@ -66,7 +63,7 @@ export default async function SignedInHomePage() {
                 {/* Welcome Section */}
                 <div className="text-center mb-16">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                        Welcome back, <span className="text-primary">{claims.first_name || 'User'}</span>!
+                        Welcome back!
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Choose how you'd like to manage your company today with AI's intelligent tools
@@ -173,8 +170,7 @@ export default async function SignedInHomePage() {
                 <footer className="border-t border-border py-12">
                     <div className="text-center">
                         <p className="text-muted-foreground">
-                            © 2025 MyCoco CMS with Telegram PWA.
-                            <span className="text-primary"> AI Powered Telegram-PWA for Salesman</span>
+                            © 2025 Made By Brixta
                         </p>
                     </div>
                 </footer>

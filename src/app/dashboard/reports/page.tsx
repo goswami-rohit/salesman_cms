@@ -5,7 +5,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import CompetitionReportsPage from './competitionReports';
-import SalesOrdersTable from './salesReports';
+import SalesOrdersTable from './salesOrders';
 import DailyVisitReportsPage from './dailyVisitReports';
 import TechnicalVisitReportsPage from './technicalVisitReports';
 

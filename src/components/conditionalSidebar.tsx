@@ -1,3 +1,4 @@
+// src/components/conditionalSidebar.tsx
 'use client';
 
 import { usePathname } from 'next/navigation';

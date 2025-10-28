@@ -16,11 +16,11 @@ export const salesmanAttendanceSchema = z.object({
   outTimeImageCaptured: z.boolean(),
   inTimeImageUrl: z.string().nullable(),
   outTimeImageUrl: z.string().nullable(),
-  
+
   // Latitude/Longitude are required fields in the DB schema, so they should be numbers.
   inTimeLatitude: z.number(),
   inTimeLongitude: z.number(),
-  
+
   // The rest are optional in the DB schema, so they are nullable numbers in the output.
   inTimeAccuracy: z.number().nullable(),
   inTimeSpeed: z.number().nullable(),
@@ -32,10 +32,14 @@ export const salesmanAttendanceSchema = z.object({
   outTimeSpeed: z.number().nullable(),
   outTimeHeading: z.number().nullable(),
   outTimeAltitude: z.number().nullable(),
-  
+
   // Added timestamps for a complete report
   createdAt: z.string(),
   updatedAt: z.string(),
+
+  salesmanRole: z.string().optional(),
+  area: z.string().optional(),
+  region: z.string().optional(),
 });
 // -----------------------------
 
@@ -76,6 +80,9 @@ export async function GET() {
             firstName: true,
             lastName: true,
             email: true,
+            role: true,
+            area: true,
+            region: true,
           }
         },
       },
@@ -96,7 +103,7 @@ export async function GET() {
         salesmanName: salesmanName,
         date: record.attendanceDate.toISOString().split('T')[0], // YYYY-MM-DD
         location: record.locationName, // Corresponds to locationName in schema
-        
+
         // Use ISO string for inTime/outTime for consistency, or keep toLocaleTimeString if that is the strict frontend requirement
         inTime: record.inTimeTimestamp ? record.inTimeTimestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : null,
         outTime: record.outTimeTimestamp ? record.outTimeTimestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : null,
@@ -105,13 +112,13 @@ export async function GET() {
         outTimeImageCaptured: record.outTimeImageCaptured,
         inTimeImageUrl: record.inTimeImageUrl,
         outTimeImageUrl: record.outTimeImageUrl,
-        
+
         // Since inTimeLatitude and inTimeLongitude are required in the schema, we assume they exist.
         inTimeLatitude: record.inTimeLatitude.toNumber(), // Convert Decimal to Number
         inTimeLongitude: record.inTimeLongitude.toNumber(),
-        
+
         // Optional decimal fields are converted to number or null
-        inTimeAccuracy: record.inTimeAccuracy?.toNumber() ?? null, 
+        inTimeAccuracy: record.inTimeAccuracy?.toNumber() ?? null,
         inTimeSpeed: record.inTimeSpeed?.toNumber() ?? null,
         inTimeHeading: record.inTimeHeading?.toNumber() ?? null,
         inTimeAltitude: record.inTimeAltitude?.toNumber() ?? null,
@@ -121,10 +128,14 @@ export async function GET() {
         outTimeSpeed: record.outTimeSpeed?.toNumber() ?? null,
         outTimeHeading: record.outTimeHeading?.toNumber() ?? null,
         outTimeAltitude: record.outTimeAltitude?.toNumber() ?? null,
-        
+
         // Added Timestamps
         createdAt: record.createdAt.toISOString(),
         updatedAt: record.updatedAt.toISOString(),
+
+        salesmanRole: record.user?.role ?? '',
+        area: record.user?.area ?? '',
+        region: record.user?.region ?? '',
       };
     });
 

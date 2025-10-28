@@ -42,6 +42,10 @@ export const geoTrackingSchema = z.object({
   // Timestamps
   createdAt: z.string(),
   updatedAt: z.string(),
+
+  salesmanRole: z.string().optional(),
+  area: z.string().optional(),
+  region: z.string().optional(),
 });
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
@@ -79,9 +83,20 @@ export async function GET() {
       // We must include the user and company to get the workosOrganizationId
       include: {
         user: {
-          include: {
+          select: {
             company: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+            area: true,
+            region: true,
+            salesmanLoginId: true,
+            // company: {
+            //   select: { workosOrganizationId: true },
+            // },
           },
+
         },
       },
       orderBy: {
@@ -117,12 +132,16 @@ export async function GET() {
       siteName: report.siteName,
       checkInTime: report.checkInTime?.toISOString() ?? null,
       checkOutTime: report.checkOutTime?.toISOString() ?? null,
-      journeyId: report.journeyId ?? null, 
-      isActive: report.isActive, 
-      destLat: report.destLat?.toNumber() ?? null, 
-      destLng: report.destLng?.toNumber() ?? null, 
+      journeyId: report.journeyId ?? null,
+      isActive: report.isActive,
+      destLat: report.destLat?.toNumber() ?? null,
+      destLng: report.destLng?.toNumber() ?? null,
       createdAt: report.createdAt.toISOString(),
       updatedAt: report.updatedAt.toISOString(),
+
+      salesmanRole: report.user?.role ?? '',
+      area: report.user?.area ?? '',
+      region: report.user?.region ?? '',
     }));
 
     const validatedReports = z.array(geoTrackingSchema).parse(formattedReports);
