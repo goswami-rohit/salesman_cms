@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 import { z } from 'zod';
-import { dealerVerification } from '@/lib/Reusable-constants';
+import { dealerVerificationSchema, verificationUpdateSchema } from '@/lib/shared-zod-schema';
 
 // Define roles allowed to perform dealer verification actions (GET and PUT)
 const allowedRoles = [
@@ -17,37 +17,6 @@ const allowedRoles = [
     'manager',
     'assistant-manager',
 ];
-
-// Zod Schema for the data returned by the GET endpoint (minimal fields for verification)
-export const DealerVerificationSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1),
-    phoneNo: z.string().min(1),
-    area: z.string().min(1),
-    region: z.string().min(1),
-    type: z.string().min(1), // Used as a primary identifier/zone category
-    verificationStatus: z.enum(dealerVerification),
-
-    // Statutory IDs
-    gstinNo: z.string().nullable().optional(),
-    panNo: z.string().nullable().optional(),
-    aadharNo: z.string().nullable().optional(),
-    tradeLicNo: z.string().nullable().optional(),
-
-    // Image URLs (nullable/optional)
-    tradeLicencePicUrl: z.string().url().nullable().optional(),
-    shopPicUrl: z.string().url().nullable().optional(),
-    dealerPicUrl: z.string().url().nullable().optional(),
-    blankChequePicUrl: z.string().url().nullable().optional(),
-    partnershipDeedPicUrl: z.string().url().nullable().optional(),
-    
-    remarks: z.string().nullable().optional(),
-});
-
-// Zod Schema for the PUT request body (Verification action)
-const VerificationUpdateSchema = z.object({
-    verificationStatus: z.enum(["VERIFIED", "REJECTED"]), 
-});
 
 
 /**
@@ -111,7 +80,7 @@ export async function GET(request: NextRequest) {
         });
         
         // 5. Validate and return data
-        const validatedDealers = z.array(DealerVerificationSchema).safeParse(dealers);
+        const validatedDealers = z.array(dealerVerificationSchema).safeParse(dealers);
         if (!validatedDealers.success) {
             console.error("GET Response Validation Error:", validatedDealers.error);
             return NextResponse.json({ error: 'Data integrity error on server', details: validatedDealers.error }, { status: 500 });
@@ -161,7 +130,7 @@ export async function PUT(request: NextRequest) {
 
         // 4. Validate request body against the new, simplified schema
         const body = await request.json();
-        const validatedBody = VerificationUpdateSchema.safeParse(body);
+        const validatedBody = verificationUpdateSchema.safeParse(body);
 
         if (!validatedBody.success) {
             console.error("PUT Request Body Validation Error:", validatedBody.error);

@@ -4,45 +4,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma'; // Replaced local PrismaClient with shared instance
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { z } from 'zod'; // Added Zod Import
-
-// --- ZOD SCHEMA DEFINITION ---
-export const salesmanAttendanceSchema = z.object({
-  id: z.string().uuid(),
-  salesmanName: z.string(),
-  date: z.string(), // YYYY-MM-DD
-  location: z.string(),
-  inTime: z.string().nullable(), // Formatted time string or null
-  outTime: z.string().nullable(), // Formatted time string or null
-  inTimeImageCaptured: z.boolean(),
-  outTimeImageCaptured: z.boolean(),
-  inTimeImageUrl: z.string().nullable(),
-  outTimeImageUrl: z.string().nullable(),
-
-  // Latitude/Longitude are required fields in the DB schema, so they should be numbers.
-  inTimeLatitude: z.number(),
-  inTimeLongitude: z.number(),
-
-  // The rest are optional in the DB schema, so they are nullable numbers in the output.
-  inTimeAccuracy: z.number().nullable(),
-  inTimeSpeed: z.number().nullable(),
-  inTimeHeading: z.number().nullable(),
-  inTimeAltitude: z.number().nullable(),
-  outTimeLatitude: z.number().nullable(),
-  outTimeLongitude: z.number().nullable(),
-  outTimeAccuracy: z.number().nullable(),
-  outTimeSpeed: z.number().nullable(),
-  outTimeHeading: z.number().nullable(),
-  outTimeAltitude: z.number().nullable(),
-
-  // Added timestamps for a complete report
-  createdAt: z.string(),
-  updatedAt: z.string(),
-
-  salesmanRole: z.string().optional(),
-  area: z.string().optional(),
-  region: z.string().optional(),
-});
-// -----------------------------
+import { salesmanAttendanceSchema } from '@/lib/shared-zod-schema';
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',

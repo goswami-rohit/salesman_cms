@@ -4,36 +4,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 import { z } from 'zod'; // Import Zod for schema validation
-
-// Define Zod schema for the data returned by this API
-export const dailyVisitReportSchema = z.object({
-  id: z.string(),
-  salesmanName: z.string(),
-  role: z.string(),
-  reportDate: z.string(), // YYYY-MM-DD string
-  dealerType: z.string(),
-  dealerName: z.string().nullable(),
-  subDealerName: z.string().nullable(),
-  location: z.string(),
-  latitude: z.number(),
-  longitude: z.number(),
-  visitType: z.string(),
-  dealerTotalPotential: z.number(),
-  dealerBestPotential: z.number(),
-  brandSelling: z.array(z.string()),
-  contactPerson: z.string().nullable(),
-  contactPersonPhoneNo: z.string().nullable(),
-  todayOrderMt: z.number(),
-  todayCollectionRupees: z.number(),
-  overdueAmount: z.number().nullable(),
-  feedbacks: z.string(),
-  solutionBySalesperson: z.string().nullable(),
-  anyRemarks: z.string().nullable(),
-  checkInTime: z.string(), // ISO string
-  checkOutTime: z.string().nullable(), // ISO string or null
-  inTimeImageUrl: z.string().nullable(),
-  outTimeImageUrl: z.string().nullable(),
-});
+import { dailyVisitReportSchema } from '@/lib/shared-zod-schema';
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',

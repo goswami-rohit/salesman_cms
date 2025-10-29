@@ -20,7 +20,7 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { dailyVisitReportSchema } from '@/app/api/dashboardPagesAPI/reports/daily-visit-reports/route';
+import { dailyVisitReportSchema } from '@/lib/shared-zod-schema';
 import { Search, Loader2 } from 'lucide-react';
 
 type DailyVisitReport = z.infer<typeof dailyVisitReportSchema> & {

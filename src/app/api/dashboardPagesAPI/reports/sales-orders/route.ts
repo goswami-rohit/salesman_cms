@@ -4,67 +4,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-
-// Zod schema for API response validation
-export const salesOrderSchema = z.object({
-  // Primary & FKs
-  id: z.string(),
-  userId: z.number().nullable(),
-  dealerId: z.string().nullable(),
-  dvrId: z.string().nullable(),
-  pjpId: z.string().nullable(),
-
-  // Denormalized display fields (nice for UI)
-  salesmanName: z.string(),
-  salesmanRole: z.string(),
-  dealerName: z.string(),
-  dealerType: z.string(),
-  dealerPhone: z.string(),
-  dealerAddress: z.string(),
-  area: z.string(),
-  region: z.string(),
-
-  // Business fields (raw)
-  orderDate: z.string(),                      // YYYY-MM-DD
-  orderPartyName: z.string(),
-
-  partyPhoneNo: z.string().nullable(),
-  partyArea: z.string().nullable(),
-  partyRegion: z.string().nullable(),
-  partyAddress: z.string().nullable(),
-
-  deliveryDate: z.string().nullable(),        // YYYY-MM-DD or null
-  deliveryArea: z.string().nullable(),
-  deliveryRegion: z.string().nullable(),
-  deliveryAddress: z.string().nullable(),
-  deliveryLocPincode: z.string().nullable(),
-
-  paymentMode: z.string().nullable(),
-  paymentTerms: z.string().nullable(),
-  paymentAmount: z.number().nullable(),
-  receivedPayment: z.number().nullable(),
-  receivedPaymentDate: z.string().nullable(), // YYYY-MM-DD or null
-  pendingPayment: z.number().nullable(),
-
-  orderQty: z.number().nullable(),
-  orderUnit: z.string().nullable(),
-
-  itemPrice: z.number().nullable(),
-  discountPercentage: z.number().nullable(),
-  itemPriceAfterDiscount: z.number().nullable(),
-
-  itemType: z.string().nullable(),
-  itemGrade: z.string().nullable(),
-
-  // Convenience/computed
-  orderTotal: z.number(),                      // qty * effective price
-  estimatedDelivery: z.string().nullable(),    // alias of deliveryDate for your UI
-  remarks: z.string().nullable(),              // not in DB, stays null for compat
-
-  // Timestamps
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+import { salesOrderSchema } from '@/lib/shared-zod-schema';
 
 // Roles allowed to access Sales Orders
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',

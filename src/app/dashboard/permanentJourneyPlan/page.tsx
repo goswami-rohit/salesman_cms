@@ -18,7 +18,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { permanentJourneyPlanSchema } from '@/app/api/dashboardPagesAPI/permanent-journey-plan/route';
+import { permanentJourneyPlanSchema } from '@/lib/shared-zod-schema';
 
 // Infer the TypeScript type from the Zod schema
 type PermanentJourneyPlan = z.infer<typeof permanentJourneyPlanSchema>;

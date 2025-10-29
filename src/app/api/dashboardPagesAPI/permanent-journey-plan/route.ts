@@ -4,24 +4,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 import { z } from 'zod'; // Added Zod Import
-
-// --- ZOD SCHEMA DEFINITION ---
-export const permanentJourneyPlanSchema = z.object({
-  id: z.string().uuid(),
-  salesmanName: z.string(),
-  userId: z.number().int(),
-  createdByName: z.string(),
-  createdByRole: z.string(),
-  areaToBeVisited: z.string(),
-  planDate: z.string(), // Mapped to YYYY-MM-DD
-  description: z.string().nullable().optional(), // Mapped to String? in schema
-  status: z.string(),
-  taskIds: z.array(z.string()), // Array of DailyTask IDs
-  // We'll also include the timestamps, as these are useful in most reports
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-// -----------------------------
+import { permanentJourneyPlanSchema } from '@/lib/shared-zod-schema';
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',

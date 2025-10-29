@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { technicalVisitReportSchema } from '@/app/api/dashboardPagesAPI/reports/technical-visit-reports/route';
+import { technicalVisitReportSchema } from '@/lib/shared-zod-schema';
 
 // UI Components for Filtering/Pagination
 import { Input } from '@/components/ui/input';

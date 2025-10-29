@@ -31,7 +31,7 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
 import { dealerTypes, brands } from '@/lib/Reusable-constants'
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
-import { getDealersSchema} from '@/app/api/dashboardPagesAPI/dealerManagement/route';
+import { getDealersSchema} from '@/lib/shared-zod-schema';
 
 // Schema for form submission, which transforms string inputs to numbers.
 const addDealerFormSchema = z.object({

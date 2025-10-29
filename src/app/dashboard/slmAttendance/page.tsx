@@ -39,7 +39,7 @@ import { Search, Loader2 } from 'lucide-react';
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { cn } from '@/lib/utils';
-import { salesmanAttendanceSchema } from '@/app/api/dashboardPagesAPI/slm-attendance/route';
+import { salesmanAttendanceSchema } from '@/lib/shared-zod-schema';
 
 type SalesmanAttendanceReport = z.infer<typeof salesmanAttendanceSchema>;
 

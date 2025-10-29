@@ -15,7 +15,7 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { salesOrderSchema } from '@/app/api/dashboardPagesAPI/reports/sales-orders/route'
+import { salesOrderSchema } from '@/lib/shared-zod-schema'
 
 // UI Components for Filtering
 import { Input } from '@/components/ui/input';

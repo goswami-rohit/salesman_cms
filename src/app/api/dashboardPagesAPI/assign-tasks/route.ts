@@ -4,30 +4,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-
-// Zod schema for validating the POST request body when assigning tasks
-export const assignTaskSchema = z.object({
-  salesmanUserIds: z.array(z.number().int()).min(1, "At least one salesman must be selected."),
-  taskDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Task date must be in YYYY-MM-DD format."),
-  visitType: z.string(),
-  relatedDealerIds: z.array(z.string().uuid()).optional().nullable(), // ✅ accept multiple dealers
-  siteName: z.string().min(1, "Site name is required for Technical Visit.").optional().nullable(),
-  description: z.string().optional().nullable(),
-});
-
-// Zod schema for the GET response for daily tasks - DEFINED HERE
-export const dailyTaskSchema = z.object({
-  id: z.string(),
-  salesmanName: z.string(),
-  assignedByUserName: z.string(),
-  taskDate: z.string(), // YYYY-MM-DD
-  visitType: z.string(),
-  relatedDealerName: z.string().nullable().optional(), // For Client Visit
-  siteName: z.string().nullable().optional(), // For Technical Visit
-  description: z.string().nullable().optional(),
-  status: z.string(),
-  createdAt: z.string(),
-});
+import { assignTaskSchema, dailyTaskSchema } from '@/lib/shared-zod-schema';
 
 // Roles allowed to assign tasks
 const allowedAssignerRoles = ['president', 'senior-general-manager', 'general-manager',

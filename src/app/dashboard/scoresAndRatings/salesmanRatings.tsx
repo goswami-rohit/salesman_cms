@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { salesmanRatingSchema } from '@/app/api/dashboardPagesAPI/scores-ratings/route';
+import { salesmanRatingSchema } from '@/lib/shared-zod-schema';
 
 // UI Components for Filtering
 import { Input } from '@/components/ui/input';

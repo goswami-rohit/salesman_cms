@@ -35,7 +35,7 @@ import { IconCalendar } from "@tabler/icons-react";
 import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
-import { dailyTaskSchema } from "@/app/api/dashboardPagesAPI/assign-tasks/route";
+import { dailyTaskSchema } from "@/lib/shared-zod-schema";
 
 // --- Zod Schemas for Data and Form Validation ---
 

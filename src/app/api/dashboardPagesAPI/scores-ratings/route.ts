@@ -4,30 +4,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-
-// Salesperson Ratings
-export const salesmanRatingSchema = z.object({
-  id: z.number(),
-  salesPersonName: z.string(),
-  area: z.string(),
-  region: z.string(),
-  rating: z.number().int(),
-});
-
-// Dealer Scores (now includes area/region/type; fixed date field)
-export const dealerScoreSchema = z.object({
-  id: z.string(),
-  dealerName: z.string(),
-  dealerScore: z.number(),
-  trustWorthinessScore: z.number(),
-  creditWorthinessScore: z.number(),
-  orderHistoryScore: z.number(),
-  visitFrequencyScore: z.number(),
-  lastUpdatedDate: z.string(),     // YYYY-MM-DD string we format below
-  area: z.string().optional(),     // from Dealer.area
-  region: z.string().optional(),   // from Dealer.region
-  type: z.string().optional(),     // from Dealer.type
-});
+import { salesmanRatingSchema, dealerScoreSchema } from '@/lib/shared-zod-schema';
 
 const allowedRoles = [
   'president', 'senior-general-manager', 'general-manager',

@@ -7,16 +7,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod'; // Added Zod Import
-
-// --- ZOD SCHEMA DEFINITION (for static fields) ---
-// Since the brand columns are dynamic, we define the required static fields
-// and use .passthrough() to allow any other keys (the brand names) which must be numbers (capacity).
-export const baseDealerBrandMappingSchema = z.object({
-  id: z.string(), // Dealer ID
-  dealerName: z.string(),
-  area: z.string(),
-  totalPotential: z.number(),
-});
+import { baseDealerBrandMappingSchema } from '@/lib/shared-zod-schema';
 
 // We'll refine the schema later to ensure dynamic keys are numbers, but for a general check, .passthrough() is enough
 export const dealerBrandMappingSchema = baseDealerBrandMappingSchema.passthrough().refine(

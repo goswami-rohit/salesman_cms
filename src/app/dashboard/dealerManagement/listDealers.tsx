@@ -14,7 +14,7 @@ import {
 import { DataTableReusable } from '@/components/data-table-reusable';
 
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
-import { getDealersSchema } from '@/app/api/dashboardPagesAPI/dealerManagement/route';
+import { getDealersSchema } from '@/lib/shared-zod-schema';
 
 type DealerRecord = z.infer<typeof getDealersSchema>;
 

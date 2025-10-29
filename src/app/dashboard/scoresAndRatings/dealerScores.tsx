@@ -16,9 +16,9 @@ import {
 
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { dealerScoreSchema } from '@/app/api/dashboardPagesAPI/scores-ratings/route';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Loader2 } from 'lucide-react';
+import { dealerScoreSchema } from '@/lib/shared-zod-schema';
 
 type DealerScore = z.infer<typeof dealerScoreSchema>;
 

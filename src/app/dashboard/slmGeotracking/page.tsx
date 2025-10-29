@@ -24,7 +24,7 @@ import { IconCalendar } from '@tabler/icons-react';
 
 // Utilities
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { geoTrackingSchema } from '@/app/api/dashboardPagesAPI/slm-geotracking/route';
+import { geoTrackingSchema } from '@/lib/shared-zod-schema';
 import { format, addDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from '@/lib/utils';

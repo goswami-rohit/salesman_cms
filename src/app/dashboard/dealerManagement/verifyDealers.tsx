@@ -16,10 +16,10 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { DealerVerificationSchema } from '@/app/api/dashboardPagesAPI/dealerManagement/dealer-verify/route';
+import { dealerVerificationSchema } from '@/lib/shared-zod-schema';
 
 
-type DealerRecord = z.infer<typeof DealerVerificationSchema>;
+type DealerRecord = z.infer<typeof dealerVerificationSchema>;
 
 export default function VerifyDealersPage() {
     const [pendingDealers, setPendingDealers] = useState<DealerRecord[]>([]);
@@ -43,7 +43,7 @@ export default function VerifyDealersPage() {
             
             const dealersArray = Array.isArray(data) ? data : data.dealers;
 
-            const validatedDealers = z.array(DealerVerificationSchema).parse(dealersArray);
+            const validatedDealers = z.array(dealerVerificationSchema).parse(dealersArray);
             setPendingDealers(validatedDealers);
             toast.success(`Loaded ${validatedDealers.length} pending dealers.`, { duration: 2000 });
         } catch (e: any) {

@@ -4,22 +4,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod'; // 1. Added Zod Import
-
-// --- ZOD SCHEMA DEFINITION ---
-export const competitionReportSchema = z.object({
-  id: z.string(),
-  salesmanName: z.string(),
-  brandName: z.string(),
-  date: z.string(), // Mapped to YYYY-MM-DD
-  billing: z.string(),
-  nod: z.string(),
-  retail: z.string(),
-  schemesYesNo: z.string(),
-  avgSchemeCost: z.number(), // Mapped from Decimal to Number
-  remarks: z.string(), // Mapped from String? to non-nullable string
-  createdAt: z.string(), // ISO String
-  updatedAt: z.string(), // ISO String
-});
+import {competitionReportSchema} from '@/lib/shared-zod-schema';
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',

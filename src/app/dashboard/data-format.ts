@@ -2,11 +2,8 @@
 import { z } from 'zod';
 
 // zod imports from routes
-import { geoTrackingSchema } from '@/app/api/dashboardPagesAPI/slm-geotracking/route';
-import { dailyVisitReportSchema } from '@/app/api/dashboardPagesAPI/reports/daily-visit-reports/route';
-import { technicalVisitReportSchema } from '@/app/api/dashboardPagesAPI/reports/technical-visit-reports/route';
-import { salesOrderSchema } from '@/app/api/dashboardPagesAPI/reports/sales-orders/route';
-import { competitionReportSchema } from '@/app/api/dashboardPagesAPI/reports/competition-reports/route';
+import { geoTrackingSchema, dailyVisitReportSchema, technicalVisitReportSchema,
+  salesOrderSchema, competitionReportSchema } from '@/lib/shared-zod-schema';
 
 // ---------------------------------------------------------------------
 // 1. Exporting Raw Schemas

@@ -4,32 +4,8 @@ import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-
+import { salesmanLeaveApplicationSchema, updateLeaveApplicationSchema } from '@/lib/shared-zod-schema';
 const prisma = new PrismaClient();
-
-export const salesmanLeaveApplicationSchema = z.object({
-  id: z.string().uuid(),
-  salesmanName: z.string(),
-  leaveType: z.string(),
-  startDate: z.string(), // YYYY-MM-DD
-  endDate: z.string(),   // YYYY-MM-DD
-  reason: z.string(),
-  status: z.string(), // "Pending", "Approved", "Rejected"
-  adminRemarks: z.string().nullable(),
-  createdAt: z.string(), // ISO string
-  updatedAt: z.string(), // ISO string
-
-  salesmanRole: z.string().optional(),
-  area: z.string().optional(),
-  region: z.string().optional(),
-});
-
-// Zod schema for validating PATCH request body
-export const updateLeaveApplicationSchema = z.object({
-  id: z.string().uuid(), // Ensure it's a valid UUID for the leave application
-  status: z.enum(["Approved", "Rejected"]), // Status must be one of these two
-  adminRemarks: z.string().nullable().optional(), // Can be string, null, or undefined (if not sent)
-});
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',

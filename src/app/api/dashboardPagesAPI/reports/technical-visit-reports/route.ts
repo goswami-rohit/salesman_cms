@@ -4,49 +4,7 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Use shared prisma instance
 import { z } from 'zod'; // Import Zod
-
-// --- ZOD SCHEMA DEFINITION ---
-export const technicalVisitReportSchema = z.object({
-  id: z.string(),
-  salesmanName: z.string(),
-  role: z.string(),
-  visitType: z.string(),
-  siteNameConcernedPerson: z.string(),
-  phoneNo: z.string(),
-  date: z.string(), // Mapped to YYYY-MM-DD
-  emailId: z.string(), // Formatted to '' if null
-  clientsRemarks: z.string(),
-  salespersonRemarks: z.string(),
-  checkInTime: z.string(), // ISO String
-  checkOutTime: z.string(), // ISO String or ''
-  
-  // NEW/MISSING FIELDS from formatting logic - MUST BE NULLABLE if they are optional in Prisma
-  inTimeImageUrl: z.string().nullable(),
-  outTimeImageUrl: z.string().nullable(),
-  siteVisitType: z.string().nullable(), // FIX: Added .nullable()
-  dhalaiVerificationCode: z.string().nullable(), // FIX: Added .nullable()
-  isVerificationStatus: z.string().nullable(), // FIX: Added .nullable()
-  meetingId: z.string().nullable(), // FIX: Added .nullable()
-  createdAt: z.string(), // ISO String
-  updatedAt: z.string(), // ISO String
-
-  // Array fields
-  siteVisitBrandInUse: z.array(z.string()),
-  influencerType: z.array(z.string()),
-
-  // Optional string fields formatted to ''
-  siteVisitStage: z.string(),
-  conversionFromBrand: z.string(),
-  conversionQuantityUnit: z.string(),
-  associatedPartyName: z.string(),
-  serviceType: z.string(),
-  qualityComplaint: z.string(),
-  promotionalActivity: z.string(),
-  channelPartnerVisit: z.string(),
-
-  // Numeric field, converted to number or null
-  conversionQuantityValue: z.number().nullable(), // FIX: Confirms it can be null
-});
+import { technicalVisitReportSchema } from '@/lib/shared-zod-schema';
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',

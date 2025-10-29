@@ -1,7 +1,7 @@
 // src/app/dashboard/dashboardGraphs.tsx
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ColumnDef } from '@tanstack/react-table';

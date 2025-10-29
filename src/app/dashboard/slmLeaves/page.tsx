@@ -30,7 +30,7 @@ import { IconCalendar } from '@tabler/icons-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { salesmanLeaveApplicationSchema } from '@/app/api/dashboardPagesAPI/slm-leaves/route';
+import { salesmanLeaveApplicationSchema } from '@/lib/shared-zod-schema';
 import { cn } from '@/lib/utils';
 
 // IMPORTANT: do NOT augment the z.infer type with role/area/region — those fields are NOT part of the leave schema.

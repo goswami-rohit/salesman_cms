@@ -5,7 +5,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { UniqueIdentifier } from '@dnd-kit/core';
 
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { competitionReportSchema } from '@/app/api/dashboardPagesAPI/reports/competition-reports/route'
+import { competitionReportSchema } from '@/lib/shared-zod-schema'
 
 // Infer the TypeScript type from the Zod schema
 type CompetitionReport = z.infer<typeof competitionReportSchema>;
