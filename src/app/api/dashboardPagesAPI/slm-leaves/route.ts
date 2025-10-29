@@ -81,7 +81,7 @@ export async function GET() {
     });
 
     // Format the data to match the frontend's expected structure
-    const formattedApplications = leaveApplications.map(app => {
+    const formattedApplications = leaveApplications.map((app:any) => {
       // Construct salesmanName from user's firstName and lastName, handling potential nulls
       const salesmanName = [app.user?.firstName, app.user?.lastName]
         .filter(Boolean) // Filters out any null or undefined parts

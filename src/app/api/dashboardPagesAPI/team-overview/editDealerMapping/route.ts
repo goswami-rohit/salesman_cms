@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       select: { id: true },
     });
 
-    const assignedDealerIds = assigned.map(d => d.id);
+    const assignedDealerIds = assigned.map((d:any) => d.id);
 
     return NextResponse.json({ dealers, assignedDealerIds }, { status: 200 });
   } catch (err) {

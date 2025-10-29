@@ -29,7 +29,7 @@ export async function GET() {
     });
 
     // Extract the string values from the query results
-    const roles = uniqueRoles.map(a => a.role || '').filter(Boolean);
+    const roles = uniqueRoles.map((a:any) => a.role || '').filter(Boolean);
 
     // FIX: Return the roles using the correct 'roles' key
     return NextResponse.json({ roles }, { status: 200 });

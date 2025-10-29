@@ -85,7 +85,7 @@ export async function GET() {
     });
 
     // 5. Format the data to match the frontend's expected structure and validate
-    const formattedReports = dailyVisitReports.map(report => {
+    const formattedReports = dailyVisitReports.map((report:any) => {
       const salesmanName = `${report.user.firstName || ''} ${report.user.lastName || ''}`.trim() || report.user.email;
 
       return {

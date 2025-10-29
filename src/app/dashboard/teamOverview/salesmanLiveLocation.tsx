@@ -230,7 +230,7 @@ export function SalesmanLiveLocation() {
                 <SelectTrigger id="role">
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
-                <SelectContent className="z-[9999]">
+                <SelectContent className="z-9999">
                   <SelectItem value="all">All Roles</SelectItem>
                   {roles.map((role) => (
                     <SelectItem key={role} value={role}>
@@ -251,7 +251,7 @@ export function SalesmanLiveLocation() {
                 <SelectTrigger id="area">
                   <SelectValue placeholder="All Areas" />
                 </SelectTrigger>
-                <SelectContent className="z-[9999]">
+                <SelectContent className="z-9999">
                   <SelectItem value="all">All Areas</SelectItem>
                   {dynamicLocations.areas.sort().map((area) => (
                     <SelectItem key={area} value={area}>
@@ -272,7 +272,7 @@ export function SalesmanLiveLocation() {
                 <SelectTrigger id="region">
                   <SelectValue placeholder="All Regions" />
                 </SelectTrigger>
-                <SelectContent className="z-[9999]">
+                <SelectContent className="z-9999">
                   <SelectItem value="all">All Regions</SelectItem>
                   {dynamicLocations.regions.sort().map((region) => (
                     <SelectItem key={region} value={region}>

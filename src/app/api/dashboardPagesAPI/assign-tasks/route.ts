@@ -134,7 +134,7 @@ export async function GET() {
     });
 
     // 7. Format the tasks data for the frontend table display
-    const formattedTasks = dailyTasks.map(task => {
+    const formattedTasks = dailyTasks.map((task:any) => {
       const salesmanName = `${task.user.firstName || ''} ${task.user.lastName || ''}`.trim() || task.user.email;
       const assignedByUserName = `${task.assignedBy.firstName || ''} ${task.assignedBy.lastName || ''}`.trim() || task.assignedBy.email;
 
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (assignedUsers.length !== salesmanUserIds.length) {
-      const assignedUserIdsSet = new Set(assignedUsers.map(u => u.id));
+      const assignedUserIdsSet = new Set(assignedUsers.map((u: any) => u.id));
       const invalidUserIds = salesmanUserIds.filter(id => !assignedUserIdsSet.has(id));
       return NextResponse.json(
         { error: `Forbidden: Invalid user IDs: ${invalidUserIds.join(', ')}` },

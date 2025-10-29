@@ -19,8 +19,8 @@ export async function GET() {
         });
 
         // Extract string values and filter out any nulls
-        const regions = uniqueRegions.map(r => r.region).filter(Boolean) as string[];
-        const areas = uniqueAreas.map(a => a.area).filter(Boolean) as string[];
+        const regions = uniqueRegions.map((r:any) => r.region).filter(Boolean) as string[];
+        const areas = uniqueAreas.map((a:any) => a.area).filter(Boolean) as string[];
 
         return NextResponse.json({ regions, areas }, { status: 200 });
 

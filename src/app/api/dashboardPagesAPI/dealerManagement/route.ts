@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
-import { z } from 'zod';
+import { unknown, z } from 'zod';
 
 // Zod validation for numeric fields that can be null/optional (Int or Decimal in Prisma)
 const optionalNumberSchema = z.number().nullable().optional();
@@ -325,7 +325,7 @@ export async function GET() {
         }
 
         // Then in your mapping:
-        const formattedDealers = dealers.map(dealer => ({
+        const formattedDealers = dealers.map((dealer:any) => ({
             id: dealer.id,
             name: dealer.name,
             type: dealer.type,

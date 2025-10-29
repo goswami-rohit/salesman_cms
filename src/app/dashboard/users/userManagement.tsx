@@ -381,144 +381,16 @@ export default function UsersManagement({ adminUser }: Props) {
         const user = row.original;
         return (
           <div className="flex items-center space-x-2">
-            {/* Edit Dialog */}
-            <Dialog open={editingUser?.id === user.id} onOpenChange={(open) => !open && setEditingUser(null)}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => startEdit(user)}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit User</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleUpdateUser} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-email">Email Address</Label>
-                    <Input
-                      id="edit-email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="user@example.com"
-                      required
-                      disabled
-                    />
-                  </div>
+            {/* Edit Button - now just sets the user to be edited */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => startEdit(user)}
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-firstName">First Name</Label>
-                      <Input
-                        id="edit-firstName"
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        placeholder="John"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-lastName">Last Name</Label>
-                      <Input
-                        id="edit-lastName"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        placeholder="Doe"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-phoneNumber">Phone Number</Label>
-                    <Input
-                      id="edit-phoneNumber"
-                      type="tel"
-                      value={formData.phoneNumber}
-                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-role">Role</Label>
-                    <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="president">President</SelectItem>
-                        <SelectItem value="senior-general-manager">Senior General Manager</SelectItem>
-                        <SelectItem value="general-manager">General Manager</SelectItem>
-                        <SelectItem value="regional-sales-manager">Regional Sales Manager</SelectItem>
-                        <SelectItem value="area-sales-manager">Area Sales Manager</SelectItem>
-                        <SelectItem value="senior-manager">Senior Manager</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="assistant-manager">Assistant Manager</SelectItem>
-                        <SelectItem value="senior-executive">Senior Executive</SelectItem>
-                        <SelectItem value="executive">Executive</SelectItem>
-                        <SelectItem value="junior-executive">Junior Executive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-region">Region</Label>
-                      <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {/* Dynamic regions from the hook */}
-                          {locations.regions.map(region => (
-                            <SelectItem key={region} value={region}>{region}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-area">Area</Label>
-                      <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {/* Dynamic areas from the hook */}
-                          {locations.areas.map(area => (
-                            <SelectItem key={area} value={area}>{area}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2 pt-4">
-                    <Button type="submit" disabled={loading} className="flex-1">
-                      {loading ? 'Updating...' : 'Update User'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingUser(null);
-                        resetForm();
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            {/* Delete Dialog - Conditional Rendering */}
+            {/* Delete Dialog - Conditional Rendering (kept inline as it doesn't use parent state updates) */}
             {user.id !== adminUser.id && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -550,7 +422,8 @@ export default function UsersManagement({ adminUser }: Props) {
         );
       },
     },
-  ], [editingUser, formData, loading, locations.areas, locations.regions, adminUser.id]);
+    // Removed formData from dependencies, as it's no longer used to render the dialog content here
+  ], [editingUser, loading, locations.areas, locations.regions, adminUser.id]);
 
 
   if (loading || locationsLoading) {
@@ -586,6 +459,7 @@ export default function UsersManagement({ adminUser }: Props) {
             </p>
           </div>
 
+          {/* --- ADD USER DIALOG --- */}
           <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
             <DialogTrigger asChild>
               <Button>
@@ -721,6 +595,110 @@ export default function UsersManagement({ adminUser }: Props) {
               </form>
             </DialogContent>
           </Dialog>
+          {/* --- END ADD USER DIALOG --- */}
+
+          {/* --- EDIT DIALOG --- */}
+          <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+            {/* Note: No DialogTrigger needed here, the button in the table cell acts as the trigger via state change */}
+            <DialogContent key={editingUser?.id}>
+              <DialogHeader>
+                <DialogTitle>Edit User</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleUpdateUser} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email Address</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="user@example.com"
+                    required
+                    disabled
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-firstName">First Name</Label>
+                    <Input
+                      id="edit-firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="John"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-lastName">Last Name</Label>
+                    <Input
+                      id="edit-lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phoneNumber">Phone Number</Label>
+                  <Input
+                    id="edit-phoneNumber"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+
+                {/* Role section edit in Team Overview  */}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Region changed from Select to Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-region">Region</Label>
+                    <Input
+                      id="edit-region"
+                      value={formData.region}
+                      onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                      placeholder="North"
+                    />
+                  </div>
+
+                  {/* Area changed from Select to Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-area">Area</Label>
+                    <Input
+                      id="edit-area"
+                      value={formData.area}
+                      onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                      placeholder="Central"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex space-x-2 pt-4">
+                  <Button type="submit" disabled={loading} className="flex-1">
+                    {loading ? 'Updating...' : 'Update User'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingUser(null);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+          {/* --- END EDIT DIALOG --- */}
+
         </div>
 
         {/* Success Message */}
@@ -747,10 +725,10 @@ export default function UsersManagement({ adminUser }: Props) {
           </CardHeader>
           <CardContent>
             {/* 3. Using DataTableReusable component */}
-            <DataTableReusable 
-              data={users} 
-              columns={columns} 
-              //filterColumn="email" // Allow filtering by email
+            <DataTableReusable
+              data={users}
+              columns={columns}
+            //filterColumn="email" // Allow filtering by email
             />
           </CardContent>
         </Card>

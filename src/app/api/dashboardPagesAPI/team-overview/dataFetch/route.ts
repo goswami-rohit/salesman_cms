@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { ROLE_HIERARCHY } from '@/lib/roleHierarchy';
 
 // Define the roles that are allowed to view the Team Overview page.
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     });
 
     // 6. Format the data for the frontend table.
-    const formattedTeamData = teamMembers.map((member) => {
+    const formattedTeamData = teamMembers.map((member:any) => {
       // Create the managedBy string from the manager's first and last name using the 'reportsTo' relation.
       const managedBy = member.reportsTo
         ? `${member.reportsTo.firstName || ''} ${member.reportsTo.lastName || ''}`.trim()
@@ -72,17 +72,17 @@ export async function GET(request: NextRequest) {
 
       // Create a comma-separated string of direct report names using the 'reports' relation.
       const manages = member.reports
-        .map((report) => `${report.firstName || ''} ${report.lastName || ''}`.trim())
+        .map((report:any) => `${report.firstName || ''} ${report.lastName || ''}`.trim())
         .filter(Boolean) // Filter out any empty strings
         .join(', ') || 'None';
 
       // Create a structured array of objects for the popover
-      const managesReports = member.reports.map(report => ({
+      const managesReports = member.reports.map((report:any) => ({
         name: `${report.firstName || ''} ${report.lastName || ''}`.trim(),
         role: report.role,
       }));
 
-      const managesIds = member.reports.map(report => report.id);
+      const managesIds = member.reports.map((report:any) => report.id);
 
       return {
         id: member.id,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching team data:', error);
     // Handle specific Prisma errors if needed, otherwise return a generic server error.
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error instanceof PrismaClient) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

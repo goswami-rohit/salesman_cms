@@ -263,7 +263,7 @@ export function ChartPieReusable({ data, dataKey, nameKey, title, description }:
               paddingAngle={2}
               onMouseEnter={onPieEnter}
               onMouseLeave={onPieLeave}
-              activeIndex={activeIndex}
+              //activeIndex={activeIndex}
               activeShape={(props: any) => renderActiveShape({ ...props, nameKey })} // Pass nameKey to active shape renderer
             >
               {data.map((_, index) => (

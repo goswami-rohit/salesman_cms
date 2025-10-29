@@ -665,7 +665,7 @@ export function TeamTabContent() {
             placeholder="Search team members..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="md:max-w-sm flex-grow"
+            className="md:max-w-sm grow"
           />
           <Select value={selectedRole} onValueChange={handleRoleChange}>
             <SelectTrigger className="w-[180px]">

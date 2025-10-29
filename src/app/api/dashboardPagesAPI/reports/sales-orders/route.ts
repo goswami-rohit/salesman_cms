@@ -121,7 +121,7 @@ export async function GET() {
     });
 
     // 5) Format -> plain JSON
-    const formatted = salesOrders.map((order) => {
+    const formatted = salesOrders.map((order:any) => {
       const toNum = (v: any) => (v == null ? null : Number(v));
       const toDate = (d: any) => (d ? new Date(d).toISOString().split('T')[0] : null);
 

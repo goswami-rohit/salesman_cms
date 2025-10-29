@@ -40,8 +40,8 @@ export async function GET() {
     });
 
     // Extract the string values from the query results
-    const regions = uniqueRegions.map(r => r.region || '').filter(Boolean);
-    const areas = uniqueAreas.map(a => a.area || '').filter(Boolean);
+    const regions = uniqueRegions.map((r:any) => r.region || '').filter(Boolean);
+    const areas = uniqueAreas.map((a:any) => a.area || '').filter(Boolean);
 
     return NextResponse.json({ regions, areas }, { status: 200 });
 

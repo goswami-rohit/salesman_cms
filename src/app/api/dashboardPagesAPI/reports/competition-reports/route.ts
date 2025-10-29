@@ -68,7 +68,7 @@ export async function GET() {
     });
 
     // Map the data to match the frontend's CompetitionReport schema (camelCase, combined fields)
-    const formattedReports = competitionReports.map(report => ({
+    const formattedReports = competitionReports.map((report:any) => ({
       id: report.id,
       salesmanName: `${report.user.firstName || ''} ${report.user.lastName || ''}`.trim() || report.user.email,
       brandName: report.brandName,

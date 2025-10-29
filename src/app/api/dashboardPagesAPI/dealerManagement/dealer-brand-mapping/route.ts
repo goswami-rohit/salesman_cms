@@ -67,7 +67,7 @@ async function getAllBrandNames(companyId: number) {
       name: 'asc',
     },
   });
-  return brands.map((b) => b.name);
+  return brands.map((b:any) => b.name);
 }
 
 // Main API handler for the brand mapping data.

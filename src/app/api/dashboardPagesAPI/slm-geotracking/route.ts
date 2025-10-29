@@ -107,7 +107,7 @@ export async function GET() {
     });
 
     // 5. Format the data for the frontend table display
-    const formattedReports = geotrackingReports.map(report => ({
+    const formattedReports = geotrackingReports.map((report:any) => ({
       id: report.id,
       // Add optional chaining to prevent errors if the user object is unexpectedly null
       salesmanName: report.user?.firstName && report.user?.lastName ? `${report.user.firstName} ${report.user.lastName}` : null,

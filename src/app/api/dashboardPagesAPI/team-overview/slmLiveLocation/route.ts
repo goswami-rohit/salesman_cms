@@ -76,8 +76,8 @@ export async function GET() {
     });
 
     // Extract the user IDs from the active plans
-    const activeSalesmen = activePlans.map(plan => plan.user);
-    const salesmanIds = activeSalesmen.map(s => String(s.id));
+    const activeSalesmen = activePlans.map((plan:any) => plan.user);
+    const salesmanIds = activeSalesmen.map((s:any) => String(s.id));
 
     if (salesmanIds.length === 0) {
       return NextResponse.json([], { status: 200 });
@@ -95,7 +95,7 @@ export async function GET() {
     // Fetch latest endpoint for each active salesman concurrently (safe-fail)
     type FetchResult = | { ok: true; data: any } | { ok: false; error: any };
 
-    const fetchPromises: Promise<FetchResult>[] = salesmanIds.map((id) =>
+    const fetchPromises: Promise<FetchResult>[] = salesmanIds.map((id:any) =>
       axios
         .get(`${slmServerURL}/api/geotracking/user/${id}/latest`, { timeout: 5000 })
         .then((r) => ({ ok: true as const, data: r.data }))
@@ -119,7 +119,7 @@ export async function GET() {
         if (!latest) return null; // user has no points yet
 
         // Find the user metadata from your DB list (activeSalesmen)
-        const user = activeSalesmen.find((u) => String(u.id) === String(salesmanIds[idx]));
+        const user = activeSalesmen.find((u:any) => String(u.id) === String(salesmanIds[idx]));
         if (!user) return null;
 
         // Map the latest DB row to the liveLocationSchema shape

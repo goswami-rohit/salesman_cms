@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use a Prisma transaction to ensure all updates are atomic
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx:any) => {
       // Step 1: Get the current direct reports for the user
       const currentDirectReports = await tx.user.findMany({
         where: {
@@ -75,10 +75,10 @@ export async function POST(request: NextRequest) {
         },
         select: { id: true }
       });
-      const currentDirectReportIds = currentDirectReports.map(report => report.id);
+      const currentDirectReportIds = currentDirectReports.map((report:any) => report.id);
 
       // Step 2: Users to be unmanaged (no longer in the managesIds list)
-      const usersToUnmanage = currentDirectReportIds.filter(id => !managesIds.includes(id));
+      const usersToUnmanage = currentDirectReportIds.filter((id:any) => !managesIds.includes(id));
       if (usersToUnmanage.length > 0) {
         await tx.user.updateMany({
           where: {

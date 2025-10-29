@@ -100,7 +100,7 @@ export async function GET() {
     });
 
     // Format the data to match the frontend's expected TechnicalVisitReport structure
-    const formattedReports = technicalReports.map(report => {
+    const formattedReports = technicalReports.map((report:any) => {
       // Construct salesmanName from user's firstName and lastName, handling potential nulls
       const salesmanName = [report.user?.firstName, report.user?.lastName]
         .filter(Boolean) // Filters out any null or undefined parts

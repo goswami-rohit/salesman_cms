@@ -92,13 +92,13 @@ export async function GET() {
     });
 
     // Map the data to match the frontend's PermanentJourneyPlan schema
-    const formattedPlans = permanentJourneyPlans.map(plan => {
+    const formattedPlans = permanentJourneyPlans.map((plan:any) => {
       // Construct salesman and creator names, handling potential nulls
       const salesmanName = `${plan.user.firstName || ''} ${plan.user.lastName || ''}`.trim() || plan.user.email;
       const createdByName = `${plan.createdBy.firstName || ''} ${plan.createdBy.lastName || ''}`.trim() || plan.createdBy.email;
 
       // Extract only the IDs of the tasks
-      const taskIds = plan.dailyTasks.map(task => task.id);
+      const taskIds = plan.dailyTasks.map((task:any) => task.id);
 
       return {
         id: plan.id,

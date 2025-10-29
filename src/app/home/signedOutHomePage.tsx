@@ -39,7 +39,7 @@ export default function SignedOutHomePage() {
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
                 <span className="text-foreground">Company</span>
                 <br />
-                <span className="bg-gradient-to-r from-primary to-chart-1 bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-primary to-chart-1 bg-clip-text text-transparent">
                   Management System
                 </span>
               </h1>

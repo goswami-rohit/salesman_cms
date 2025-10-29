@@ -267,7 +267,7 @@ export default function CemtemChatPage() {
                                         : "Message CemTemBot..."
                                     : "Connecting to server..."
                             }
-                            className="min-h-[44px] max-h-[120px] resize-none pr-12 text-base rounded-xl border border-input bg-muted text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/50"
+                            className="min-h-11 max-h-[120px] resize-none pr-12 text-base rounded-xl border border-input bg-muted text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/50"
                             disabled={!isConnected}
                         />
                         <Button

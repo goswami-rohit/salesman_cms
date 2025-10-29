@@ -69,7 +69,7 @@ export async function GET(request: Request) {
           },
         });
 
-        const formatted = salesmanRatings.map(r => ({
+        const formatted = salesmanRatings.map((r:any) => ({
           id: r.id,
           salesPersonName:
             `${r.user.firstName || ''} ${r.user.lastName || ''}`.trim() || r.user.email,
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
           },
         });
 
-        const formatted = dealerScores.map(s => ({
+        const formatted = dealerScores.map((s:any) => ({
           id: s.id,
           dealerName: s.dealer.name,
           dealerScore: s.dealerScore.toNumber(),

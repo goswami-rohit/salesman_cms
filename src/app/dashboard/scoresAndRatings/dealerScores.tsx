@@ -63,7 +63,7 @@ const renderSelectFilter = (
   options: string[],
   isLoading: boolean = false
 ) => (
-  <div className="flex flex-col space-y-1 w-full sm:w-[160px] min-w-[120px]">
+  <div className="flex flex-col space-y-1 w-full sm:w-40 min-w-[120px]">
     <label className="text-sm font-medium text-muted-foreground">{label}</label>
     <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
       <SelectTrigger className="h-9">

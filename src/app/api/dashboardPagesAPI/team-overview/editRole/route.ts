@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use a transaction to ensure both the Prisma and WorkOS updates are successful.
-    const updatedUser = await prisma.$transaction(async (prisma) => {
+    const updatedUser = await prisma.$transaction(async (prisma:any) => {
       // Step 1: Find the user in the database to get their WorkOS ID and the company's WorkOS ID
       const userToUpdate = await prisma.user.findUnique({
         where: { id: userId },

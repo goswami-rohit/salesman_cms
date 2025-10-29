@@ -93,7 +93,7 @@ export async function GET() {
     });
 
     // Map the Prisma data to the desired frontend format
-    const formattedRecords = attendanceRecords.map(record => {
+    const formattedRecords = attendanceRecords.map((record:any) => {
       // Construct salesmanName from firstName and lastName, handling potential nulls
       const salesmanName = [record.user?.firstName, record.user?.lastName]
         .filter(Boolean) // Remove any null or undefined parts

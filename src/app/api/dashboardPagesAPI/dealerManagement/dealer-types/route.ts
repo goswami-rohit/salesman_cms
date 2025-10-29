@@ -29,7 +29,7 @@ export async function GET() {
     });
 
     // Extract the string values from the query results
-    const type = uniqueTypes.map(a => a.type);
+    const type = uniqueTypes.map((a:any) => a.type);
 
     return NextResponse.json({ type }, { status: 200 });
 

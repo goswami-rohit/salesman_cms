@@ -38,7 +38,7 @@ export async function getFlattenedUsers(companyId: number): Promise<FlattenedUse
         orderBy: { createdAt: 'desc' },
     });
 
-    return rawUsers.map(u => ({
+    return rawUsers.map((u:any) => ({
         id: u.id,
         email: u.email,
         fullName: `${u.firstName} ${u.lastName}`,
@@ -158,7 +158,7 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
     });
 
     // 2. Transformation/Flattening Logic
-    return rawDealers.map(d => ({
+    return rawDealers.map((d:any) => ({
         // Scalar Fields (Default Mapping)
         id: d.id, type: d.type, name: d.name, region: d.region, area: d.area, phoneNo: d.phoneNo,
         address: d.address, pinCode: d.pinCode ?? null, feedbacks: d.feedbacks, remarks: d.remarks ?? null,
@@ -256,7 +256,7 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
         orderBy: { reportDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         // Map scalar fields
         id: r.id,
         dealerType: r.dealerType,
@@ -356,7 +356,7 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
         orderBy: { reportDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         // Map scalar fields
         id: r.id,
         visitType: r.visitType,
@@ -432,7 +432,7 @@ export async function getFlattenedPermanentJourneyPlans(companyId: number): Prom
         orderBy: { planDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         id: r.id,
         areaToBeVisited: r.areaToBeVisited,
         description: r.description ?? null,
@@ -483,7 +483,7 @@ export async function getFlattenedCompetitionReports(companyId: number): Promise
         orderBy: { reportDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         id: r.id,
         brandName: r.brandName,
         billing: r.billing,
@@ -541,7 +541,7 @@ export async function getFlattenedDailyTasks(companyId: number): Promise<Flatten
         orderBy: { taskDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         id: r.id,
         visitType: r.visitType,
         relatedDealerId: r.relatedDealerId ?? null,
@@ -614,7 +614,7 @@ export async function getFlattenedSalesmanAttendance(companyId: number): Promise
         orderBy: { attendanceDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         // Map scalar fields (String, Boolean)
         id: r.id,
         locationName: r.locationName,
@@ -680,7 +680,7 @@ export async function getFlattenedSalesmanLeaveApplication(companyId: number): P
         orderBy: { startDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         // Map scalar fields (String)
         id: r.id,
         leaveType: r.leaveType,
@@ -778,7 +778,7 @@ export async function getFlattenedSalesOrders(companyId: number): Promise<Flatte
     const toNum = (v: any): number | null => (v == null ? null : Number(v));
     const toDate = (d: any): string | null => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
-    return orders.map(o => {
+    return orders.map((o:any) => {
         const qty = toNum(o.orderQty) ?? 0;
         // Prefer price after discount; fall back to base price; else 0
         const unitPrice = (toNum(o.itemPriceAfterDiscount) ?? toNum(o.itemPrice) ?? 0);
@@ -904,7 +904,7 @@ export async function getFlattenedGeoTracking(companyId: number): Promise<Flatte
         orderBy: { recordedAt: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         // Map scalar fields (String, Boolean)
         id: r.id,
         locationType: r.locationType ?? null,
@@ -981,7 +981,7 @@ export async function getFlattenedDealerReportsAndScores(companyId: number): Pro
         orderBy: { lastUpdatedDate: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         id: r.id,
 
         // DateTime Conversions
@@ -1026,7 +1026,7 @@ export async function getFlattenedRatings(companyId: number): Promise<FlattenedR
         orderBy: { id: 'desc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         id: r.id,
         area: r.area,
         region: r.region,
@@ -1074,7 +1074,7 @@ export async function getFlattenedDealerBrandCapacities(companyId: number): Prom
         orderBy: { dealerId: 'asc' },
     });
 
-    return rawReports.map(r => ({
+    return rawReports.map((r:any) => ({
         id: r.id,
         dealerId: r.dealerId,
 

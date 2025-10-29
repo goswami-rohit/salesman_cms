@@ -12,7 +12,7 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
-import {baseDealerBrandMappingSchema} from '@/app/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping/route';
+//import {baseDealerBrandMappingSchema} from '@/app/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping/route';
 
 // Define a type for the dealer brand mapping data, including a record for dynamic brand columns.
 type DealerBrandMappingData = {
