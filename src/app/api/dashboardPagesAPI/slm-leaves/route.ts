@@ -1,4 +1,5 @@
 // src/app/api/dashboardPagesAPI/slm-leaves/route.ts
+export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';

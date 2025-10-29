@@ -1,5 +1,5 @@
 // src/app/components/chart-area-reusable.tsx
-//"use client"
+"use client"
 
 import * as React from "react"
 import {

@@ -1,4 +1,4 @@
-// src/app/dashboard/addDealers/verifyDealers.tsx
+// src/app/dashboard/dealerManagement/verifyDealers.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -16,7 +16,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { dealerVerification } from '@/lib/Reusable-constants';
 import { DealerVerificationSchema } from '@/app/api/dashboardPagesAPI/dealerManagement/dealer-verify/route';
 
 

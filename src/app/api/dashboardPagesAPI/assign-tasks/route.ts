@@ -1,4 +1,5 @@
 // src/app/api/dashboardPagesAPI/assign-tasks/route.ts
+export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';

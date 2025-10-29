@@ -1,4 +1,4 @@
-// src/app/dashboard/addDealers/listDealers.tsx
+// src/app/dashboard/dealerManagement/listDealers.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';

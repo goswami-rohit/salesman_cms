@@ -1,4 +1,4 @@
-// src/middleware.ts
+// src/proxy.ts -- previously middleware.ts
 import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest, NextFetchEvent } from 'next/server';
@@ -12,7 +12,7 @@ const allowedOrigins = [
 ];
 
 // The main middleware function that combines AuthKit and CORS logic.
-export async function middleware(request: NextRequest, event: NextFetchEvent) {
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // First, run the AuthKit middleware, correctly passing both the request and event.
   const authkitResponse = await authkitMiddleware({
     middlewareAuth: {

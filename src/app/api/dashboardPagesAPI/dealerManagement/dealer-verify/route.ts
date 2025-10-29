@@ -1,4 +1,5 @@
 // src/app/api/dashboardPagesAPI/add-dealers/dealer-verify/route.ts
+export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client

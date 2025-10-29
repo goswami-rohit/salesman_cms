@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { UniqueIdentifier } from '@dnd-kit/core';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';

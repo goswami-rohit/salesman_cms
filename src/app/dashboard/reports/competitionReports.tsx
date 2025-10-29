@@ -1,4 +1,4 @@
-// src/app/dashboard/competitionReports.tsx
+// src/app/dashboard/reports/competitionReports.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';

@@ -1,4 +1,5 @@
 // src/app/api/dashboardPagesAPI/dealerManagement/route.ts
+export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
@@ -173,6 +174,7 @@ const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'senior-manager', 'manager', 'assistant-manager',
   'senior-executive', 'executive','junior-executive'];
 
+  // HAVE TO FIX DEALER ADDING - STATUS SET TO 'PENDING'
 export async function POST(request: NextRequest) {
     try {
         const claims = await getTokenClaims();

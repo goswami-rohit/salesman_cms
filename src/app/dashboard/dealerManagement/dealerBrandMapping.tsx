@@ -1,4 +1,4 @@
-// src/app/dashboard/dealerDevelopmentAndMappingReports/dealerBrandMapping.tsx
+// src/app/dashboard/dealerManagement/dealerBrandMapping.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
