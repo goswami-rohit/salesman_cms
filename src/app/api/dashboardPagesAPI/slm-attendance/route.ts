@@ -1,4 +1,5 @@
 // src/app/api/dashboardPagesAPI/salesman-attendance/route.ts
+import 'server-only';
 export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma'; // Replaced local PrismaClient with shared instance

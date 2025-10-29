@@ -1,4 +1,5 @@
 // src/app/api/dashboardPagesAPI/routes/daily-visit-reports/route.ts
+import 'server-only';
 export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';

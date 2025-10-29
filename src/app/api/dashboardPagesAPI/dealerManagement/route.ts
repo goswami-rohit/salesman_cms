@@ -1,4 +1,5 @@
 // src/app/api/dashboardPagesAPI/dealerManagement/route.ts
+import 'server-only';
 export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';

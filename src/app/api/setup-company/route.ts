@@ -1,4 +1,5 @@
 // src/app/api/setup-company/route.ts
+import 'server-only';
 export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { withAuth } from '@workos-inc/authkit-nextjs';
