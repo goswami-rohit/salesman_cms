@@ -281,8 +281,7 @@ export default function PJPVerifyPage() {
             <CardHeader className='rounded-t-lg'>
                 <CardTitle className='text-2xl'>PJP Verification Queue</CardTitle>
                 <CardDescription>
-                    Review and verify Permanent Journey Plans (PJPs) submitted by salesmen.
-                    Verification is required before plans are visible in the mobile app.
+                    Review and verify (PJPs) submitted by sales executives.
                 </CardDescription>
             </CardHeader>
             <CardContent className='p-6'>
@@ -318,7 +317,7 @@ export default function PJPVerifyPage() {
                     <DialogHeader>
                         <DialogTitle>Edit & Approve PJP: {pjpToModify?.id}</DialogTitle>
                         <DialogDescription>
-                            Modify the PJP details before saving and marking it as **VERIFIED**.
+                            Modify the PJP details before saving and marking it as VERIFIED.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handlePatchPJP} className="grid gap-4 py-4">

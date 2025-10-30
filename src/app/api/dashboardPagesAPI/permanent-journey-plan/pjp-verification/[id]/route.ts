@@ -48,7 +48,7 @@ async function verifyPJP(pjpId: string, currentUserCompanyId: number) {
 /**
  * PUT: Update the verificationStatus of a PJP (VERIFIED or REJECTED).
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
         // FIX: AWAIT the params object before destructuring/accessing id, as requested by the error message.
         const resolvedParams = await Promise.resolve(params);
@@ -116,7 +116,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 /**
  * PATCH: Modify PJP data fields and set status to 'VERIFIED' (Admin modification and approval).
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
         // FIX: AWAIT the params object before destructuring/accessing id, as requested by the error message.
         const resolvedParams = await Promise.resolve(params);
