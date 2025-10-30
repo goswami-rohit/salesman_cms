@@ -1,7 +1,6 @@
 // src/app/dashboard/scoresAndRatings/page.tsx
 'use client';
 
-import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Import the report components

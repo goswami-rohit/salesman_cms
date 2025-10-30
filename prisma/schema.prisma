@@ -70,8 +70,9 @@ model User {
   permanentJourneyPlansAssigned PermanentJourneyPlan[] @relation("PJP_AssignedUser")
   // PJPs created by this user
   permanentJourneyPlansCreated  PermanentJourneyPlan[] @relation("PJP_CreatedBy")
+  noOfPJP Int?            @map("no_of_pjp")
+  dealerBrandMappings     DealerBrandMapping[]
 
-  // --- NEW RELATIONS FOR TSO & INVENTORY ---
   createdMeetings                     TSOMeeting[]             @relation("UserCreatedMeetings") 
   giftLogs                            GiftAllocationLog[]   @relation("UserGiftLogs")
   giftTransfersSent                   GiftAllocationLog[]   @relation("SourceUserTransfers")
@@ -163,6 +164,8 @@ model Dealer {
   blankChequePicUrl              String?   @map("blank_cheque_pic_url") @db.VarChar(500)
   partnershipDeedPicUrl          String?   @map("partnership_deed_pic_url") @db.VarChar(500) // Optional
 
+  salesGrowthPercentage Decimal? @map("sales_growth_percentage") @db.Decimal(5, 2)
+
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -172,6 +175,7 @@ model Dealer {
   subDealers      Dealer[] @relation("SubDealers")
   dailyTasks      DailyTask[] @relation("DealerDailyTasks")
   salesOrders     SalesOrder[]
+  noOfPJP         Int?        @map("no_of_pjp")
 
   reportsAndScores DealerReportsAndScores? @relation("DealerScores")
 
@@ -349,10 +353,14 @@ model PermanentJourneyPlan {
   status          String   @db.VarChar(50)
 
   // Ensure the name here matches DailyTask (see below)
-  dailyTasks      DailyTask[] @relation("PJPTasks")
+  dailyTasks              DailyTask[] @relation("PJPTasks")
   dailyVisitReports       DailyVisitReport[] @relation("PJPReports_DVR")
   technicalVisitReports   TechnicalVisitReport[] @relation("PJPReports_TVR")
   salesOrders             SalesOrder[] @relation("PJP_Sales_Orders")
+
+  visitDealerName String? @map("visit_dealer_name") @db.VarChar(255)
+  verificationStatus      String?                 @map("verification_status") @db.VarChar(50)
+  additionalVisitRemarks  String?                 @map("additional_visit_remarks") @db.VarChar(500)
 
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -624,10 +632,14 @@ model DealerBrandMapping {
   dealerId    String   @map("dealer_id")
   brandId     Int      @map("brand_id")
   capacityMT  Decimal  @map("capacity_mt") @db.Decimal(12, 2)
+  bestCapacityMT             Decimal? @map("best_capacity_mt") @db.Decimal(12, 2)
+  brandGrowthCapacityPercent Decimal? @map("brand_growth_capacity_percent") @db.Decimal(5, 2)
 
   // Relations
   dealer      Dealer @relation(fields: [dealerId], references: [id])
   brand       Brand  @relation(fields: [brandId], references: [id])
+  userId Int? @map("user_id") // FK to User
+  user User? @relation(fields: [userId], references: [id]) // New relation
 
   @@unique([dealerId, brandId])
   @@map("dealer_brand_mapping")

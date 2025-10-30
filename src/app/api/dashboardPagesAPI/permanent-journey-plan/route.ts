@@ -1,7 +1,7 @@
 // src/app/api/dashboardPagesAPI/permanent-journey-plan/route.ts
 import 'server-only';
 export const runtime = 'nodejs';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma'; // Ensure this path is correct for your Prisma client
 import { z } from 'zod'; // Added Zod Import
@@ -12,7 +12,7 @@ const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'senior-manager', 'manager', 'assistant-manager',
   'senior-executive','executive',];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const claims = await getTokenClaims();
 
@@ -32,14 +32,25 @@ export async function GET() {
       return NextResponse.json({ error: `Forbidden: Only the following roles can access PJP data: ${allowedRoles.join(', ')}` }, { status: 403 });
     }
 
-    // Fetch Permanent Journey Plans for the current user's company
-    const permanentJourneyPlans = await prisma.permanentJourneyPlan.findMany({
-      where: {
-        // Filter by the user's company who is assigned to the plan
+    const { searchParams } = new URL(request.url);
+    const verificationStatus = searchParams.get('verificationStatus');
+
+    // 4. Construct the WHERE clause (NEW)
+    const whereClause: any = {
         user: { 
-          companyId: currentUser.companyId,
+            companyId: currentUser.companyId,
         },
-      },
+    };
+
+    // Apply the verification status filter if present
+    if (verificationStatus) {
+        whereClause.verificationStatus = verificationStatus;
+    }
+
+
+    // 5. Fetch Permanent Journey Plans for the current user's company
+    const permanentJourneyPlans = await prisma.permanentJourneyPlan.findMany({
+      where: whereClause, // Use the constructed whereClause
       include: {
         // Include salesman details to get their name
         user: { 
@@ -95,6 +106,9 @@ export async function GET() {
         description: plan.description,
         status: plan.status,
         taskIds: taskIds,
+        visitDealerName: plan.visitDealerName,
+        verificationStatus: plan.verificationStatus,
+        additionalVisitRemarks: plan.additionalVisitRemarks,
         createdAt: plan.createdAt.toISOString(),
         updatedAt: plan.updatedAt.toISOString(),
       };

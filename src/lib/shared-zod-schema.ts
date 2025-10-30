@@ -1,6 +1,5 @@
 // src/lib/shared-zod-schema.ts
 import { z } from 'zod';
-import { dealerVerification } from '@/lib/Reusable-constants';
 
 // assign tasks - daily tasks
 // Zod schema for validating the POST request body when assigning tasks
@@ -37,32 +36,32 @@ export const baseDealerBrandMappingSchema = z.object({
 
 // dealer - verification
 export const dealerVerificationSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1),
-    phoneNo: z.string().min(1),
-    area: z.string().min(1),
-    region: z.string().min(1),
-    type: z.string().min(1), // Used as a primary identifier/zone category
-    verificationStatus: z.enum(dealerVerification),
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  phoneNo: z.string().min(1),
+  area: z.string().min(1),
+  region: z.string().min(1),
+  type: z.string().min(1), // Used as a primary identifier/zone category
+  verificationStatus: z.enum(["PENDING", "VERIFIED", "REJECTED"]),
 
-    // Statutory IDs
-    gstinNo: z.string().nullable().optional(),
-    panNo: z.string().nullable().optional(),
-    aadharNo: z.string().nullable().optional(),
-    tradeLicNo: z.string().nullable().optional(),
+  // Statutory IDs
+  gstinNo: z.string().nullable().optional(),
+  panNo: z.string().nullable().optional(),
+  aadharNo: z.string().nullable().optional(),
+  tradeLicNo: z.string().nullable().optional(),
 
-    // Image URLs (nullable/optional)
-    tradeLicencePicUrl: z.string().url().nullable().optional(),
-    shopPicUrl: z.string().url().nullable().optional(),
-    dealerPicUrl: z.string().url().nullable().optional(),
-    blankChequePicUrl: z.string().url().nullable().optional(),
-    partnershipDeedPicUrl: z.string().url().nullable().optional(),
-    
-    remarks: z.string().nullable().optional(),
+  // Image URLs (nullable/optional)
+  tradeLicencePicUrl: z.string().url().nullable().optional(),
+  shopPicUrl: z.string().url().nullable().optional(),
+  dealerPicUrl: z.string().url().nullable().optional(),
+  blankChequePicUrl: z.string().url().nullable().optional(),
+  partnershipDeedPicUrl: z.string().url().nullable().optional(),
+
+  remarks: z.string().nullable().optional(),
 });
 
 export const verificationUpdateSchema = z.object({
-    verificationStatus: z.enum(["VERIFIED", "REJECTED"]), 
+  verificationStatus: z.enum(["VERIFIED", "REJECTED"]),
 });
 
 // dealer 
@@ -71,162 +70,162 @@ export const optionalIntSchema = z.number().int().nullable().optional();
 export const optionalStringSchema = z.string().nullable().optional();
 
 export const getDealersSchema = z.object({
-    id: z.string().uuid(), // Expecting a UUID string
-    name: z.string().min(1, "Dealer name is required."),
-    type: z.string().min(1, "Dealer type is required."), 
-    parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
-    parentDealerName: optionalStringSchema, // Custom field from parentDealer relation
-    region: z.string().min(1, "Region is required."),     
-    area: z.string().min(1, "Area is required."),         
-    phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
-    address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    pinCode: optionalStringSchema,
-    latitude: optionalNumberSchema,
-    longitude: optionalNumberSchema,
-    dateOfBirth: optionalStringSchema,       // ISO string
-    anniversaryDate: optionalStringSchema,   // ISO string
-    totalPotential: z.number().nonnegative("Total potential must be 0 or positive."),
-    bestPotential: z.number().nonnegative("Best potential must be 0 or positive."),
-    brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
-    feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
-    remarks: optionalStringSchema, 
-    verificationStatus: z.string().optional(),
-    
-    // --- New Fields (Contact, KYC, Development) ---
-    dealerDevelopmentStatus: optionalStringSchema,
-    dealerDevelopmentObstacle: optionalStringSchema,
-    whatsappNo: optionalStringSchema,
-    emailId: optionalStringSchema,
-    businessType: optionalStringSchema,
-    gstinNo: optionalStringSchema,
-    panNo: optionalStringSchema,
-    tradeLicNo: optionalStringSchema, 
-    aadharNo: optionalStringSchema,
+  id: z.string().uuid(), // Expecting a UUID string
+  name: z.string().min(1, "Dealer name is required."),
+  type: z.string().min(1, "Dealer type is required."),
+  parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
+  parentDealerName: optionalStringSchema, // Custom field from parentDealer relation
+  region: z.string().min(1, "Region is required."),
+  area: z.string().min(1, "Area is required."),
+  phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
+  address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
+  pinCode: optionalStringSchema,
+  latitude: optionalNumberSchema,
+  longitude: optionalNumberSchema,
+  dateOfBirth: optionalStringSchema,       // ISO string
+  anniversaryDate: optionalStringSchema,   // ISO string
+  totalPotential: z.number().nonnegative("Total potential must be 0 or positive."),
+  bestPotential: z.number().nonnegative("Best potential must be 0 or positive."),
+  brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
+  feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
+  remarks: optionalStringSchema,
+  verificationStatus: z.string().optional(),
 
-    // --- Godown Details ---
-    godownSizeSqFt: optionalNumberSchema, 
-    godownCapacityMTBags: optionalStringSchema, 
-    godownAddressLine: optionalStringSchema, 
-    godownLandMark: optionalStringSchema, 
-    godownDistrict: optionalStringSchema, 
-    godownArea: optionalStringSchema, 
-    godownRegion: optionalStringSchema, 
-    godownPinCode: optionalStringSchema, 
+  // --- New Fields (Contact, KYC, Development) ---
+  dealerDevelopmentStatus: optionalStringSchema,
+  dealerDevelopmentObstacle: optionalStringSchema,
+  whatsappNo: optionalStringSchema,
+  emailId: optionalStringSchema,
+  businessType: optionalStringSchema,
+  gstinNo: optionalStringSchema,
+  panNo: optionalStringSchema,
+  tradeLicNo: optionalStringSchema,
+  aadharNo: optionalStringSchema,
 
-    // --- Residential Address Details ---
-    residentialAddressLine: optionalStringSchema, 
-    residentialLandMark: optionalStringSchema, 
-    residentialDistrict: optionalStringSchema, 
-    residentialArea: optionalStringSchema, 
-    residentialRegion: optionalStringSchema, 
-    residentialPinCode: optionalStringSchema, 
+  // --- Godown Details ---
+  godownSizeSqFt: optionalNumberSchema,
+  godownCapacityMTBags: optionalStringSchema,
+  godownAddressLine: optionalStringSchema,
+  godownLandMark: optionalStringSchema,
+  godownDistrict: optionalStringSchema,
+  godownArea: optionalStringSchema,
+  godownRegion: optionalStringSchema,
+  godownPinCode: optionalStringSchema,
 
-    // --- Bank Details ---
-    bankAccountName: optionalStringSchema, 
-    bankName: optionalStringSchema, 
-    bankBranchAddress: optionalStringSchema, 
-    bankAccountNumber: optionalStringSchema, 
-    bankIfscCode: optionalStringSchema, 
+  // --- Residential Address Details ---
+  residentialAddressLine: optionalStringSchema,
+  residentialLandMark: optionalStringSchema,
+  residentialDistrict: optionalStringSchema,
+  residentialArea: optionalStringSchema,
+  residentialRegion: optionalStringSchema,
+  residentialPinCode: optionalStringSchema,
 
-    // --- Sales & Promoter Details ---
-    brandName: optionalStringSchema, 
-    monthlySaleMT: optionalNumberSchema, 
-    noOfDealers: optionalNumberSchema, 
-    areaCovered: optionalStringSchema, 
-    projectedMonthlySalesBestCementMT: optionalNumberSchema, 
-    noOfEmployeesInSales: optionalNumberSchema, 
+  // --- Bank Details ---
+  bankAccountName: optionalStringSchema,
+  bankName: optionalStringSchema,
+  bankBranchAddress: optionalStringSchema,
+  bankAccountNumber: optionalStringSchema,
+  bankIfscCode: optionalStringSchema,
 
-    // --- Declaration ---
-    declarationName: optionalStringSchema, 
-    declarationPlace: optionalStringSchema, 
-    declarationDate: optionalStringSchema, 
+  // --- Sales & Promoter Details ---
+  brandName: optionalStringSchema,
+  monthlySaleMT: optionalNumberSchema,
+  noOfDealers: optionalNumberSchema,
+  areaCovered: optionalStringSchema,
+  projectedMonthlySalesBestCementMT: optionalNumberSchema,
+  noOfEmployeesInSales: optionalNumberSchema,
 
-    // --- Document/Image URLs ---
-    tradeLicencePicUrl: optionalStringSchema,
-    shopPicUrl: optionalStringSchema,
-    dealerPicUrl: optionalStringSchema,
-    blankChequePicUrl: optionalStringSchema,
-    partnershipDeedPicUrl: optionalStringSchema, 
+  // --- Declaration ---
+  declarationName: optionalStringSchema,
+  declarationPlace: optionalStringSchema,
+  declarationDate: optionalStringSchema,
 
-    createdAt: z.string(), // Expecting ISO string
-    updatedAt: z.string(), // Expecting ISO string
+  // --- Document/Image URLs ---
+  tradeLicencePicUrl: optionalStringSchema,
+  shopPicUrl: optionalStringSchema,
+  dealerPicUrl: optionalStringSchema,
+  blankChequePicUrl: optionalStringSchema,
+  partnershipDeedPicUrl: optionalStringSchema,
+
+  createdAt: z.string(), // Expecting ISO string
+  updatedAt: z.string(), // Expecting ISO string
 });
 
 // Schema for the POST request body (data sent from frontend to create a new dealer)
 export const postDealersSchema = z.object({
-    name: z.string().min(1, "Dealer name is required."),
-    type: z.string(),
-    parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
-    region: z.string(),
-    area: z.string(),
-    phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
-    address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
-    pinCode: optionalStringSchema,
-    latitude: optionalNumberSchema,
-    longitude: optionalNumberSchema,
-    dateOfBirth: optionalStringSchema,       // ISO string
-    anniversaryDate: optionalStringSchema,   // ISO string
-    totalPotential: z.number().nonnegative("Total potential must be 0 or positive."),
-    bestPotential: z.number().nonnegative("Best potential must be 0 or positive."),
-    brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
-    feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
-    remarks: optionalStringSchema, 
+  name: z.string().min(1, "Dealer name is required."),
+  type: z.string(),
+  parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
+  region: z.string(),
+  area: z.string(),
+  phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
+  address: z.string().min(1, "Address is required.").max(500, "Address is too long."),
+  pinCode: optionalStringSchema,
+  latitude: optionalNumberSchema,
+  longitude: optionalNumberSchema,
+  dateOfBirth: optionalStringSchema,       // ISO string
+  anniversaryDate: optionalStringSchema,   // ISO string
+  totalPotential: z.number().nonnegative("Total potential must be 0 or positive."),
+  bestPotential: z.number().nonnegative("Best potential must be 0 or positive."),
+  brandSelling: z.array(z.string()).min(1, "At least one brand must be selected."),
+  feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
+  remarks: optionalStringSchema,
 
-    // --- New Fields (Contact, KYC, Development) ---
-    dealerDevelopmentStatus: optionalStringSchema,
-    dealerDevelopmentObstacle: optionalStringSchema,
-    whatsappNo: optionalStringSchema,
-    emailId: optionalStringSchema,
-    businessType: optionalStringSchema,
-    gstinNo: optionalStringSchema,
-    panNo: optionalStringSchema,
-    tradeLicNo: optionalStringSchema, 
-    aadharNo: optionalStringSchema,
+  // --- New Fields (Contact, KYC, Development) ---
+  dealerDevelopmentStatus: optionalStringSchema,
+  dealerDevelopmentObstacle: optionalStringSchema,
+  whatsappNo: optionalStringSchema,
+  emailId: optionalStringSchema,
+  businessType: optionalStringSchema,
+  gstinNo: optionalStringSchema,
+  panNo: optionalStringSchema,
+  tradeLicNo: optionalStringSchema,
+  aadharNo: optionalStringSchema,
 
-    // --- Godown Details ---
-    godownSizeSqFt: optionalIntSchema, // Specific integer validation
-    godownCapacityMTBags: optionalStringSchema, 
-    godownAddressLine: optionalStringSchema, 
-    godownLandMark: optionalStringSchema, 
-    godownDistrict: optionalStringSchema, 
-    godownArea: optionalStringSchema, 
-    godownRegion: optionalStringSchema, 
-    godownPinCode: optionalStringSchema, 
+  // --- Godown Details ---
+  godownSizeSqFt: optionalIntSchema, // Specific integer validation
+  godownCapacityMTBags: optionalStringSchema,
+  godownAddressLine: optionalStringSchema,
+  godownLandMark: optionalStringSchema,
+  godownDistrict: optionalStringSchema,
+  godownArea: optionalStringSchema,
+  godownRegion: optionalStringSchema,
+  godownPinCode: optionalStringSchema,
 
-    // --- Residential Address Details ---
-    residentialAddressLine: optionalStringSchema, 
-    residentialLandMark: optionalStringSchema, 
-    residentialDistrict: optionalStringSchema, 
-    residentialArea: optionalStringSchema, 
-    residentialRegion: optionalStringSchema, 
-    residentialPinCode: optionalStringSchema, 
+  // --- Residential Address Details ---
+  residentialAddressLine: optionalStringSchema,
+  residentialLandMark: optionalStringSchema,
+  residentialDistrict: optionalStringSchema,
+  residentialArea: optionalStringSchema,
+  residentialRegion: optionalStringSchema,
+  residentialPinCode: optionalStringSchema,
 
-    // --- Bank Details ---
-    bankAccountName: optionalStringSchema, 
-    bankName: optionalStringSchema, 
-    bankBranchAddress: optionalStringSchema, 
-    bankAccountNumber: optionalStringSchema, 
-    bankIfscCode: optionalStringSchema, 
+  // --- Bank Details ---
+  bankAccountName: optionalStringSchema,
+  bankName: optionalStringSchema,
+  bankBranchAddress: optionalStringSchema,
+  bankAccountNumber: optionalStringSchema,
+  bankIfscCode: optionalStringSchema,
 
-    // --- Sales & Promoter Details ---
-    brandName: optionalStringSchema, 
-    monthlySaleMT: optionalNumberSchema, 
-    noOfDealers: optionalIntSchema, // Specific integer validation
-    areaCovered: optionalStringSchema, 
-    projectedMonthlySalesBestCementMT: optionalNumberSchema, 
-    noOfEmployeesInSales: optionalIntSchema, // Specific integer validation
+  // --- Sales & Promoter Details ---
+  brandName: optionalStringSchema,
+  monthlySaleMT: optionalNumberSchema,
+  noOfDealers: optionalIntSchema, // Specific integer validation
+  areaCovered: optionalStringSchema,
+  projectedMonthlySalesBestCementMT: optionalNumberSchema,
+  noOfEmployeesInSales: optionalIntSchema, // Specific integer validation
 
-    // --- Declaration ---
-    declarationName: optionalStringSchema, 
-    declarationPlace: optionalStringSchema, 
-    declarationDate: optionalStringSchema, 
+  // --- Declaration ---
+  declarationName: optionalStringSchema,
+  declarationPlace: optionalStringSchema,
+  declarationDate: optionalStringSchema,
 
-    // --- Document/Image URLs ---
-    tradeLicencePicUrl: optionalStringSchema,
-    shopPicUrl: optionalStringSchema,
-    dealerPicUrl: optionalStringSchema,
-    blankChequePicUrl: optionalStringSchema,
-    partnershipDeedPicUrl: optionalStringSchema, 
+  // --- Document/Image URLs ---
+  tradeLicencePicUrl: optionalStringSchema,
+  shopPicUrl: optionalStringSchema,
+  dealerPicUrl: optionalStringSchema,
+  blankChequePicUrl: optionalStringSchema,
+  partnershipDeedPicUrl: optionalStringSchema,
 });
 
 // pjp 
@@ -241,9 +240,43 @@ export const permanentJourneyPlanSchema = z.object({
   description: z.string().nullable().optional(), // Mapped to String? in schema
   status: z.string(),
   taskIds: z.array(z.string()), // Array of DailyTask IDs
-  // We'll also include the timestamps, as these are useful in most reports
+  visitDealerName: z.string().nullable(),
+  verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
+  additionalVisitRemarks: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+});
+
+export const permanentJourneyPlanVerificationSchema = z.object({
+  id: z.string(),
+  salesmanName: z.string(),
+  userId: z.number(),
+  createdByName: z.string(),
+  createdByRole: z.string(),
+  areaToBeVisited: z.string(),
+  planDate: z.string(), // YYYY-MM-DD
+  description: z.string().nullable(),
+  status: z.string(),
+  visitDealerName: z.string().nullable(),
+  verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
+  additionalVisitRemarks: z.string().nullable(),
+  salesmanRegion: z.string().nullable(),
+  salesmanArea: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const pjpVerificationUpdateSchema = z.object({
+  verificationStatus: z.enum(['VERIFIED', 'REJECTED']),
+  additionalVisitRemarks: z.string().max(500).optional().nullable(),
+});
+
+export const pjpModificationSchema = z.object({
+  planDate: z.string().optional(),
+  areaToBeVisited: z.string().max(500).optional(),
+  description: z.string().max(500).optional().nullable(),
+  visitDealerName: z.string().max(255).optional().nullable(),
+  additionalVisitRemarks: z.string().max(500).optional().nullable(),
 });
 
 // competition report
@@ -367,7 +400,7 @@ export const technicalVisitReportSchema = z.object({
   salespersonRemarks: z.string(),
   checkInTime: z.string(), // ISO String
   checkOutTime: z.string(), // ISO String or ''
-  
+
   // NEW/MISSING FIELDS from formatting logic - MUST BE NULLABLE if they are optional in Prisma
   inTimeImageUrl: z.string().nullable(),
   outTimeImageUrl: z.string().nullable(),
@@ -536,6 +569,9 @@ export type DealerVerificationSchema = z.infer<typeof dealerVerificationSchema>;
 export type GetDealersSchema = z.infer<typeof getDealersSchema>;
 export type PostDealersSchema = z.infer<typeof postDealersSchema>;
 export type PermanentJourneyPlanSchema = z.infer<typeof permanentJourneyPlanSchema>;
+export type PermanentJourneyPlanVerificationSchema = z.infer<typeof permanentJourneyPlanVerificationSchema>;
+export type PjpVerificationUpdateSchema = z.infer<typeof pjpVerificationUpdateSchema>;
+export type PjpModificationSchema = z.infer<typeof pjpModificationSchema>;
 export type CompetitionReportSchema = z.infer<typeof competitionReportSchema>;
 export type DailyVisitReportSchema = z.infer<typeof dailyVisitReportSchema>;
 export type TechnicalVisitReportSchema = z.infer<typeof technicalVisitReportSchema>;
