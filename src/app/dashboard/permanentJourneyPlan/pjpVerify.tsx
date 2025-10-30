@@ -262,7 +262,7 @@ export default function PJPVerifyPage() {
                         onClick={() => openModificationDialog(row.original)}
                         className='border-blue-500 text-blue-500 hover:bg-blue-50'
                     >
-                        Edit & Approve
+                        Edit & Apply
                     </Button>
                     <Button
                         variant="destructive"

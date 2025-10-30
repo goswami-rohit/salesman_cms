@@ -62,6 +62,16 @@ async function getAllBrandNames(companyId: number) {
   return brands.map((b:any) => b.name);
 }
 
+// Helper for Deciaml? fields
+function toNumberOrNull(val: any): number | null {
+    if (val === null || val === undefined || val === '') return null;
+    if (typeof val === 'object' && typeof val.toNumber === 'function') {
+        return val.toNumber();
+    }
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+}
+
 // Main API handler for the brand mapping data.
 export async function GET() {
   try {
@@ -124,6 +134,9 @@ export async function GET() {
           dealerName: dealer.name,
           area: dealer.area,
           totalPotential: dealer.totalPotential.toNumber(),
+          userId: mapping.userId,
+          bestCapacityMT: toNumberOrNull(mapping.bestCapacityMT),
+          brandGrowthCapacityPercent: toNumberOrNull(mapping.brandGrowthCapacityPercent),
         };
 
         // Add placeholders for all possible brands with a default value of 0.

@@ -182,6 +182,7 @@ export async function GET() {
             feedbacks: dealer.feedbacks,
             remarks: dealer.remarks,
             verificationStatus: dealer.verificationStatus,
+            noOfPJP: dealer.noOfPJP,
             createdAt: dealer.createdAt.toISOString(),
             updatedAt: dealer.updatedAt.toISOString(),
             parentDealerName: dealer.parentDealer?.name || null,

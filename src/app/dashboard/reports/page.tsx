@@ -1,7 +1,6 @@
 // src/app/dashboard/reports/page.tsx
 'use client';
 
-import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import CompetitionReportsPage from './competitionReports';
@@ -17,7 +16,6 @@ export default function ReportsPage() {
         Reports Page
         </h2>
       </div>
-
       <Tabs defaultValue="dailyVisitReport" className="space-y-4">
         <TabsList>
           <TabsTrigger value="dailyVisitReport">DVR Report</TabsTrigger>

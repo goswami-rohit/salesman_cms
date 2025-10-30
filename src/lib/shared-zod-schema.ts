@@ -29,9 +29,12 @@ export const dailyTaskSchema = z.object({
 // dealer brand mapping + brands 
 export const baseDealerBrandMappingSchema = z.object({
   id: z.string(), // Dealer ID
+  userId: z.number().nullable().optional(),
   dealerName: z.string(),
   area: z.string(),
   totalPotential: z.number(),
+  bestCapacityMT: z.number().nullable().optional(),
+  brandGrowthCapacityPercent: z.number().nullable().optional(),
 });
 
 // dealer - verification
@@ -90,6 +93,7 @@ export const getDealersSchema = z.object({
   feedbacks: z.string().min(1, "Feedbacks are required.").max(500, "Feedbacks are too long."),
   remarks: optionalStringSchema,
   verificationStatus: z.string().optional(),
+  noOfPJP: z.number().nullable().optional(),
 
   // --- New Fields (Contact, KYC, Development) ---
   dealerDevelopmentStatus: optionalStringSchema,
@@ -247,6 +251,7 @@ export const permanentJourneyPlanSchema = z.object({
   updatedAt: z.string(),
 });
 
+// pjp verifcation
 export const permanentJourneyPlanVerificationSchema = z.object({
   id: z.string(),
   salesmanName: z.string(),

@@ -23,7 +23,6 @@ export default function ScoresAndRatingsPage() {
       <p className="text-neutral-500">
         View detailed ratings for salesmen and scores for dealers.
       </p>
-
       <Tabs defaultValue="salesmanRatings" className="space-y-4">
         <TabsList>
           <TabsTrigger value="salesmanRatings">Salesman Ratings</TabsTrigger>

@@ -19,7 +19,6 @@ export default function ScoresAndRatingsPage() {
       <p className="text-neutral-500">
         View and Manage Executive made PJPs here.
       </p>
-
       <Tabs defaultValue="pjpList" className="space-y-4">
         <TabsList>
           <TabsTrigger value="pjpList">PJP List</TabsTrigger>
