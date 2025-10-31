@@ -142,49 +142,59 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             return NextResponse.json({ error: `Forbidden: Your role (${currentUser?.role || 'None'}) is not authorized to modify/verify PJPs.` }, { status: 403 });
         }
 
-        // 2. Validate PJP existence and ownership
-        const verificationResult = await verifyPJP(pjpId, currentUser.companyId);
-        if (verificationResult.error) {
-            return NextResponse.json({ error: verificationResult.error }, { status: verificationResult.status });
-        }
+        const verify = await verifyPJP(pjpId, currentUser.companyId);
+        if (verify.error) return NextResponse.json({ error: verify.error }, { status: verify.status });
 
-        // 3. Validate request body
-        const body = await request.json();
-        const validatedBody = pjpModificationSchema.safeParse(body);
-
-        if (!validatedBody.success) {
-            console.error("PATCH Request Body Validation Error:", validatedBody.error);
-            return NextResponse.json({ error: 'Invalid PJP modification data.', details: validatedBody.error.issues }, { status: 400 });
+        // Validate payload against updated DTO (dealerId instead of visitDealerName)
+        const v = pjpModificationSchema.safeParse(await request.json());
+        if (!v.success) {
+            console.error('PATCH Request Body Validation Error:', v.error);
+            return NextResponse.json({ error: 'Invalid PJP modification data.', details: v.error.issues }, { status: 400 });
         }
 
         const {
             planDate,
             areaToBeVisited,
             description,
-            visitDealerName,
+            dealerId,                 // ✅ new FK field
             additionalVisitRemarks,
-        } = validatedBody.data;
+        } = v.data as {
+            planDate?: string;
+            areaToBeVisited?: string;
+            description?: string | null;
+            dealerId?: string | null;
+            additionalVisitRemarks?: string | null;
+        };
 
-        // 4. Update the PJP data and set status to VERIFIED
+        // Optional guard: if dealerId provided, ensure it exists
+        if (dealerId) {
+            const dealerExists = await prisma.dealer.findUnique({ where: { id: dealerId }, select: { id: true } });
+            if (!dealerExists) {
+                return NextResponse.json({ error: 'Invalid dealerId: dealer not found.' }, { status: 400 });
+            }
+        }
+
         const updatedPJP = await prisma.permanentJourneyPlan.update({
             where: { id: pjpId },
             data: {
-                // Modified fields 
-                planDate: planDate ? new Date(planDate) : undefined, // Convert date string back to Date object
-                areaToBeVisited: areaToBeVisited,
-                description: description,
-                visitDealerName: visitDealerName,
+                planDate: planDate ? new Date(planDate) : undefined,
+                areaToBeVisited,
+                description,
+                dealerId: dealerId ?? null,
 
-                // Verification and status fields set to approved
+                // Verification and status set to approved on modification
                 verificationStatus: 'VERIFIED',
-                additionalVisitRemarks: additionalVisitRemarks,
-                status: 'APPROVED', // Keep status updated for general PJP listing (non-verification view)
+                additionalVisitRemarks,
+                status: 'APPROVED',
             },
+            include: { dealer: { select: { name: true } } },
         });
 
         return NextResponse.json({
             message: `PJP modified and VERIFIED successfully`,
-            pjp: updatedPJP
+            pjp: {...updatedPJP, 
+                dealerName: updatedPJP.dealer?.name ?? null,
+            }
         }, { status: 200 });
 
     } catch (error) {

@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
                 user: {
                     companyId: currentUser.companyId, // Filter by fetched companyId
                 },
-                verificationStatus: 'PENDING', // Filter for pending verification
+                status: 'PENDING'
             },
             include: {
                 // Include salesman details
@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
                         role: true,
                     },
                 },
+                dealer: { select: { name: true } },
             },
             orderBy: {
                 planDate: 'asc',
@@ -97,8 +98,10 @@ export async function GET(request: NextRequest) {
                 planDate: plan.planDate.toISOString().split('T')[0],
                 description: plan.description,
                 status: plan.status,
-                visitDealerName: plan.visitDealerName,
-                verificationStatus: plan.verificationStatus,
+                visitDealerName: plan.dealer?.name ?? null,
+                verificationStatus: plan.verificationStatus
+                    ? plan.verificationStatus.toUpperCase()
+                    : 'PENDING',
                 additionalVisitRemarks: plan.additionalVisitRemarks,
                 salesmanRegion: plan.user.region,
                 salesmanArea: plan.user.area,

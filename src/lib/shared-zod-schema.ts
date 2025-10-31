@@ -244,7 +244,8 @@ export const permanentJourneyPlanSchema = z.object({
   description: z.string().nullable().optional(), // Mapped to String? in schema
   status: z.string(),
   taskIds: z.array(z.string()), // Array of DailyTask IDs
-  visitDealerName: z.string().nullable(),
+  dealerId: z.string().uuid().nullable().optional(),
+  visitDealerName: z.string().nullable().optional(),
   verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
   additionalVisitRemarks: z.string().nullable(),
   createdAt: z.string(),
@@ -262,7 +263,8 @@ export const permanentJourneyPlanVerificationSchema = z.object({
   planDate: z.string(), // YYYY-MM-DD
   description: z.string().nullable(),
   status: z.string(),
-  visitDealerName: z.string().nullable(),
+  dealerId: z.string().uuid().nullable().optional(),
+  visitDealerName: z.string().nullable().optional(),
   verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
   additionalVisitRemarks: z.string().nullable(),
   salesmanRegion: z.string().nullable(),
@@ -280,7 +282,8 @@ export const pjpModificationSchema = z.object({
   planDate: z.string().optional(),
   areaToBeVisited: z.string().max(500).optional(),
   description: z.string().max(500).optional().nullable(),
-  visitDealerName: z.string().max(255).optional().nullable(),
+  dealerId: z.string().uuid().nullable().optional(),
+  visitDealerName: z.string().nullable().optional(),
   additionalVisitRemarks: z.string().max(500).optional().nullable(),
 });
 
@@ -307,6 +310,8 @@ export const dailyVisitReportSchema = z.object({
   role: z.string(),
   reportDate: z.string(), // YYYY-MM-DD string
   dealerType: z.string(),
+  dealerId: z.string().uuid().nullable().optional(),
+  subDealerId: z.string().uuid().nullable().optional(),
   dealerName: z.string().nullable(),
   subDealerName: z.string().nullable(),
   location: z.string(),

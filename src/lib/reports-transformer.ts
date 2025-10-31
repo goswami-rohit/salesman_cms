@@ -38,7 +38,7 @@ export async function getFlattenedUsers(companyId: number): Promise<FlattenedUse
         orderBy: { createdAt: 'desc' },
     });
 
-    return rawUsers.map((u:any) => ({
+    return rawUsers.map((u: any) => ({
         id: u.id,
         email: u.email,
         fullName: `${u.firstName} ${u.lastName}`,
@@ -158,7 +158,7 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
     });
 
     // 2. Transformation/Flattening Logic
-    return rawDealers.map((d:any) => ({
+    return rawDealers.map((d: any) => ({
         // Scalar Fields (Default Mapping)
         id: d.id, type: d.type, name: d.name, region: d.region, area: d.area, phoneNo: d.phoneNo,
         address: d.address, pinCode: d.pinCode ?? null, feedbacks: d.feedbacks, remarks: d.remarks ?? null,
@@ -202,66 +202,62 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
 
 // DVR
 export type FlattenedDailyVisitReport = {
-    // All scalar fields from DailyVisitReport
     id: string;
-    reportDate: string; // Converted from Date
+    reportDate: string;
     dealerType: string;
-    dealerName: string | null;
-    subDealerName: string | null;
+    dealerName: string | null;      // hydrated from relation
+    subDealerName: string | null;   // hydrated from relation
     location: string;
-    latitude: number; // Converted from Decimal
-    longitude: number; // Converted from Decimal
+    latitude: number;
+    longitude: number;
     visitType: string;
-    dealerTotalPotential: number; // Converted from Decimal
-    dealerBestPotential: number; // Converted from Decimal
-    brandSelling: string; // Converted from String[]
+    dealerTotalPotential: number;
+    dealerBestPotential: number;
+    brandSelling: string;
     contactPerson: string | null;
     contactPersonPhoneNo: string | null;
-    todayOrderMt: number; // Converted from Decimal
-    todayCollectionRupees: number; // Converted from Decimal
-    overdueAmount: number | null; // Converted from Decimal
+    todayOrderMt: number;
+    todayCollectionRupees: number;
+    overdueAmount: number | null;
     feedbacks: string;
     solutionBySalesperson: string | null;
     anyRemarks: string | null;
-    checkInTime: string; // Converted from DateTime (Timestamp)
-    checkOutTime: string | null; // Converted from DateTime (Timestamp)
+    checkInTime: string;
+    checkOutTime: string | null;
     inTimeImageUrl: string | null;
     outTimeImageUrl: string | null;
-    createdAt: string; // Converted from DateTime (Timestamp)
-    updatedAt: string; // Converted from DateTime (Timestamp)
+    createdAt: string;
+    updatedAt: string;
 
-    // Flattened fields from the related User model (salesperson)
     salesmanName: string;
     salesmanEmail: string;
 };
 
 export async function getFlattenedDailyVisitReports(companyId: number): Promise<FlattenedDailyVisitReport[]> {
-    // 2a. Prisma Query: Select all fields and the necessary 'user' relation
     const rawReports = await prisma.dailyVisitReport.findMany({
         where: { user: { companyId } },
         select: {
-            // All scalar fields included explicitly
-            id: true, userId: true, reportDate: true, dealerType: true, dealerName: true, subDealerName: true,
-            location: true, latitude: true, longitude: true, visitType: true, dealerTotalPotential: true,
-            dealerBestPotential: true, brandSelling: true, contactPerson: true, contactPersonPhoneNo: true,
-            todayOrderMt: true, todayCollectionRupees: true, overdueAmount: true, feedbacks: true,
-            solutionBySalesperson: true, anyRemarks: true, checkInTime: true, checkOutTime: true,
-            inTimeImageUrl: true, outTimeImageUrl: true, createdAt: true, updatedAt: true,
-
-            // Nested query for the relation:
-            user: {
-                select: { firstName: true, lastName: true, email: true }
-            },
+            id: true, userId: true, reportDate: true, dealerType: true,
+            location: true, latitude: true, longitude: true, visitType: true,
+            dealerTotalPotential: true, dealerBestPotential: true, brandSelling: true,
+            contactPerson: true, contactPersonPhoneNo: true, todayOrderMt: true,
+            todayCollectionRupees: true, overdueAmount: true, feedbacks: true,
+            solutionBySalesperson: true, anyRemarks: true, checkInTime: true,
+            checkOutTime: true, inTimeImageUrl: true, outTimeImageUrl: true,
+            createdAt: true, updatedAt: true,
+            user: { select: { firstName: true, lastName: true, email: true } },
+            // hydrate names from FKs
+            dealer: { select: { name: true } },    // relation("DVR_Dealer")
+            subDealer: { select: { name: true } },    // relation("DVR_SubDealer")
         },
         orderBy: { reportDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
-        // Map scalar fields
+    return rawReports.map((r: any) => ({
         id: r.id,
         dealerType: r.dealerType,
-        dealerName: r.dealerName ?? null,
-        subDealerName: r.subDealerName ?? null,
+        dealerName: r.dealer?.name ?? null,           // from relation
+        subDealerName: r.subDealer?.name ?? null,     // from relation
         location: r.location,
         contactPerson: r.contactPerson ?? null,
         contactPersonPhoneNo: r.contactPersonPhoneNo ?? null,
@@ -271,14 +267,14 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
         inTimeImageUrl: r.inTimeImageUrl ?? null,
         outTimeImageUrl: r.outTimeImageUrl ?? null,
 
-        // DateTime Fields (Date/Timestamp conversion to string)
-        reportDate: r.reportDate.toISOString().slice(0, 10), // Date only
+        // Dates
+        reportDate: r.reportDate.toISOString().slice(0, 10),
         checkInTime: r.checkInTime.toISOString(),
         checkOutTime: r.checkOutTime?.toISOString() ?? null,
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
 
-        // Decimal Fields (Conversion to number)
+        // Decimals
         latitude: r.latitude.toNumber(),
         longitude: r.longitude.toNumber(),
         visitType: r.visitType,
@@ -288,14 +284,15 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
         todayCollectionRupees: r.todayCollectionRupees.toNumber(),
         overdueAmount: r.overdueAmount?.toNumber() ?? null,
 
-        // Array Field (Conversion to comma-separated string)
+        // Arrays
         brandSelling: r.brandSelling.join(', '),
 
-        // Custom, flattened fields:
-        salesmanName: `${r.user.firstName} ${r.user.lastName}`,
+        // Flattened user
+        salesmanName: `${r.user.firstName ?? ''} ${r.user.lastName ?? ''}`.trim() || r.user.email,
         salesmanEmail: r.user.email,
     }));
 }
+
 
 // TVR
 export type FlattenedTechnicalVisitReport = {
@@ -356,7 +353,7 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
         orderBy: { reportDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         // Map scalar fields
         id: r.id,
         visitType: r.visitType,
@@ -403,53 +400,55 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
 // PJP
 export type FlattenedPermanentJourneyPlan = {
     id: string;
-    planDate: string; // Converted from DateTime (Date)
+    planDate: string;
     areaToBeVisited: string;
     description: string | null;
     status: string;
-    createdAt: string; // Converted from DateTime (Timestamp)
-    updatedAt: string; // Converted from DateTime (Timestamp)
+    createdAt: string;
+    updatedAt: string;
 
-    // Flattened Assigned User
     assignedSalesmanName: string;
     assignedSalesmanEmail: string;
-    // Flattened Creator User
+
     creatorName: string;
     creatorEmail: string;
+
+    dealerName: string | null;
 };
 
 export async function getFlattenedPermanentJourneyPlans(companyId: number): Promise<FlattenedPermanentJourneyPlan[]> {
     const rawReports = await prisma.permanentJourneyPlan.findMany({
         where: { user: { companyId } },
         select: {
-            // All scalar fields
             id: true, planDate: true, areaToBeVisited: true, description: true, status: true,
             createdAt: true, updatedAt: true,
-            // Relations
-            user: { select: { firstName: true, lastName: true, email: true } }, // Assigned Salesman
-            createdBy: { select: { firstName: true, lastName: true, email: true } }, // Creator
+            user: { select: { firstName: true, lastName: true, email: true } },
+            createdBy: { select: { firstName: true, lastName: true, email: true } },
+            dealer: { select: { name: true } }, //hydrate dealer name
         },
         orderBy: { planDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         id: r.id,
         areaToBeVisited: r.areaToBeVisited,
         description: r.description ?? null,
         status: r.status,
 
-        // DateTime Conversions
         planDate: r.planDate.toISOString().slice(0, 10),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
 
-        // Flattened Relations
-        assignedSalesmanName: `${r.user.firstName} ${r.user.lastName}`,
+        assignedSalesmanName: `${r.user.firstName ?? ''} ${r.user.lastName ?? ''}`.trim() || r.user.email,
         assignedSalesmanEmail: r.user.email,
-        creatorName: `${r.createdBy.firstName} ${r.createdBy.lastName}`,
+
+        creatorName: `${r.createdBy.firstName ?? ''} ${r.createdBy.lastName ?? ''}`.trim() || r.createdBy.email,
         creatorEmail: r.createdBy.email,
+
+        dealerName: r.dealer?.name ?? null,   //final output friendly
     }));
 }
+
 
 // Competition Report
 export type FlattenedCompetitionReport = {
@@ -483,7 +482,7 @@ export async function getFlattenedCompetitionReports(companyId: number): Promise
         orderBy: { reportDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         id: r.id,
         brandName: r.brandName,
         billing: r.billing,
@@ -541,7 +540,7 @@ export async function getFlattenedDailyTasks(companyId: number): Promise<Flatten
         orderBy: { taskDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         id: r.id,
         visitType: r.visitType,
         relatedDealerId: r.relatedDealerId ?? null,
@@ -614,7 +613,7 @@ export async function getFlattenedSalesmanAttendance(companyId: number): Promise
         orderBy: { attendanceDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         // Map scalar fields (String, Boolean)
         id: r.id,
         locationName: r.locationName,
@@ -680,7 +679,7 @@ export async function getFlattenedSalesmanLeaveApplication(companyId: number): P
         orderBy: { startDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         // Map scalar fields (String)
         id: r.id,
         leaveType: r.leaveType,
@@ -778,7 +777,7 @@ export async function getFlattenedSalesOrders(companyId: number): Promise<Flatte
     const toNum = (v: any): number | null => (v == null ? null : Number(v));
     const toDate = (d: any): string | null => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
-    return orders.map((o:any) => {
+    return orders.map((o: any) => {
         const qty = toNum(o.orderQty) ?? 0;
         // Prefer price after discount; fall back to base price; else 0
         const unitPrice = (toNum(o.itemPriceAfterDiscount) ?? toNum(o.itemPrice) ?? 0);
@@ -904,7 +903,7 @@ export async function getFlattenedGeoTracking(companyId: number): Promise<Flatte
         orderBy: { recordedAt: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         // Map scalar fields (String, Boolean)
         id: r.id,
         locationType: r.locationType ?? null,
@@ -981,7 +980,7 @@ export async function getFlattenedDealerReportsAndScores(companyId: number): Pro
         orderBy: { lastUpdatedDate: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         id: r.id,
 
         // DateTime Conversions
@@ -1026,7 +1025,7 @@ export async function getFlattenedRatings(companyId: number): Promise<FlattenedR
         orderBy: { id: 'desc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rawReports.map((r: any) => ({
         id: r.id,
         area: r.area,
         region: r.region,
@@ -1041,7 +1040,14 @@ export async function getFlattenedRatings(companyId: number): Promise<FlattenedR
 // Brands && Dealer Brand Mapping
 export type FlattenedDealerBrandMapping = {
     id: string;
-    capacityMT: number; // Converted from Decimal
+
+    // Capacities
+    capacityMT: number;                 // required
+    bestCapacityMT: number | null;      // optional
+    brandGrowthCapacityPercent: number | null; // optional
+
+    // Who recorded/owns this mapping (optional in schema)
+    userId: number | null;
 
     // Flattened Brand
     brandName: string;
@@ -1053,35 +1059,41 @@ export type FlattenedDealerBrandMapping = {
     dealerArea: string;
 };
 
-export async function getFlattenedDealerBrandCapacities(companyId: number): Promise<FlattenedDealerBrandMapping[]> {
-    const rawReports = await prisma.dealerBrandMapping.findMany({
+export async function getFlattenedDealerBrandCapacities(
+    companyId: number
+): Promise<FlattenedDealerBrandMapping[]> {
+    const rows = await prisma.dealerBrandMapping.findMany({
         where: {
-            // Filter via Dealer -> User -> Company
             dealer: {
-                user: {
-                    companyId: companyId
-                }
+                user: { companyId }
             }
         },
         select: {
-            // Scalar fields
-            id: true, capacityMT: true, dealerId: true,
-
-            // Relations
+            id: true,
+            dealerId: true,
+            userId: true,
+            capacityMT: true,
+            bestCapacityMT: true,
+            brandGrowthCapacityPercent: true,
             brand: { select: { name: true } },
             dealer: { select: { name: true, region: true, area: true } },
         },
         orderBy: { dealerId: 'asc' },
     });
 
-    return rawReports.map((r:any) => ({
+    return rows.map((r: any) => ({
         id: r.id,
         dealerId: r.dealerId,
 
-        // Decimal Conversions
+        // Decimal conversions
         capacityMT: r.capacityMT.toNumber(),
+        bestCapacityMT: r.bestCapacityMT?.toNumber() ?? null,
+        brandGrowthCapacityPercent: r.brandGrowthCapacityPercent?.toNumber() ?? null,
 
-        // Flattened Relations
+        // Optional owner
+        userId: r.userId ?? null,
+
+        // Flattened relations
         brandName: r.brand.name,
         dealerName: r.dealer.name,
         dealerRegion: r.dealer.region,

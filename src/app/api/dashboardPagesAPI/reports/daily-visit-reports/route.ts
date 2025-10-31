@@ -50,6 +50,8 @@ export async function GET() {
             region: true,
           },
         },
+        dealer:   { select: { name: true } }, 
+        subDealer:{ select: { name: true } },
       },
       orderBy: {
         reportDate: 'desc', // Order by latest reports first
@@ -67,9 +69,11 @@ export async function GET() {
         area: report.user.area,
         region: report.user.region,
         reportDate: report.reportDate.toISOString().split('T')[0], // YYYY-MM-DD
+        dealerId: null,
+        subDealerId: null,
         dealerType: report.dealerType,
-        dealerName: report.dealerName,
-        subDealerName: report.subDealerName,
+        dealerName: report.dealer?.name ?? null,
+        subDealerName: report.subDealer?.name ?? null,
         location: report.location,
         latitude: report.latitude.toNumber(),
         longitude: report.longitude.toNumber(),

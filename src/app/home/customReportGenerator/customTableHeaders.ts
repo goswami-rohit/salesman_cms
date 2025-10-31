@@ -57,7 +57,7 @@ export const tablesMetadata: TableMeta[] = [
             'brandSelling', 'contactPerson', 'contactPersonPhoneNo', 'todayOrderMt',
             'todayCollectionRupees', 'overdueAmount', 'feedbacks', 'solutionBySalesperson',
             'anyRemarks', 'checkInTime', 'checkOutTime', 'inTimeImageUrl', 'outTimeImageUrl',
-            'createdAt', 'updatedAt', 'salesmanName', 'salesmanEmail'
+            'createdAt', 'updatedAt'
         ],
     },
     {
@@ -79,7 +79,7 @@ export const tablesMetadata: TableMeta[] = [
         id: 'permanentJourneyPlans',
         title: 'Permanent Journey Plans (PJP)',
         icon: Car,
-        columns: ['id', 'planDate', 'areaToBeVisited', 'description', 'status', 'assignedSalesmanName', 'createdBySalesmanName', 'createdAt'],
+        columns: ['id', 'planDate', 'areaToBeVisited', 'description', 'status', 'dealerName', 'assignedSalesmanName', 'creatorName', 'createdAt', 'updatedAt']
     },
     {
         id: 'salesOrders',
@@ -122,7 +122,7 @@ export const tablesMetadata: TableMeta[] = [
         id: 'dealerBrandCapacities',
         title: 'Dealer Brand Capacities',
         icon: Boxes,
-        columns: ['id', 'capacityMT', 'brandName', 'dealerName', 'dealerRegion', 'dealerArea'],
+        columns: ['id', 'capacityMT', 'bestCapacityMT', 'brandGrowthCapacityPercent', 'userId', 'brandName', 'dealerName', 'dealerRegion', 'dealerArea']
     },
     {
         id: 'salesmanAttendance',

@@ -24,18 +24,18 @@ import { dailyVisitReportSchema } from '@/lib/shared-zod-schema';
 import { Search, Loader2 } from 'lucide-react';
 
 type DailyVisitReport = z.infer<typeof dailyVisitReportSchema> & {
-    // Manually adding fields expected by the filter logic and table columns, 
-    // assuming they are present in the actual API data.
-    role: string;
-    area: string;
-    region: string;
+  // Manually adding fields expected by the filter logic and table columns, 
+  // assuming they are present in the actual API data.
+  role: string;
+  area: string;
+  region: string;
 };
 const columnHelper = createColumnHelper<DailyVisitReport>();
 const ITEMS_PER_PAGE = 10;
 
 // API Endpoints for filter options
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`; 
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`; 
+const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
 
 // Type definitions for API responses
 interface LocationsResponse {
@@ -43,8 +43,8 @@ interface LocationsResponse {
   regions: string[];
 }
 interface RolesResponse {
-    // FIX: Expecting roles under the 'roles' key
-    roles: string[]; 
+  // FIX: Expecting roles under the 'roles' key
+  roles: string[];
 }
 
 // Helper function to render the Select filter component
@@ -98,10 +98,10 @@ export default function DailyVisitReportsPage() {
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [availableAreas, setAvailableAreas] = useState<string[]>([]);
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
-  
+
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
-  
+
   const [locationError, setLocationError] = useState<string | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
 
@@ -161,13 +161,13 @@ export default function DailyVisitReportsPage() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data: LocationsResponse = await response.json();
-      
+
       const safeAreas = Array.isArray(data.areas) ? data.areas.filter(Boolean) : [];
       const safeRegions = Array.isArray(data.regions) ? data.regions.filter(Boolean) : [];
-      
+
       setAvailableAreas(safeAreas);
       setAvailableRegions(safeRegions);
-      
+
     } catch (err: any) {
       console.error('Failed to fetch filter locations:', err);
       setLocationError('Failed to load Area/Region filters.');
@@ -189,11 +189,11 @@ export default function DailyVisitReportsPage() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       // FIX: Now expecting roles under the 'roles' key
-      const data: RolesResponse = await response.json(); 
+      const data: RolesResponse = await response.json();
       const roles = data.roles && Array.isArray(data.roles) ? data.roles : [];
-      
+
       const safeRoles = roles.filter(Boolean);
-      
+
       setAvailableRoles(safeRoles);
     } catch (err: any) {
       console.error('Failed to fetch filter roles:', err);
@@ -211,29 +211,38 @@ export default function DailyVisitReportsPage() {
     fetchRoles();
   }, [fetchReports, fetchLocations, fetchRoles]);
 
-  
+
   // Memoized function for comprehensive filtering
   const filteredReports = useMemo(() => {
     // Reset page on filter change
-    setCurrentPage(1); 
-    
+    setCurrentPage(1);
+
+    const q = searchQuery.trim().toLowerCase();
+
     return reports.filter((report) => {
-      // 1. Username/Salesman Name Search (fuzzy match on salesmanName only)
-      const usernameMatch = !searchQuery ||
-        report.salesmanName.toLowerCase().includes(searchQuery.toLowerCase());
+      // 1) Search across salesman + dealer names
+      const nameHaystack = [
+        report.salesmanName,
+        report.dealerName ?? '',
+        report.subDealerName ?? ''
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      const usernameMatch = !q || nameHaystack.includes(q);
 
       // 2. Role Filter (Uses the 'role' field)
-      const roleMatch = roleFilter === 'all' || 
-        report.role?.toLowerCase() === roleFilter.toLowerCase(); 
+      const roleMatch = roleFilter === 'all' ||
+        report.role?.toLowerCase() === roleFilter.toLowerCase();
 
       // 3. Area Filter (Uses the 'area' field)
-      const areaMatch = areaFilter === 'all' || 
-        report.area?.toLowerCase() === areaFilter.toLowerCase(); 
+      const areaMatch = areaFilter === 'all' ||
+        report.area?.toLowerCase() === areaFilter.toLowerCase();
 
       // 4. Region Filter (Uses the 'region' field)
-      const regionMatch = regionFilter === 'all' || 
+      const regionMatch = regionFilter === 'all' ||
         report.region?.toLowerCase() === regionFilter.toLowerCase();
-      
+
       // Combine all conditions
       return usernameMatch && roleMatch && areaMatch && regionMatch;
     });
@@ -251,8 +260,8 @@ export default function DailyVisitReportsPage() {
   const dailyVisitReportColumns: ColumnDef<DailyVisitReport, any>[] = [
     columnHelper.accessor('salesmanName', { header: 'Salesman' }),
     columnHelper.accessor('role', { header: 'Role' }), // Uses 'role' accessor
-    columnHelper.accessor('area', { header: 'Area' }), 
-    columnHelper.accessor('region', { header: 'Region' }), 
+    columnHelper.accessor('area', { header: 'Area' }),
+    columnHelper.accessor('region', { header: 'Region' }),
     columnHelper.accessor('reportDate', { header: 'Date' }),
     columnHelper.accessor('dealerType', { header: 'Dealer Type' }),
     columnHelper.accessor('dealerName', { header: 'Dealer Name', cell: info => info.getValue() || 'N/A' }),
@@ -261,9 +270,9 @@ export default function DailyVisitReportsPage() {
     columnHelper.accessor('visitType', { header: 'Visit Type' }),
     columnHelper.accessor('todayOrderMt', { header: 'Order (MT)', cell: info => info.getValue().toFixed(2) }),
     columnHelper.accessor('todayCollectionRupees', { header: 'Collection (₹)', cell: info => info.getValue().toFixed(2) }),
-    columnHelper.accessor('overdueAmount', { 
-      header: 'Overdue (₹)', 
-      cell: info => info.getValue() ? info.getValue().toFixed(2) : '0.00' 
+    columnHelper.accessor('overdueAmount', {
+      header: 'Overdue (₹)',
+      cell: info => info.getValue() ? info.getValue().toFixed(2) : '0.00'
     }),
     columnHelper.accessor('feedbacks', {
       header: 'Feedbacks',
@@ -305,10 +314,10 @@ export default function DailyVisitReportsPage() {
 
           {/* 2. Role Filter (Now displays dynamically fetched roles from the 'roles' key) */}
           {renderSelectFilter(
-            'Role', 
-            roleFilter, 
-            (v) => { setRoleFilter(v); }, 
-            availableRoles, 
+            'Role',
+            roleFilter,
+            (v) => { setRoleFilter(v); },
+            availableRoles,
             isLoadingRoles
           )}
 
@@ -329,13 +338,13 @@ export default function DailyVisitReportsPage() {
             availableRegions, 
             isLoadingLocations
           )} */}
-          
+
           {/* Display filter option errors if any */}
           {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
           {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
         </div>
         {/* --- End Individual Filter Components --- */}
-        
+
         <div className="bg-card p-6 rounded-lg border border-border">
           {filteredReports.length === 0 ? (
             <div className="text-center text-gray-500 py-8">No daily visit reports found matching the selected filters.</div>
@@ -345,14 +354,14 @@ export default function DailyVisitReportsPage() {
                 columns={dailyVisitReportColumns}
                 data={currentReports}
                 enableRowDragging={false}
-                onRowOrderChange={() => {}}
+                onRowOrderChange={() => { }}
               />
 
               <Pagination className="mt-6">
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(currentPage - 1)} 
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(currentPage - 1)}
                       aria-disabled={currentPage === 1}
                       tabIndex={currentPage === 1 ? -1 : undefined}
                     />
@@ -368,8 +377,8 @@ export default function DailyVisitReportsPage() {
                     </PaginationItem>
                   ))}
                   <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(currentPage + 1)} 
+                    <PaginationNext
+                      onClick={() => handlePageChange(currentPage + 1)}
                       aria-disabled={currentPage === totalPages}
                       tabIndex={currentPage === totalPages ? -1 : undefined}
                     />

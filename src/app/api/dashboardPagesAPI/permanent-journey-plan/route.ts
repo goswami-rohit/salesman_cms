@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
             siteName: true,
           },
         },
+        dealer: { select: { name: true } },
       },
       orderBy: {
         planDate: 'desc', // Order by latest plans first
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
         description: plan.description,
         status: plan.status,
         taskIds: taskIds,
-        visitDealerName: plan.visitDealerName,
+        visitDealerName: plan.dealer?.name ?? null,
         verificationStatus: plan.verificationStatus,
         additionalVisitRemarks: plan.additionalVisitRemarks,
         createdAt: plan.createdAt.toISOString(),

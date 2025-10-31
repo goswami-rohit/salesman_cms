@@ -178,8 +178,10 @@ model Dealer {
   noOfPJP         Int?        @map("no_of_pjp")
 
   reportsAndScores DealerReportsAndScores? @relation("DealerScores")
-
   dealerBrandCapacities  DealerBrandMapping[]
+  dailyVisitReportsAsDealer     DailyVisitReport[]      @relation("DVR_Dealer")
+  dailyVisitReportsAsSubDealer  DailyVisitReport[]      @relation("DVR_SubDealer")
+  permanentJourneyPlansAsDealer PermanentJourneyPlan[]  @relation("PJP_Dealer")
 
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
@@ -191,9 +193,13 @@ model DailyVisitReport {
   id                    String    @id @default(uuid()) @db.VarChar(255)
   userId                Int       @map("user_id") // Foreign Key to User.id
   reportDate            DateTime  @map("report_date") @db.Date
+
   dealerType            String    @map("dealer_type") @db.VarChar(50) // "Dealer", "Sub Dealer"
-  dealerName            String?   @map("dealer_name") @db.VarChar(255)
-  subDealerName         String?   @map("sub_dealer_name") @db.VarChar(255)
+  dealerId              String?   @map("dealer_id") @db.VarChar(255)
+  subDealerId           String?   @map("sub_dealer_id") @db.VarChar(255)
+  dealer                Dealer?   @relation("DVR_Dealer", fields: [dealerId], references: [id], onDelete: SetNull)
+  subDealer             Dealer?   @relation("DVR_SubDealer", fields: [subDealerId], references: [id], onDelete: SetNull)
+
   location              String    @db.VarChar(500)
   latitude              Decimal   @db.Decimal(10, 7)
   longitude             Decimal   @db.Decimal(10, 7)
@@ -222,6 +228,8 @@ model DailyVisitReport {
   permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_DVR", fields: [pjpId], references: [id], onDelete: SetNull)
 
   @@index([userId], map: "idx_daily_visit_reports_user_id")
+  @@index([dealerId], map: "idx_dvr_dealer_id")
+  @@index([subDealerId], map: "idx_dvr_sub_dealer_id")
   @@map("daily_visit_reports")
 }
 
@@ -358,7 +366,8 @@ model PermanentJourneyPlan {
   technicalVisitReports   TechnicalVisitReport[] @relation("PJPReports_TVR")
   salesOrders             SalesOrder[] @relation("PJP_Sales_Orders")
 
-  visitDealerName String? @map("visit_dealer_name") @db.VarChar(255)
+  dealerId                String?  @map("dealer_id") @db.VarChar(255)
+  dealer                  Dealer?  @relation("PJP_Dealer", fields: [dealerId], references: [id], onDelete: SetNull)
   verificationStatus      String?                 @map("verification_status") @db.VarChar(50)
   additionalVisitRemarks  String?                 @map("additional_visit_remarks") @db.VarChar(500)
 
@@ -367,6 +376,7 @@ model PermanentJourneyPlan {
 
   @@index([userId], map: "idx_permanent_journey_plans_user_id")
   @@index([createdById], map: "idx_permanent_journey_plans_created_by_id")
+  @@index([dealerId], map: "idx_pjp_dealer_id")
   @@map("permanent_journey_plans")
 }
 
