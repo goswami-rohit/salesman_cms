@@ -233,66 +233,61 @@ export type FlattenedDailyVisitReport = {
     salesmanEmail: string;
 };
 
+// getFlattenedDailyVisitReports — FIXED to pull names via FKs
 export async function getFlattenedDailyVisitReports(companyId: number): Promise<FlattenedDailyVisitReport[]> {
-    const rawReports = await prisma.dailyVisitReport.findMany({
+    // getFlattenedDailyVisitReports(companyId)
+    const raw = await prisma.dailyVisitReport.findMany({
         where: { user: { companyId } },
         select: {
-            id: true, userId: true, reportDate: true, dealerType: true,
+            id: true, reportDate: true, dealerType: true,
             location: true, latitude: true, longitude: true, visitType: true,
-            dealerTotalPotential: true, dealerBestPotential: true, brandSelling: true,
-            contactPerson: true, contactPersonPhoneNo: true, todayOrderMt: true,
-            todayCollectionRupees: true, overdueAmount: true, feedbacks: true,
-            solutionBySalesperson: true, anyRemarks: true, checkInTime: true,
-            checkOutTime: true, inTimeImageUrl: true, outTimeImageUrl: true,
+            dealerTotalPotential: true, dealerBestPotential: true,
+            brandSelling: true, contactPerson: true, contactPersonPhoneNo: true,
+            todayOrderMt: true, todayCollectionRupees: true, overdueAmount: true,
+            feedbacks: true, solutionBySalesperson: true, anyRemarks: true,
+            checkInTime: true, checkOutTime: true, inTimeImageUrl: true, outTimeImageUrl: true,
             createdAt: true, updatedAt: true,
+
             user: { select: { firstName: true, lastName: true, email: true } },
-            // hydrate names from FKs
-            dealer: { select: { name: true } },    // relation("DVR_Dealer")
-            subDealer: { select: { name: true } },    // relation("DVR_SubDealer")
+
+            // REQUIRED for names
+            dealer: { select: { name: true } },
+            subDealer: { select: { name: true } },
         },
         orderBy: { reportDate: 'desc' },
     });
 
-    return rawReports.map((r: any) => ({
+    return raw.map(r => ({
         id: r.id,
-        dealerType: r.dealerType,
-        dealerName: r.dealer?.name ?? null,           // from relation
-        subDealerName: r.subDealer?.name ?? null,     // from relation
-        location: r.location,
-        contactPerson: r.contactPerson ?? null,
-        contactPersonPhoneNo: r.contactPersonPhoneNo ?? null,
-        feedbacks: r.feedbacks,
-        solutionBySalesperson: r.solutionBySalesperson ?? null,
-        anyRemarks: r.anyRemarks ?? null,
-        inTimeImageUrl: r.inTimeImageUrl ?? null,
-        outTimeImageUrl: r.outTimeImageUrl ?? null,
-
-        // Dates
         reportDate: r.reportDate.toISOString().slice(0, 10),
-        checkInTime: r.checkInTime.toISOString(),
-        checkOutTime: r.checkOutTime?.toISOString() ?? null,
-        createdAt: r.createdAt.toISOString(),
-        updatedAt: r.updatedAt.toISOString(),
-
-        // Decimals
+        dealerType: r.dealerType,
+        dealerName: r.dealer?.name ?? null,
+        subDealerName: r.subDealer?.name ?? null,
+        location: r.location,
         latitude: r.latitude.toNumber(),
         longitude: r.longitude.toNumber(),
         visitType: r.visitType,
         dealerTotalPotential: r.dealerTotalPotential.toNumber(),
         dealerBestPotential: r.dealerBestPotential.toNumber(),
+        brandSelling: r.brandSelling.join(', '),
+        contactPerson: r.contactPerson ?? null,
+        contactPersonPhoneNo: r.contactPersonPhoneNo ?? null,
         todayOrderMt: r.todayOrderMt.toNumber(),
         todayCollectionRupees: r.todayCollectionRupees.toNumber(),
         overdueAmount: r.overdueAmount?.toNumber() ?? null,
-
-        // Arrays
-        brandSelling: r.brandSelling.join(', '),
-
-        // Flattened user
+        feedbacks: r.feedbacks,
+        solutionBySalesperson: r.solutionBySalesperson ?? null,
+        anyRemarks: r.anyRemarks ?? null,
+        checkInTime: r.checkInTime.toISOString(),
+        checkOutTime: r.checkOutTime?.toISOString() ?? null,
+        inTimeImageUrl: r.inTimeImageUrl ?? null,
+        outTimeImageUrl: r.outTimeImageUrl ?? null,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
         salesmanName: `${r.user.firstName ?? ''} ${r.user.lastName ?? ''}`.trim() || r.user.email,
         salesmanEmail: r.user.email,
     }));
 }
-
 
 // TVR
 export type FlattenedTechnicalVisitReport = {

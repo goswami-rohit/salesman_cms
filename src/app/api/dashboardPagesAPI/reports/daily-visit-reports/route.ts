@@ -10,7 +10,7 @@ import { dailyVisitReportSchema } from '@/lib/shared-zod-schema';
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive','executive',];
+  'senior-executive', 'executive',];
 
 export async function GET() {
   try {
@@ -50,8 +50,8 @@ export async function GET() {
             region: true,
           },
         },
-        dealer:   { select: { name: true } }, 
-        subDealer:{ select: { name: true } },
+        dealer: { select: { name: true } },
+        subDealer: { select: { name: true } },
       },
       orderBy: {
         reportDate: 'desc', // Order by latest reports first
@@ -59,7 +59,7 @@ export async function GET() {
     });
 
     // 5. Format the data to match the frontend's expected structure and validate
-    const formattedReports = dailyVisitReports.map((report:any) => {
+    const formattedReports = dailyVisitReports.map((report: any) => {
       const salesmanName = `${report.user.firstName || ''} ${report.user.lastName || ''}`.trim() || report.user.email;
 
       return {
@@ -69,11 +69,13 @@ export async function GET() {
         area: report.user.area,
         region: report.user.region,
         reportDate: report.reportDate.toISOString().split('T')[0], // YYYY-MM-DD
-        dealerId: null,
-        subDealerId: null,
-        dealerType: report.dealerType,
+
+        dealerId: report.dealerId ?? null,          // don't hardcode null
+        subDealerId: report.subDealerId ?? null,    // don't hardcode null
         dealerName: report.dealer?.name ?? null,
         subDealerName: report.subDealer?.name ?? null,
+        dealerType: report.dealerType,
+        
         location: report.location,
         latitude: report.latitude.toNumber(),
         longitude: report.longitude.toNumber(),
