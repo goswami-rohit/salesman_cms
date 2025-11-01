@@ -7,6 +7,8 @@ import CompetitionReportsPage from './competitionReports';
 import SalesOrdersTable from './salesOrders';
 import DailyVisitReportsPage from './dailyVisitReports';
 import TechnicalVisitReportsPage from './technicalVisitReports';
+import DvrPjpReportPage from './dvr-pjp';
+import SalesDVRReportPage from './sales-dvr';
 
 export default function ReportsPage() {
   return (
@@ -22,6 +24,8 @@ export default function ReportsPage() {
           <TabsTrigger value="technicalVisitReport">TVR Report</TabsTrigger>
           <TabsTrigger value="salesOrderReport">Sales Orders</TabsTrigger>
           <TabsTrigger value="competitionReport">Competition Report</TabsTrigger>
+          <TabsTrigger value="dvrVpjp">DVR V PJP</TabsTrigger>
+          <TabsTrigger value="salesVdvr">Sales V DVR</TabsTrigger>
         </TabsList>
         <TabsContent value="dailyVisitReport" className="space-y-4">
           <DailyVisitReportsPage />
@@ -34,6 +38,12 @@ export default function ReportsPage() {
         </TabsContent>
         <TabsContent value="competitionReport" className="space-y-4">
           <CompetitionReportsPage />
+        </TabsContent>
+        <TabsContent value="dvrVpjp" className="space-y-4">
+          <DvrPjpReportPage />
+        </TabsContent>
+        <TabsContent value="salesVdvr" className="space-y-4">
+          <SalesDVRReportPage />
         </TabsContent>
       </Tabs>
     </div>

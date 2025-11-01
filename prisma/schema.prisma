@@ -368,11 +368,11 @@ model PermanentJourneyPlan {
 
   dealerId                String?  @map("dealer_id") @db.VarChar(255)
   dealer                  Dealer?  @relation("PJP_Dealer", fields: [dealerId], references: [id], onDelete: SetNull)
-  verificationStatus      String?                 @map("verification_status") @db.VarChar(50)
-  additionalVisitRemarks  String?                 @map("additional_visit_remarks") @db.VarChar(500)
+  verificationStatus      String?  @map("verification_status") @db.VarChar(50)
+  additionalVisitRemarks  String?  @map("additional_visit_remarks") @db.VarChar(500)
 
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([userId], map: "idx_permanent_journey_plans_user_id")
   @@index([createdById], map: "idx_permanent_journey_plans_created_by_id")
@@ -583,6 +583,7 @@ model SalesOrder {
   itemType               String?   @map("item_type") @db.VarChar(20)        // "PPC" or "OPC"
   itemGrade              String?   @map("item_grade") @db.VarChar(10)       // "33" | "43" | "53"
 
+  status                 String? @default("Pending") @db.VarChar(50)
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 

@@ -62,18 +62,14 @@ export const salesOrderColumns: ColumnDef<SalesOrder, any>[] = [
     header: 'User ID',
     cell: info => info.getValue() ?? '-',
   }),
-  columnHelper.accessor('dealerId', {
-    header: 'Dealer ID',
-    cell: info => info.getValue() ?? '-',
-  }),
-  columnHelper.accessor('dvrId', {
-    header: 'DVR ID',
-    cell: info => info.getValue() ?? '-',
-  }),
-  columnHelper.accessor('pjpId', {
-    header: 'PJP ID',
-    cell: info => info.getValue() ?? '-',
-  }),
+  // columnHelper.accessor('dvrId', {
+  //   header: 'DVR ID',
+  //   cell: info => info.getValue() ?? '-',
+  // }),
+  // columnHelper.accessor('pjpId', {
+  //   header: 'PJP ID',
+  //   cell: info => info.getValue() ?? '-',
+  // }),
 
   // Denormalized display
   columnHelper.accessor('salesmanName', {
