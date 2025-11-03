@@ -17,6 +17,7 @@ const allowedRoles = [
     'senior-manager',
     'manager',
     'assistant-manager',
+    'senior-executive','executive'
 ];
 
 

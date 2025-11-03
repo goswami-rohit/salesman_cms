@@ -7,8 +7,8 @@ import CompetitionReportsPage from './competitionReports';
 import SalesOrdersTable from './salesOrders';
 import DailyVisitReportsPage from './dailyVisitReports';
 import TechnicalVisitReportsPage from './technicalVisitReports';
-import DvrPjpReportPage from './dvr-pjp';
-import SalesDVRReportPage from './sales-dvr';
+import DvrPjpReportPage from './dvrVpjp';
+import SalesDVRReportPage from './salesVdvr';
 
 export default function ReportsPage() {
   return (

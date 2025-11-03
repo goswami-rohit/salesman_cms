@@ -14,7 +14,7 @@ const workos = new WorkOS(process.env.WORKOS_API_KEY);
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
-  'senior-manager', 'manager', 'assistant-manager',];
+  'senior-manager', 'manager', 'assistant-manager', 'senior-executive', 'executive'];
 
 const editRoleSchema = z.object({
   userId: z.number(),

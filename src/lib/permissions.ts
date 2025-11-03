@@ -1,3 +1,5 @@
+import { boolean } from "zod";
+
 // src/lib/permissions.ts
 export type WorkOSRole =
   | 'president'
@@ -20,19 +22,37 @@ export interface DashboardPermissions {
 
   // Business Dashboard section
   dashboard: boolean;
-  teamOverview: boolean;
+  teamOverview: {
+    teamTabContent: boolean;
+    salesmanLiveLocation: boolean;
+  };
   users: boolean;
   assignTasks: boolean;
-  dealerManagement: boolean;
+  dealerManagement: {
+    
+    listDealers: boolean;
+    verifyDealers: boolean;
+    dealerBrandMapping: boolean;
+  };
+  reports: {
+    dailyVisitReports: boolean;
+    technicalVisitReports: boolean;
+    competitionReports: boolean;
+    salesOrders: boolean;
+    dvrVpjp: boolean;
+    salesVdvr: boolean;
+  };
+  permanentJourneyPlan: {
+    pjpList: boolean;
+    pjpVerify: boolean;
+  };
   salesmanAttendance: boolean;
   salesmanLeaves: boolean;
   salesmanGeotracking: boolean;
-  dailyVisitReports: boolean;
-  permanentJourneyPlan: boolean;
-  technicalVisitReports: boolean;
-  competitionReports: boolean;
-  dealerDevelopmentAndMappingReports: boolean;
-  scoresAndRatings: boolean;
+  scoresAndRatings: {
+    dealerScores: boolean;
+    salesmanRatings: boolean;
+  };
 
   // Account section
   account: boolean;
@@ -46,19 +66,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
     users: true,
     assignTasks: true,
-    dealerManagement: true,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -67,19 +105,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
     users: true,
     assignTasks: true,
-    dealerManagement: true,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -88,19 +144,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
     users: true,
     assignTasks: true,
-    dealerManagement: true,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -111,19 +185,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
     users: true,
     assignTasks: true,
-    dealerManagement: true,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -132,19 +224,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
-    users: false,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
+    users: true,
     assignTasks: true,
-    dealerManagement: true,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -153,19 +263,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
     users: true,
     assignTasks: true,
-    dealerManagement: true,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -174,19 +302,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
     users: true,
     assignTasks: true,
-    dealerManagement: true, 
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -195,19 +341,37 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: true,
+    teamOverview: {
+      teamTabContent: true,
+      salesmanLiveLocation: true,
+    },
     users: true,
     assignTasks: true,
-    dealerManagement: true,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: true,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: true,
+    },
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: true,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -218,40 +382,76 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: true,
     dashboard: true,
-    teamOverview: false,
+    teamOverview: {
+      teamTabContent: false,
+      salesmanLiveLocation: true,
+    },
     users: false,
     assignTasks: false,
-    dealerManagement: true,
-    salesmanAttendance: true,
-    salesmanLeaves: false,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: false,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: true,
+      dvrVpjp: true,
+      salesVdvr: true,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: false,
+    },
+    salesmanAttendance: false,
+    salesmanLeaves: true,
     salesmanGeotracking: true,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: false,
-    dealerDevelopmentAndMappingReports: true,
-    scoresAndRatings: true,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
   executive: {
     home: true,
     cemtemChat: true,
-    customReportGenerator: false,
+    customReportGenerator: true,
     dashboard: true,
-    teamOverview: false,
+    teamOverview: {
+      teamTabContent: false,
+      salesmanLiveLocation: false,
+    },
     users: false,
     assignTasks: false,
-    dealerManagement: true,
-    salesmanAttendance: false,
+    dealerManagement: {
+      listDealers: true,
+      
+      dealerBrandMapping: true,
+      verifyDealers: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: false,
+      dvrVpjp: false,
+      salesVdvr: false,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: false,
+    },
+    salesmanAttendance: true,
     salesmanLeaves: false,
     salesmanGeotracking: false,
-    dailyVisitReports: true,
-    permanentJourneyPlan: true,
-    technicalVisitReports: true,
-    competitionReports: false,
-    dealerDevelopmentAndMappingReports: false,
-    scoresAndRatings: false,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
@@ -260,28 +460,61 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     cemtemChat: true,
     customReportGenerator: false,
     dashboard: true,
-    teamOverview: false,
+    teamOverview: {
+      teamTabContent: false,
+      salesmanLiveLocation: false,
+    },
     users: false,
     assignTasks: false,
-    dealerManagement: true,
-    salesmanAttendance: false,
+    dealerManagement: {
+      
+      listDealers: true,
+      verifyDealers: false,
+      dealerBrandMapping: true,
+    },
+    reports: {
+      dailyVisitReports: true,
+      technicalVisitReports: true,
+      competitionReports: true,
+      salesOrders: false,
+      dvrVpjp: false,
+      salesVdvr: false,
+    },
+    permanentJourneyPlan: {
+      pjpList: true,
+      pjpVerify: false,
+    },
+    salesmanAttendance: true,
     salesmanLeaves: false,
     salesmanGeotracking: false,
-    dailyVisitReports: false,
-    permanentJourneyPlan: false,
-    technicalVisitReports: false,
-    competitionReports: false,
-    dealerDevelopmentAndMappingReports: false,
-    scoresAndRatings: false,
+    scoresAndRatings: {
+      dealerScores: true,
+      salesmanRatings: true,
+    },
     account: true,
     raiseAQuery: true,
   },
 };
 
-export function hasPermission(role: WorkOSRole, feature: keyof DashboardPermissions): boolean {
-  return WORKOS_ROLE_PERMISSIONS[role]?.[feature] || false;
+// Build a type of all leaf boolean paths like "reports.dailyVisitReports"
+type LeafPaths<T, P extends string = ''> =
+  T extends boolean
+    ? P
+    : { [K in keyof T & string]:
+          LeafPaths<T[K], P extends '' ? K : `${P}.${K}`>
+      }[keyof T & string];
+
+export type PermPath = LeafPaths<DashboardPermissions>;
+
+function getByPath(obj: any, path: string) {
+  return path.split('.').reduce((acc, k) => acc?.[k], obj);
+}
+
+export function hasPermission(role: WorkOSRole, feature: PermPath): boolean {
+  const perms = WORKOS_ROLE_PERMISSIONS[role] ?? WORKOS_ROLE_PERMISSIONS['junior-executive'];
+  return getByPath(perms, feature) === true;
 }
 
 export function getUserPermissions(role: WorkOSRole): DashboardPermissions {
-  return WORKOS_ROLE_PERMISSIONS[role] || WORKOS_ROLE_PERMISSIONS['junior-executive'];
+  return WORKOS_ROLE_PERMISSIONS[role] ?? WORKOS_ROLE_PERMISSIONS['junior-executive'];
 }

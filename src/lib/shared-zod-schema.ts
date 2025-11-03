@@ -54,11 +54,11 @@ export const dealerVerificationSchema = z.object({
   tradeLicNo: z.string().nullable().optional(),
 
   // Image URLs (nullable/optional)
-  tradeLicencePicUrl: z.string().url().nullable().optional(),
-  shopPicUrl: z.string().url().nullable().optional(),
-  dealerPicUrl: z.string().url().nullable().optional(),
-  blankChequePicUrl: z.string().url().nullable().optional(),
-  partnershipDeedPicUrl: z.string().url().nullable().optional(),
+  tradeLicencePicUrl: z.string().nullable().optional(),
+  shopPicUrl: z.string().nullable().optional(),
+  dealerPicUrl: z.string().nullable().optional(),
+  blankChequePicUrl: z.string().nullable().optional(),
+  partnershipDeedPicUrl: z.string().nullable().optional(),
 
   remarks: z.string().nullable().optional(),
 });
@@ -69,7 +69,7 @@ export const verificationUpdateSchema = z.object({
 
 // dealer 
 export const optionalNumberSchema = z.number().nullable().optional();
-export const optionalIntSchema = z.number().int().nullable().optional();
+export const optionalIntSchema = z.number().nullable().optional();
 export const optionalStringSchema = z.string().nullable().optional();
 
 export const getDealersSchema = z.object({
