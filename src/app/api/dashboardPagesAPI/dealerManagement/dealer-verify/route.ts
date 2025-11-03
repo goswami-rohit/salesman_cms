@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const dealerId = searchParams.get('id');
 
-        if (!dealerId || !z.string().uuid().safeParse(dealerId).success) {
+        if (!dealerId || !z.string().safeParse(dealerId).success) {
             return NextResponse.json({ error: 'Missing or invalid dealer ID in query' }, { status: 400 });
         }
 

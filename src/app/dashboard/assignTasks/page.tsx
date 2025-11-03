@@ -65,7 +65,7 @@ const assignTaskFormSchema = z.object({
     error: "A task date is required.",
   }),
   visitType: z.enum(["Client Visit", "Technical Visit"]),  // strict types when assigning tasks
-  relatedDealerIds: z.array(z.string().uuid()).optional(), // Changed to array for multi-select
+  relatedDealerIds: z.array(z.string()).optional(), // Changed to array for multi-select
   siteName: z.string().min(1, "Site name is required for Technical Visit.").optional(),
   description: z.string().optional(),
   area: z.string().optional(),

@@ -7,7 +7,7 @@ export const assignTaskSchema = z.object({
   salesmanUserIds: z.array(z.number().int()).min(1, "At least one salesman must be selected."),
   taskDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Task date must be in YYYY-MM-DD format."),
   visitType: z.string(),
-  relatedDealerIds: z.array(z.string().uuid()).optional().nullable(), // ✅ accept multiple dealers
+  relatedDealerIds: z.array(z.string()).optional().nullable(), // ✅ accept multiple dealers
   siteName: z.string().min(1, "Site name is required for Technical Visit.").optional().nullable(),
   description: z.string().optional().nullable(),
 });
@@ -39,7 +39,7 @@ export const baseDealerBrandMappingSchema = z.object({
 
 // dealer - verification
 export const dealerVerificationSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string().min(1),
   phoneNo: z.string().min(1),
   area: z.string().min(1),
@@ -73,7 +73,7 @@ export const optionalIntSchema = z.number().nullable().optional();
 export const optionalStringSchema = z.string().nullable().optional();
 
 export const getDealersSchema = z.object({
-  id: z.string().uuid(), // Expecting a UUID string
+  id: z.string(), // Expecting a UUID string
   name: z.string().min(1, "Dealer name is required."),
   type: z.string().min(1, "Dealer type is required."),
   parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
@@ -234,7 +234,7 @@ export const postDealersSchema = z.object({
 
 // pjp 
 export const permanentJourneyPlanSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   salesmanName: z.string(),
   userId: z.number().int(),
   createdByName: z.string(),
@@ -244,7 +244,7 @@ export const permanentJourneyPlanSchema = z.object({
   description: z.string().nullable().optional(), // Mapped to String? in schema
   status: z.string(),
   taskIds: z.array(z.string()), // Array of DailyTask IDs
-  dealerId: z.string().uuid().nullable().optional(),
+  dealerId: z.string().nullable().optional(),
   visitDealerName: z.string().nullable().optional(),
   verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
   additionalVisitRemarks: z.string().nullable(),
@@ -263,7 +263,7 @@ export const permanentJourneyPlanVerificationSchema = z.object({
   planDate: z.string(), // YYYY-MM-DD
   description: z.string().nullable(),
   status: z.string(),
-  dealerId: z.string().uuid().nullable().optional(),
+  dealerId: z.string().nullable().optional(),
   visitDealerName: z.string().nullable().optional(),
   verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
   additionalVisitRemarks: z.string().nullable(),
@@ -282,7 +282,7 @@ export const pjpModificationSchema = z.object({
   planDate: z.string().optional(),
   areaToBeVisited: z.string().max(500).optional(),
   description: z.string().max(500).optional().nullable(),
-  dealerId: z.string().uuid().nullable().optional(),
+  dealerId: z.string().nullable().optional(),
   visitDealerName: z.string().nullable().optional(),
   additionalVisitRemarks: z.string().max(500).optional().nullable(),
 });
@@ -310,8 +310,8 @@ export const dailyVisitReportSchema = z.object({
   role: z.string(),
   reportDate: z.string(), // YYYY-MM-DD string
   dealerType: z.string(),
-  dealerId: z.string().uuid().nullable().optional(),
-  subDealerId: z.string().uuid().nullable().optional(),
+  dealerId: z.string().nullable().optional(),
+  subDealerId: z.string().nullable().optional(),
   dealerName: z.string().nullable(),
   subDealerName: z.string().nullable(),
   location: z.string(),
@@ -466,7 +466,7 @@ export const dealerScoreSchema = z.object({
 
 // salesman attendance 
 export const salesmanAttendanceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   salesmanName: z.string(),
   date: z.string(), // YYYY-MM-DD
   location: z.string(),
@@ -548,7 +548,7 @@ export const geoTrackingSchema = z.object({
 
 // leave application
 export const salesmanLeaveApplicationSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   salesmanName: z.string(),
   leaveType: z.string(),
   startDate: z.string(), // YYYY-MM-DD
@@ -566,7 +566,7 @@ export const salesmanLeaveApplicationSchema = z.object({
 
 // Zod schema for validating PATCH request body
 export const updateLeaveApplicationSchema = z.object({
-  id: z.string().uuid(), // Ensure it's a valid UUID for the leave application
+  id: z.string(), // Ensure it's a valid UUID for the leave application
   status: z.enum(["Approved", "Rejected"]), // Status must be one of these two
   adminRemarks: z.string().nullable().optional(), // Can be string, null, or undefined (if not sent)
 });

@@ -37,7 +37,7 @@ import { getDealersSchema} from '@/lib/shared-zod-schema';
 const addDealerFormSchema = z.object({
     name: z.string().min(1, "Dealer name is required."),
     type: z.string().min(1, "Dealer type is required."),
-    parentDealerId: z.string().uuid().optional().nullable(),
+    parentDealerId: z.string().optional().nullable(),
     region: z.string().min(1, "Region is required."),
     area: z.string().min(1, "Area is required."),
     phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
