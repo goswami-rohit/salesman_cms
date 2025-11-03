@@ -182,6 +182,8 @@ export async function GET() {
             feedbacks: dealer.feedbacks,
             remarks: dealer.remarks,
             verificationStatus: dealer.verificationStatus,
+            nameOfFirm: dealer.nameOfFirm,
+            underSalesPromoterName: dealer.underSalesPromoterName,
             noOfPJP: dealer.noOfPJP,
             createdAt: dealer.createdAt.toISOString(),
             updatedAt: dealer.updatedAt.toISOString(),

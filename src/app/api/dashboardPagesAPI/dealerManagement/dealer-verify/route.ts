@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
                 region: true,
                 type: true,
                 verificationStatus: true,
+                nameOfFirm: true,
+                underSalesPromoterName: true,
                 // Statutory IDs
                 gstinNo: true,
                 panNo: true,

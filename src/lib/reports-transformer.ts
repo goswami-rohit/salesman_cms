@@ -68,6 +68,8 @@ export type FlattenedDealer = {
     dealerDevelopmentStatus: string | null;
     dealerDevelopmentObstacle: string | null;
     verificationStatus: string;
+    nameOfFirm: string | null;
+    underSalesPromoterName: string | null;
     whatsappNo: string | null;
     emailId: string | null;
     businessType: string | null;
@@ -136,7 +138,7 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
             phoneNo: true, address: true, pinCode: true, latitude: true, longitude: true,
             dateOfBirth: true, anniversaryDate: true, totalPotential: true, bestPotential: true,
             brandSelling: true, feedbacks: true, remarks: true, dealerDevelopmentStatus: true,
-            dealerDevelopmentObstacle: true, verificationStatus: true, whatsappNo: true, emailId: true,
+            dealerDevelopmentObstacle: true, verificationStatus: true, whatsappNo: true, emailId: true, nameOfFirm: true, underSalesPromoterName: true,
             businessType: true, gstinNo: true, panNo: true, tradeLicNo: true, aadharNo: true,
             godownSizeSqFt: true, godownCapacityMTBags: true, godownAddressLine: true, godownLandMark: true,
             godownDistrict: true, godownArea: true, godownRegion: true, godownPinCode: true,
@@ -163,7 +165,7 @@ export async function getFlattenedDealers(companyId: number): Promise<FlattenedD
         id: d.id, type: d.type, name: d.name, region: d.region, area: d.area, phoneNo: d.phoneNo,
         address: d.address, pinCode: d.pinCode ?? null, feedbacks: d.feedbacks, remarks: d.remarks ?? null,
         dealerDevelopmentStatus: d.dealerDevelopmentStatus ?? null, dealerDevelopmentObstacle: d.dealerDevelopmentObstacle ?? null,
-        verificationStatus: d.verificationStatus, whatsappNo: d.whatsappNo ?? null, emailId: d.emailId ?? null,
+        verificationStatus: d.verificationStatus, whatsappNo: d.whatsappNo ?? null, emailId: d.emailId ?? null, nameOfFirm: d.nameOfFirm ?? null, underSalesPromoterName: d.underSalesPromoterName ?? null,
         businessType: d.businessType ?? null, gstinNo: d.gstinNo ?? null, panNo: d.panNo ?? null, tradeLicNo: d.tradeLicNo ?? null,
         aadharNo: d.aadharNo ?? null, godownSizeSqFt: d.godownSizeSqFt ?? null, godownCapacityMTBags: d.godownCapacityMTBags ?? null,
         godownAddressLine: d.godownAddressLine ?? null, godownLandMark: d.godownLandMark ?? null, godownDistrict: d.godownDistrict ?? null,

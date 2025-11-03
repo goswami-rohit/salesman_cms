@@ -165,6 +165,8 @@ model Dealer {
   partnershipDeedPicUrl          String?   @map("partnership_deed_pic_url") @db.VarChar(500) // Optional
 
   salesGrowthPercentage Decimal? @map("sales_growth_percentage") @db.Decimal(5, 2)
+  nameOfFirm            String? @map("nameOfFirm") @db.VarChar(500)
+  underSalesPromoterName String? @map("underSalesPromoterName") @db.VarChar(200)
 
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

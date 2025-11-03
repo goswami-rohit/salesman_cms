@@ -97,6 +97,8 @@ export default function VerifyDealersPage() {
         { accessorKey: 'name', header: 'Dealer Name', minSize: 150 },
         { accessorKey: 'phoneNo', header: 'Phone No.', minSize: 120 },
         { accessorKey: 'region', header: 'Region', minSize: 100 },
+        { accessorKey: 'nameOfFirm', header: 'Firm Name', minSize: 100 },
+        { accessorKey: 'underSalesPromoterName', header: 'SP Name', minSize: 100 },
         { accessorKey: 'gstinNo', header: 'GSTIN', minSize: 150, cell: info => info.getValue() || <span className='text-gray-400'>N/A</span> },
         { accessorKey: 'tradeLicNo', header: 'Trade Lic. No.', minSize: 120, cell: info => info.getValue() || <span className='text-gray-400'>N/A</span> },
         {

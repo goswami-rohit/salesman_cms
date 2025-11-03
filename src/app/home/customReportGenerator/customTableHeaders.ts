@@ -33,7 +33,7 @@ export const tablesMetadata: TableMeta[] = [
         columns: [
             'id', 'type', 'name', 'region', 'area', 'phoneNo', 'address', 'pinCode',
             'feedbacks', 'remarks', 'dealerDevelopmentStatus', 'dealerDevelopmentObstacle',
-            'verificationStatus', 'whatsappNo', 'emailId', 'businessType', 'gstinNo',
+            'verificationStatus', 'whatsappNo', 'emailId', 'businessType', 'gstinNo', 'nameOfFirm', 'underSalesPromoterName',
             'panNo', 'tradeLicNo', 'aadharNo', 'godownSizeSqFt', 'godownCapacityMTBags',
             'godownAddressLine', 'godownLandMark', 'godownDistrict', 'godownArea',
             'godownRegion', 'godownPinCode', 'residentialAddressLine', 'residentialLandMark',

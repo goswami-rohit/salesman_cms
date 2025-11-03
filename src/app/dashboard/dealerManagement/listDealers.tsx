@@ -134,6 +134,8 @@ export default function ListDealersPage() {
     { accessorKey: 'parentDealerName', header: 'Parent Dealer', cell: info => info.getValue() || '-' },
     { accessorKey: 'region', header: 'Region' },
     { accessorKey: 'area', header: 'Area' },
+    { accessorKey: 'nameOfFirm', header: 'Firm Name' },
+    { accessorKey: 'underSalesPromoterName', header: 'SP Name' },
     { accessorKey: 'address', header: 'Address' },
     { accessorKey: 'pinCode', header: 'Pin Code' },
     { accessorKey: 'dateOfBirth', header: 'DOB', cell: info => info.getValue() || '-' },

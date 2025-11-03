@@ -46,6 +46,8 @@ export const dealerVerificationSchema = z.object({
   region: z.string().min(1),
   type: z.string().min(1), // Used as a primary identifier/zone category
   verificationStatus: z.enum(["PENDING", "VERIFIED", "REJECTED"]),
+  nameOfFirm: z.string().nullable().optional(),
+  underSalesPromoterName: z.string().nullable().optional(),
 
   // Statutory IDs
   gstinNo: z.string().nullable().optional(),
@@ -69,11 +71,11 @@ export const verificationUpdateSchema = z.object({
 
 // dealer 
 export const optionalNumberSchema = z.number().nullable().optional();
-export const optionalIntSchema = z.number().nullable().optional();
+export const optionalIntSchema = z.number().int().nullable().optional();
 export const optionalStringSchema = z.string().nullable().optional();
 
 export const getDealersSchema = z.object({
-  id: z.string(), // Expecting a UUID string
+  id: z.string(), 
   name: z.string().min(1, "Dealer name is required."),
   type: z.string().min(1, "Dealer type is required."),
   parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
@@ -101,6 +103,8 @@ export const getDealersSchema = z.object({
   whatsappNo: optionalStringSchema,
   emailId: optionalStringSchema,
   businessType: optionalStringSchema,
+  nameOfFirm: optionalStringSchema,
+  underSalesPromoterName: optionalStringSchema,
   gstinNo: optionalStringSchema,
   panNo: optionalStringSchema,
   tradeLicNo: optionalStringSchema,
@@ -566,7 +570,7 @@ export const salesmanLeaveApplicationSchema = z.object({
 
 // Zod schema for validating PATCH request body
 export const updateLeaveApplicationSchema = z.object({
-  id: z.string(), // Ensure it's a valid UUID for the leave application
+  id: z.string(), 
   status: z.enum(["Approved", "Rejected"]), // Status must be one of these two
   adminRemarks: z.string().nullable().optional(), // Can be string, null, or undefined (if not sent)
 });
