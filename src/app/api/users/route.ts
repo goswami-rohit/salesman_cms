@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 //import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique IDs
 //import bcrypt from 'bcryptjs'; // Import bcryptjs
 
@@ -21,16 +22,30 @@ const allowedAdminRoles = [
     'assistant-manager',
 ];
 
-// Create Gmail transporter
-const createEmailTransporter = () => {
-    return nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD,
-        },
-    });
+// ---------- Email setup ----------
+const EMAIL_TIMEOUT_MS = 12000;
+
+const transportOptions: SMTPTransport.Options = {
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: process.env.GMAIL_USER!, pass: process.env.GMAIL_APP_PASSWORD! },
+    connectionTimeout: 10000,
+    greetingTimeout: 7000,
+    socketTimeout: 15000,
+    // nodemailer typings may not expose 'family'; it's harmless at runtime
+    // @ts-ignore
+    family: 4,
 };
+
+const transporter = nodemailer.createTransport(transportOptions);
+
+async function withTimeout<T>(p: Promise<T>, ms = EMAIL_TIMEOUT_MS): Promise<T> {
+    return await Promise.race([
+        p,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('EMAIL_TIMEOUT')), ms)),
+    ]);
+}
 
 // Gmail email sending function - UPDATED
 async function sendInvitationEmailGmail({
@@ -56,83 +71,92 @@ async function sendInvitationEmailGmail({
     salesmanLoginId?: string | null;
     tempPassword?: string | null;
 }) {
-    const transporter = createEmailTransporter();
+    const mailbox = process.env.GMAIL_USER!;
 
     // Conditional content for salesman details
-    const salesmanDetailsHtml = salesmanLoginId && tempPassword ? `
-            <p>For your **Sales Team Mobile App** login:</p>
-            <ul>
-                <li><strong>Employee ID (Login ID):</strong> <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${salesmanLoginId}</span></li>
-                <li><strong>Temporary Password:</strong> <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${tempPassword}</span></li>
-            </ul>
-            <p style="color: #d9534f; font-weight: bold;">Please change this password after your first login to the mobile app.</p>
-        ` : '';
+    const salesmanDetailsHtml =
+        salesmanLoginId && tempPassword
+            ? `
+        <p>For your <strong>Sales Team Mobile App</strong> login:</p>
+        <ul>
+          <li><strong>Employee ID (Login ID):</strong>
+            <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${salesmanLoginId}</span>
+          </li>
+          <li><strong>Temporary Password:</strong>
+            <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${tempPassword}</span>
+          </li>
+        </ul>
+        <p style="color: #d9534f; font-weight: bold;">Please change this password after your first login to the mobile app.</p>
+      `
+            : '';
 
-    const salesmanDetailsText = salesmanLoginId && tempPassword ? `
+    const salesmanDetailsText =
+        salesmanLoginId && tempPassword
+            ? `
 For your Sales Team Mobile App login:
 Employee ID (Login ID): ${salesmanLoginId}
 Password: ${tempPassword}
-        ` : '';
+`
+            : '';
 
     const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Invitation to ${companyName}</title>
-        <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #0070f3; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { background-color: #0070f3; color: #ffffff !important; padding: 15px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; font-weight: bold; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-            .invite-code { background-color: #e9ecef; padding: 10px; border-radius: 4px; font-family: monospace; word-break: break-all; }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1>🎉 You're Invited!</h1>
-            <p>Welcome to ${companyName}</p>
-        </div>
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invitation to ${companyName}</title>
+      <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #0070f3; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+          .button { background-color: #0070f3; color: #ffffff !important; padding: 15px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; font-weight: bold; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          .invite-code { background-color: #e9ecef; padding: 10px; border-radius: 4px; font-family: monospace; word-break: break-all; }
+      </style>
+  </head>
+  <body>
+      <div class="header">
+          <h1>🎉 You're Invited!</h1>
+          <p>Welcome to ${companyName}</p>
+      </div>
 
-        <div class="content">
-            <p><strong>Hi ${firstName},</strong></p>
+      <div class="content">
+          <p><strong>Hi ${firstName},</strong></p>
+          <p>${adminName} has invited you to join <strong>${companyName}</strong> as a <strong>${role}</strong>.</p>
 
-            <p>${adminName} has invited you to join <strong>${companyName}</strong> as a <strong>${role}</strong>.</p>
+          <p>To accept this invitation and set up your account for the web application, please click the button below:</p>
 
-            <p>To accept this invitation and set up your account for the web application, please click the button below:</p>
+          <div style="text-align: center;">
+              <a href="${inviteUrl}" class="button" style="color: #ffffff !important;">Accept Web App Invitation & Join Team</a>
+          </div>
 
-            <div style="text-align: center;">
-                <a href="${inviteUrl}" class="button" style="color: #ffffff !important;">
-                Accept Web App Invitation & Join Team</a>
-            </div>
+          <p>Or copy and paste this link into your browser:</p>
+          <div class="invite-code">${inviteUrl}</div>
 
-            <p>Or copy and paste this link into your browser:</p>
-            <div class="invite-code">${inviteUrl}</div>
+          ${salesmanDetailsHtml}
+          <!-- salesman details end -->
 
-            ${salesmanDetailsHtml} {/* Include salesman details */}
+          <p><strong>What happens next?</strong></p>
+          <ul>
+              <li>Click the invitation link above to set up your web app account.</li>
+              <li>Access your team dashboard.</li>
+              <li>${salesmanLoginId ? 'Use your Employee ID and Password above to log in to the Sales Team Mobile App.' : ''}</li>
+              <li>Start collaborating with your team!</li>
+          </ul>
 
-            <p><strong>What happens next?</strong></p>
-            <ul>
-                <li>Click the invitation link above to set up your web app account.</li>
-                <li>Access your team dashboard.</li>
-                <li>${salesmanLoginId ? 'Use your Employee ID and Password above to log in to the Sales Team Mobile App.' : ''}</li>
-                <li>Start collaborating with your team!</li>
-            </ul>
+          <p><em>This web app invitation will expire in 7 days for security reasons.</em></p>
 
-            <p><em>This web app invitation will expire in 7 days for security reasons.</em></p>
+          <p>Welcome to the team!</p>
+          <p><strong>The ${companyName} Team</strong></p>
+      </div>
 
-            <p>Welcome to the team!</p>
-            <p><strong>The ${companyName} Team</strong></p>
-        </div>
-
-        <div class="footer">
-            <p>If you have any questions, please contact your administrator.</p>
-            <p>This email was sent from ${companyName} Team Management System.</p>
-        </div>
-    </body>
-    </html>
+      <div class="footer">
+          <p>If you have any questions, please contact your administrator.</p>
+          <p>This email was sent from ${companyName} Team Management System.</p>
+      </div>
+  </body>
+  </html>
   `;
 
     const textContent = `
@@ -153,17 +177,21 @@ Welcome to the team!
 The ${companyName} Team
   `;
 
-    const mailOptions = {
-        from: `"${companyName}" <${fromEmail}>`,
-        to: to,
+    const mailOptions: nodemailer.SendMailOptions = {
+        from: `"${companyName}" <${mailbox}>`,
+        to,
         subject: `🎉 You're invited to join ${companyName}!`,
         text: textContent,
         html: htmlContent,
+        envelope: { from: mailbox, to },
+        // replyTo: fromEmail, // optional
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully:', result.messageId);
-    return result;
+    // Verify then send, with hard timeout so the API never hangs forever
+    await withTimeout(transporter.verify(), 6000);
+    const info = await withTimeout(transporter.sendMail(mailOptions), EMAIL_TIMEOUT_MS);
+
+    return info;
 }
 
 // Function to generate a random password

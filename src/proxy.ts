@@ -24,11 +24,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
      unauthenticatedPaths: [
        '/',
        '/login',
-       //'/login/signup',
-       //'/login/reset-password',
        '/auth/callback',
-       //'/joinNewUser',
-       //'/setup-company',
      ],
    },
  })(request, event);
