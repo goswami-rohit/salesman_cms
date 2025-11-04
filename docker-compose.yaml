@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   slm-dashboard-app:
     # Use your Docker image name here

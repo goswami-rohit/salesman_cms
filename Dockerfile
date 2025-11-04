@@ -1,10 +1,10 @@
 # Stage 1: Dependencies - Install all dependencies
 # We use node:20-alpine for a lightweight base image with Node.js 20.
-FROM node:20-alpine AS deps
+FROM node:25 AS deps
 # Install necessary packages for Prisma and Node.js
 # libc6-compat is required for Prisma engines on Alpine.
 # openssl is needed for a variety of packages.
-RUN apk add --no-cache libc6-compat openssl
+#RUN apk add --no-cache libc6-compat openssl #Not needed for debian base image (node:25) needed for others
 WORKDIR /app
 
 # Copy the dependency files to leverage Docker's layer caching
@@ -15,7 +15,7 @@ RUN npm ci
 
 # Stage 2: Builder - Build the Next.js application
 # This stage takes the dependencies and builds the application for production.
-FROM node:20-alpine AS builder
+FROM node:25 AS builder
 WORKDIR /app
 
 # Copy the dependencies from the previous stage
@@ -36,12 +36,14 @@ ENV NEXT_PRIVATE_STANDALONE=true
 # The Prisma client must be generated before the Next.js build process can use it.
 # SKIP_ENV_VALIDATION=1 is used to allow the build to proceed even if the .env file is not present in the container
 RUN npx prisma generate
-RUN npm run build
+RUN --mount=type=secret,id=WORKOS_API_KEY,env=WORKOS_API_KEY npm run build
 
 # Stage 3: Runner - The final production image
 # This stage uses a super-lightweight distroless base image for security and size.
-FROM gcr.io/distroless/nodejs20-debian12 AS runner
+FROM gcr.io/distroless/nodejs24-debian12 AS runner
 WORKDIR /app
+
+ENV NODE_ENV=production
 
 # Disable telemetry again in the final image
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -48,7 +48,7 @@ async function withTimeout<T>(p: Promise<T>, ms = EMAIL_TIMEOUT_MS): Promise<T> 
 }
 
 // Gmail email sending function - UPDATED
-async function sendInvitationEmailGmail({
+export async function sendInvitationEmailGmail({
     to,
     firstName,
     lastName,
@@ -195,7 +195,7 @@ The ${companyName} Team
 }
 
 // Function to generate a random password
-function generateRandomPassword(length: number = 10): string {
+export function generateRandomPassword(length: number = 10): string {
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let password = "";
     for (let i = 0; i < length; i++) {

@@ -45,6 +45,7 @@ import { useUserLocations } from '@/components/reusable-user-locations';
 // 1. Corrected Import: Using DataTableReusable as specified
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { ColumnDef } from '@tanstack/react-table';
+import { BulkInviteDialog } from './bulkInvite';
 
 interface User {
   id: number;
@@ -298,6 +299,19 @@ export default function UsersManagement({ adminUser }: Props) {
     setError('');
   };
 
+  // Custom setter for success messages
+  const handleSuccess = (message: string) => {
+    setError('');
+    setSuccess(message);
+    setTimeout(() => setSuccess(''), 5000);
+  };
+
+  // Custom setter for error messages
+  const handleError = (message: string) => {
+    setSuccess('');
+    setError(message);
+    setTimeout(() => setError(''), 10000);
+  };
 
   // 2. Define Columns for the DataTable
   const columns: ColumnDef<User>[] = useMemo(() => [
@@ -458,247 +472,256 @@ export default function UsersManagement({ adminUser }: Props) {
               Manage users for {adminUser.company.companyName}
             </p>
           </div>
+          <div className="flex space-x-3">
 
-          {/* --- ADD USER DIALOG --- */}
-          <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New User & Send Invitation</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleCreateUser} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="user@example.com"
-                    required
-                  />
-                </div>
+            {/* --- ADD BULK USER INVITE BUTTON --- */}
+            <BulkInviteDialog
+              onSuccess={handleSuccess}
+              onError={handleError}
+              onRefreshUsers={fetchUsers}
+            />
+            {/* --- END ADD BULK USER --- */}
 
-                <div className="grid grid-cols-2 gap-4">
+            {/* --- ADD SINGLE USER DIALOG --- */}
+            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New User & Send Invitation</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCreateUser} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
+                    <Label htmlFor="email">Email Address</Label>
                     <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      placeholder="John"
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="user@example.com"
                       required
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        placeholder="John"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        placeholder="Doe"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
+                    <Label htmlFor="phoneNumber">Phone Number</Label>
                     <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      placeholder="Doe"
-                      required
+                      id="phoneNumber"
+                      type="tel"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      placeholder="+91 9999900000"
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Phone Number</Label>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    placeholder="+91 9999900000"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="president">President</SelectItem>
-                      <SelectItem value="senior-general-manager">Senior General Manager</SelectItem>
-                      <SelectItem value="general-manager">General Manager</SelectItem>
-                      <SelectItem value="regional-sales-manager">Regional Sales Manager</SelectItem>
-                      <SelectItem value="area-sales-manager">Area Sales Manager</SelectItem>
-                      <SelectItem value="senior-manager">Senior Manager</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="assistant-manager">Assistant Manager</SelectItem>
-                      <SelectItem value="senior-executive">Senior Executive</SelectItem>
-                      <SelectItem value="executive">Executive</SelectItem>
-                      <SelectItem value="junior-executive">Junior Executive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="region">Region</Label>
-                    <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Region" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {locations.regions.map(region => (
-                          <SelectItem key={region} value={region}>{region}</SelectItem>
-                        ))}
+                        <SelectItem value="president">President</SelectItem>
+                        <SelectItem value="senior-general-manager">Senior General Manager</SelectItem>
+                        <SelectItem value="general-manager">General Manager</SelectItem>
+                        <SelectItem value="regional-sales-manager">Regional Sales Manager</SelectItem>
+                        <SelectItem value="area-sales-manager">Area Sales Manager</SelectItem>
+                        <SelectItem value="senior-manager">Senior Manager</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="assistant-manager">Assistant Manager</SelectItem>
+                        <SelectItem value="senior-executive">Senior Executive</SelectItem>
+                        <SelectItem value="executive">Executive</SelectItem>
+                        <SelectItem value="junior-executive">Junior Executive</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="area">Area</Label>
-                    <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Area" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locations.areas.map(area => (
-                          <SelectItem key={area} value={area}>{area}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="region">Region</Label>
+                      <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {locations.regions.map(region => (
+                            <SelectItem key={region} value={region}>{region}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="area">Area</Label>
+                      <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Area" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {locations.areas.map(area => (
+                            <SelectItem key={area} value={area}>{area}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button
-                    type="submit"
-                    className="flex items-center"
-                    disabled={loading}
-                  >
-                    {loading ? 'Creating...' : 'Create User'}
-                  </Button>
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button
+                      type="submit"
+                      className="flex items-center"
+                      disabled={loading}
+                    >
+                      {loading ? 'Creating...' : 'Create User'}
+                    </Button>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      resetForm();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateModal(false);
+                        resetForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
 
-              </form>
-            </DialogContent>
-          </Dialog>
-          {/* --- END ADD USER DIALOG --- */}
+                </form>
+              </DialogContent>
+            </Dialog>
+            {/* --- END ADD USER DIALOG --- */}
 
-          {/* --- EDIT DIALOG --- */}
-          <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-            {/* Note: No DialogTrigger needed here, the button in the table cell acts as the trigger via state change */}
-            <DialogContent key={editingUser?.id}>
-              <DialogHeader>
-                <DialogTitle>Edit User</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleUpdateUser} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-email">Email Address</Label>
-                  <Input
-                    id="edit-email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="user@example.com"
-                    required
-                    disabled
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+            {/* --- EDIT DIALOG --- */}
+            <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+              {/* Note: No DialogTrigger needed here, the button in the table cell acts as the trigger via state change */}
+              <DialogContent key={editingUser?.id}>
+                <DialogHeader>
+                  <DialogTitle>Edit User</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleUpdateUser} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-firstName">First Name</Label>
+                    <Label htmlFor="edit-email">Email Address</Label>
                     <Input
-                      id="edit-firstName"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      placeholder="John"
+                      id="edit-email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="user@example.com"
                       required
+                      disabled
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-firstName">First Name</Label>
+                      <Input
+                        id="edit-firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        placeholder="John"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-lastName">Last Name</Label>
+                      <Input
+                        id="edit-lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        placeholder="Doe"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-lastName">Last Name</Label>
+                    <Label htmlFor="edit-phoneNumber">Phone Number</Label>
                     <Input
-                      id="edit-lastName"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      placeholder="Doe"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-phoneNumber">Phone Number</Label>
-                  <Input
-                    id="edit-phoneNumber"
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-
-                {/* Role section edit in Team Overview  */}
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Region changed from Select to Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-region">Region</Label>
-                    <Input
-                      id="edit-region"
-                      value={formData.region}
-                      onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                      placeholder="North"
+                      id="edit-phoneNumber"
+                      type="tel"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      placeholder="+1 (555) 123-4567"
                     />
                   </div>
 
-                  {/* Area changed from Select to Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-area">Area</Label>
-                    <Input
-                      id="edit-area"
-                      value={formData.area}
-                      onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                      placeholder="Central"
-                    />
+                  {/* Role section edit in Team Overview  */}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Region changed from Select to Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-region">Region</Label>
+                      <Input
+                        id="edit-region"
+                        value={formData.region}
+                        onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                        placeholder="North"
+                      />
+                    </div>
+
+                    {/* Area changed from Select to Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-area">Area</Label>
+                      <Input
+                        id="edit-area"
+                        value={formData.area}
+                        onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                        placeholder="Central"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex space-x-2 pt-4">
-                  <Button type="submit" disabled={loading} className="flex-1">
-                    {loading ? 'Updating...' : 'Update User'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingUser(null);
-                      resetForm();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-          {/* --- END EDIT DIALOG --- */}
-
+                  <div className="flex space-x-2 pt-4">
+                    <Button type="submit" disabled={loading} className="flex-1">
+                      {loading ? 'Updating...' : 'Update User'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingUser(null);
+                        resetForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            {/* --- END EDIT DIALOG --- */}
+          </div>
         </div>
 
         {/* Success Message */}
