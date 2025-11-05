@@ -1,11 +1,12 @@
 services:
-  slm-dashboard-app:
+  slmcmsdashboard:
     # Use your Docker image name here
-    image: goswamirohit/slmcmsdashboard:v5
-    container_name: slm-dashboard-app
+    image: goswamirohit/slmcmsdashboard:v8
+    container_name: slmcmsdashboard
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:4000:3000"
     # This is the key line that tells Docker to read the variables from the .env file
     env_file:
-      - .env.production
+      - .env
+      - .env.local
