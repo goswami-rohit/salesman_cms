@@ -1,19 +1,23 @@
-// app/dashboard/reports/dvr-pjp.tsx
+// app/dashboard/reports/dvrVpjp.tsx
 'use client';
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { Calendar, ChevronUp, ChevronDown, Gauge, List } from 'lucide-react';
+import { IconSearch } from '@tabler/icons-react'; // Added import
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button'; // Added import
+import { Input } from '@/components/ui/input'; // Added import
+import { MultiSelect } from '@/components/multi-select'; // Added import
 
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { ChartAreaInteractive } from '@/components/chart-area-reusable';
-import { useDvrPjpData } from '@/components/data-comparison-calculation'; // corrected path
+import { useDvrPjpData } from '@/components/data-comparison-calculation';
 
 // --- Types aligned with shared Zod schemas + helper hook ---
 interface PJPRecord {
@@ -62,27 +66,90 @@ const DATE_FILTERS = [
 ];
 
 export default function DvrPjpReportPage() {
+  // --- States ---
   const [days, setDays] = React.useState<string>('30');
-
+  
   // Client-side fetch + compute (uses ONLY VERIFIED PJPs internally)
   const { loading, error, filteredPjps, filteredDvrs, analytics } = useDvrPjpData(Number(days));
+
+  // --- New Filter States ---
+  const [salesmanFilter, setSalesmanFilter] = React.useState<string[]>([]);
+  const [areaFilter, setAreaFilter] = React.useState<string[]>([]);
+  const [dealerTypeFilter, setDealerTypeFilter] = React.useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = React.useState('');
 
   React.useEffect(() => {
     if (error) toast.error('Data Load Error', { description: error });
   }, [error]);
 
-  // Chart data
+  // --- Unique filter options (derived from date-filtered data) ---
+  const uniqueOptions = React.useMemo(() => {
+    const salesmen = new Set<string>();
+    const areas = new Set<string>();
+    const dealerTypes = new Set<string>();
+
+    (filteredPjps ?? []).forEach(d => {
+      if (d.salesmanName) salesmen.add(d.salesmanName);
+      if (d.areaToBeVisited) areas.add(d.areaToBeVisited);
+    });
+    (filteredDvrs ?? []).forEach(d => {
+      if (d.salesmanName) salesmen.add(d.salesmanName);
+      if (d.dealerType) dealerTypes.add(d.dealerType);
+    });
+
+    return {
+      salesmen: Array.from(salesmen).sort().map(s => ({ label: s, value: s })),
+      areas: Array.from(areas).sort().map(a => ({ label: a, value: a })),
+      dealerTypes: Array.from(dealerTypes).sort().map(dt => ({ label: dt, value: dt })),
+    };
+  }, [filteredPjps, filteredDvrs]);
+
+  // --- Apply client-side filters ---
+  const finalFilteredPjps = React.useMemo(() => {
+    if (!filteredPjps) return [];
+    let temp = [...filteredPjps];
+
+    if (salesmanFilter.length) temp = temp.filter(r => salesmanFilter.includes(r.salesmanName));
+    if (areaFilter.length) temp = temp.filter(r => areaFilter.includes(r.areaToBeVisited));
+    
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      temp = temp.filter(record =>
+        Object.values(record).some(value => String(value).toLowerCase().includes(s))
+      );
+    }
+    return temp;
+  }, [filteredPjps, salesmanFilter, areaFilter, searchTerm]);
+
+  const finalFilteredDvrs = React.useMemo(() => {
+    if (!filteredDvrs) return [];
+    let temp = [...filteredDvrs];
+
+    if (salesmanFilter.length) temp = temp.filter(r => salesmanFilter.includes(r.salesmanName));
+    if (dealerTypeFilter.length) temp = temp.filter(r => dealerTypeFilter.includes(r.dealerType));
+
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      temp = temp.filter(record =>
+        Object.values(record).some(value => String(value).toLowerCase().includes(s))
+      );
+    }
+    return temp;
+  }, [filteredDvrs, salesmanFilter, dealerTypeFilter, searchTerm]);
+
+
+  // --- Chart data (uses FINAL filtered data) ---
   const chartData = React.useMemo(() => {
-    if (!filteredPjps || !filteredDvrs) return [];
+    if (!finalFilteredPjps || !finalFilteredDvrs) return [];
     const map = new Map<string, { name: string; dvrs: number; pjps: number }>();
 
-    filteredDvrs.forEach((d:any) => {
+    finalFilteredDvrs.forEach((d:any) => {
       const key = d.reportDate;
       if (!map.has(key)) map.set(key, { name: key, dvrs: 0, pjps: 0 });
       map.get(key)!.dvrs += 1;
     });
 
-    filteredPjps.forEach((p:any) => {
+    finalFilteredPjps.forEach((p:any) => {
       const key = p.planDate;
       if (!map.has(key)) map.set(key, { name: key, dvrs: 0, pjps: 0 });
       map.get(key)!.pjps += 1;
@@ -91,7 +158,7 @@ export default function DvrPjpReportPage() {
     return Array.from(map.values()).sort(
       (a, b) => new Date(a.name).getTime() - new Date(b.name).getTime()
     );
-  }, [filteredPjps, filteredDvrs]);
+  }, [finalFilteredPjps, finalFilteredDvrs]);
 
   // Columns — PJP
   const pjpColumns: ColumnDef<PJPRecord>[] = React.useMemo(() => [
@@ -152,36 +219,79 @@ export default function DvrPjpReportPage() {
     <div className="p-8 space-y-8">
       <h1 className="text-3xl font-bold flex items-center gap-3">DVR vs PJP Analytics Report</h1>
 
-      {/* Filters */}
+      {/* --- Filters (NEW) --- */}
       <Card>
         <CardHeader>
           <CardTitle>Filter Data</CardTitle>
           <CardDescription>
-            Select a date range to filter the transactional tables below. Analytics are computed using <b>only VERIFIED PJP</b>.
+            Select filters to apply to the tables and chart below. KPIs are date-based. Analytics use <b>only VERIFIED PJP</b>.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-muted-foreground" />
-            <span className="font-medium">Period:</span>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Select value={days} onValueChange={setDays} disabled={loading}>
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                {DATE_FILTERS.map(f => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="relative sm:col-span-1 lg:col-span-3">
+              <Input
+                placeholder="Search all fields..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-white"
+              />
+              <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
           </div>
-          <Select value={days} onValueChange={setDays} disabled={loading}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              {DATE_FILTERS.map(f => (
-                <SelectItem key={f.value} value={f.value}>
-                  {f.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <MultiSelect
+              options={uniqueOptions.salesmen}
+              selectedValues={salesmanFilter}
+              onValueChange={setSalesmanFilter}
+              placeholder="Filter Salesman"
+              className="w-full"
+            />
+            <MultiSelect
+              options={uniqueOptions.areas}
+              selectedValues={areaFilter}
+              onValueChange={setAreaFilter}
+              placeholder="Filter Area"
+              className="w-full"
+            />
+            <MultiSelect
+              options={uniqueOptions.dealerTypes}
+              selectedValues={dealerTypeFilter}
+              onValueChange={setDealerTypeFilter}
+              placeholder="Filter Dealer Type"
+              className="w-full"
+            />
+          </div>
+
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setSalesmanFilter([]); setAreaFilter([]);
+              setDealerTypeFilter([]); setSearchTerm(''); setDays('30');
+            }}
+          >
+            Clear All Filters
+          </Button>
         </CardContent>
       </Card>
 
       {loading && <div className="text-center py-16 text-white font-semibold">Loading DVR vs PJP data...</div>}
 
+      {/* --- KPIs (Uses analytics object but FINAL counts) --- */}
       {!loading && analytics && filteredDvrs && filteredPjps && (
         <div className="space-y-6">
           <h2 className="text-2xl font-semibold border-b pb-2">Key Performance Indicators</h2>
@@ -195,15 +305,17 @@ export default function DvrPjpReportPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-4xl font-extrabold text-primary">
+                  {/* Percentage is from the date-based analytics hook */}
                   {analytics.targetAchievementPercentage.toFixed(2)}%
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {filteredDvrs.length} actual visits vs. {filteredPjps.length} verified planned visits.
+                  {/* Counts are from the FINAL filtered data */}
+                  {finalFilteredDvrs.length} actual visits vs. {finalFilteredPjps.length} verified planned visits.
                 </p>
               </CardContent>
             </Card>
 
-            {/* MoM Cards */}
+            {/* MoM Cards (from analytics hook) */}
             {analytics.momMetrics.find((m:any) => m.metric.includes('DVR')) && (
               <MoMMetricCard metricData={analytics.momMetrics.find((m:any) => m.metric.includes('DVR'))!} />
             )}
@@ -212,7 +324,7 @@ export default function DvrPjpReportPage() {
             )}
           </div>
 
-          {/* Trend Chart */}
+          {/* Trend Chart (uses FINAL filtered data) */}
           <div className="pt-6">
             <ChartAreaInteractive
               data={chartData}
@@ -223,37 +335,53 @@ export default function DvrPjpReportPage() {
 
           <Separator className="my-8" />
 
-          {/* Tables */}
+          {/* Tables (uses FINAL filtered data) */}
           <h2 className="text-2xl font-semibold border-b pb-2 pt-4">Transactional Data (Last {days} Days)</h2>
 
           <div className="space-y-8">
             <Card>
               <CardHeader>
                 <CardTitle>Daily Visit Reports (DVRs)</CardTitle>
-                <CardDescription>Total DVRs reported in the last {days} days: {filteredDvrs.length}</CardDescription>
+                <CardDescription>
+                  Showing {finalFilteredDvrs.length} of {filteredDvrs.length} records in this period.
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <DataTableReusable
-                  columns={dvrColumns}
-                  data={filteredDvrs}
-                  enableRowDragging={false}
-                  onRowOrderChange={() => {}}
-                />
+                {finalFilteredDvrs.length > 0 ? (
+                  <DataTableReusable
+                    columns={dvrColumns}
+                    data={finalFilteredDvrs}
+                    enableRowDragging={false}
+                    onRowOrderChange={() => {}}
+                  />
+                ) : (
+                  <div className="text-center text-gray-500 py-12 border border-dashed rounded-lg">
+                    <p className="font-medium">No DVRs match your current filters.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
                 <CardTitle>Permanent Journey Plans (VERIFIED PJPs)</CardTitle>
-                <CardDescription>Total VERIFIED PJPs in the last {days} days: {filteredPjps.length}</CardDescription>
+                <CardDescription>
+                  Showing {finalFilteredPjps.length} of {filteredPjps.length} records in this period.
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <DataTableReusable
-                  columns={pjpColumns}
-                  data={filteredPjps}
-                  enableRowDragging={false}
-                  onRowOrderChange={() => {}}
-                />
+                 {finalFilteredPjps.length > 0 ? (
+                  <DataTableReusable
+                    columns={pjpColumns}
+                    data={finalFilteredPjps}
+                    enableRowDragging={false}
+                    onRowOrderChange={() => {}}
+                  />
+                ) : (
+                  <div className="text-center text-gray-500 py-12 border border-dashed rounded-lg">
+                    <p className="font-medium">No PJPs match your current filters.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -263,7 +391,7 @@ export default function DvrPjpReportPage() {
   );
 }
 
-// --- Reusable MoM Card ---
+// --- Reusable MoM Card (No changes) ---
 interface MoMMetricCardProps { metricData: MoMComparisonMetrics; }
 
 const MoMMetricCard: React.FC<MoMMetricCardProps> = ({ metricData }) => {

@@ -1,10 +1,11 @@
-// app/dashboard/reports/sales-dvr.tsx
+// app/dashboard/reports/salesVdvr.tsx
 'use client';
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { IconFilter, IconRefresh, IconSearch, IconListDetails, IconTrendingUp } from '@tabler/icons-react';
+import { IconFilter, IconRefresh, IconSearch, IconListDetails, IconTrendingUp, IconCurrencyRupee } from '@tabler/icons-react';
+import { Calendar, Gauge, BarChart } from 'lucide-react'; // Added imports
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ const formatCurrency = (amount: number): string =>
     maximumFractionDigits: 2,
   }).format(amount);
 
+// --- SALES Columns ---
 const salesColumns: ColumnDef<SalesRecord>[] = [
   {
     accessorKey: 'orderDate',
@@ -82,6 +84,18 @@ const salesColumns: ColumnDef<SalesRecord>[] = [
   { accessorKey: 'orderPartyName', header: 'Party Name', enableSorting: false, enableHiding: true },
 ];
 
+// --- DVR Columns (Copied from dvr-pjp.tsx for consistency) ---
+const dvrColumns: ColumnDef<DVRRecord>[] = [
+  { accessorKey: 'reportDate', header: 'Report Date', cell: ({ row }) => new Date(row.original.reportDate).toLocaleDateString() },
+  { accessorKey: 'salesmanName', header: 'Salesman' },
+  { accessorKey: 'dealerName', header: 'Dealer Visited' },
+  { accessorKey: 'dealerType', header: 'Type', cell: ({ row }) => <Badge variant="outline">{row.original.dealerType}</Badge> },
+  { accessorKey: 'location', header: 'Location' },
+  { accessorKey: 'todayOrderMt', header: 'Order (MT)', cell: ({ row }) => row.original.todayOrderMt.toFixed(2) },
+  { accessorKey: 'todayCollectionRupees', header: 'Collection (₹)', cell: ({ row }) => `₹${row.original.todayCollectionRupees.toLocaleString('en-IN')}` },
+];
+
+
 /* =========================
    Filters
 ========================= */
@@ -126,6 +140,10 @@ export default function SalesDVRReportPage() {
       if (d.area) areas.add(d.area);
       if (d.dealerType) dealerTypes.add(d.dealerType);
     });
+    // Also check DVRs for dealer types
+    (dvrs ?? []).forEach(d => {
+      if (d.dealerType) dealerTypes.add(d.dealerType);
+    });
 
     return {
       salesmen: Array.from(salesmen).sort().map(s => ({ label: s, value: s })),
@@ -133,7 +151,7 @@ export default function SalesDVRReportPage() {
       areas: Array.from(areas).sort().map(a => ({ label: a, value: a })),
       dealerTypes: Array.from(dealerTypes).sort().map(dt => ({ label: dt, value: dt })),
     };
-  }, [sales]);
+  }, [sales, dvrs]);
 
   /* =========================
      Time window helpers
@@ -160,7 +178,7 @@ export default function SalesDVRReportPage() {
   /* =========================
      Client-side filters
   ========================= */
-  const filteredData = React.useMemo(() => {
+  const filteredSalesData = React.useMemo(() => {
     let temp = [...salesInWindow];
 
     if (salesmanFilter.length) temp = temp.filter(r => salesmanFilter.includes(r.salesmanName));
@@ -178,11 +196,28 @@ export default function SalesDVRReportPage() {
     return temp;
   }, [salesInWindow, salesmanFilter, regionFilter, areaFilter, dealerTypeFilter, searchTerm]);
 
+  // Apply filters to DVRs as well for consistency
+  const filteredDvrData = React.useMemo(() => {
+    let temp = [...dvrsInWindow];
+
+    if (salesmanFilter.length) temp = temp.filter(r => salesmanFilter.includes(r.salesmanName));
+    // Note: DVRs don't have region/area in this schema, but do have dealerType
+    if (dealerTypeFilter.length) temp = temp.filter(r => dealerTypeFilter.includes(r.dealerType));
+
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      temp = temp.filter(record =>
+        Object.values(record).some(value => String(value).toLowerCase().includes(s))
+      );
+    }
+    return temp;
+  }, [dvrsInWindow, salesmanFilter, dealerTypeFilter, searchTerm]);
+
   /* =========================
      Analytics (Sales vs DVR)
   ========================= */
-  const totalSalesValue = React.useMemo(() => calculateTotalSalesValue(filteredData), [filteredData]);
-  const totalVisits = dvrsInWindow.length;
+  const totalSalesValue = React.useMemo(() => calculateTotalSalesValue(filteredSalesData), [filteredSalesData]);
+  const totalVisits = filteredDvrData.length; // Use filtered DVRs
   const salesPerVisit = totalVisits > 0 ? totalSalesValue / totalVisits : 0;
 
   const mom = React.useMemo(() => {
@@ -227,12 +262,14 @@ export default function SalesDVRReportPage() {
   }, [sales, dvrs]);
 
   /* =========================
-     Error UI (match DVR–PJP page look)
+     Error UI
   ========================= */
   if (error) {
     return (
       <div className="p-8 space-y-4">
-        <h1 className="text-3xl font-bold">Sales vs DVR</h1>
+        <h1 className="text-3xl font-bold flex items-center gap-3">
+          <IconListDetails /> Sales vs DVR Analytics Report
+        </h1>
         <Card className="border-red-500 bg-red-50">
           <CardContent className="pt-6 text-red-700 font-medium">
             <p>Error: {error}</p>
@@ -247,111 +284,26 @@ export default function SalesDVRReportPage() {
   }
 
   /* =========================
-     Loading UI
-  ========================= */
-  if (loading) {
-    return (
-      <div className="p-8 space-y-4">
-        <Card className="animate-pulse">
-          <CardHeader>
-            <CardTitle className="h-6 bg-gray-200 w-1/4 rounded" />
-            <CardDescription className="h-4 bg-gray-200 w-1/2 rounded" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="h-10 bg-gray-100 rounded" />
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => <div key={i} className="h-8 bg-gray-100 rounded" />)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  /* =========================
      Main UI
   ========================= */
   return (
-    <div className="space-y-6 p-4 md:p-8">
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="shadow-md">
-          <CardHeader><CardTitle>Total Sales (Selected)</CardTitle></CardHeader>
-          <CardContent className="text-3xl font-bold text-primary">
-            {formatCurrency(totalSalesValue)}
-          </CardContent>
-        </Card>
+    <div className="space-y-8 p-4 md:p-8">
+      <h1 className="text-3xl font-bold flex items-center gap-3">
+        <IconListDetails /> Sales vs DVR Analytics Report
+      </h1>
 
-        <Card className="shadow-md">
-          <CardHeader><CardTitle>Total Visits (Selected)</CardTitle></CardHeader>
-          <CardContent className="text-3xl font-bold">{totalVisits}</CardContent>
-        </Card>
-
-        <Card className="shadow-md">
-          <CardHeader><CardTitle>Sales per Visit</CardTitle></CardHeader>
-          <CardContent className="text-3xl font-bold text-green-600">
-            {formatCurrency(salesPerVisit)}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* MoM */}
-      {mom && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle>MoM: Sales Value</CardTitle>
-              <IconTrendingUp className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg">
-                This Month: <span className="font-semibold">{formatCurrency(mom.sales.thisMonthValue)}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Last Month: {formatCurrency(mom.sales.lastMonthValue)}
-              </div>
-              <div className={`mt-2 font-semibold ${mom.sales.changePercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {mom.sales.changePercentage.toFixed(2)}%
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle>MoM: DVR Count</CardTitle>
-              <IconTrendingUp className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg">
-                This Month: <span className="font-semibold">{mom.dvrs.thisMonthValue}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Last Month: {mom.dvrs.lastMonthValue}
-              </div>
-              <div className={`mt-2 font-semibold ${mom.dvrs.changePercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {mom.dvrs.changePercentage.toFixed(2)}%
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Header + Controls */}
+      {/* --- Filters --- */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-bold flex items-center gap-3 text-primary">
-            <IconListDetails className="h-7 w-7" />
-            Raw Sales Order DVR Report
-          </CardTitle>
+          <CardTitle>Filter Data</CardTitle>
           <CardDescription>
-            Detailed breakdown of all sales orders (DVR). Client-side filters + analytics.
+            Select filters to apply to the KPIs and transactional tables below.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 border rounded-lg bg-secondary/10">
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Select value={timePeriod} onValueChange={setTimePeriod}>
-              <SelectTrigger className="w-full md:w-40 bg-white">
+              <SelectTrigger className="w-full bg-white">
                 <SelectValue placeholder="Time Period" />
               </SelectTrigger>
               <SelectContent>
@@ -363,7 +315,7 @@ export default function SalesDVRReportPage() {
               </SelectContent>
             </Select>
 
-            <div className="relative grow">
+            <div className="relative sm:col-span-1 lg:col-span-3">
               <Input
                 placeholder="Search all fields..."
                 value={searchTerm}
@@ -372,69 +324,198 @@ export default function SalesDVRReportPage() {
               />
               <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MultiSelect
               options={uniqueOptions.salesmen}
               selectedValues={salesmanFilter}
               onValueChange={setSalesmanFilter}
               placeholder="Filter Salesman"
-              className="w-full md:w-[200px]"
+              className="w-full"
             />
             <MultiSelect
               options={uniqueOptions.regions}
               selectedValues={regionFilter}
               onValueChange={setRegionFilter}
               placeholder="Filter Region"
-              className="w-full md:w-40"
+              className="w-full"
             />
             <MultiSelect
               options={uniqueOptions.areas}
               selectedValues={areaFilter}
               onValueChange={setAreaFilter}
               placeholder="Filter Area"
-              className="w-full md:w-40"
+              className="w-full"
             />
             <MultiSelect
               options={uniqueOptions.dealerTypes}
               selectedValues={dealerTypeFilter}
               onValueChange={setDealerTypeFilter}
               placeholder="Filter Dealer Type"
-              className="w-full md:w-[180px]"
+              className="w-full"
             />
-
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setSalesmanFilter([]); setRegionFilter([]); setAreaFilter([]);
-                setDealerTypeFilter([]); setSearchTerm(''); setTimePeriod('30');
-              }}
-            >
-              Clear All
-            </Button>
           </div>
 
-          <Separator className="mb-6" />
-
-          {/* Table */}
-          <div className="text-sm font-medium mb-4 text-gray-600">
-            Showing {filteredData.length} of {(salesInWindow ?? []).length} records (window), from {(sales ?? []).length} total.
-          </div>
-
-          {filteredData.length > 0 ? (
-            <DataTableReusable
-              columns={salesColumns}
-              data={filteredData}
-              enableRowDragging={false}
-              onRowOrderChange={() => {}}
-            />
-          ) : (
-            <div className="text-center text-gray-500 py-12 border border-dashed rounded-lg">
-              <p className="font-medium">No sales records match your current filters or time period.</p>
-              <p className="text-sm mt-1">Try adjusting the filters or selecting “All Time”.</p>
-            </div>
-          )}
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setSalesmanFilter([]); setRegionFilter([]); setAreaFilter([]);
+              setDealerTypeFilter([]); setSearchTerm(''); setTimePeriod('30');
+            }}
+          >
+            Clear All Filters
+          </Button>
         </CardContent>
       </Card>
+
+      {loading && <div className="text-center py-16 text-white font-semibold">Loading Sales vs DVR data...</div>}
+
+      {!loading && sales && dvrs && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-semibold border-b pb-2">Key Performance Indicators</h2>
+          
+          {/* --- KPIs --- */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-medium">Total Sales (Filtered)</CardTitle>
+                <IconCurrencyRupee className="h-6 w-6 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-extrabold text-primary">
+                  {formatCurrency(totalSalesValue)}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  From {filteredSalesData.length} sales orders.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-medium">Total Visits (Filtered)</CardTitle>
+                <BarChart className="h-6 w-6 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-extrabold">{totalVisits}</div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  From {filteredDvrData.length} verified visits.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-medium">Sales per Visit</CardTitle>
+                <Gauge className="h-6 w-6 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-extrabold text-green-600">
+                  {formatCurrency(salesPerVisit)}
+                </div>
+                 <p className="text-sm text-muted-foreground mt-1">
+                  (Total Sales / Total Visits)
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* --- MoM Cards --- */}
+          {mom && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg font-medium">MoM: Sales Value</CardTitle>
+                  <IconTrendingUp className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{formatCurrency(mom.sales.thisMonthValue)}</div>
+                  <div className={`mt-1 font-semibold ${mom.sales.changePercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {mom.sales.changePercentage.toFixed(2)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    vs. Last Month ({formatCurrency(mom.sales.lastMonthValue)})
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg font-medium">MoM: DVR Count</CardTitle>
+                  <IconTrendingUp className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{mom.dvrs.thisMonthValue}</div>
+                  <div className={`mt-1 font-semibold ${mom.dvrs.changePercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {mom.dvrs.changePercentage.toFixed(2)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    vs. Last Month ({mom.dvrs.lastMonthValue})
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <Separator className="my-8" />
+
+          {/* --- Tables --- */}
+          <h2 className="text-2xl font-semibold border-b pb-2 pt-4">
+            Transactional Data (Last {timePeriod === 'all' ? 'All Time' : `${timePeriod} Days`})
+          </h2>
+
+          <div className="space-y-8">
+            {/* --- Sales Table --- */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Raw Sales Order Report</CardTitle>
+                <CardDescription>
+                  Showing {filteredSalesData.length} of {salesInWindow.length} records (window), from {sales.length} total.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {filteredSalesData.length > 0 ? (
+                  <DataTableReusable
+                    columns={salesColumns}
+                    data={filteredSalesData}
+                    enableRowDragging={false}
+                    onRowOrderChange={() => {}}
+                  />
+                ) : (
+                  <div className="text-center text-gray-500 py-12 border border-dashed rounded-lg">
+                    <p className="font-medium">No sales records match your current filters.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* --- DVR Table --- */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Daily Visit Reports (DVRs)</CardTitle>
+                <CardDescription>
+                  Showing {filteredDvrData.length} of {dvrsInWindow.length} records (window), from {dvrs.length} total.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {filteredDvrData.length > 0 ? (
+                  <DataTableReusable
+                    columns={dvrColumns}
+                    data={filteredDvrData}
+                    enableRowDragging={false}
+                    onRowOrderChange={() => {}}
+                  />
+                ) : (
+                  <div className="text-center text-gray-500 py-12 border border-dashed rounded-lg">
+                    <p className="font-medium">No DVR records match your current filters.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
