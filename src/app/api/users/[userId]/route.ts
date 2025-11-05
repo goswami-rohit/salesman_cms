@@ -16,7 +16,7 @@ const allowedAdminRoles = [
   'area-sales-manager',
   'senior-manager',
   'manager',
-  'assistant-manager',
+  'assistant-manager'
 ];
 
 const updateUserSchema = z.object({

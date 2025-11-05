@@ -19,7 +19,7 @@ const allowedAdminRoles = [
     'area-sales-manager',
     'senior-manager',
     'manager',
-    'assistant-manager',
+    'assistant-manager'
 ];
 
 // ---------- Email setup ----------
