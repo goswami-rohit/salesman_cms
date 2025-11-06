@@ -114,7 +114,7 @@ model Dealer {
   whatsappNo                     String?   @map("whatsapp_no") @db.VarChar(20)
   emailId                        String?   @map("email_id") @db.VarChar(255)
   businessType                   String?   @map("business_type") @db.VarChar(100)
-  gstinNo                        String?   @map("gstin_no") @db.VarChar(20) // GSTIN no. (string)
+  gstinNo                        String?   @unique @map("gstin_no") @db.VarChar(20) // GSTIN no. (string)
   panNo                          String?   @map("pan_no") @db.VarChar(20) // PAN no. (string)
   tradeLicNo                     String?   @map("trade_lic_no") @db.VarChar(150) // Trade Lic (string)
   aadharNo                       String?   @map("aadhar_no") @db.VarChar(20) // Aadhar No (string)
@@ -373,12 +373,19 @@ model PermanentJourneyPlan {
   verificationStatus      String?  @map("verification_status") @db.VarChar(50)
   additionalVisitRemarks  String?  @map("additional_visit_remarks") @db.VarChar(500)
 
+  bulkOpId                String?  @map("bulk_op_id")        @db.VarChar(50)
+  idempotencyKey          String?  @map("idempotency_key")   @db.VarChar(120)
+
   createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt               DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([userId], map: "idx_permanent_journey_plans_user_id")
   @@index([createdById], map: "idx_permanent_journey_plans_created_by_id")
   @@index([dealerId], map: "idx_pjp_dealer_id")
+  @@index([bulkOpId], map: "idx_pjp_bulk_op_id")
+  @@unique([userId, dealerId, planDate], map: "uniq_pjp_user_dealer_plan_date")
+  @@unique([idempotencyKey], map: "uniq_pjp_idempotency_key_not_null")
+  
   @@map("permanent_journey_plans")
 }
 
@@ -656,4 +663,14 @@ model DealerBrandMapping {
 
   @@unique([dealerId, brandId])
   @@map("dealer_brand_mapping")
+}
+
+// Tally Raw Data
+model tally_raw {
+  id             String   @id @default(uuid())
+  collectionName String   @map("collection_name")
+  rawData        Json     @map("raw_data")
+  syncedAt       DateTime @default(now()) @map("synced_at")
+
+  @@map("tally_raw")
 }
