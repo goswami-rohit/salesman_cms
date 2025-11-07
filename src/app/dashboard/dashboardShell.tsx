@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { WorkOSRole } from '@/lib/permissions';
 
-interface Company {
+interface Company { 
   id: number;
   companyName: string;
   adminUserId: string;

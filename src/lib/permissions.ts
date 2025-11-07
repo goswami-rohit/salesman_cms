@@ -384,7 +384,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     dashboard: true,
     teamOverview: {
       teamTabContent: false,
-      salesmanLiveLocation: true,
+      salesmanLiveLocation: false,
     },
     users: false,
     assignTasks: false,
@@ -431,7 +431,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       addAndListDealers: false,
       listDealers: true,
       dealerBrandMapping: true,
-      verifyDealers: true,
+      verifyDealers: false,
     },
     reports: {
       dailyVisitReports: true,
@@ -474,7 +474,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     },
     reports: {
       dailyVisitReports: true,
-      technicalVisitReports: true,
+      technicalVisitReports: false,
       competitionReports: true,
       salesOrders: false,
       dvrVpjp: false,

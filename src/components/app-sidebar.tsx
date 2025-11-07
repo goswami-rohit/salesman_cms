@@ -15,11 +15,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-//import { hasPermission, WorkOSRole } from '@/lib/permissions';
-
-// These are placeholders to allow the component to function in a single-file environment.
-type WorkOSRole = string;
-const hasPermission = (userRole: WorkOSRole, permission: string): boolean => { return true; };
+import { hasPermission, WorkOSRole, PermPath } from '@/lib/permissions';
 
 interface Props {
   userRole: WorkOSRole;
@@ -35,7 +31,7 @@ interface CompanyInfo {
 interface MenuItem {
   title: string;
   url?: string;
-  permission: string;
+  permission: PermPath | 'logout' | 'account';
   items?: MenuItem[];
 }
 
@@ -46,22 +42,16 @@ const ITEM_PERMISSIONS = {
   "Custom Report Generator": 'customReportGenerator' as const,
 
   "Business Dashboard": 'dashboard' as const,
-  "Actionables": 'actionables' as const,
-  "Team Overview": 'teamOverview' as const,
+  "Team Overview": 'teamOverview.teamTabContent' as const,
   "Users": 'users' as const,
   "Assign Tasks": 'assignTasks' as const,
-  "Dealer Management": 'dealerManagement' as const,
-
-  "Reports": 'reports' as const,
+  "Dealer Management": 'dealerManagement.listDealers' as const,
+  "Reports": 'reports.dailyVisitReports' as const,
   "Salesman Attendance": 'salesmanAttendance' as const,
   "Salesman Leaves": 'salesmanLeaves' as const,
   "Salesman Geotracking": 'salesmanGeotracking' as const,
-  "Daily Visit Reports": 'dailyVisitReports' as const,
-  "Technical Visit Reports": 'technicalVisitReports' as const,
-  "Competition Reports": 'competitionReports' as const,
-  "Sales Order Reports": 'salesAndCollectionReports' as const,
-  "Permanent Journey Plan": 'permanentJourneyPlan' as const,
-  "Scores And Ratings": 'scoresAndRatings' as const,
+  "Permanent Journey Plan": 'permanentJourneyPlan.pjpList' as const,
+  "Scores And Ratings": 'scoresAndRatings.salesmanRatings' as const,
 
   "Account": 'account' as const,
   "Raise A Querry": 'raiseAQuery' as const,
@@ -187,23 +177,38 @@ export function AppSidebar({ userRole }: Props) {
   }, []);
 
   // Recursive function to filter menu items based on user permissions
-  const filterMenuItems = (items: any[], role: WorkOSRole): any[] => {
+  const filterMenuItems = (items: MenuItem[], role: WorkOSRole): MenuItem[] => {
     return items.reduce((acc, item) => {
-      if ('url' in item) {
-        if (hasPermission(role, item.permission)) {
-          acc.push(item);
-        }
-      } else if ('items' in item) {
+      // Special cases for links that are always visible
+      if (item.permission === 'logout' || item.permission === 'account') {
+        acc.push(item);
+        return acc;
+      }
+
+      // Check for sub-items first
+      if (item.items) {
         const filteredSubItems = filterMenuItems(item.items, role);
         if (filteredSubItems.length > 0) {
+          // If the group has visible children, add the group
           acc.push({ ...item, items: filteredSubItems });
+        } else if (item.url && hasPermission(role, item.permission as PermPath)) {
+          // If no visible children, check if the main link itself is permitted
+          // (e.g., for "Business Dashboard" which links to /dashboard)
+          acc.push({ ...item, items: [] }); // Add without children
+        }
+      }
+      // Check for single items (links with no children)
+      else if (item.url) {
+        if (hasPermission(role, item.permission as PermPath)) {
+          acc.push(item);
         }
       }
       return acc;
-    }, [] as any[]);
+    }, [] as MenuItem[]);
   };
 
   const accessibleMenuItems = useMemo(() => {
+    // Pass the userRole to the filter function
     return filterMenuItems(menuItems, userRole);
   }, [userRole]);
 
@@ -228,7 +233,7 @@ export function AppSidebar({ userRole }: Props) {
         <SidebarGroup>
           <SidebarMenu>
             {accessibleMenuItems.map((item: MenuItem) => {
-              if (item.items) {
+              if (item.items && item.items.length > 0) { // Only render as sub-menu if items exist
                 return (
                   <SidebarMenuItem key={item.title}>
                     {item.url ? (
@@ -297,7 +302,7 @@ export function AppSidebar({ userRole }: Props) {
                     </SidebarMenuSub>
                   </SidebarMenuItem>
                 );
-              } else {
+              } else if (item.url) { // Render top-level items that have a URL but no children
                 // Top-level without children (e.g., standalone link)
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -309,6 +314,7 @@ export function AppSidebar({ userRole }: Props) {
                   </SidebarMenuItem>
                 );
               }
+              return null; // Don't render groups with no URL and no children
             })}
           </SidebarMenu>
         </SidebarGroup>

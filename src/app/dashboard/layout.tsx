@@ -23,9 +23,12 @@ const allowedNonAdminRoles = [
   'junior-executive',
 ];
 // Pages that non-admin roles are allowed to access
-const nonAdminAllowedPages = [
-  "/dashboard/users",
-  "/dashboard/teamOverview",
+const nonAdminAllowedPages = [ 
+  '/dashboard/reports',
+  '/dashboard/dealerManagement',
+  '/dashboard/permanentJourneyPlan',
+  '/dashboard/salesmanAttendance',
+  '/dashboard/scoresAndRatings',
 ];
 
 async function refreshUserJWTIfNeeded(user: any, claims: any) {
