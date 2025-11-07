@@ -160,240 +160,237 @@ This folder is a key architectural pattern. It doesn't contain generic CRUD logi
 
 ### `src/app/dashboard/` (The Protected Frontend)
 
-This folder contains all the **frontend UI pages and components** that are only accessible after logging in. It leverages the "Server Page, Client Component" pattern, where the `page.tsx` file is a Server Component that handles initial auth and data loading, and it renders an interactive Client Component (e.g., `userManagement.tsx`) which contains all the state, event handlers, and client-side data fetching.
+This folder contains all the frontend UI pages and components that are only accessible after logging in. It leverages the "Server Page, Client Component" pattern, where the `page.tsx` file is a Server Component that handles initial auth and data loading, and it renders an interactive Client Component (e.g., `userManagement.tsx`) which contains all the state, event handlers, and client-side data fetching.
 
-* **`layout.tsx`:**
-    * **Purpose:** The root layout for the *entire* protected dashboard. This is the main security gate.
-    * **Logic:** This is a **Server Component**.
-    * It calls `getSSRSession()` on the server to check for a valid session cookie.
-    * **Security:** If `!session.isAuthenticated`, it immediately calls `redirect('/')`, preventing any unauthenticated access to the dashboard. This is the primary server-side gatekeeper.
-    * If authenticated, it renders the `DashboardShell` client component and passes the server-fetched user/company data as initial props.
+* **`layout.tsx`**:
+    * **Purpose**: The root layout for the entire protected dashboard. This is the main security gate.
+    * **Logic**: This is a Server Component.
+    * It calls `withAuth()` and `getTokenClaims()` on the server to get the authenticated user and their claims.
+    * It fetches the user's details and role from the local `prisma` database.
+    * **Security**: If no user is found, it redirects to `/login`.
+    * **RBAC**: It checks the user's `finalRole` against `allowedNonAdminRoles`. If the user is a non-admin, it checks if they are trying to access a page *not* in the `nonAdminAllowedPages` list. If they are, it redirects them to `/dashboard/welcome?error=unauthorized`.
+    * If authenticated and authorized, it renders the `DashboardShell` client component and passes the server-fetched user data as initial props.
 
-* **`dashboardShell.tsx`:**
-    * **Purpose:** The interactive client-side wrapper for the entire dashboard. This is what provides the persistent sidebar and header.
-    * **Logic:** This is a **Client Component** (`'use client'`).
-    * **Client-Side Data:** It uses `useSWR` to make a client-side call to `/api/me`. This ensures the user's data (especially their role) is always fresh, even if changed in another tab (stale-while-revalidate).
-    * **State:** It manages the mobile sidebar state (`isSidebarOpen`) using `useState`.
-    * **Rendering:** It renders the `AppSidebar` and `SiteHeader` components, passing them the `user` object from `useSWR`. This is how the sidebar gets the user's `role` for its RBAC checks.
-    * It renders the `children` prop (the actual page content, e.g., `users/page.tsx`).
+* **`dashboardShell.tsx`**:
+    * **Purpose**: The interactive client-side wrapper for the entire dashboard. This provides the persistent sidebar and header.
+    * **Logic**: This is a Client Component (`'use client'`).
+    * **Props**: It receives the user's `workosRole` as a prop from `layout.tsx`.
+    * **State**: It manages the sidebar state via `SidebarProvider`.
+    * **Rendering**: It renders the `AppSidebar` (passing it the `userRole` for its RBAC checks) and `SiteHeader` components. It renders the `children` prop (the actual page content, e.g., `dashboard/page.tsx` or `dashboard/users/page.tsx`).
 
-* **`page.tsx` (`/dashboard`):**
-    * **Purpose:** The main dashboard landing page with graphs and stats.
-    * **Logic:** This is a **Server Component**. It performs all initial data fetching on the server for speed.
-    * It calls `getTokenClaims` and makes direct `prisma` calls to fetch aggregate data (e.g., `dealerCount`, `dvrCount`, `tvrCount`).
-    * It passes this pre-fetched data (e.g., `dvrData`, `tvrData`) as props to the `DashboardGraphs` client component.
+* **`page.tsx` (/dashboard)**:
+    * **Purpose**: The main dashboard landing page with graphs and stats.
+    * **Logic**: This is a Server Component. It simply renders the `<DashboardGraphs />` client component within a `<Suspense>` boundary. All data fetching is deferred to the client component.
 
-* **`dashboardGraphs.tsx`:**
-    * **Purpose:** The interactive client component that displays the graphs and stats on the main dashboard page.
-    * **Logic:** This is a **Client Component** (`'use client'`).
-    * **Props:** It receives all its data (e.g., `dvrData`, `tvrData`) as props from `page.tsx`. It contains no data-fetching logic itself.
-    * **State:** It uses `useState` to manage the date range filter for the graphs.
-    * **Calculation:** It contains client-side logic (e.g., `calculateTotal`, `calculatePercentageChange`) to process the prop data based on the selected date range.
-    * **Rendering:** It renders the `data-comparison-calculation.tsx` and `chart-area-reusable.tsx` components, passing them the newly calculated stats.
+* **`dashboardGraphs.tsx`**:
+    * **Purpose**: The interactive client component that displays the graphs and stats on the main dashboard page.
+    * **Logic**: This is a Client Component (`'use client'`).
+    * **Data Fetching**: It contains its own `fetchData` function, which is called in a `useEffect` hook. This function makes parallel, client-side `fetch` calls to multiple API endpoints (`/api/dashboardPagesAPI/slm-geotracking`, `/api/dashboardPagesAPI/reports/daily-visit-reports`, `/api/dashboardPagesAPI/reports/sales-orders`, `/api/users`) to get all the raw data for the dashboard.
+    * **State**: It uses `useState` to manage all raw data, loading/error states, and filters (e.g., `selectedRole`, `selectedSalesman`).
+    * **Calculation**: It uses `useMemo` to filter and aggregate the raw data based on the selected filters, preparing it for the graphs (e.g., `geoGraphData`, `collectionGraphData`).
+    * **Rendering**: It renders `ChartAreaInteractive` components for the graphs and `DataTableReusable` for the tables, passing them the client-side filtered and aggregated data.
 
-* **`data-format.ts`:**
-    * **Purpose:** A simple utility file defining TypeScript interfaces for the data shapes used in the dashboard, like `DataPoint` and `ComparisonData`.
+* **`data-format.ts`**:
+    * **Purpose**: A utility file exporting Zod schemas and inferred TypeScript types for raw API data (e.g., `RawGeoTrackingRecord`, `RawDailyVisitReportRecord`) and aggregated graph data (e.g., `DailyVisitsData`, `GeoTrackingData`).
 
----
+* **`src/app/dashboard/assignTasks/`**
+    * **`page.tsx`**:
+        * **Purpose**: The "Assign Tasks" page.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **State**: Manages tasks, salesmen, dealers, loading, and form state (e.g., `selectedSalesmen`, `taskDate`, `visitType`) for creating a new task.
+        * **Data Fetching**: In `useEffect`, it makes a `fetch` call to `/api/dashboardPagesAPI/assign-tasks` to get data for the dropdowns (salesmen, dealers) and the list of existing tasks. It also uses the `useDealerLocations` hook to get areas and regions.
+        * **Mutation**: The `handleSubmit` function validates the form state against `assignTaskFormSchema` and makes a `POST` request to `/api/dashboardPagesAPI/assign-tasks` with the new task data. On success, it shows a toast and re-fetches the tasks.
+        * **Rendering**: Renders a `<Dialog>` for the creation form and `DataTableReusable` to display the list of tasks.
 
-#### `src/app/dashboard/assignTasks/`
+* **`src/app/dashboard/dealerManagement/`**
+    * **`page.tsx`**:
+        * **Purpose**: The server-side entry point for the "Dealer Management" section.
+        * **Logic**: This is a Server Component.
+        * **RBAC**: It fetches the user's role on the server by calling `getCurrentUserRole()`.
+        * It uses `hasPermission()` to check which tabs the user is allowed to see (e.g., `dealerManagement.listDealers`, `dealerManagement.verifyDealers`, `dealerManagement.dealerBrandMapping`).
+        * **Data Passing**: It passes these boolean permissions as props to the `<DealerManagementTabs />` client component.
+        * If the user has no permissions for this section, it renders an "Access Denied" message.
+    * **`tabsLoader.tsx`**:
+        * **Purpose**: The client-side container for the "Dealer Management" tabs.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **Props**: Receives permission booleans (e.g., `canSeeListDealers`, `canSeeVerifyDealers`) from `page.tsx`.
+        * **Rendering**: It renders the shadcn `<Tabs>` component.
+        * It conditionally renders the `<TabsTrigger>` and `<TabsContent>` for each sub-page (e.g., `<ListDealersPage />`, `<VerifyDealersPage />`) based on the props it received.
+    * **`listDealers.tsx`**:
+        * **Purpose**: The client component for the "List Dealers" tab.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **State**: Manages data (the list of dealers), loading, and filter states (region, area, type) using `useState`.
+        * **Data Fetching**: It has a `fetchDealers` function that fetches from `/api/dashboardPagesAPI/dealerManagement?status=VERIFIED`. This is called inside a `useEffect` hook. It also fetches filter options from `useDealerLocations` and `/api/dashboardPagesAPI/dealerManagement/dealer-types`.
+        * **Filtering**: The `filteredDealers` are calculated client-side using `useMemo` based on the filter states.
+        * **Mutation**: Includes a "Delete" button in the table, which opens a dialog and sends a `DELETE` request.
+        * **Rendering**: Renders `DataTableReusable` with the `filteredDealers`.
+    * **`verifyDealers.tsx`**:
+        * **Purpose**: The client component for the "Verify Dealers" tab.
+        * **Logic**: A Client Component.
+        * **Data Fetching**: Its `fetchPendingDealers` function hardcodes a query parameter `?status=PENDING` to ensure it only ever fetches unverified dealers.
+        * **Mutation**: Its columns definition for the table includes "Verify" and "Reject" buttons. The `handleVerificationAction` function makes a `PUT` request to `/api/dashboardPagesAPI/dealerManagement/dealer-verify?id=${dealerId}`, sending the new status. It re-fetches data on success.
+    * **`dealerBrandMapping.tsx`**:
+        * **Purpose**: The client component for the "Brand Mapping" tab.
+        * **Logic**: A Client Component.
+        * **Data Fetching**: Fetches from `/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping`.
+        * **Dynamic Columns**: It dynamically generates table columns based on the brand names returned from the API.
 
-* **`page.tsx`:**
-    * **Purpose:** The "Assign Tasks" page.
-    * **Logic:** This is a **Client Component** (`'use client'`).
-    * **State:** Manages `tasks`, `users`, `dealers`, `loading`, and form state (`newTask`) for creating a new task.
-    * **Data Fetching:** In `useEffect`, it makes multiple `fetch` calls to get data for the dropdowns (e.g., `/api/users`, `/api/dashboardPagesAPI/dealerManagement`) and to get the list of existing tasks (`/api/dashboardPagesAPI/assign-tasks`).
-    * **Mutation:** The `handleCreateTask` function makes a `POST` request to `/api/dashboardPagesAPI/assign-tasks` with the `newTask` state. On success, it shows a toast and re-fetches the tasks.
-    * **Rendering:** Renders a `<Dialog>` for the creation form and `DataTableReusable` to display the list of tasks.
+* **`src/app/dashboard/permanentJourneyPlan/`**
+    * **`page.tsx`**:
+        * **Purpose**: The server-side entry point for the PJP section.
+        * **Logic**: This is a Server Component that performs RBAC checks.
+        * It fetches the user's role and uses `hasPermission()` to check for `permanentJourneyPlan.pjpList` and `permanentJourneyPlan.pjpVerify`.
+        * It passes these boolean permissions as props to the `<PermanentJourneyPlanTabs />` client component.
+        * If the user has no permissions, it renders an "Access Denied" message.
+    * **`tabsLoader.tsx`**:
+        * **Purpose**: The client-side container for the PJP tabs.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **Props**: Receives `canSeePjpList` and `canSeePjpVerify` as boolean props from `page.tsx`.
+        * **Rendering**: It renders the `<Tabs>` component and conditionally renders the "PJP List" and "PJP Verify" triggers and content based on the received props.
+    * **`pjpList.tsx`**:
+        * **Purpose**: Client component to list and filter PJPs.
+        * **Logic**: A Client Component.
+        * **State**: Manages `pjps`, `loading`, `filters` (search, role, status).
+        * **Data Fetching**: Fetches from `/api/dashboardPagesAPI/permanent-journey-plan?verificationStatus=VERIFIED`.
+        * **Filtering**: Filters are applied client-side using `useMemo`.
+    * **`pjpVerify.tsx`**:
+        * **Purpose**: Client component for managers to approve or reject PJP submissions.
+        * **Logic**: A Client Component.
+        * **Data Fetching**: Fetches only pending PJPs from `/api/dashboardPagesAPI/permanent-journey-plan/pjp-verification`. It also fetches dealers and locations for the "Edit & Apply" modal.
+        * **Mutation**: The columns definition includes "Verify", "Reject", and "Edit & Apply" buttons.
+            * `handleVerificationAction` makes a `PUT` request to `/api/dashboardPagesAPI/permanent-journey-plan/pjp-verification/${pjpId}` with the new status.
+            * `handlePatchPJP` (for "Edit & Apply") makes a `PATCH` request to the same endpoint with the modified PJP data.
 
----
+* **`src/app/dashboard/reports/`**
+    * **`page.tsx`**:
+        * **Purpose**: The server-side entry point for the Reports section.
+        * **Logic**: A Server Component that performs heavy RBAC checks.
+        * It fetches the user's role and uses `hasPermission()` for every report (e.g., `reports.dailyVisitReports`, `reports.salesOrders`, `reports.dvrVpjp`).
+        * It passes all these permission booleans as props to the `<ReportsTabs />` client component.
+        * If the user can see no reports, it renders an "Access Denied" message.
+    * **`tabsLoader.tsx`**:
+        * **Purpose**: The client-side container for all report tabs.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **Props**: Receives multiple permission booleans (e.g., `canSeeDVR`, `canSeeTVR`, `canSeeDvrVpjp`) from `page.tsx`.
+        * **Rendering**: It renders the `<Tabs>` component. It dynamically renders only the `<TabsTrigger>` and `<TabsContent>` for reports the user has permission to see, based on the props.
+    * **`dailyVisitReports.tsx` / `salesOrders.tsx` / `technicalVisitReports.tsx` / `competitionReports.tsx`**:
+        * **Purpose**: These are the client components for each respective report tab.
+        * **Logic**: They all follow the exact same pattern:
+        * Client Component (`'use client'`).
+        * **State**: Manage `data: any[]`, `loading`, and filter states (search, role, area, region).
+        * **Data Fetching**: `useEffect` calls `fetchData` for the report itself, plus `fetchLocations` and `fetchRoles` for the filter dropdowns.
+        * **Filtering**: Filters are applied client-side using `useMemo` to create the `filteredReports` array.
+        * **Rendering**: They render `DataTableReusable` and pass it the paginated, filtered data.
+    * **`dvrVpjp.tsx` & `salesVdvr.tsx`**:
+        * **Purpose**: These are analytical reports that show ratios.
+        * **Logic**: They are also client components that use a custom hook (`useDvrPjpData`) to fetch their data. They have extensive client-side filtering logic (`useMemo`) that re-calculates KPIs (`totalSalesValue`, `salesPerVisit`) and filtered table data (`filteredSalesData`, `filteredDvrData`) when filters change.
 
-#### `src/app/dashboard/dealerManagement/`
+* **`src/app/dashboard/scoresAndRatings/`**
+    * **`page.tsx`**:
+        * **Purpose**: The server-side entry point for "Scores and Ratings".
+        * **Logic**: A Server Component that fetches the user's role.
+        * It uses `hasPermission()` to check for `scoresAndRatings.dealerScores` and `scoresAndRatings.salesmanRatings`.
+        * It passes these booleans as props to the `<ScoresAndRatingsTabs />` client component.
+    * **`tabsLoader.tsx`**:
+        * **Purpose**: The client-side container for the "Scores and Ratings" tabs.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **Props**: Receives `canSeeSalesmanRatings` and `canSeeDealerScores` as boolean props.
+        * **Rendering**: It renders the `<Tabs>` component and conditionally renders the triggers and content for "Salesman Ratings" and "Dealer Scores" based on the props.
+    * **`salesmanRatings.tsx`**:
+        * **Purpose**: Client component to view salesman ratings.
+        * **Logic**: A Client Component.
+        * **Data Fetching**: Fetches from `/api/dashboardPagesAPI/scores-ratings?type=salesman`. Also fetches filter options from `/api/users/user-locations` and `/api/users/user-roles`.
+        * **Filtering**: Applies filters for search, role, area, and region client-side via `useMemo`.
+    * **`dealerScores.tsx`**:
+        * **Purpose**: A client component to display dealer scores.
+        * **Logic**: A Client Component. Fetches from `/api/dashboardPagesAPI/scores-ratings?type=dealer`. Also fetches filter options for locations and types.
+        * **Filtering**: Applies filters for search, area, region, and type client-side via `useMemo`.
 
-* **`page.tsx`:**
-    * **Purpose:** The main container for the "Dealer Management" section.
-    * **Logic:** This is a **Server Component**.
-    * **RBAC:** This is the key. It fetches the user's `role` on the server. It then uses shadcn's `<Tabs>` component.
-    * It *conditionally renders* the `<TabsTrigger>` and `<TabsContent>` for each sub-page based on `hasPermission(user.role, '...')`.
-    * **Example:** A user without the `dealerManagement.verifyDealers` permission will not even see the "Verify Dealers" tab rendered in the HTML.
-    * It renders the client components for each tab (e.g., `<ListDealers />`, `<VerifyDealers />`).
+* **`src/app/dashboard/slmAttendance/`**
+    * **`page.tsx`**:
+        * **Purpose**: The "Salesman Attendance" report page.
+        * **Logic**: A Client Component (`'use client'`).
+        * **Pattern**: It follows the standard report pattern: `useState` for data, filters (dateRange, search, role, area, region).
+        * **Data Fetching**: `useEffect` calls `fetchAttendanceReports` (which fetches from `/api/dashboardPagesAPI/slm-attendance` with date range) and also `fetchLocations` and `fetchRoles` for filter dropdowns.
+        * **Filtering**: Filters are applied client-side using `useMemo`.
+        * **Rendering**: Renders `DataTableReusable` and a `<Dialog>` to view full report details.
 
-* **`listDealers.tsx`:**
-    * **Purpose:** The client component for the "List Dealers" tab.
-    * **Logic:** This is a **Client Component** (`'use client'`).
-    * **State:** Manages `data` (the list of dealers), `loading`, and filter states (`regionFilter`, `areaFilter`, `statusFilter`) using `useState`.
-    * **Data Fetching:** It has a `fetchData` function that builds a URL with query parameters from the filter state (e.g., `/api/dashboardPagesAPI/dealerManagement?regions=${regionFilter.join(',')}`). This is called inside a `useEffect` hook.
-    * **Filtering:** The `useEffect` hook has the filter states in its dependency array, so `fetchData` is automatically re-run whenever a filter changes.
-    * **Rendering:** Renders `DataTableReusable` with the `data`.
+* **`src/app/dashboard/slmGeotracking/`**
+    * **`page.tsx`**:
+        * **Purpose**: The "Salesman Journey" tracking page, displayed as a table report.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **State**: Manages `tracks`, `loading`, `error`, and filters (search, dateRange, role, area, region).
+        * **Data Fetching**: `useEffect` calls `fetchTracks` (which fetches from `/api/dashboardPagesAPI/slm-geotracking` with date range) and also `fetchLocations` and `fetchRoles` for filter dropdowns.
+        * **Filtering**: Filters are applied client-side using `useMemo`.
+        * **Rendering**: Renders `DataTableReusable` to display the tracking history as a table.
 
-* **`verifyDealers.tsx`:**
-    * **Purpose:** The client component for the "Verify Dealers" tab.
-    * **Logic:** A **Client Component**. It is almost identical to `listDealers.tsx`, but with two key differences:
-        1.  **Data Fetching:** Its `fetchData` function *hardcodes* a query parameter `&verificationStatus=PENDING` to ensure it only ever fetches unverified dealers.
-        2.  **Mutation:** Its `columns` definition for the table includes "Approve" and "Reject" buttons. The `handleVerify` function makes a `PUT` request to `/api/dashboardPagesAPI/dealerManagement/dealer-verify`, sending the `dealerId` and the new `status`. It re-fetches data on success.
+* **`src/app/dashboard/slmLeaves/`**
+    * **`page.tsx`**:
+        * **Purpose**: The "Salesman Leave" approval page.
+        * **Logic**: A Client Component (`'use client'`).
+        * **Data Fetching**: Fetches from `/api/dashboardPagesAPI/slm-leaves` with date range. Also fetches filter options from location and role endpoints.
+        * **Filtering**: Filters (search, date, role, area, region) are applied client-side using `useMemo`.
+        * **Mutation**: The `DataTableReusable` has "Accept" and "Reject" buttons for pending leaves.
+        * The `handleLeaveAction` function makes a `PATCH` request to `/api/dashboardPagesAPI/slm-leaves`, sending the `id`, new `status`, and `adminRemarks`. It updates the local state on success.
 
-* **`dealerBrandMapping.tsx`:**
-    * **Purpose:** The client component for the "Brand Mapping" tab.
-    * **Logic:** A **Client Component**. Manages state for `brands`, `dealers`, `mappings`, and a form for creating new mappings.
-    * **Data Fetching:** Fetches from `/api/dashboardPagesAPI/dealerManagement` (for dealers) and `/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping` (for mappings).
-    * **Mutation:** `handleCreateMapping` makes a `POST` request to `/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping` to create a new link.
+* **`src/app/dashboard/teamOverview/`**
+    * **`page.tsx`**:
+        * **Purpose**: The server-side entry point for the "Team Overview" section.
+        * **Logic**: A Server Component that performs RBAC checks.
+        * It fetches the user's role and uses `hasPermission()` to check for `teamOverview.teamTabContent` and `teamOverview.salesmanLiveLocation`.
+        * It passes these boolean permissions as props to the `<TeamOverviewTabs />` client component.
+        * If the user has no permissions, it renders an "Access Denied" message.
+    * **`tabsLoader.tsx`**:
+        * **Purpose**: The client-side container for the "Team Overview" tabs.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **Props**: Receives `canSeeTeamView` and `canSeeLiveLocation` as boolean props from `page.tsx`.
+        * **Rendering**: It renders the `<Tabs>` component and conditionally renders the "Team View" and "Salesman Live Location" triggers and content based on the received props.
+    * **`teamTabContent.tsx`**:
+        * **Purpose**: The client component for the main "Team" tab, showing hierarchy and allowing edits.
+        * **Logic**: A Client Component.
+        * **Data Fetching**: Fetches data from `/api/dashboardPagesAPI/team-overview/dataFetch` and the current user's role from `/api/me`.
+        * **Mutation (Edit Role)**: The "Edit Role" button opens a popover, checking `canAssignRole` from `roleHierarchy.ts` to determine which roles are assignable. `handleSaveRole` makes a `POST` request to `/api/dashboardPagesAPI/team-overview/editRole`.
+        * **Mutation (Edit Mapping)**: The "Edit Mapping" button opens a popover to set `managedBy` and `manages` fields, based on role hierarchy. `handleSaveMapping` makes a `POST` request to `/api/dashboardPagesAPI/team-overview/editMapping`.
+        * **Mutation (Edit Dealer Mapping)**: The "Edit Dealer Mapping" button opens a popover that fetches dealers (with filters) and assigned dealers. `handleSaveDealerMapping` makes a `POST` request to `/api/dashboardPagesAPI/team-overview/editDealerMapping`.
+    * **`salesmanLiveLocation.tsx`**:
+        * **Purpose**: The client component for the "Live Location" tab.
+        * **Logic**: A Client Component.
+        * **Data Fetching**: `useEffect` fetches from `/api/dashboardPagesAPI/team-overview/slmLiveLocation` on a 30-second interval to get the last known location of all users. It also uses `useUserLocations` to get filters.
+        * **Dynamic Import**: It uses `dynamic(() => import('react-leaflet'), { ssr: false })` to load the Leaflet map.
+        * **Rendering**: It renders the `<MapContainer>` and then maps over the filtered locations to render a `<Marker>` for each user's last known location.
 
----
+* **`src/app/dashboard/users/`**
+    * **`page.tsx`**:
+        * **Purpose**: The Server Component wrapper for the User Management page.
+        * **Logic**: A Server Component.
+        * **RBAC**: It fetches the user's claims and checks if their `userRole` is in the `allowedAdminRoles` list. If not, it redirects to `/dashboard` *before* rendering the client component.
+        * It fetches the `adminUser`'s data (needed for prop passing) on the server.
+        * It renders the main client component: `<UsersManagement adminUser={adminUser} />`.
+    * **`userManagement.tsx`**:
+        * **Purpose**: The main interactive client component for managing users.
+        * **Logic**: A Client Component (`'use client'`).
+        * **State**: Manages `users: User[]`, `loading`, `error`, `formData` (for the create/edit modal), and `editingUser: User | null`.
+        * **Data Fetching**: `useEffect` on mount calls `fetchUsers()`. `fetchUsers` is an async function that does `fetch('/api/users')`, gets the JSON, and calls `setUsers(data.users)`.
+        * **Mutations**:
+            * `handleCreateUser`: `POST`s the `formData` to `/api/users`.
+            * `handleUpdateUser`: `PUT`s the `formData` to `/api/users/${editingUser.id}`.
+            * `handleDeleteUser`: `DELETE`s from `/api/users/${userId}`.
+            * All mutation handlers call `fetchUsers()` on success to refresh the table.
+        * **Rendering**: It renders the `DataTableReusable` component, passing it the `users` state and a `columns` definition that includes the "Edit" and "Delete" buttons.
+    * **`bulkInvite.tsx`**:
+        * **Purpose**: A client component (rendered as a `<Dialog>`) for bulk-inviting users via file upload or text paste.
+        * **Logic**: A Client Component.
+        * **State**: Manages the pasted text (`bulkData`) or the selected file (`currentFile`).
+        * **File Parsing**: It uses a `parseBulkData` function to read the CSV/TSV data from the string, validate headers (email, firstName, lastName, phoneNumber, role, region, area), and validate role values.
+        * **Mutation**: The `handleBulkSubmit` function makes a `POST` request, sending the parsed user array to the `/api/users/bulk-invite` endpoint.
 
-#### `src/app/dashboard/permanentJourneyPlan/`
-
-* **`page.tsx`:**
-    * **Purpose:** A `<Tabs>` layout container for the PJP section.
-    * **Logic:** This is a **Server Component** that performs RBAC checks.
-    * It conditionally renders the "PJP List" tab and the "PJP Verify" tab based on `hasPermission(user.role, 'permanentJourneyPlan.pjpList')` and `hasPermission(user.role, 'permanentJourneyPlan.pjpVerify')`.
-
-* **`pjpList.tsx`:**
-    * **Purpose:** Client component to list, filter, and create PJPs.
-    * **Logic:** A **Client Component**.
-    * **State:** Manages `pjps`, `users`, `dealers`, `loading`, filters, and a `newPjp` object for the creation form.
-    * **Data Fetching:** Fetches from `/api/dashboardPagesAPI/permanent-journey-plan` with filters.
-    * **Mutation:** `handleCreatePjp` opens a `<Dialog>` and makes a `POST` request to `/api/dashboardPagesAPI/permanent-journey-plan` with the `newPjp` data.
-
-* **`pjpVerify.tsx`:**
-    * **Purpose:** Client component for managers to approve or reject PJP submissions.
-    * **Logic:** A **Client Component**.
-    * **Data Fetching:** Fetches *only* pending PJPs from `/api/dashboardPagesAPI/permanent-journey-plan/pjp-verification`.
-    * **Mutation:** The `columns` definition includes "Approve" and "Reject" buttons. The `handleVerification` function makes a `PUT` request to the dynamic API route `/api/dashboardPagesAPI/permanent-journey-plan/pjp-verification/${pjpId}` with the new `status` in the body.
-
----
-
-#### `src/app/dashboard/reports/`
-
-* **`page.tsx`:**
-    * **Purpose:** The main `<Tabs>` layout for all reports.
-    * **Logic:** A **Server Component** that performs heavy RBAC checks.
-    * It renders a `<TabsTrigger>` and `<TabsContent>` for each report *only if* the user has the specific permission for it (e.g., `hasPermission(user.role, 'reports.dailyVisitReports')`).
-
-* **`dailyVisitReports.tsx` / `salesOrders.tsx` / `technicalVisitReports.tsx` / `competitionReports.tsx`:**
-    * **Purpose:** These are the client components for each respective report tab.
-    * **Logic:** They all follow the *exact same pattern*:
-        1.  **Client Component** (`'use client'`).
-        2.  **State:** Manage `data: any[]`, `loading`, and filter states (`dateRange`, `regions`, `areas`).
-        3.  **Data Fetching:** `useEffect` calls `fetchData`.
-        4.  `fetchData` is an `async` function that builds a URL with query params from the filter state (e.g., `/api/dashboardPagesAPI/reports/sales-orders?startDate=...&regions=...`).
-        5.  `useEffect` has the filter states in its dependency array, so it re-fetches automatically when a filter changes.
-        6.  **Rendering:** They render `DataTableReusable` and pass it the `data`.
-
-* **`dvrVpjp.tsx` & `salesVdvr.tsx`:**
-    * **Purpose:** These are *analytical* reports that show ratios.
-    * **Logic:** They follow the same pattern as other reports, but they call their own unique API endpoints (e.g., `/api/dashboardPagesAPI/reports/dvr-v-pjp`) which return pre-calculated, transformed data from the server (via `reports-transformer.ts`).
-
----
-
-#### `src/app/dashboard/scoresAndRatings/`
-
-* **`page.tsx`:**
-    * **Purpose:** A `<Tabs>` layout for "Dealer Scores" and "Salesman Ratings".
-    * **Logic:** A **Server Component** that uses `hasPermission` to conditionally render the tabs.
-
-* **`salesmanRatings.tsx`:**
-    * **Purpose:** Client component to view and set ratings for salesmen.
-    * **Logic:** A **Client Component**.
-    * **Data Fetching:** Fetches from `/api/dashboardPagesAPI/scores-ratings`.
-    * **Mutation:** Renders a "Set Rating" button in the table. This opens a `<Dialog>` where an admin can set a 1-5 star rating.
-    * `handleRatingSubmit` makes a `POST` request to `/api/dashboardPagesAPI/scores-ratings` with the `userId` and new `rating`.
-* **`dealerScores.tsx`:**
-    * **Purpose:** (Inferred) A client component to display dealer scores.
-    * **Logic:** A **Client Component**. It likely fetches from an endpoint like `/api/dashboardPagesAPI/dealer-scores` and displays the read-only scores in a `DataTableReusable`.
-
----
-
-#### `src/app/dashboard/slmAttendance/`
-
-* **`page.tsx`:**
-    * **Purpose:** The "Salesman Attendance" report page.
-    * **Logic:** A **Client Component** (`'use client'`).
-    * **Pattern:** It follows the standard report pattern: `useState` for `data` and `dateRange` filter.
-    * **Data Fetching:** `useEffect` calls `fetchData` which fetches from `/api/dashboardPagesAPI/slm-attendance` with the date range as query params.
-    * **Rendering:** Renders `DataTableReusable`.
-
----
-
-#### `src/app/dashboard/slmGeotracking/`
-
-* **`page.tsx`:**
-    * **Purpose:** The "Salesman Journey" tracking page with a map.
-    * **Logic:** This is a complex **Client Component** (`'use client'`).
-    * **State:** Manages `selectedUser`, `selectedDate`, `coordinates: LatLngTuple[]`, and `loading`.
-    * **Dynamic Import:** It uses `dynamic(() => import('react-leaflet'), { ssr: false })` to load the Leaflet map components *only on the client side*, as they do not support Server-Side Rendering.
-    * **Data Fetching:** The `handleFetchTrack` function makes a `POST` request to `/api/dashboardPagesAPI/slm-geotracking` with the `userId` and `date` in the body.
-    * **Rendering:** When the API returns an array of coordinates, the `coordinates` state is updated. This triggers the map to re-render, drawing a `<Polyline>` using the new `coordinates` state. It also uses a custom `<FitBounds />` component to automatically zoom the map to fit the drawn path.
-
----
-
-#### `src/app/dashboard/slmLeaves/`
-
-* **`page.tsx`:**
-    * **Purpose:** The "Salesman Leave" approval page.
-    * **Logic:** A **Client Component** (`'use client'`).
-    * **Data Fetching:** Fetches from `/api/dashboardPagesAPI/slm-leaves` with filters.
-    * **Mutation:** The `DataTableReusable` has an "Actions" button that opens a `<Dialog>`. This dialog contains radio buttons for "Approve"/"Reject" and an input for `adminRemarks`.
-    * The `handleUpdateLeave` function makes a `PUT` request to `/api/dashboardPagesAPI/slm-leaves`, sending the `leaveId`, new `status`, and `adminRemarks`. It re-fetches the data on success.
-
----
-
-#### `src/app/dashboard/teamOverview/`
-
-* **`page.tsx`:**
-    * **Purpose:** A `<Tabs>` layout container for the "Team Overview" section.
-    * **Logic:** A **Server Component** that performs RBAC checks.
-    * It conditionally renders the "Team" tab and the "Salesman Live Location" tab based on `hasPermission(user.role, 'teamOverview.teamTabContent')` and `hasPermission(user.role, 'teamOverview.salesmanLiveLocation')` respectively.
-
-* **`teamTabContent.tsx`:**
-    * **Purpose:** The client component for the main "Team" tab.
-    * **Logic:** A **Client Component**.
-    * **Data Fetching:** Fetches data from `/api/dashboardPagesAPI/team-overview/dataFetch`.
-    * **Mutation (Edit Role):** The "Actions" column has a button that opens a dialog to "Change Role". The "Save" button in this dialog makes a `POST` request to the *specialized, secure* endpoint `/api/dashboardPagesAPI/team-overview/editRole`, which contains the `canAssignRole` RBAC check.
-    * **Mutation (Edit Mapping):** It has similar dialogs and handlers (`handleEditMapping`, `handleEditDealerMapping`) that call their own specific `PUT` API endpoints (`/api/dashboardPagesAPI/team-overview/editMapping`, etc.).
-
-* **`salesmanLiveLocation.tsx`:**
-    * **Purpose:** The client component for the "Live Location" tab.
-    * **Logic:** A **Client Component**.
-    * **Data Fetching:** `useEffect` fetches from `/api/dashboardPagesAPI/team-overview/slmLiveLocation` to get the *last known location* of all users.
-    * **Dynamic Import:** It uses `dynamic(() => import('react-leaflet'), { ssr: false })` to load the Leaflet map.
-    * **Rendering:** It renders the `<MapContainer>` and then maps over the fetched `locations` to render a `<Marker>` for each user's last known location.
-
----
-
-#### `src/app/dashboard/users/`
-
-* **`page.tsx`:**
-    * **Purpose:** The Server Component wrapper for the User Management page.
-    * **Logic:** A **Server Component**.
-    * It fetches the `adminUser`'s data (needed for prop passing) on the server.
-    * It renders the main client component: `<UsersManagement adminUser={adminUser} />`.
-
-* **`userManagement.tsx`:**
-    * **Purpose:** The main interactive client component for managing users.
-    * **Logic:** A **Client Component** (`'use client'`).
-    * **State:** Manages `users: User[]`, `loading`, `error`, `formData` (for the create/edit modal), and `editingUser: User | null`.
-    * **Data Fetching:** `useEffect` on mount calls `fetchUsers()`. `fetchUsers` is an `async` function that does `fetch('/api/users')`, gets the JSON, and calls `setUsers(data.users)`.
-    * **Mutations:**
-        * `handleCreateUser`: `POST`s the `formData` to `/api/users`.
-        * `handleUpdateUser`: `PUT`s the `formData` to `/api/users/${editingUser.id}`.
-        * `handleDeleteUser`: `DELETE`s from `/api/users/${userId}`.
-        * All mutation handlers call `fetchUsers()` on success to refresh the table.
-    * **Rendering:** It renders the `DataTableReusable` component, passing it the `users` state and a `columns` definition that includes the "Edit" and "Delete" buttons.
-
-* **`bulkInvite.tsx`:**
-    * **Purpose:** A client component (rendered as a `<Dialog>`) for bulk-inviting users via file upload.
-    * **Logic:** A **Client Component**.
-    * **State:** Manages the parsed data from the uploaded file (`parsedData`).
-    * **File Parsing:** It uses `read-excel-file` library to parse the contents of an uploaded Excel file into a JSON array.
-    * **Mutation:** The `handleSubmit` function makes a `POST` request, sending the `parsedData` array to the `/api/users/bulk-invite` endpoint.
-
----
-
-#### `src/app/dashboard/welcome/`
-
-* **`page.tsx`:**
-    * **Purpose:** A simple "Welcome" page, likely for new users.
-    * **Logic:** A simple **Server Component** that renders static welcome text and a button/link directing the user to `/setup-company` if their company isn't set up, or to the main dashboard.
+* **`src/app/dashboard/welcome/`**
+    * **`page.tsx`**:
+        * **Purpose**: A simple "Welcome" page, primarily for non-admin users or those who land on an unauthorized page.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **State**: It uses the `useSearchParams` hook to read the `name` and `error` query parameters from the URL.
+        * **Effects**: It uses `useEffect` to check if `error === 'unauthorized'`. If true, it displays an error toast message: "🚫 You do not have access to this page yet. Contact the admin/manager.".
+        * **Rendering**: It displays a welcome message to the user (using the `name` param) and includes a "Logout" button.
 
 ---
 

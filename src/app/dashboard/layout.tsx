@@ -24,10 +24,8 @@ const allowedNonAdminRoles = [
 ];
 // Pages that non-admin roles are allowed to access
 const nonAdminAllowedPages = [
-  "/dashboard/addDealers",
-  "/dashboard/dailyVisitReports",
-  "/dashboard/technicalVisitReports",
-  "/dashboard/permanentJourneyPlan",
+  "/dashboard/users",
+  "/dashboard/teamOverview",
 ];
 
 async function refreshUserJWTIfNeeded(user: any, claims: any) {

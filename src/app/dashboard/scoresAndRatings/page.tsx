@@ -1,18 +1,61 @@
 // src/app/dashboard/scoresAndRatings/page.tsx
-'use client';
+// --- NO 'use client' --- This is the Server Component.
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Import the new client component from 'tabsLoader.tsx'
+import { ScoresAndRatingsTabs } from './tabsLoader';
 
-// Import the report components
-import SalesmanRatings from './salesmanRatings';
-import DealerScores from './dealerScores';
+// Server-side imports for permissions
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+import prisma from '@/lib/prisma';
+import { hasPermission, WorkOSRole } from '@/lib/permissions';
 
 /**
- * Main page component for the Scores and Ratings section.
- * It provides a tabbed interface to switch between different reports,
- * with a consistent layout and styling.
+ * Fetches the current user's role from the database.
+ * Runs only on the server.
  */
-export default function ScoresAndRatingsPage() {
+async function getCurrentUserRole(): Promise<WorkOSRole | null> {
+  try {
+    const claims = await getTokenClaims();
+    if (!claims?.sub) {
+      return null; // Not logged in
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      select: { role: true },
+    });
+    
+    return (user?.role as WorkOSRole) ?? null;
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    return null;
+  }
+}
+
+// The page component is now an 'async' function
+export default async function ScoresAndRatingsPage() {
+  // 1. Get the user's role on the server
+  const userRole = await getCurrentUserRole();
+
+  // 2. Check permissions for each tab
+  const roleToCheck = userRole ?? 'junior-executive'; // Default to lowest role
+  
+  const canSeeSalesmanRatings = hasPermission(roleToCheck, 'scoresAndRatings.salesmanRatings');
+  const canSeeDealerScores = hasPermission(roleToCheck, 'scoresAndRatings.dealerScores');
+
+  // 3. Handle users who can't see anything
+  if (!canSeeSalesmanRatings && !canSeeDealerScores) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-6">
+        <h2 className="text-3xl font-bold tracking-tight">Access Denied</h2>
+        <p className="text-neutral-500">
+          You do not have permission to view this section.
+        </p>
+      </div>
+    );
+  }
+
+  // 4. Render the page, passing permissions to the client component
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
       <div className="flex items-center justify-between space-y-2">
@@ -23,18 +66,14 @@ export default function ScoresAndRatingsPage() {
       <p className="text-neutral-500">
         View detailed ratings for salesmen and scores for dealers.
       </p>
-      <Tabs defaultValue="salesmanRatings" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="salesmanRatings">Salesman Ratings</TabsTrigger>
-          <TabsTrigger value="dealerScores">Dealer Scores</TabsTrigger>
-        </TabsList>
-        <TabsContent value="salesmanRatings" className="space-y-4">
-          <SalesmanRatings />
-        </TabsContent>
-        <TabsContent value="dealerScores" className="space-y-4">
-          <DealerScores />
-        </TabsContent>
-      </Tabs>
+      
+      {/* Render the CLIENT component and pass the
+        server-side permissions as props.
+      */}
+      <ScoresAndRatingsTabs 
+        canSeeSalesmanRatings={canSeeSalesmanRatings}
+        canSeeDealerScores={canSeeDealerScores}
+      />
     </div>
   );
 }

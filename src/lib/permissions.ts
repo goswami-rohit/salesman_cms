@@ -29,7 +29,7 @@ export interface DashboardPermissions {
   users: boolean;
   assignTasks: boolean;
   dealerManagement: {
-    
+    addAndListDealers: boolean,
     listDealers: boolean;
     verifyDealers: boolean;
     dealerBrandMapping: boolean;
@@ -73,7 +73,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -112,7 +112,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -151,7 +151,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -192,7 +192,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -231,7 +231,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -270,7 +270,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -309,7 +309,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -348,7 +348,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: true,
     assignTasks: true,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
@@ -389,7 +389,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: false,
     assignTasks: false,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: false,
       dealerBrandMapping: true,
@@ -428,8 +428,8 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: false,
     assignTasks: false,
     dealerManagement: {
+      addAndListDealers: false,
       listDealers: true,
-      
       dealerBrandMapping: true,
       verifyDealers: true,
     },
@@ -467,7 +467,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     users: false,
     assignTasks: false,
     dealerManagement: {
-      
+      addAndListDealers: false,
       listDealers: true,
       verifyDealers: false,
       dealerBrandMapping: true,

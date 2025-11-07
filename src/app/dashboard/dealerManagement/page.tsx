@@ -1,15 +1,66 @@
 // src/app/dashboard/dealerManagement/page.tsx
-'use client';
+// --- NO 'use client' --- This is the Server Component.
 
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Import the new client component from 'tabsLoader.tsx'
+import { DealerManagementTabs } from './tabsLoader';
 
-//import AddAndListDealersPage from '@/app/dashboard/dealerManagement/addAndListDealers';
-import ListDealersPage from '@/app/dashboard/dealerManagement/listDealers';
-import VerifyDealersPage from '@/app/dashboard/dealerManagement/verifyDealers';
-import DealerBrandMappingPage from '@/app/dashboard/dealerManagement/dealerBrandMapping';
+// Server-side imports for permissions
+import { getTokenClaims } from '@workos-inc/authkit-nextjs';
+import prisma from '@/lib/prisma';
+import { hasPermission, WorkOSRole } from '@/lib/permissions';
 
-export default function DealersPage() {
+/**
+ * Fetches the current user's role from the database.
+ * Runs only on the server.
+ */
+async function getCurrentUserRole(): Promise<WorkOSRole | null> {
+  try {
+    const claims = await getTokenClaims();
+    if (!claims?.sub) {
+      return null; // Not logged in
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      select: { role: true },
+    });
+    
+    return (user?.role as WorkOSRole) ?? null;
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    return null;
+  }
+}
+
+// The page component is now an 'async' function
+export default async function DealersPage() {
+  // 1. Get the user's role on the server
+  const userRole = await getCurrentUserRole();
+
+  // 2. Check permissions for each tab
+  const roleToCheck = userRole ?? 'junior-executive'; // Default to lowest role
+
+  const canSeeAddAndListDealers = hasPermission(roleToCheck, 'dealerManagement.addAndListDealers');
+  const canSeeListDealers = hasPermission(roleToCheck, 'dealerManagement.listDealers');
+  const canSeeVerifyDealers = hasPermission(roleToCheck, 'dealerManagement.verifyDealers');
+  const canSeeBrandMapping = hasPermission(roleToCheck, 'dealerManagement.dealerBrandMapping');
+
+  // Corrected 'canSeeAnything' to include all permissions
+  const canSeeAnything = canSeeAddAndListDealers || canSeeListDealers || canSeeVerifyDealers || canSeeBrandMapping;
+
+  // 3. Handle users who can't see anything
+  if (!canSeeAnything) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-6">
+        <h2 className="text-3xl font-bold tracking-tight">Access Denied</h2>
+        <p className="text-neutral-500">
+          You do not have permission to view this section.
+        </p>
+      </div>
+    );
+  }
+
+  // 4. Render the page, passing permissions to the client component
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
       <div className="flex items-center justify-between space-y-2">
@@ -18,26 +69,15 @@ export default function DealersPage() {
         </h2>
       </div>
 
-      <Tabs defaultValue="ListDealers" className="space-y-4">
-        <TabsList>
-          {/* <TabsTrigger value="addAndListDealers">Add-List Dealers</TabsTrigger> */}
-          <TabsTrigger value="ListDealers">List Dealers</TabsTrigger>
-          <TabsTrigger value="verifyDealers">Verify Dealers</TabsTrigger>
-          <TabsTrigger value="dealerBrandMapping">Dealer Brand Mapping</TabsTrigger>
-        </TabsList>
-        {/* <TabsContent value="addAndListDealers" className="space-y-4">
-          <AddAndListDealersPage />
-        </TabsContent> */}
-        <TabsContent value="ListDealers" className="space-y-4">
-          <ListDealersPage />
-        </TabsContent>
-        <TabsContent value="verifyDealers" className="space-y-4">
-          <VerifyDealersPage />
-        </TabsContent>
-        <TabsContent value="dealerBrandMapping" className="space-y-4">
-          <DealerBrandMappingPage />
-        </TabsContent>
-      </Tabs>
+      {/* Render the CLIENT component and pass the
+        server-side permissions as props.
+      */}
+      <DealerManagementTabs
+        //canSeeAddAndListDealers={canSeeAddAndListDealers}
+        canSeeListDealers={canSeeListDealers}
+        canSeeVerifyDealers={canSeeVerifyDealers}
+        canSeeBrandMapping={canSeeBrandMapping}
+      />
     </div>
   );
 }
