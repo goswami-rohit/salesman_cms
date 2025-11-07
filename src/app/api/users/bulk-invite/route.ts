@@ -13,7 +13,7 @@ import {
 const allowedAdminRoles = [
     'president',
     'senior-general-manager',
-    'general-manager',
+    'general-manager', 
     'regional-sales-manager',
     'area-sales-manager',
     'senior-manager',
@@ -30,6 +30,7 @@ interface SingleUserPayload {
     role: string;
     region?: string;
     area?: string;
+    isTechnical: boolean; // <-- ADDED
 }
 interface AdminUserWithCompany {
     id: number;
@@ -53,13 +54,15 @@ async function processSingleInvitation(
     // NOTE: In a real app, move all imports/setup logic (WorkOS, nodemailer, etc.) 
     // into this function or import them from a utility file to ensure they are available.
     const workos = new WorkOS(process.env.WORKOS_API_KEY!);
-    const { email, firstName, lastName, phoneNumber, role, region, area } = userPayload;
+    // --- UPDATED DESTRUCTURING ---
+    const { email, firstName, lastName, phoneNumber, role, region, area, isTechnical } = userPayload;
 
     if (!email || !firstName || !lastName || !role) {
         throw new Error('Missing required fields for one or more users');
     }
 
     const workosRole = role.toLowerCase();
+    const isTechnicalRole = !!isTechnical; // <-- ADDED: Ensure boolean
     const companyId = adminUser!.companyId;
     const companyName = adminUser!.company!?.companyName;
     const adminName = `${adminUser!.firstName} ${adminUser!.lastName}`;
@@ -94,6 +97,28 @@ async function processSingleInvitation(
         hashedPassword = tempPasswordPlaintext; // Placeholder for non-bcrypt hashing
     }
 
+    // --- START: ADDED TECHNICAL CREDENTIAL LOGIC ---
+    let techLoginId: string | null = null;
+    let techTempPasswordPlaintext: string | null = null;
+    let techHashedPassword = null;
+
+    if (isTechnicalRole) {
+        let isUnique = false;
+        while (!isUnique) {
+            const generatedId = `TSE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            // We removed unique constraint, but checking is still good practice
+            const existingTechUser = await prisma.user.findFirst({ where: { techLoginId: generatedId } });
+            if (!existingTechUser) {
+                techLoginId = generatedId;
+                isUnique = true;
+            }
+        }
+        techTempPasswordPlaintext = generateRandomPassword();
+        techHashedPassword = techTempPasswordPlaintext; // Storing plaintext as per existing pattern
+    }
+    // --- END: ADDED TECHNICAL CREDENTIAL LOGIC ---
+
+
     // 3. Create WorkOS invitation
     let workosInvitation;
     try {
@@ -107,6 +132,7 @@ async function processSingleInvitation(
     }
 
     // 4. Create/Update user in your database
+    // --- UPDATED: Added new technical fields ---
     const userData = {
         firstName, 
         lastName, 
@@ -118,7 +144,11 @@ async function processSingleInvitation(
         inviteToken: workosInvitation.id,
         salesmanLoginId,
         hashedPassword,
+        isTechnicalRole, // <-- ADDED
+        techLoginId, // <-- ADDED
+        techHashedPassword, // <-- ADDED
     };
+    // --- END UPDATE ---
 
     let newUser;
     if (existingUser) {
@@ -134,6 +164,7 @@ async function processSingleInvitation(
 
     // 5. Send custom invitation email
     try {
+        // --- UPDATED: Pass new tech credentials to email function ---
         await sendInvitationEmailGmail({
             to: email,
             firstName, 
@@ -144,8 +175,11 @@ async function processSingleInvitation(
             role: workosRole,
             fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
             salesmanLoginId: salesmanLoginId,
-            tempPassword: tempPasswordPlaintext
+            tempPassword: tempPasswordPlaintext,
+            techLoginId: techLoginId, // <-- ADDED
+            techTempPassword: techTempPasswordPlaintext // <-- ADDED
         });
+        // --- END UPDATE ---
     } catch (emailError) {
         console.error(`❌ Failed to send invitation email to ${email}:`, emailError);
         // Do not throw; log the failure and allow the bulk operation to continue
@@ -156,6 +190,7 @@ async function processSingleInvitation(
         email,
         message: 'Invitation sent and email delivered successfully',
         salesmanLoginId,
+        techLoginId, // <-- ADDED
     };
 }
 
@@ -171,6 +206,7 @@ export async function POST(request: NextRequest) {
         const organizationId = claims.org_id as string;
         const body = await request.json();
 
+        // The body IS the array of users, as sent by bulkInvite.tsx
         const usersToProcess: SingleUserPayload[] = Array.isArray(body) ? body : [];
 
         if (usersToProcess.length === 0) {
@@ -196,6 +232,18 @@ export async function POST(request: NextRequest) {
         let hasErrors = false;
 
         for (const userPayload of usersToProcess) {
+            // Frontend parser in bulkInvite.tsx should have validated this,
+            // but we do a server-side check for robustness.
+            if (userPayload.isTechnical === undefined) {
+                hasErrors = true;
+                results.push({
+                    success: false,
+                    email: userPayload.email,
+                    error: "Missing 'isTechnical' flag.",
+                });
+                continue; // Skip this user
+            }
+            
             try {
                 const result = await processSingleInvitation(userPayload, adminUser, organizationId);
                 results.push(result);

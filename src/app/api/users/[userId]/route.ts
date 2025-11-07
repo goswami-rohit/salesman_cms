@@ -6,6 +6,9 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { WorkOS } from '@workos-inc/node';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import * as nodemailer from 'nodemailer'; // <-- ADDED
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { generateRandomPassword } from '@/app/api/users/route';
 
 // Define the roles that have admin-level access
 const allowedAdminRoles = [
@@ -19,6 +22,107 @@ const allowedAdminRoles = [
   'assistant-manager'
 ];
 
+// --- START: COPIED HELPERS (for Email & Password) ---
+
+const EMAIL_TIMEOUT_MS = 12000;
+
+const transportOptions: SMTPTransport.Options = {
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: process.env.GMAIL_USER!, pass: process.env.GMAIL_APP_PASSWORD! },
+    connectionTimeout: 10000,
+    greetingTimeout: 7000,
+    socketTimeout: 15000,
+    // @ts-ignore
+    family: 4,
+};
+
+const transporter = nodemailer.createTransport(transportOptions);
+
+async function withTimeout<T>(p: Promise<T>, ms = EMAIL_TIMEOUT_MS): Promise<T> {
+    return await Promise.race([
+        p,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('EMAIL_TIMEOUT')), ms)),
+    ]);
+}
+
+/**
+ * NEW, simplified email function just for sending new tech credentials.
+ */
+export async function sendTechCredentialsEmail({
+    to,
+    firstName,
+    lastName,
+    companyName,
+    adminName,
+    techLoginId,
+    techTempPassword,
+}: {
+    to: string;
+    firstName: string;
+    lastName: string;
+    companyName: string;
+    adminName: string;
+    techLoginId: string;
+    techTempPassword: string;
+}) {
+    const mailbox = process.env.GMAIL_USER!;
+
+    const technicalDetailsHtml = `
+        <p>Your administrator (${adminName}) has created new credentials for the <strong>Technical Team Mobile App</strong>.</p>
+        <ul>
+          <li><strong>Technical ID (Login ID):</strong>
+            <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${techLoginId}</span>
+          </li>
+          <li><strong>Temporary Password:</strong>
+            <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${techTempPassword}</span>
+          </li>
+        </ul>
+        <p style="color: #d9534f; font-weight: bold;">Please change this password after your first login to the technical mobile app.</p>
+      `;
+
+    const htmlContent = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <title>Your Technical App Credentials for ${companyName}</title>
+      <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #0070f3; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+      </style>
+  </head>
+  <body>
+      <div class="header">
+          <h1>Technical App Credentials Update</h1>
+      </div>
+      <div class="content">
+          <p><strong>Hi ${firstName} ${lastName},</strong></p>
+          ${technicalDetailsHtml}
+          <p>If you have any questions, please contact your administrator.</p>
+          <p><strong>The ${companyName} Team</strong></p>
+      </div>
+  </body>
+  </html>
+  `;
+
+    const mailOptions: nodemailer.SendMailOptions = {
+        from: `"${companyName}" <${mailbox}>`,
+        to,
+        subject: `Your Technical App Credentials for ${companyName}`,
+        html: htmlContent,
+        envelope: { from: mailbox, to },
+    };
+
+    await withTimeout(transporter.verify(), 6000);
+    const info = await withTimeout(transporter.sendMail(mailOptions), EMAIL_TIMEOUT_MS);
+    return info;
+}
+
+// --- END: COPIED HELPERS ---
+
 const updateUserSchema = z.object({
   firstName: z.string().min(1, "First name is required.").optional(),
   lastName: z.string().min(1, "Last name is required.").optional(),
@@ -26,7 +130,8 @@ const updateUserSchema = z.object({
   role: z.string().min(1, "Role is required.").optional(),
   area: z.string().optional().nullable(),
   region: z.string().optional().nullable(),
-  phoneNumber: z.string().optional().nullable(), // Added phone number
+  phoneNumber: z.string().optional().nullable(),
+  isTechnical: z.boolean().optional()
 }).strict();
 
 // GET - Get single user
@@ -54,7 +159,8 @@ export async function GET(
     const targetUser = await prisma.user.findFirst({
       where: {
         id: parseInt(userId),
-        companyId: adminUser.companyId
+        companyId: adminUser.companyId,
+        isTechnicalRole: adminUser.isTechnicalRole
       }
     });
 
@@ -96,6 +202,7 @@ export async function PUT(
     // 1. Fetch Current User for Authorization
     const adminUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
+      include: { company: true },
     });
 
     // Check if the user's role is in the list of allowed admin roles
@@ -116,12 +223,20 @@ export async function PUT(
     }
 
     // Destructure data for WorkOS and Prisma updates
-    const { role, area, region, phoneNumber, ...workosStandardData } = parsedBody.data;
+    const { role, area, region, phoneNumber, isTechnical, ...workosStandardData } = parsedBody.data;
 
     // 2. Check if the target user exists and belongs to the same company
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserLocalId },
-      select: { id: true, companyId: true, workosUserId: true, email: true }
+      select: { 
+        id: true, 
+        companyId: true, 
+        workosUserId: true, 
+        firstName: true,
+        lastName: true,
+        email: true, 
+        techLoginId: true, 
+        isTechnicalRole: true }
     });
 
     if (!targetUser || targetUser.companyId !== adminUser.companyId) {
@@ -154,6 +269,52 @@ export async function PUT(
       ...(phoneNumber !== undefined && { phoneNumber }),
       updatedAt: new Date()
     };
+
+    // --- START: New Technical Credential Generation Logic ---
+    let emailNotificationPromise: Promise<unknown> = Promise.resolve(); // To hold the email task
+    
+    // CHECK: Is admin flipping the switch to TRUE?
+    // AND Does the user NOT ALREADY have a tech ID?
+    if (isTechnical === true && !targetUser.techLoginId) {
+      console.log(`Generating new technical credentials for user ${targetUser.id}`);
+      let isUnique = false;
+      let newTechLoginId = '';
+      
+      while (!isUnique) {
+        newTechLoginId = `TSE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        // We removed the unique constraint, but checking is still good practice
+        const existingTechUser = await prisma.user.findFirst({ where: { techLoginId: newTechLoginId } });
+        if (!existingTechUser) {
+          isUnique = true;
+        }
+      }
+
+      const newTechPassword = generateRandomPassword();
+      
+      // Add new credentials to the Prisma update
+      prismaUpdateData.isTechnicalRole = true;
+      prismaUpdateData.techLoginId = newTechLoginId;
+      prismaUpdateData.techHashedPassword = newTechPassword; // Storing plaintext as per existing pattern
+
+      // Prepare the email notification
+      emailNotificationPromise = sendTechCredentialsEmail({
+          to: targetUser.email,
+          firstName: (workosStandardData.firstName || targetUser.firstName || ''),
+          lastName: (workosStandardData.lastName || targetUser.lastName || ''),
+          companyName: adminUser.company.companyName,
+          adminName: `${adminUser.firstName} ${adminUser.lastName}`,
+          techLoginId: newTechLoginId,
+          techTempPassword: newTechPassword
+      }).catch(emailError => {
+          // Log the error but don't block the API response
+          console.error(`Failed to send technical credential email to ${targetUser.email}:`, emailError);
+      });
+
+    } else if (isTechnical !== undefined) {
+      // Handle simple toggles (e.g., true -> false or just re-affirming true)
+      prismaUpdateData.isTechnicalRole = isTechnical;
+    }
+    // --- END: New Technical Credential Generation Logic ---
 
     const prismaUpdatePromise = prisma.user.update({
       // Use the local ID (now a string) for the update
@@ -191,6 +352,11 @@ export async function PUT(
       customAttributes.phoneNumber = phoneNumber;
       workosUpdateRequired = true;
     }
+    if (isTechnical !== undefined) {
+      // Convert boolean to string for WorkOS custom attributes
+      customAttributes.isTechnical = isTechnical.toString(); 
+      workosUpdateRequired = true;
+    }
 
     // Check if any standard fields (firstName, lastName, email) were provided
     if (Object.keys(workosStandardData).length > 0) {
@@ -214,7 +380,8 @@ export async function PUT(
     // Execute both updates concurrently if a WorkOS update is needed
     await Promise.all([
       prismaUpdatePromise,
-      workosUpdatePromise
+      workosUpdatePromise,
+      emailNotificationPromise,
     ].filter(Boolean));
 
     return NextResponse.json({

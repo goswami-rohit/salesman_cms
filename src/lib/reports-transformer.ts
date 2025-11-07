@@ -6,12 +6,14 @@ import { Prisma } from '@prisma/client';
 export type FlattenedUser = {
     id: number;
     email: string;
-    fullName: string; // Flattened name
+    firstName: string,
+    lastName: string,
     role: string;
     phoneNumber: string | null;
     status: string;
     region: string | null;
     area: string | null;
+    isTechnicalRole?: boolean | null;
     reportsToManagerName: string | null; // Flattened relation name
     createdAt: string;
 };
@@ -29,6 +31,7 @@ export async function getFlattenedUsers(companyId: number): Promise<FlattenedUse
             status: true,
             region: true,
             area: true,
+            isTechnicalRole: true,
             createdAt: true,
             // Relations for flattening:
             reportsTo: {
@@ -41,12 +44,14 @@ export async function getFlattenedUsers(companyId: number): Promise<FlattenedUse
     return rawUsers.map((u: any) => ({
         id: u.id,
         email: u.email,
-        fullName: `${u.firstName} ${u.lastName}`,
+        firstName: u.firstName,
+        lastName: u.lastName,
         role: u.role,
         phoneNumber: u.phoneNumber ?? null,
         status: u.status,
         region: u.region ?? null,
         area: u.area ?? null,
+        isTechnicalRole: u.isTechnicalRole ?? null,
         reportsToManagerName: u.reportsTo ? `${u.reportsTo.firstName} ${u.reportsTo.lastName}` : null,
         createdAt: u.createdAt?.toISOString() ?? '',
     }));

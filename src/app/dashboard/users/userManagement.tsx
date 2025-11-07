@@ -6,6 +6,7 @@ import { Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -60,6 +61,7 @@ interface User {
   createdAt: string;
   updatedAt: string;
   salesmanLoginId?: string | null;
+  isTechnicalRole?: boolean | null;
 }
 
 interface Company {
@@ -131,6 +133,7 @@ export default function UsersManagement({ adminUser }: Props) {
     role: 'junior-executive',
     region: '',
     area: '',
+    isTechnical: false,
   });
 
   // New useEffect hook to set initial form data for user locations
@@ -187,6 +190,10 @@ export default function UsersManagement({ adminUser }: Props) {
         let successMsg = `User created and invitation sent to ${formData.email}.`;
         if (data.user && data.user.salesmanLoginId) {
           successMsg += ` Employee ID for mobile app: ${data.user.salesmanLoginId}. Password sent via email.`;
+        }
+        // Add tech login ID to success message if it exists
+        if (data.user && data.user.techLoginId) {
+          successMsg += ` Technical ID for mobile app: ${data.user.techLoginId}.`;
         }
         setSuccess(successMsg);
       } else {
@@ -282,6 +289,7 @@ export default function UsersManagement({ adminUser }: Props) {
       role: user.role,
       region: user.region || '',
       area: user.area || '',
+      isTechnical: user.isTechnicalRole || false,
     });
   };
 
@@ -294,6 +302,7 @@ export default function UsersManagement({ adminUser }: Props) {
       role: 'junior-executive',
       region: '',
       area: '',
+      isTechnical: false,
     });
     setEditingUser(null);
     setError('');
@@ -362,6 +371,17 @@ export default function UsersManagement({ adminUser }: Props) {
       accessorKey: "area",
       header: "Area",
       cell: ({ row }) => row.original.area || '-',
+    },
+    {
+      accessorKey: "isTechnicalRole",
+      header: "Technical Role",
+      cell: ({ row }) => {
+        return row.original.isTechnicalRole ? (
+          <span className="font-medium text-white flex items-center justify-center">Yes</span>
+        ) : (
+          <span className="text-gray-500 flex items-center justify-center">No</span>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -564,6 +584,19 @@ export default function UsersManagement({ adminUser }: Props) {
                     </Select>
                   </div>
 
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox
+                      id="isTechnical-create"
+                      checked={formData.isTechnical}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isTechnical: !!checked })
+                      }
+                    />
+                    <Label htmlFor="isTechnical-create" className="text-sm font-medium">
+                      Check if Technical Role
+                    </Label>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="region">Region</Label>
@@ -677,6 +710,19 @@ export default function UsersManagement({ adminUser }: Props) {
                   </div>
 
                   {/* Role section edit in Team Overview  */}
+
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox
+                      id="isTechnical-edit"
+                      checked={formData.isTechnical}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isTechnical: !!checked })
+                      }
+                    />
+                    <Label htmlFor="isTechnical-edit" className="text-sm font-medium">
+                      Check if Technical Role
+                    </Label>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     {/* Region changed from Select to Input */}

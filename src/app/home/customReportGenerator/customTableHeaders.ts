@@ -24,7 +24,7 @@ export const tablesMetadata: TableMeta[] = [
         id: 'users',
         title: 'User (Salesman)',
         icon: User,
-        columns: ['id', 'email', 'firstName', 'lastName', 'role', 'phoneNo', 'address', 'region', 'area', 'isActive', 'createdAt']
+        columns: ['id', 'email', 'firstName', 'lastName', 'role', 'phoneNo', 'address', 'region', 'area', 'isTechnicalRole', 'isActive', 'createdAt']
     },
     {
         id: 'dealers',

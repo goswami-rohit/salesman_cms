@@ -49,6 +49,11 @@ model User {
   salesmanLoginId           String?   @unique @map("salesman_login_id")
   hashedPassword            String?   @map("hashed_password") // Stores securely hashed passwords
 
+  // --- NEW TECHNICAL ROLE FIELDS ---
+  isTechnicalRole         Boolean   @default(false) @map("is_technical_role")
+  techLoginId             String?   @unique @map("tech_login_id")
+  techHashedPassword      String?   @map("tech_hash_password")
+
   // --- HIERARCHY FIELDS ---
   reportsToId               Int?      @map("reports_to_id")
   reportsTo                 User?     @relation("ReportsToManager", fields: [reportsToId], references: [id], onDelete: SetNull)

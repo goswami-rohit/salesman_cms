@@ -31,6 +31,7 @@ interface UserPayload {
     phoneNumber?: string;
     region?: string;
     area?: string;
+    isTechnical?: boolean | null;
 }
 
 
@@ -65,10 +66,11 @@ export function BulkInviteDialog({ onSuccess, onError, onRefreshUsers }: BulkInv
         'role': 'role',
         'region': 'region',
         'area': 'area',
+        'istechnical': 'isTechnical',
     };
 
     // --- FIX: Only enforce mandatory fields in the header check ---
-    const mandatoryFields = ['email', 'firstname', 'lastname', 'phonenumber', 'role', 'region', 'area']; 
+    const mandatoryFields = ['email', 'firstname', 'lastname', 'phonenumber', 'role', 'region', 'area', 'istechnical']; 
     
     // Check if ALL mandatory headers exist
     if (!mandatoryFields.every(field => headers.includes(field))) {
@@ -258,6 +260,7 @@ export function BulkInviteDialog({ onSuccess, onError, onRefreshUsers }: BulkInv
                         <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">region</code>, 
                         <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">area</code>
                     </p>
+                    <p className="mt-1 pl-4">Note: <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">isTechnical</code> should be TRUE (or 'yes', '1') or FALSE (or 'no', '0', empty).</p>
                 </div>
               </AlertDescription>
           </Alert>
@@ -289,7 +292,7 @@ export function BulkInviteDialog({ onSuccess, onError, onRefreshUsers }: BulkInv
                   onError('');
               }}
               rows={8}
-              placeholder={`email,firstName,lastName,phoneNumber,role,region,area\nuser1@example.com,John,Doe,+919999900001,junior-executive,North,Central\nuser2@example.com,Jane,Smith,+919999900002,manager,South,East`}
+              placeholder={`email,firstName,lastName,phoneNumber,role,region,area,isTechnical\nuser1@example.com,John,Doe,+919999900001,junior-executive,North,Central\nuser2@example.com,Jane,Smith,+919999900002,manager,South,East,FALSE`}
               disabled={loading || !!currentFile}
             />
           </div>

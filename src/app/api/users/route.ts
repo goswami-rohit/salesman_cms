@@ -19,7 +19,7 @@ const allowedAdminRoles = [
     'area-sales-manager',
     'senior-manager',
     'manager',
-    'assistant-manager'
+    'assistant-manager' 
 ];
 
 // ---------- Email setup ----------
@@ -58,7 +58,9 @@ export async function sendInvitationEmailGmail({
     role,
     fromEmail,
     salesmanLoginId,
-    tempPassword
+    tempPassword,
+    techLoginId, // <-- ADDED
+    techTempPassword, // <-- ADDED
 }: {
     to: string;
     firstName: string;
@@ -70,6 +72,8 @@ export async function sendInvitationEmailGmail({
     fromEmail: string;
     salesmanLoginId?: string | null;
     tempPassword?: string | null;
+    techLoginId?: string | null; // <-- ADDED
+    techTempPassword?: string | null; // <-- ADDED
 }) {
     const mailbox = process.env.GMAIL_USER!;
 
@@ -90,6 +94,24 @@ export async function sendInvitationEmailGmail({
       `
             : '';
 
+    // --- START: NEW TECHNICAL DETAILS ---
+    const technicalDetailsHtml =
+        techLoginId && techTempPassword
+            ? `
+        <p>For your <strong>Technical Team Mobile App</strong> login:</p>
+        <ul>
+          <li><strong>Technical ID (Login ID):</strong>
+            <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${techLoginId}</span>
+          </li>
+          <li><strong>Temporary Password:</strong>
+            <span style="font-family: monospace; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px; display: inline-block;">${techTempPassword}</span>
+          </li>
+        </ul>
+        <p style="color: #d9534f; font-weight: bold;">Please change this password after your first login to the technical mobile app.</p>
+      `
+            : '';
+    // --- END: NEW TECHNICAL DETAILS ---
+
     const salesmanDetailsText =
         salesmanLoginId && tempPassword
             ? `
@@ -98,6 +120,17 @@ Employee ID (Login ID): ${salesmanLoginId}
 Password: ${tempPassword}
 `
             : '';
+            
+    // --- START: NEW TECHNICAL DETAILS (TEXT) ---
+    const technicalDetailsText =
+        techLoginId && techTempPassword
+            ? `
+For your Technical Team Mobile App login:
+Technical ID (Login ID): ${techLoginId}
+Password: ${techTempPassword}
+`
+            : '';
+    // --- END: NEW TECHNICAL DETAILS (TEXT) ---
 
     const htmlContent = `
   <!DOCTYPE html>
@@ -135,14 +168,12 @@ Password: ${tempPassword}
           <div class="invite-code">${inviteUrl}</div>
 
           ${salesmanDetailsHtml}
-          <!-- salesman details end -->
-
-          <p><strong>What happens next?</strong></p>
+          ${technicalDetailsHtml} <p><strong>What happens next?</strong></p>
           <ul>
               <li>Click the invitation link above to set up your web app account.</li>
               <li>Access your team dashboard.</li>
               <li>${salesmanLoginId ? 'Use your Employee ID and Password above to log in to the Sales Team Mobile App.' : ''}</li>
-              <li>Start collaborating with your team!</li>
+              <li>${techLoginId ? 'Use your Technical ID and Password above to log in to the Technical Team Mobile App.' : ''}</li> <li>Start collaborating with your team!</li>
           </ul>
 
           <p><em>This web app invitation will expire in 7 days for security reasons.</em></p>
@@ -170,8 +201,7 @@ To accept this invitation and set up your account for the web application, pleas
 ${inviteUrl}
 
 ${salesmanDetailsText}
-
-This web app invitation will expire in 7 days.
+${technicalDetailsText} This web app invitation will expire in 7 days.
 
 Welcome to the team!
 The ${companyName} Team
@@ -236,8 +266,8 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        // Updated to include `region` and `area`
-        const { email, firstName, lastName, phoneNumber, role, region, area } = body;
+        // Updated to include `region`, `area`, and `isTechnical`
+        const { email, firstName, lastName, phoneNumber, role, region, area, isTechnical } = body;
 
         // Validate required fields
         if (!email || !firstName || !lastName || !role) {
@@ -246,6 +276,7 @@ export async function POST(request: NextRequest) {
 
         // The WorkOS role slug is the same as the user role
         const workosRole = role.toLowerCase();
+        const isTechnicalRole = !!isTechnical; // Ensure it's a boolean
 
         const existingUser = await prisma.user.findUnique({
             where: {
@@ -267,9 +298,16 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // --- Salesman Login ---
         let salesmanLoginId: string | null = null;
         let tempPasswordPlaintext: string | null = null;
         let hashedPassword = null;
+
+        // --- Technical Login ---
+        let techLoginId: string | null = null;
+        let techTempPasswordPlaintext: string | null = null;
+        let techHashedPassword = null;
+
 
         // Generate salesmanLoginId and temporary password ONLY for executive roles
         if (['senior-executive', 'executive', 'junior-executive'].includes(workosRole)) {
@@ -290,6 +328,31 @@ export async function POST(request: NextRequest) {
             // hashedPassword = await bcrypt.hash(tempPasswordPlaintext, salt);
             hashedPassword = tempPasswordPlaintext;
         }
+
+        // --- START: NEW TECHNICAL LOGIN LOGIC ---
+        // Generate techLoginId if the 'isTechnical' flag is true
+        if (isTechnicalRole) {
+            let isUnique = false;
+            while (!isUnique) {
+                // --- MODIFIED PREFIX ---
+                const generatedId = `TSE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                // --- END MODIFICATION ---
+                const existingTechUser = await prisma.user.findUnique({ where: { techLoginId: generatedId } });
+                if (existingTechUser) {
+                    // Collision, generate again
+                } else {
+                    techLoginId = generatedId;
+                    isUnique = true;
+                }
+            }
+            techTempPasswordPlaintext = generateRandomPassword();
+            // In a production environment, you would hash this
+            // const salt = await bcrypt.genSalt(10);
+            // techHashedPassword = await bcrypt.hash(techTempPasswordPlaintext, salt);
+            techHashedPassword = techTempPasswordPlaintext; // Storing plaintext for now, as per existing pattern
+        }
+        // --- END: NEW TECHNICAL LOGIN LOGIC ---
+
 
         // --- CORE LOGIC: Create WorkOS invitation and get the URL ---
         let workosInvitation;
@@ -335,14 +398,17 @@ export async function POST(request: NextRequest) {
                     lastName,
                     phoneNumber,
                     role: workosRole,
-                    // New: Added region and area to the update data
                     region,
                     area,
-                    // The workosUserId remains null until they log in
                     status: 'pending',
                     inviteToken: workosInvitation.id, // Use inviteToken for the workosInvitation ID
+                    // Salesman fields
                     salesmanLoginId,
                     hashedPassword,
+                    // Technical fields
+                    isTechnicalRole, // <-- ADDED
+                    techLoginId, // <-- ADDED
+                    techHashedPassword, // <-- ADDED
                 },
             });
         } else {
@@ -354,15 +420,19 @@ export async function POST(request: NextRequest) {
                     lastName,
                     phoneNumber,
                     role: workosRole,
-                    // New: Added region and area to the creation data
                     region,
                     area,
                     workosUserId: null, // The user ID is not yet available
                     inviteToken: workosInvitation.id, // Store the invitation ID
                     companyId: adminUser.companyId,
                     status: 'pending',
+                    // Salesman fields
                     salesmanLoginId,
                     hashedPassword,
+                    // Technical fields
+                    isTechnicalRole, // <-- ADDED
+                    techLoginId, // <-- ADDED
+                    techHashedPassword, // <-- ADDED
                 },
             });
         }
@@ -380,8 +450,12 @@ export async function POST(request: NextRequest) {
                 inviteUrl: workosInvitation.acceptInvitationUrl, // Pass the WorkOS URL here
                 role: workosRole,
                 fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
+                // Pass salesman details
                 salesmanLoginId: salesmanLoginId,
-                tempPassword: tempPasswordPlaintext
+                tempPassword: tempPasswordPlaintext,
+                // Pass technical details
+                techLoginId: techLoginId, // <-- ADDED
+                techTempPassword: techTempPasswordPlaintext // <-- ADDED
             });
             console.log(`✅ Invitation email sent to ${email} via Gmail`);
         } catch (emailError) {
@@ -397,6 +471,7 @@ export async function POST(request: NextRequest) {
                 lastName: newUser.lastName,
                 role: newUser.role,
                 salesmanLoginId: newUser.salesmanLoginId,
+                techLoginId: newUser.techLoginId, // <-- ADDED
             },
             workosInvitation: workosInvitation
         }, { status: 201 });
@@ -433,9 +508,9 @@ export async function GET(request: NextRequest) {
                     firstName: currentUser.firstName,
                     lastName: currentUser.lastName,
                     companyName: currentUser.company?.companyName,
-                    // New: Added region and area
                     region: currentUser.region,
                     area: currentUser.area,
+                    isTechnical: currentUser.isTechnicalRole, // <-- ADDED
                 }
             });
         }
@@ -454,9 +529,9 @@ export async function GET(request: NextRequest) {
             currentUser: {
                 role: currentUser.role,
                 companyName: currentUser.company?.companyName,
-                // New: Added region and area
                 region: currentUser.region,
                 area: currentUser.area,
+                isTechnical: currentUser.isTechnicalRole, // <-- ADDED
             }
         });
     } catch (error: any) {
