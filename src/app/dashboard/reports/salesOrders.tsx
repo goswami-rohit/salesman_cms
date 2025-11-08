@@ -528,48 +528,50 @@ const SalesOrdersTable = () => {
       {/* --- End Filter Components --- */}
 
       {/* Data Table */}
-      {filteredOrders.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">
-          No sales orders found matching the selected filters.
-        </div>
-      ) : (
-        <>
-          <DataTableReusable
-            columns={salesOrderColumns}
-            data={currentOrders} // Use filtered and paginated data
-            enableRowDragging={false}
-            onRowOrderChange={() => { }}
-          />
-          <Pagination className="mt-6">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  aria-disabled={currentPage === 1}
-                  tabIndex={currentPage === 1 ? -1 : undefined}
-                />
-              </PaginationItem>
-              {[...Array(totalPages)].map((_, index) => (
-                <PaginationItem key={index}>
-                  <PaginationLink
-                    onClick={() => handlePageChange(index + 1)}
-                    isActive={currentPage === index + 1}
-                  >
-                    {index + 1}
-                  </PaginationLink>
+      <div className="bg-card p-6 rounded-lg border border-border">
+        {filteredOrders.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            No sales orders found matching the selected filters.
+          </div>
+        ) : (
+          <>
+            <DataTableReusable
+              columns={salesOrderColumns}
+              data={currentOrders} // Use filtered and paginated data
+              enableRowDragging={false}
+              onRowOrderChange={() => { }}
+            />
+            <Pagination className="mt-6">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    aria-disabled={currentPage === 1}
+                    tabIndex={currentPage === 1 ? -1 : undefined}
+                  />
                 </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  aria-disabled={currentPage === totalPages}
-                  tabIndex={currentPage === totalPages ? -1 : undefined}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </>
-      )}
+                {[...Array(totalPages)].map((_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(index + 1)}
+                      isActive={currentPage === index + 1}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    aria-disabled={currentPage === totalPages}
+                    tabIndex={currentPage === totalPages ? -1 : undefined}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </>
+        )}
+      </div>
     </>
   );
 };

@@ -274,21 +274,21 @@ export default function PJPVerifyPage() {
           <Button
             variant="default"
             size="sm"
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-500 hover:bg-green-700"
             onClick={() => handleVerificationAction(row.original.id, 'VERIFIED')}
           >
             Verify
           </Button>
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={() => openModificationDialog(row.original)}
-            className="border-blue-500 text-blue-500 hover:bg-blue-50"
+            className="text-white bg-blue-500 hover:bg-blue-600"
           >
             Edit & Apply
           </Button>
           <Button
-            variant="destructive"
+            className="bg-red-800 hover:bg-red-900 text-white"
             size="sm"
             onClick={() => handleVerificationAction(row.original.id, 'REJECTED')}
           >

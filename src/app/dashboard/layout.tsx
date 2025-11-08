@@ -2,6 +2,7 @@
 import { withAuth, getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
+import type { Metadata } from "next";
 import prisma from '@/lib/prisma';
 import DashboardShell from './dashboardShell';
 
@@ -14,11 +15,12 @@ const allowedAdminRoles = [
   'senior-manager',
   'manager',
   'assistant-manager',
-  'senior-executive', 
+  //'senior-executive', 
   //'executive',
   //'junior-executive',
 ];
 const allowedNonAdminRoles = [
+  'senior-executive', 
   'executive',
   'junior-executive',
 ];
@@ -48,6 +50,12 @@ async function refreshUserJWTIfNeeded(user: any, claims: any) {
   }
   return { needsRefresh: false };
 }
+
+export const metadata: Metadata = {
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
 
 export default async function DashboardLayout({
   children,

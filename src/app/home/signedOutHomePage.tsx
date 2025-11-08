@@ -3,6 +3,7 @@
 //import Link from 'next/link';
 import { Bot, BarChart3, Users, Zap, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button'; // Assuming this is still used for the Button component
+import Image from 'next/image';
 
 export default function SignedOutHomePage() {
   const handleLogin = () => {
@@ -16,13 +17,20 @@ export default function SignedOutHomePage() {
       <nav className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
+              <Image
+                src="/bestcement.webp"
+                alt='Best Cement Logo'
+                width={32}  // 32px
+                height={32} // 32px
+                className="rounded-lg object-cover" // Keeps it rounded
+              />
               <span className="text-xl font-bold text-foreground">Best Cement CMS</span>
             </div>
             {/* The login button from the old design */}
             <Button
               onClick={handleLogin}
-              className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+              className="bg-foreground text-background px-4 py-2 rounded-md hover:bg-(--primary-hover) transition-opacity"
             >
               Sign/Log In
             </Button>
@@ -36,12 +44,10 @@ export default function SignedOutHomePage() {
           <div className="space-y-8">
             {/* Main Heading */}
             <div className="space-y-4">
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-                <span className="text-foreground">Company</span>
+              <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-primary">
+                Company
                 <br />
-                <span className="bg-linear-to-r from-primary to-chart-1 bg-clip-text text-transparent">
-                  Management System
-                </span>
+                Management System
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                 Your centralized management system. To get started, please log in or sign up.
@@ -53,7 +59,7 @@ export default function SignedOutHomePage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   onClick={handleLogin}
-                  className="inline-flex items-center px-8 py-4 bg-primary text-primary-foreground rounded-md font-medium text-lg hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center px-8 py-4 bg-foreground text-background rounded-md font-medium text-lg hover:bg-(--primary-hover) transition-opacity"
                 >
                   <LogIn className="w-5 h-5 mr-2" />
                   Get Started

@@ -16,6 +16,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { hasPermission, WorkOSRole, PermPath } from '@/lib/permissions';
+import Image from 'next/image';
 
 interface Props {
   userRole: WorkOSRole;
@@ -220,9 +221,17 @@ export function AppSidebar({ userRole }: Props) {
       <SidebarContent>
         <SidebarHeader>
           <div className="flex items-center space-x-2">
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+            {/*<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
               <Building2 className="size-4" />
-            </div>
+            </div>*/}
+            {/* This replaces the <div> with the Building2 icon */}
+            <Image
+              src="/bestcement.webp"
+              alt={companyInfo?.companyName || 'Company Logo'}
+              width={32}  // Corresponds to your 'size-8' class (8 * 4px)
+              height={32} // Corresponds to your 'size-8' class
+              className="rounded-lg object-cover" // Keeps it rounded and ensures the image fills the space
+            />
             <div>
               <div className="text-sm font-bold">{companyInfo?.companyName}</div>
               <div className="text-xs text-gray-500">{companyInfo?.adminName}</div>

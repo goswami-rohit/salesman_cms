@@ -88,7 +88,7 @@ function EditRoleCell({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-80 border border-border/30 bg-popover/50 backdrop-blur-lg">
         <h4 className="font-bold mb-2">Edit Role</h4>
         <p className="text-sm text-gray-500">Member: {member.name}</p>
         <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
@@ -98,7 +98,7 @@ function EditRoleCell({
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Assign new role" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
               {rolesToShow.map((role) => (
                 <SelectItem key={role} value={role}>
                   {role}
@@ -185,7 +185,7 @@ function EditMappingCell({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-80 border border-border/30 bg-popover/50 backdrop-blur-lg">
         <h4 className="font-bold mb-2">Edit Reporting Structure</h4>
         <p className="text-sm text-gray-500">Member: {member.name}</p>
         <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
@@ -200,7 +200,7 @@ function EditMappingCell({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Senior that manages this member" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
                 <SelectItem value="none">None</SelectItem>
                 {managerOptions.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
@@ -335,7 +335,7 @@ function EditDealerMappingCell({
           <StoreIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96">
+      <PopoverContent className="w-96 border border-border/30 bg-popover/50 backdrop-blur-lg">
         <h4 className="font-bold mb-2">Edit Dealer Mapping</h4>
         <p className="text-sm text-gray-500 mb-4">Salesman: {member.name}</p>
 
@@ -349,7 +349,7 @@ function EditDealerMappingCell({
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by Area" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
               <SelectItem value={ALL}>All Areas</SelectItem>
               {locations.areas.sort().map((area) => (
                 <SelectItem key={area} value={area}>
@@ -367,7 +367,7 @@ function EditDealerMappingCell({
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by Region" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
               <SelectItem value={ALL}>All Regions</SelectItem>
               {locations.regions.sort().map((region) => (
                 <SelectItem key={region} value={region}>
@@ -433,7 +433,7 @@ const getTeamColumns = (
                 <EyeIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80">
+            <PopoverContent className="w-80 border border-border/30 bg-popover/50 backdrop-blur-lg">
               <h4 className="font-bold mb-2">Total members: {managesReports.length}</h4>
               {managesReports.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-1">
@@ -626,7 +626,7 @@ export function TeamTabContent() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="border border-border/30 bg-card/50 backdrop-blur-lg">
         <CardHeader>
           <CardTitle>Team Hierarchy</CardTitle>
         </CardHeader>
@@ -641,7 +641,7 @@ export function TeamTabContent() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="border border-border/30 bg-card/50 backdrop-blur-lg">
         <CardHeader>
           <CardTitle>Team Hierarchy</CardTitle>
         </CardHeader>
@@ -655,7 +655,7 @@ export function TeamTabContent() {
   }
 
   return (
-    <Card>
+    <Card className="border border-border/30 bg-card/50 backdrop-blur-lg">
       <CardHeader>
         <CardTitle>Team Hierarchy & Overview</CardTitle>
       </CardHeader>
@@ -671,7 +671,7 @@ export function TeamTabContent() {
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
               <SelectItem value="all">All Roles</SelectItem>
               {allRoles.map((role) => (
                 <SelectItem key={role} value={role}>

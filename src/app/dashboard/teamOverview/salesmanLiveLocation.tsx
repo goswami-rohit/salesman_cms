@@ -202,7 +202,7 @@ export function SalesmanLiveLocation() {
   return (
     <div className="p-6 space-y-6">
       {/* Filters */}
-      <Card className="rounded-xl shadow-lg">
+      <Card className="rounded-xl shadow-lg border border-border/30 bg-card/50 backdrop-blur-lg">
         <CardHeader>
           <CardTitle>Salesman Live Location Filters</CardTitle>
         </CardHeader>
@@ -230,7 +230,7 @@ export function SalesmanLiveLocation() {
                 <SelectTrigger id="role">
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
-                <SelectContent className="z-9999">
+                <SelectContent className="z-9999 border border-border/30 bg-popover/50 backdrop-blur-lg">
                   <SelectItem value="all">All Roles</SelectItem>
                   {roles.map((role) => (
                     <SelectItem key={role} value={role}>
@@ -251,7 +251,7 @@ export function SalesmanLiveLocation() {
                 <SelectTrigger id="area">
                   <SelectValue placeholder="All Areas" />
                 </SelectTrigger>
-                <SelectContent className="z-9999">
+                <SelectContent className="z-9999 border border-border/30 bg-popover/50 backdrop-blur-lg">
                   <SelectItem value="all">All Areas</SelectItem>
                   {dynamicLocations.areas.sort().map((area) => (
                     <SelectItem key={area} value={area}>
@@ -272,7 +272,7 @@ export function SalesmanLiveLocation() {
                 <SelectTrigger id="region">
                   <SelectValue placeholder="All Regions" />
                 </SelectTrigger>
-                <SelectContent className="z-9999">
+                <SelectContent className="z-9999 border border-border/30 bg-popover/50 backdrop-blur-lg">
                   <SelectItem value="all">All Regions</SelectItem>
                   {dynamicLocations.regions.sort().map((region) => (
                     <SelectItem key={region} value={region}>
@@ -287,7 +287,7 @@ export function SalesmanLiveLocation() {
       </Card>
 
       {/* Map */}
-      <Card className="rounded-xl shadow-lg">
+       <Card className="rounded-xl shadow-lg border border-border/3D bg-card/50 backdrop-blur-lg">
         <CardHeader>
           <CardTitle>Live Salesman Locations</CardTitle>
         </CardHeader>

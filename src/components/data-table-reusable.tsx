@@ -215,7 +215,10 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
                 <IconChevronDown className="ml-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-popover text-popover-foreground border-border">
+            <DropdownMenuContent 
+              align="end" 
+              className="w-56 bg-popover/50 backdrop-blur-lg text-popover-foreground border-border/30"
+            >
               {table
                 .getAllColumns()
                 .filter(
@@ -244,7 +247,7 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
       </div>
 
       {/* Main Table Content */}
-      <div className="overflow-hidden rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border border-border/30 bg-card/50 backdrop-blur-lg">
         <DndContext
           collisionDetection={closestCenter}
           modifiers={[restrictToVerticalAxis]}
@@ -253,9 +256,9 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
           id={sortableId}
         >
           <Table>
-            <TableHeader className="bg-muted sticky top-0 z-10 text-muted-foreground">
+            <TableHeader className="bg-primary sticky top-0 z-10 text-primary-foreground">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="border-border">
+                <TableRow key={headerGroup.id} className="border-border/30">
                   {headerGroup.headers.map((header) => {
                     return (
                       <TableHead key={header.id} colSpan={header.colSpan}>
@@ -285,7 +288,7 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
                       <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && "selected"}
-                        className="border-border hover:bg-accent hover:text-accent-foreground"
+                        className="border-border/30"
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>
@@ -328,10 +331,10 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger size="sm" className="w-20 bg-input text-foreground border-border">
+              <SelectTrigger size="sm" className="w-20 bg-input/50 backdrop-blur-lg text-foreground border-border/30">
                 <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
-              <SelectContent side="top" className="bg-popover text-popover-foreground border-border">
+              <SelectContent side="top" className="bg-popover/50 backdrop-blur-lg text-popover-foreground border-border/30">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
                   <SelectItem key={pageSize} value={`${pageSize}`}>
                     {pageSize}
@@ -347,7 +350,7 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
+              className="hidden h-8 w-8 p-0 lg:flex bg-secondary/50 backdrop-blur-lg text-secondary-foreground border-border/30 hover:bg-secondary/60"
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
             >
@@ -356,7 +359,7 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
             </Button>
             <Button
               variant="outline"
-              className="size-8 bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
+              className="size-8 bg-secondary/50 backdrop-blur-lg text-secondary-foreground border-border/30 hover:bg-secondary/60"
               size="icon"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
@@ -366,7 +369,7 @@ export function DataTableReusable<TData extends { id: UniqueIdentifier }, TValue
             </Button>
             <Button
               variant="outline"
-              className="size-8 bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
+              className="size-8 bg-secondary/50 backdrop-blur-lg text-secondary-foreground border-border/30 hover:bg-secondary/60"
               size="icon"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}

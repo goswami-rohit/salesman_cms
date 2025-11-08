@@ -80,7 +80,7 @@ const salesColumns: ColumnDef<SalesRecord>[] = [
     cell: ({ row }) => <div className="text-right text-sm text-red-600">{formatCurrency(row.original.pendingPayment ?? 0)}</div>,
   },
   { accessorKey: 'orderQty', header: 'Qty', cell: ({ row }) => <div className="text-center font-mono text-sm">{row.original.orderQty ?? 0}</div> },
-  { accessorKey: 'paymentMode', header: 'Payment Mode', cell: ({ row }) => <span className="text-xs text-gray-600">{row.original.paymentMode ?? '—'}</span>, enableSorting: false },
+  { accessorKey: 'paymentMode', header: 'Payment Mode', cell: ({ row }) => <span className="text-xs text-gray-300">{row.original.paymentMode ?? '—'}</span>, enableSorting: false },
   { accessorKey: 'orderPartyName', header: 'Party Name', enableSorting: false, enableHiding: true },
 ];
 

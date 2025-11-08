@@ -409,95 +409,113 @@ export default function SlmLeavesPage() {
         </div>
 
         {/* --- Filters Section --- */}
-        <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-secondary border">
-          {/* 1. Date Range Picker (Leave Date) */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="date"
-                variant={"outline"}
-                className={cn(
-                  "w-full sm:w-[300px] justify-start text-left font-normal",
-                  !dateRange && "text-muted-foreground"
-                )}
-              >
-                <IconCalendar className="mr-2 h-4 w-4" />
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "LLL dd, y")} -{" "}
-                      {format(dateRange.to, "LLL dd, y")}
-                    </>
-                  ) : (
-                    format(dateRange.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Filter by Leave Date Range</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                defaultMonth={dateRange?.from || addDays(new Date(), -7)}
-                selected={dateRange}
-                onSelect={setDateRange}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-          {dateRange && (
-            <Button variant="ghost" onClick={() => setDateRange(undefined)} className='min-w-[100px]'>
-              Clear Date
-            </Button>
-          )}
+        <div
+          className="rounded-lg border border-border mb-6 bg-card p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-          {/* 2. Search Input */}
-          <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
-            <label className="text-sm font-medium text-muted-foreground">Search All Fields</label>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Salesman, Reason, Status..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9"
-              />
+            {/* 1) Date Range */}
+            <div className="flex flex-col space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Filter by Leave Date Range</label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="date"
+                      variant="outline"
+                      className="w-full h-9 justify-start text-left font-normal"
+                    >
+                      <IconCalendar className="mr-2 h-4 w-4" />
+                      {dateRange?.from
+                        ? (dateRange.to
+                          ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`
+                          : `${format(dateRange.from, "LLL dd, y")}`)
+                        : "Select range"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="range"
+                      defaultMonth={dateRange?.from || addDays(new Date(), -7)}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {dateRange && (
+                  <Button variant="ghost" onClick={() => setDateRange(undefined)} className="h-9">
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
+
+            {/* 2) Search */}
+            <div className="flex flex-col space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Search All Fields</label>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Salesman, Reason, Status..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9"
+                />
+              </div>
+            </div>
+
+            {/* 3) Role */}
+            <div className="flex flex-col space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Role</label>
+              <Select value={roleFilter} onValueChange={setRoleFilter} disabled={isLoadingRoles}>
+                <SelectTrigger className="h-9">
+                  {isLoadingRoles ? <span className="text-muted-foreground">Loading…</span> : <SelectValue placeholder="All Roles" />}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {availableRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 4) Area */}
+            <div className="flex flex-col space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Area</label>
+              <Select value={areaFilter} onValueChange={setAreaFilter} disabled={isLoadingLocations}>
+                <SelectTrigger className="h-9">
+                  {isLoadingLocations ? <span className="text-muted-foreground">Loading…</span> : <SelectValue placeholder="All Areas" />}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Areas</SelectItem>
+                  {availableAreas.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 5) Region */}
+            <div className="flex flex-col space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Region</label>
+              <Select value={regionFilter} onValueChange={setRegionFilter} disabled={isLoadingLocations}>
+                <SelectTrigger className="h-9">
+                  {isLoadingLocations ? <span className="text-muted-foreground">Loading…</span> : <SelectValue placeholder="All Regions" />}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Regions</SelectItem>
+                  {availableRegions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Errors across full width */}
+            {(locationError || roleError) && (
+              <div className="sm:col-span-2 lg:col-span-4">
+                {locationError && <p className="text-xs text-red-500">Location Filter Error: {locationError}</p>}
+                {roleError && <p className="text-xs text-red-500">Role Filter Error: {roleError}</p>}
+              </div>
+            )}
           </div>
-
-          {/* 3. Role Filter */}
-          {renderSelectFilter(
-            'Role',
-            roleFilter,
-            setRoleFilter,
-            availableRoles,
-            isLoadingRoles
-          )}
-
-          {/* 4. Area Filter */}
-          {renderSelectFilter(
-            'Area',
-            areaFilter,
-            setAreaFilter,
-            availableAreas,
-            isLoadingLocations
-          )}
-
-          {/* 5. Region Filter */}
-          {renderSelectFilter(
-            'Region',
-            regionFilter,
-            setRegionFilter,
-            availableRegions,
-            isLoadingLocations
-          )}
-
-          {locationError && <p className="text-xs text-red-500 w-full mt-2">Location Filter Error: {locationError}</p>}
-          {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
         </div>
-        {/* --- End Filters Section --- */}
-
 
         {/* Data Table Section */}
         <div className="bg-card p-6 rounded-lg border border-border">

@@ -68,7 +68,7 @@ const DATE_FILTERS = [
 export default function DvrPjpReportPage() {
   // --- States ---
   const [days, setDays] = React.useState<string>('30');
-  
+
   // Client-side fetch + compute (uses ONLY VERIFIED PJPs internally)
   const { loading, error, filteredPjps, filteredDvrs, analytics } = useDvrPjpData(Number(days));
 
@@ -111,7 +111,7 @@ export default function DvrPjpReportPage() {
 
     if (salesmanFilter.length) temp = temp.filter(r => salesmanFilter.includes(r.salesmanName));
     if (areaFilter.length) temp = temp.filter(r => areaFilter.includes(r.areaToBeVisited));
-    
+
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       temp = temp.filter(record =>
@@ -143,13 +143,13 @@ export default function DvrPjpReportPage() {
     if (!finalFilteredPjps || !finalFilteredDvrs) return [];
     const map = new Map<string, { name: string; dvrs: number; pjps: number }>();
 
-    finalFilteredDvrs.forEach((d:any) => {
+    finalFilteredDvrs.forEach((d: any) => {
       const key = d.reportDate;
       if (!map.has(key)) map.set(key, { name: key, dvrs: 0, pjps: 0 });
       map.get(key)!.dvrs += 1;
     });
 
-    finalFilteredPjps.forEach((p:any) => {
+    finalFilteredPjps.forEach((p: any) => {
       const key = p.planDate;
       if (!map.has(key)) map.set(key, { name: key, dvrs: 0, pjps: 0 });
       map.get(key)!.pjps += 1;
@@ -171,10 +171,15 @@ export default function DvrPjpReportPage() {
       header: 'Plan Status',
       cell: ({ row }) => {
         const status = row.original.status;
-        const variant = status === 'COMPLETED' ? 'default'
-                      : status === 'PENDING'   ? 'secondary'
-                      : 'destructive';
-        return <Badge variant={variant}>{status}</Badge>;
+
+        const className =
+          status === 'APPROVED'
+            ? 'bg-green-600 hover:bg-green-700 text-white'
+            : status === 'PENDING'
+              ? 'bg-yellow-500 hover:bg-yellow-600 text-black'
+              : 'bg-red-600 hover:bg-red-700 text-white';
+
+        return <Badge className={className}>{status}</Badge>;
       },
     },
     {
@@ -182,10 +187,15 @@ export default function DvrPjpReportPage() {
       header: 'Verification',
       cell: ({ row }) => {
         const status = row.original.verificationStatus;
-        const variant = status === 'VERIFIED' ? 'default'
-                      : status === 'PENDING'  ? 'secondary'
-                      : 'destructive';
-        return <Badge variant={variant}>{status}</Badge>;
+
+        const className =
+          status === 'VERIFIED'
+            ? 'bg-green-600 hover:bg-green-700 text-white'
+            : status === 'PENDING'
+              ? 'bg-yellow-500 hover:bg-yellow-600 text-black'
+              : 'bg-red-600 hover:bg-red-700 text-white';
+
+        return <Badge className={className}>{status}</Badge>;
       },
     },
   ], []);
@@ -316,11 +326,11 @@ export default function DvrPjpReportPage() {
             </Card>
 
             {/* MoM Cards (from analytics hook) */}
-            {analytics.momMetrics.find((m:any) => m.metric.includes('DVR')) && (
-              <MoMMetricCard metricData={analytics.momMetrics.find((m:any) => m.metric.includes('DVR'))!} />
+            {analytics.momMetrics.find((m: any) => m.metric.includes('DVR')) && (
+              <MoMMetricCard metricData={analytics.momMetrics.find((m: any) => m.metric.includes('DVR'))!} />
             )}
-            {analytics.momMetrics.find((m:any) => m.metric.includes('PJP')) && (
-              <MoMMetricCard metricData={analytics.momMetrics.find((m:any) => m.metric.includes('PJP'))!} />
+            {analytics.momMetrics.find((m: any) => m.metric.includes('PJP')) && (
+              <MoMMetricCard metricData={analytics.momMetrics.find((m: any) => m.metric.includes('PJP'))!} />
             )}
           </div>
 
@@ -352,7 +362,7 @@ export default function DvrPjpReportPage() {
                     columns={dvrColumns}
                     data={finalFilteredDvrs}
                     enableRowDragging={false}
-                    onRowOrderChange={() => {}}
+                    onRowOrderChange={() => { }}
                   />
                 ) : (
                   <div className="text-center text-gray-500 py-12 border border-dashed rounded-lg">
@@ -370,12 +380,12 @@ export default function DvrPjpReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                 {finalFilteredPjps.length > 0 ? (
+                {finalFilteredPjps.length > 0 ? (
                   <DataTableReusable
                     columns={pjpColumns}
                     data={finalFilteredPjps}
                     enableRowDragging={false}
-                    onRowOrderChange={() => {}}
+                    onRowOrderChange={() => { }}
                   />
                 ) : (
                   <div className="text-center text-gray-500 py-12 border border-dashed rounded-lg">

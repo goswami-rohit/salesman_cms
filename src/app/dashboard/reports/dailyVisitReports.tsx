@@ -351,7 +351,7 @@ export default function DailyVisitReportsPage() {
           ) : (
             <>
               <DataTableReusable
-                columns={dailyVisitReportColumns}
+                columns={dailyVisitReportColumns} 
                 data={currentReports}
                 enableRowDragging={false}
                 onRowOrderChange={() => { }}

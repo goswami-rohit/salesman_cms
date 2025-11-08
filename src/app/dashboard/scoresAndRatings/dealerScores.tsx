@@ -223,76 +223,94 @@ export default function DealerScores() {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-col gap-2">
-        <div className="flex items-center justify-between w-full">
-          <CardTitle>Dealer Scores</CardTitle>
-        </div>
+    <>
+      {/* Filters Card */}
+      <Card className="w-full mb-6">
+        <CardHeader className="flex flex-col gap-2">
+          <div className="flex items-center justify-between w-full">
+            <CardTitle>Dealer Scores</CardTitle>
+          </div>
 
-        {/* Filters row */}
-        <div className="flex flex-wrap items-end gap-4 p-2 w-full">
-          <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
-            <label className="text-sm font-medium text-muted-foreground">Search Dealer</label>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                placeholder="Dealer name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9 input bg-input rounded-md w-full"
-              />
+          {/* Filters Row */}
+          <div className="flex flex-wrap items-end gap-4 p-2 w-full">
+            <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
+              <label className="text-sm font-medium text-muted-foreground">Search Dealer</label>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  placeholder="Dealer name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9 input bg-input rounded-md w-full"
+                />
+              </div>
             </div>
-          </div>
 
-          {renderSelectFilter('Area', areaFilter, setAreaFilter, availableAreas, isLoadingLocations)}
-          {renderSelectFilter('Region', regionFilter, setRegionFilter, availableRegions, isLoadingLocations)}
-          {renderSelectFilter('Type', typeFilter, setTypeFilter, availableTypes, isLoadingTypes)}
+            {renderSelectFilter('Area', areaFilter, setAreaFilter, availableAreas, isLoadingLocations)}
+            {renderSelectFilter('Region', regionFilter, setRegionFilter, availableRegions, isLoadingLocations)}
+            {renderSelectFilter('Type', typeFilter, setTypeFilter, availableTypes, isLoadingTypes)}
 
-          {locationError && <p className="text-xs text-red-500 w-full mt-2">Location Filter Error: {locationError}</p>}
-          {typeError && <p className="text-xs text-red-500 w-full mt-2">Type Filter Error: {typeError}</p>}
-        </div>
-      </CardHeader>
+            {locationError && <p className="text-xs text-red-500 w-full mt-2">Location Filter Error: {locationError}</p>}
+            {typeError && <p className="text-xs text-red-500 w-full mt-2">Type Filter Error: {typeError}</p>}
+          </div>
+        </CardHeader>
+      </Card>
 
-      <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            Loading...
-          </div>
-        ) : error ? (
-          <div className="text-center text-red-500 p-8">
-            <p>Error: {error}</p>
-          </div>
-        ) : filteredData.length === 0 ? (
-          <div className="text-center text-gray-500 p-8">No dealer scores found for the selected filters.</div>
-        ) : (
-          <>
-            <DataTableReusable
-              columns={columns}
-              data={currentScores}
-              enableRowDragging={false}
-              onRowOrderChange={() => {}}
-            />
-            <Pagination className="mt-6">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} aria-disabled={currentPage === 1} />
-                </PaginationItem>
-                {[...Array(totalPages)].map((_, index) => (
-                  <PaginationItem key={index}>
-                    <PaginationLink onClick={() => handlePageChange(index + 1)} isActive={currentPage === index + 1}>
-                      {index + 1}
-                    </PaginationLink>
+      {/* Table Card */}
+      <Card className="w-full">
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              Loading...
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-500 p-8">
+              <p>Error: {error}</p>
+            </div>
+          ) : filteredData.length === 0 ? (
+            <div className="text-center text-gray-500 p-8">No dealer scores found for the selected filters.</div>
+          ) : (
+            <>
+              <DataTableReusable
+                columns={columns}
+                data={currentScores}
+                enableRowDragging={false}
+                onRowOrderChange={() => { }}
+              />
+
+              <Pagination className="mt-6">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      aria-disabled={currentPage === 1}
+                    />
                   </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext onClick={() => handlePageChange(currentPage + 1)} aria-disabled={currentPage === totalPages} />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </>
-        )}
-      </CardContent>
-    </Card>
+
+                  {[...Array(totalPages)].map((_, index) => (
+                    <PaginationItem key={index}>
+                      <PaginationLink
+                        onClick={() => handlePageChange(index + 1)}
+                        isActive={currentPage === index + 1}
+                      >
+                        {index + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      aria-disabled={currentPage === totalPages}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }

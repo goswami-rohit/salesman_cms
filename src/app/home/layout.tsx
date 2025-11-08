@@ -3,6 +3,7 @@ import { withAuth, getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import HomeShell from '@/app/home/homeShell';
+import type { Metadata } from "next";
 
 /**
  * Checks if the user's JWT is missing essential organization data and needs to be refreshed.
@@ -25,6 +26,12 @@ async function refreshUserJWTIfNeeded(user: any, claims: any) {
   }
   return { needsRefresh: false };
 }
+
+export const metadata: Metadata = {
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
 
 /**
  * Layout component for the CemTem Chat page.

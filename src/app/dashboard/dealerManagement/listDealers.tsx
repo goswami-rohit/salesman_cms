@@ -151,7 +151,7 @@ export default function ListDealersPage() {
       header: 'Actions',
       cell: ({ row }) => (
         <Button
-          variant="destructive"
+          className="bg-red-800 hover:bg-red-900 text-white"
           size="sm"
           onClick={() => {
             setDealerToDeleteId(row.original.id);

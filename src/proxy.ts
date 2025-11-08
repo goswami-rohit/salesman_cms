@@ -54,6 +54,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
 // Your existing matcher configuration.
 export const config = {
- matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+ matcher: [
+  '/((?!_next/static|_next/image|favicon.ico|.*\\.webp|.*\\.png|.*\\.svg).*)',
+  ],
 };
 

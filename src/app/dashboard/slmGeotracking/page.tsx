@@ -342,11 +342,9 @@ export default function SalesmanGeoTrackingPage() {
           <h2 className="text-3xl font-bold tracking-tight">Salesman Geo-Tracking</h2>
         </div>
 
-        {/* Main Content Card */}
+        {/* Filters Card */}
         <div className="bg-card p-6 rounded-lg border border-border shadow-lg">
-
-          {/* --- Filters Section --- */}
-          <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-secondary border mb-6">
+          <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg border mb-0">
             {/* 1. Date Range Picker */}
             <Popover>
               <PopoverTrigger asChild>
@@ -433,61 +431,60 @@ export default function SalesmanGeoTrackingPage() {
             {locationError && <p className="text-xs text-red-500 w-full mt-2">Location Filter Error: {locationError}</p>}
             {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
           </div>
-          {/* --- End Filters Section --- */}
+        </div>
 
-          {/* Data Display / Loading / Error */}
-          <div>
-            {loading ? (
-              <div className="text-center py-8 text-gray-500">
-                <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto mb-2" />
-                <p>Loading geo-tracking reports...</p>
-              </div>
-            ) : error ? (
-              <div className="text-center text-red-500 py-8">
-                Error: {error}
-                <Button onClick={fetchTracks} className="ml-4">Retry</Button>
-              </div>
-            ) : allFilteredTracks.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">No geo-tracking reports found matching the selected filters.</div>
-            ) : (
-              <>
-                <DataTableReusable
-                  columns={columns}
-                  data={currentTracks}
-                  enableRowDragging={false}
-                  onRowOrderChange={() => { }}
-                />
-                <Pagination className="mt-6">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        aria-disabled={currentPage === 1}
-                        tabIndex={currentPage === 1 ? -1 : undefined}
-                      />
+        {/* Table Card */}
+        <div className="bg-card p-6 rounded-lg border border-border shadow-lg">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto mb-2" />
+              <p>Loading geo-tracking reports...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-500 py-8">
+              Error: {error}
+              <Button onClick={fetchTracks} className="ml-4">Retry</Button>
+            </div>
+          ) : allFilteredTracks.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">No geo-tracking reports found matching the selected filters.</div>
+          ) : (
+            <>
+              <DataTableReusable
+                columns={columns}
+                data={currentTracks}
+                enableRowDragging={false}
+                onRowOrderChange={() => { }}
+              />
+              <Pagination className="mt-6">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      aria-disabled={currentPage === 1}
+                      tabIndex={currentPage === 1 ? -1 : undefined}
+                    />
+                  </PaginationItem>
+                  {[...Array(totalPages)].map((_, index) => (
+                    <PaginationItem key={index}>
+                      <PaginationLink
+                        onClick={() => handlePageChange(index + 1)}
+                        isActive={currentPage === index + 1}
+                      >
+                        {index + 1}
+                      </PaginationLink>
                     </PaginationItem>
-                    {[...Array(totalPages)].map((_, index) => (
-                      <PaginationItem key={index}>
-                        <PaginationLink
-                          onClick={() => handlePageChange(index + 1)}
-                          isActive={currentPage === index + 1}
-                        >
-                          {index + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        aria-disabled={currentPage === totalPages}
-                        tabIndex={currentPage === totalPages ? -1 : undefined}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </>
-            )}
-          </div>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      aria-disabled={currentPage === totalPages}
+                      tabIndex={currentPage === totalPages ? -1 : undefined}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </>
+          )}
         </div>
       </div>
     </div>
