@@ -83,7 +83,9 @@ function EditRoleCell({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="icon" disabled={!canEdit}>
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+          size="icon" 
+          disabled={!canEdit}>
           <PencilIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
@@ -180,7 +182,9 @@ function EditMappingCell({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="icon" disabled={!currentUserRole}>
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+          size="icon" 
+          disabled={!currentUserRole}>
           <UsersIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
@@ -331,7 +335,9 @@ function EditDealerMappingCell({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="icon" disabled={!currentUserRole}>
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+          size="icon" 
+          disabled={!currentUserRole}>
           <StoreIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
@@ -429,7 +435,9 @@ const getTeamColumns = (
         return (
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="secondary" size="icon" disabled={managesReports.length === 0}>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+              size="icon" 
+              disabled={managesReports.length === 0}>
                 <EyeIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
@@ -685,7 +693,9 @@ export function TeamTabContent() {
         {filteredData.length === 0 ? (
           <div className="text-center text-neutral-500 py-8">No team members found for this company with the selected filters.</div>
         ) : (
-          <DataTableReusable columns={teamColumns} data={filteredData} />
+          <DataTableReusable 
+            columns={teamColumns} 
+            data={filteredData} />
         )}
       </CardContent>
     </Card>
