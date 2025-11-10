@@ -69,8 +69,8 @@ export async function GET() {
         location: record.locationName, // Corresponds to locationName in schema
 
         // Use ISO string for inTime/outTime for consistency, or keep toLocaleTimeString if that is the strict frontend requirement
-        inTime: record.inTimeTimestamp ? record.inTimeTimestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : null,
-        outTime: record.outTimeTimestamp ? record.outTimeTimestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : null,
+        inTime: record.inTimeTimestamp ? record.inTimeTimestamp.toISOString() : null,
+        outTime: record.outTimeTimestamp ? record.outTimeTimestamp.toISOString() : null,
 
         inTimeImageCaptured: record.inTimeImageCaptured,
         outTimeImageCaptured: record.outTimeImageCaptured,

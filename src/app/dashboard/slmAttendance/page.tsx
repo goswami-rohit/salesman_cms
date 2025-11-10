@@ -46,15 +46,15 @@ type SalesmanAttendanceReport = z.infer<typeof salesmanAttendanceSchema>;
 const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 // --- API Endpoints and Types for Filters ---
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`; 
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`; 
+const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
   regions: string[];
 }
 interface RolesResponse {
-    roles: string[]; 
+  roles: string[];
 }
 
 // Helper function to render the Select filter component
@@ -101,7 +101,7 @@ export default function SlmAttendancePage() {
   const [roleFilter, setRoleFilter] = React.useState('all');
   const [areaFilter, setAreaFilter] = React.useState('all');
   const [regionFilter, setRegionFilter] = React.useState('all');
-  
+
   const [currentPage, setCurrentPage] = React.useState(1);
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
 
@@ -109,7 +109,7 @@ export default function SlmAttendancePage() {
   const [availableRoles, setAvailableRoles] = React.useState<string[]>([]);
   const [availableAreas, setAvailableAreas] = React.useState<string[]>([]);
   const [availableRegions, setAvailableRegions] = React.useState<string[]>([]);
-  
+
   const [isLoadingLocations, setIsLoadingLocations] = React.useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = React.useState(true);
   const [locationError, setLocationError] = React.useState<string | null>(null);
@@ -179,13 +179,13 @@ export default function SlmAttendancePage() {
       const response = await fetch(LOCATION_API_ENDPOINT);
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data: LocationsResponse = await response.json();
-      
+
       const safeAreas = Array.isArray(data.areas) ? data.areas.filter(Boolean) : [];
       const safeRegions = Array.isArray(data.regions) ? data.regions.filter(Boolean) : [];
-      
+
       setAvailableAreas(safeAreas);
       setAvailableRegions(safeRegions);
-      
+
     } catch (err: any) {
       console.error('Failed to fetch filter locations:', err);
       setLocationError('Failed to load Area/Region filters.');
@@ -203,7 +203,7 @@ export default function SlmAttendancePage() {
     try {
       const response = await fetch(ROLES_API_ENDPOINT);
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      const data: RolesResponse = await response.json(); 
+      const data: RolesResponse = await response.json();
       setAvailableRoles(data.roles && Array.isArray(data.roles) ? data.roles.filter(Boolean) : []);
     } catch (err: any) {
       console.error('Failed to fetch filter roles:', err);
@@ -217,16 +217,16 @@ export default function SlmAttendancePage() {
   React.useEffect(() => {
     fetchAttendanceReports();
   }, [fetchAttendanceReports]);
-  
+
   React.useEffect(() => {
     fetchLocations();
     fetchRoles();
-  }, [fetchLocations, fetchRoles]); 
+  }, [fetchLocations, fetchRoles]);
 
   // --- Filtering and Pagination Logic ---
   const filteredReports = React.useMemo(() => {
     // Reset page to 1 when filters or search change
-    setCurrentPage(1); 
+    setCurrentPage(1);
     const lowerCaseSearch = (searchQuery || '').toLowerCase();
 
     return attendanceReports.filter((report) => {
@@ -241,16 +241,16 @@ export default function SlmAttendancePage() {
 
       // 2. Role Filter (handle both 'salesmanRole' and 'role' keys)
       const reportRole = (report as any).salesmanRole || (report as any).role || '';
-      const roleMatch = roleFilter === 'all' || reportRole.toLowerCase() === roleFilter.toLowerCase(); 
+      const roleMatch = roleFilter === 'all' || reportRole.toLowerCase() === roleFilter.toLowerCase();
 
       // 3. Area Filter (try 'area' key; fallback to location parsing if necessary)
       const reportArea = (report as any).area || '';
-      const areaMatch = areaFilter === 'all' || (reportArea && reportArea.toLowerCase() === areaFilter.toLowerCase()); 
+      const areaMatch = areaFilter === 'all' || (reportArea && reportArea.toLowerCase() === areaFilter.toLowerCase());
 
       // 4. Region Filter (try 'region' key)
       const reportRegion = (report as any).region || '';
       const regionMatch = regionFilter === 'all' || (reportRegion && reportRegion.toLowerCase() === regionFilter.toLowerCase());
-      
+
       return matchesSearch && roleMatch && areaMatch && regionMatch;
     });
   }, [attendanceReports, searchQuery, roleFilter, areaFilter, regionFilter]);
@@ -274,6 +274,21 @@ export default function SlmAttendancePage() {
     setIsViewModalOpen(true);
   };
 
+  // --- NEW: Helper function to format time in IST ---
+  const formatTimeIST = (isoString: string | null | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+        timeZone: 'Asia/Kolkata', // Forcibly format in Indian Standard Time
+      }).format(new Date(isoString));
+    } catch (e) {
+      return 'Invalid Date'; // Fallback for any error
+    }
+  };
+
   // --- Columns Definition ---
   const salesmanAttendanceColumns: ColumnDef<SalesmanAttendanceReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
@@ -291,18 +306,32 @@ export default function SlmAttendancePage() {
         return <div>{formattedDate}</div>;
       },
     },
-    { 
-      accessorKey: "location", 
+    {
+      accessorKey: "location",
       header: "Location",
       cell: ({ row }) => <span className="max-w-[250px] truncate block">{row.original.location}</span>,
     },
-    { accessorKey: "inTime", header: "In Time" },
     {
-      accessorKey: "outTime", 
-      header: "Out Time",
-      cell: ({ row }) => (
-        <span>{row.original.outTime || "N/A (Still In)"}</span>
-      ),
+      accessorKey: 'inTime',
+      header: 'In Time',
+      cell: ({ row }) => {
+        <span>
+          {row.original.inTime
+            ? formatTimeIST(row.original.inTime)
+            : 'N/A'}
+        </span>
+      },
+    },
+    {
+      accessorKey: 'outTime',
+      header: 'Out Time',
+      cell: ({ row }) => {
+        <span>
+          {row.original.outTime
+            ? formatTimeIST(row.original.outTime)
+            : 'N/A (Still In)'}
+        </span>
+      },
     },
     {
       id: "inTimeImage",
@@ -346,9 +375,9 @@ export default function SlmAttendancePage() {
       id: "actions",
       header: "View Details",
       cell: ({ row }) => (
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => handleViewReport(row.original)}
         >
           View
@@ -433,45 +462,45 @@ export default function SlmAttendancePage() {
 
           {/* 2. Search Input */}
           <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
-              <label className="text-sm font-medium text-muted-foreground">Search All Fields</label>
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search reports..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 h-9"
-                />
-              </div>
+            <label className="text-sm font-medium text-muted-foreground">Search All Fields</label>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search reports..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
           </div>
-          
+
           {/* 3. Role Filter */}
           {renderSelectFilter(
-              'Role', 
-              roleFilter, 
-              (v) => { setRoleFilter(v); }, 
-              availableRoles, 
-              isLoadingRoles
+            'Role',
+            roleFilter,
+            (v) => { setRoleFilter(v); },
+            availableRoles,
+            isLoadingRoles
           )}
 
           {/* 4. Area Filter */}
           {renderSelectFilter(
-              'Area', 
-              areaFilter, 
-              (v) => { setAreaFilter(v); }, 
-              availableAreas, 
-              isLoadingLocations
+            'Area',
+            areaFilter,
+            (v) => { setAreaFilter(v); },
+            availableAreas,
+            isLoadingLocations
           )}
 
           {/* 5. Region Filter */}
           {renderSelectFilter(
-              'Region', 
-              regionFilter, 
-              (v) => { setRegionFilter(v); }, 
-              availableRegions, 
-              isLoadingLocations
+            'Region',
+            regionFilter,
+            (v) => { setRegionFilter(v); },
+            availableRegions,
+            isLoadingLocations
           )}
-          
+
           {locationError && <p className="text-xs text-red-500 w-full mt-2">Location Filter Error: {locationError}</p>}
           {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
         </div>
@@ -550,8 +579,8 @@ export default function SlmAttendancePage() {
               {/* In-Time Details */}
               <div className="md:col-span-2 text-lg font-semibold border-t pt-4 mt-4">In-Time Details</div>
               <div>
-                <Label htmlFor="inTime">Time</Label>
-                <Input id="inTime" value={selectedReport.inTime || 'N/A'} readOnly />
+                <Label htmlFor="inTime">In Time</Label>
+                <Input id="inTime" value={formatTimeIST(selectedReport.inTime) || 'N/A'} readOnly />
               </div>
               <div>
                 <Label htmlFor="inTimeImage">Image Captured</Label>
@@ -594,8 +623,8 @@ export default function SlmAttendancePage() {
               {/* Out-Time Details */}
               <div className="md:col-span-2 text-lg font-semibold border-t pt-4 mt-4">Out-Time Details</div>
               <div>
-                <Label htmlFor="outTime">Time</Label>
-                <Input id="outTime" value={selectedReport.outTime || 'N/A (Still In)'} readOnly />
+                <Label htmlFor="outTime">Out Time</Label>
+                <Input id="outTime" value={formatTimeIST(selectedReport.outTime) || 'N/A (Still In)'} readOnly />
               </div>
               <div>
                 <Label htmlFor="outTimeImage">Image Captured</Label>
