@@ -82,7 +82,7 @@ model User {
   giftLogs                            GiftAllocationLog[]   @relation("UserGiftLogs")
   giftTransfersSent                   GiftAllocationLog[]   @relation("SourceUserTransfers")
   giftTransfersReceived               GiftAllocationLog[]   @relation("DestinationUserTransfers")
-  masonPcSide.                        mason_pc_side[]
+  //masonPcSide.                        mason_pc_side[]
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -190,7 +190,7 @@ model Dealer {
   dailyVisitReportsAsDealer     DailyVisitReport[]      @relation("DVR_Dealer")
   dailyVisitReportsAsSubDealer  DailyVisitReport[]      @relation("DVR_SubDealer")
   permanentJourneyPlansAsDealer PermanentJourneyPlan[]  @relation("PJP_Dealer")
-  masonPcSide           mason_pc_side[]
+  //masonPcSide           mason_pc_side[]
 
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
