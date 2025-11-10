@@ -15,6 +15,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { dealerVerificationSchema } from '@/lib/shared-zod-schema';
 
@@ -26,7 +33,18 @@ export default function VerifyDealersPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // --- Filter State (3 filters) ---
+    const [selectedNameFilter, setSelectedNameFilter] = useState<string>('all');
+    const [selectedFirmNameFilter, setSelectedFirmNameFilter] =
+        useState<string>('all');
+    const [selectedRegionFilter, setSelectedRegionFilter] =
+        useState<string>('all');
+
+    // --- Delete loading state ---
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
     const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement/dealer-verify`;
+    const deleteApiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement`;
 
     // --- Fetch Pending Dealers ---
     const fetchPendingDealers = useCallback(async () => {
@@ -40,7 +58,7 @@ export default function VerifyDealersPage() {
                 throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
             const data = await response.json();
-            
+
             const dealersArray = Array.isArray(data) ? data : data.dealers;
 
             const validatedDealers = z.array(dealerVerificationSchema).parse(dealersArray);
@@ -48,8 +66,8 @@ export default function VerifyDealersPage() {
             toast.success(`Loaded ${validatedDealers.length} pending dealers.`, { duration: 2000 });
         } catch (e: any) {
             console.error("Failed to fetch pending dealers:", e);
-            const message = e instanceof z.ZodError 
-                ? "Data validation failed. Schema mismatch with backend." 
+            const message = e instanceof z.ZodError
+                ? "Data validation failed. Schema mismatch with backend."
                 : (e.message || "An unknown error occurred.");
 
             toast.error(`Failed to load pending dealers: ${message}`);
@@ -65,7 +83,7 @@ export default function VerifyDealersPage() {
 
 
     // --- Handle Verification/Rejection Action (PUT request) ---
-    const handleVerificationAction = async (dealerId: string, action: 'VERIFIED' | 'REJECTED') => {
+    const handleVerificationAction = async (dealerId: string, action: 'VERIFIED') => {
         console.log(`Attempting to set dealer ID: ${dealerId} status to ${action}`);
 
         toast.loading(`Updating dealer status to ${action}...`, { id: 'verification-status' });
@@ -76,7 +94,7 @@ export default function VerifyDealersPage() {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 // Sending 'verificationStatus' to match the fixed backend logic
-                body: JSON.stringify({ verificationStatus: action }), 
+                body: JSON.stringify({ verificationStatus: action }),
             });
 
             if (!response.ok) {
@@ -91,6 +109,75 @@ export default function VerifyDealersPage() {
         }
     };
 
+    // --- NEW: Handler to DELETE a Dealer ---
+    const handleDeleteDealer = async (id: string) => {
+        setDeletingId(id); // Set loading state for this specific button
+        const toastId = `delete-${id}`;
+        toast.loading(`Rejecting and deleting dealer...`, { id: toastId });
+        try {
+            const response = await fetch(`${deleteApiURI}?id=${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to delete dealer');
+            }
+
+            toast.success('Dealer Rejected and Deleted', { id: toastId });
+            fetchPendingDealers(); // Refresh the list
+        } catch (e: any) {
+            toast.error(e.message, { id: toastId });
+        } finally {
+            setDeletingId(null); // Clear loading state
+        }
+    };
+
+    // --- NEW: Derived lists for filter dropdowns ---
+    const nameOptions = React.useMemo(() => {
+        const names = new Set<string>();
+        pendingDealers.forEach((p) => {
+            if (p.name) names.add(p.name);
+        });
+        return ['all', ...Array.from(names).sort()];
+    }, [pendingDealers]);
+
+    const firmNameOptions = React.useMemo(() => {
+        const names = new Set<string>();
+        pendingDealers.forEach((p) => {
+            if (p.nameOfFirm) names.add(p.nameOfFirm);
+        });
+        return ['all', ...Array.from(names).sort()];
+    }, [pendingDealers]);
+
+    const regionOptions = React.useMemo(() => {
+        const regions = new Set<string>();
+        pendingDealers.forEach((p) => {
+            if (p.region) regions.add(p.region);
+        });
+        return ['all', ...Array.from(regions).sort()];
+    }, [pendingDealers]);
+
+    // --- NEW: Client-side Filtering ---
+    const filteredDealers = React.useMemo(() => {
+        return pendingDealers.filter((dealer) => {
+            const matchesName =
+                selectedNameFilter === 'all' ? true : dealer.name === selectedNameFilter;
+
+            const matchesFirmName =
+                selectedFirmNameFilter === 'all' ? true : dealer.nameOfFirm === selectedFirmNameFilter;
+
+            const matchesRegion =
+                selectedRegionFilter === 'all' ? true : dealer.region === selectedRegionFilter;
+
+            return matchesName && matchesFirmName && matchesRegion;
+        });
+    }, [
+        pendingDealers,
+        selectedNameFilter,
+        selectedFirmNameFilter,
+        selectedRegionFilter,
+    ]);
 
     // --- Columns for PENDING Dealers Table (Updated accessors) ---
     const pendingDealerColumns: ColumnDef<DealerRecord>[] = [
@@ -104,10 +191,10 @@ export default function VerifyDealersPage() {
         {
             accessorKey: 'dealerPicUrl', header: 'Dealer/ID Pic', minSize: 100,
             cell: ({ row }) => row.original.dealerPicUrl ? (
-                <a 
-                    href={row.original.dealerPicUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                <a
+                    href={row.original.dealerPicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-blue-500 hover:text-blue-600 underline text-sm truncate max-w-[100px] block"
                 >
                     View Dealer Pic
@@ -117,10 +204,10 @@ export default function VerifyDealersPage() {
         {
             accessorKey: 'shopPicUrl', header: 'Shop Pic', minSize: 100,
             cell: ({ row }) => row.original.shopPicUrl ? (
-                <a 
-                    href={row.original.shopPicUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                <a
+                    href={row.original.shopPicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-blue-500 hover:text-blue-600 underline text-sm truncate max-w-[100px] block"
                 >
                     View Shop Pic
@@ -138,15 +225,18 @@ export default function VerifyDealersPage() {
                         size="sm"
                         className='bg-green-500 hover:bg-green-700'
                         onClick={() => handleVerificationAction(row.original.id, 'VERIFIED')}
+                        disabled={deletingId === row.original.id}
                     >
                         Verify
                     </Button>
                     <Button
                         className="bg-red-800 hover:bg-red-900 text-white"
                         size="sm"
-                        onClick={() => handleVerificationAction(row.original.id, 'REJECTED')}
+                        // --- MODIFIED: onClick, disabled, and text ---
+                        onClick={() => handleDeleteDealer(row.original.id)}
+                        disabled={deletingId === row.original.id}
                     >
-                        Reject
+                        {deletingId === row.original.id ? 'Rejecting...' : 'Reject'}
                     </Button>
                 </div>
             ),
@@ -162,6 +252,59 @@ export default function VerifyDealersPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent className='p-6'>
+
+                {/* --- NEW: Filter Controls --- */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <Select
+                        value={selectedNameFilter}
+                        onValueChange={setSelectedNameFilter}
+                    >
+                        <SelectTrigger className="w-full md:w-[250px]">
+                            <SelectValue placeholder="Filter by Dealer Name" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {nameOptions.map((name) => (
+                                <SelectItem key={name} value={name}>
+                                    {name === 'all' ? 'All Dealer Names' : name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select
+                        value={selectedFirmNameFilter}
+                        onValueChange={setSelectedFirmNameFilter}
+                    >
+                        <SelectTrigger className="w-full md:w-[250px]">
+                            <SelectValue placeholder="Filter by Firm Name" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {firmNameOptions.map((name) => (
+                                <SelectItem key={name} value={name}>
+                                    {name === 'all' ? 'All Firm Names' : name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select
+                        value={selectedRegionFilter}
+                        onValueChange={setSelectedRegionFilter}
+                    >
+                        <SelectTrigger className="w-full md:w-[250px]">
+                            <SelectValue placeholder="Filter by Region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {regionOptions.map((region) => (
+                                <SelectItem key={region} value={region}>
+                                    {region === 'all' ? 'All Regions' : region}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                {/* --- END: Filter Controls --- */}
+
                 {loading ? (
                     <div className="text-center py-12 text-blue-500 flex items-center justify-center space-x-2">
                         <span>Loading pending dealers...</span>
@@ -180,7 +323,7 @@ export default function VerifyDealersPage() {
                     <div className="w-full overflow-x-auto">
                         <DataTableReusable
                             columns={pendingDealerColumns}
-                            data={pendingDealers}
+                            data={filteredDealers}
                             enableRowDragging={false}
                             onRowOrderChange={() => { }}
                         />

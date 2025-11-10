@@ -45,11 +45,11 @@ model User {
   region                    String?   @map("region")
   area                      String?   @map("area")
 
-  // Fields for salesman app specific login (empID and emp_password)
+  // --- SALESMAN ROLE FIELDS ---
   salesmanLoginId           String?   @unique @map("salesman_login_id")
-  hashedPassword            String?   @map("hashed_password") // Stores securely hashed passwords
+  hashedPassword            String?   @map("hashed_password")
 
-  // --- NEW TECHNICAL ROLE FIELDS ---
+  // --- TECHNICAL SALESMEN ROLE FIELDS ---
   isTechnicalRole         Boolean   @default(false) @map("is_technical_role")
   techLoginId             String?   @unique @map("tech_login_id")
   techHashedPassword      String?   @map("tech_hash_password")
@@ -82,6 +82,7 @@ model User {
   giftLogs                            GiftAllocationLog[]   @relation("UserGiftLogs")
   giftTransfersSent                   GiftAllocationLog[]   @relation("SourceUserTransfers")
   giftTransfersReceived               GiftAllocationLog[]   @relation("DestinationUserTransfers")
+  masonPcSide.                        mason_pc_side[]
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -185,10 +186,11 @@ model Dealer {
   noOfPJP         Int?        @map("no_of_pjp")
 
   reportsAndScores DealerReportsAndScores? @relation("DealerScores")
-  dealerBrandCapacities  DealerBrandMapping[]
+  dealerBrandCapacities         DealerBrandMapping[]
   dailyVisitReportsAsDealer     DailyVisitReport[]      @relation("DVR_Dealer")
   dailyVisitReportsAsSubDealer  DailyVisitReport[]      @relation("DVR_SubDealer")
   permanentJourneyPlansAsDealer PermanentJourneyPlan[]  @relation("PJP_Dealer")
+  masonPcSide           mason_pc_side[]
 
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
@@ -679,3 +681,25 @@ model tally_raw {
 
   @@map("tally_raw")
 }
+
+// Mason and Petty Contractor side
+//model mason_pc_side {
+//  id             String   @id @default(uuid())
+//  name           String   @map("name") @db.VarChar(100)
+//  phoneNumber    String   @map("phone_number")
+//  kycDocumentName    String?  @map("kyc_doc_name")  @db.VarChar(100)
+//  kycDocumentIdNum   String?  @map("kyc_doc_id_num")  @db.VarChar(150)
+//  verificationStatus String?  @map("verification_status") @db.VarChar(50)
+
+  // Relation to Dealer
+//  dealerId           String?  @map("dealer_id")
+//  dealer             Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // Relation to User
+//  userId             Int?     @map("user_id")
+//  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+ // @@index([dealerId], map: "idx_mason_pc_side_dealer_id")
+ // @@index([userId], map: "idx_mason_pc_side_user_id")
+ // @@map("mason_pc_side")
+//}

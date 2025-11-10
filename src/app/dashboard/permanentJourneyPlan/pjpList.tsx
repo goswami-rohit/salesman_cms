@@ -33,8 +33,13 @@ export default function PJPListPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
 
   // NEW: filters for role and status
+  // filters
   const [selectedRoleFilter, setSelectedRoleFilter] = React.useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = React.useState<string>('all');
+  const [selectedSalesmanFilter, setSelectedSalesmanFilter] = React.useState<string>('all');
+
+  // --- NEW STATE FOR IN-BUTTON LOADING ---
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   // Derived lists for filter dropdowns
   const roleOptions = React.useMemo(() => {
@@ -51,6 +56,14 @@ export default function PJPListPage() {
       if (p.status) setStatus.add(p.status);
     });
     return ['all', ...Array.from(setStatus).sort()];
+  }, [pjps]);
+
+  const salesmanOptions = React.useMemo(() => {
+    const setSalesmen = new Set<string>();
+    pjps.forEach((p) => {
+      if (p.salesmanName) setSalesmen.add(p.salesmanName);
+    });
+    return ['all', ...Array.from(setSalesmen).sort()];
   }, [pjps]);
 
   // --- Data Fetching Logic ---
@@ -88,6 +101,31 @@ export default function PJPListPage() {
     fetchPjps();
   }, [fetchPjps]);
 
+  // --- DELETE HANDLER ---
+  const handleDeletePjp = async (id: string) => {
+    setDeletingId(id); // Set loading state for this specific button
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan?id=${id}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete PJP');
+      }
+
+      toast.success('PJP deleted successfully');
+      fetchPjps(); // Refresh the list
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setDeletingId(null); // Clear loading state
+    }
+  };
+
   // --- Filtering and Pagination Logic ---
   const filteredPjps = React.useMemo(() => {
     return pjps.filter((pjp) => {
@@ -100,10 +138,10 @@ export default function PJPListPage() {
 
       const matchesRole = selectedRoleFilter === 'all' ? true : (pjp.createdByRole === selectedRoleFilter);
       const matchesStatus = selectedStatusFilter === 'all' ? true : (pjp.status === selectedStatusFilter);
-
-      return matchesSearch && matchesRole && matchesStatus;
+      const matchesSalesman = selectedSalesmanFilter === 'all' ? true : pjp.salesmanName === selectedSalesmanFilter;
+      return matchesSearch && matchesRole && matchesStatus && matchesSalesman;
     });
-  }, [pjps, searchQuery, selectedRoleFilter, selectedStatusFilter]);
+  }, [pjps, searchQuery, selectedRoleFilter, selectedStatusFilter, selectedSalesmanFilter,]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPjps.length / ITEMS_PER_PAGE));
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -118,26 +156,47 @@ export default function PJPListPage() {
   React.useEffect(() => {
     // Reset page to 1 when filters/search change
     setCurrentPage(1);
-  }, [searchQuery, selectedRoleFilter, selectedStatusFilter]);
+  }, [searchQuery, selectedRoleFilter, selectedStatusFilter, selectedSalesmanFilter,]);
 
   // --- 3. Define Columns for Permanent Journey Plan DataTable ---
   const permanentJourneyPlanColumns: ColumnDef<PermanentJourneyPlan>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
     { accessorKey: "createdByName", header: "Created By" },
     { accessorKey: "createdByRole", header: "Creator Role" },
-    { accessorKey: "areaToBeVisited", header: "Area to Visit",
+    {
+      accessorKey: "areaToBeVisited", header: "Area to Visit",
       cell: ({ row }) => <span className="max-w-[300px] truncate block">{row.original.areaToBeVisited}</span>,
     },
     { accessorKey: "visitDealerName", header: "Dealer Name" },
     { accessorKey: "planDate", header: "Planned Date" },
     { accessorKey: "status", header: "Status" },
-    { accessorKey: "description", header: "Description",
+    {
+      accessorKey: "description", header: "Description",
       cell: ({ row }) => <span className="max-w-[300px] truncate block">{row.original.description || "N/A"}</span>,
     },
-    { accessorKey: "taskIds", header: "Task IDs",
+    {
+      accessorKey: "taskIds", header: "Task IDs",
       cell: ({ row }) => <span className="max-w-[300px] truncate block">{(row.original.taskIds || []).join(', ')}</span>,
     },
     { accessorKey: "verificationStatus", header: "Verification Status" },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const pjp = row.original;
+        const isDeleting = deletingId === pjp.id;
+        return (
+          <Button
+            className="bg-red-800 hover:bg-red-900 text-white"
+            size="sm"
+            onClick={() => handleDeletePjp(pjp.id)}
+            disabled={isDeleting || loading} // Disable if this row is deleting or table is refreshing
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        );
+      },
+    },
   ];
 
   const handlePermanentJourneyPlanOrderChange = (newOrder: PermanentJourneyPlan[]) => {
@@ -176,27 +235,54 @@ export default function PJPListPage() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row items-center gap-3">
+            {/* Salesman filter */}
+            <Select
+              value={selectedSalesmanFilter}
+              onValueChange={(v) => setSelectedSalesmanFilter(v)}
+            >
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Filter by Salesman" />
+              </SelectTrigger>
+              <SelectContent>
+                {salesmanOptions.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name === 'all' ? 'All Salesmen' : name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* Role filter */}
-            <Select value={selectedRoleFilter} onValueChange={(v) => setSelectedRoleFilter(v)}>
-              <SelectTrigger className="w-[200px]">
+            <Select
+              value={selectedRoleFilter}
+              onValueChange={(v) => setSelectedRoleFilter(v)}
+            >
+              <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="Filter by Role" />
               </SelectTrigger>
               <SelectContent>
-                {roleOptions.map(role => (
-                  <SelectItem key={role} value={role}>{role === 'all' ? 'All Roles' : role}</SelectItem>
+                {roleOptions.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {role === 'all' ? 'All Roles' : role}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {/* Status filter */}
-            <Select value={selectedStatusFilter} onValueChange={(v) => setSelectedStatusFilter(v)}>
-              <SelectTrigger className="w-[200px]">
+            <Select
+              value={selectedStatusFilter}
+              onValueChange={(v) => setSelectedStatusFilter(v)}
+            >
+              <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="Filter by Status" />
               </SelectTrigger>
               <SelectContent>
-                {statusOptions.map(status => (
-                  <SelectItem key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</SelectItem>
+                {statusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status === 'all' ? 'All Statuses' : status}
+                  </SelectItem >
                 ))}
               </SelectContent>
             </Select>

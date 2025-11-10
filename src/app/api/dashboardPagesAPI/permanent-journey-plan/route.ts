@@ -124,3 +124,92 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch permanent journey plans', details: (error as Error).message }, { status: 500 });
   }
 }
+
+/**
+ * DELETE function to remove a Permanent Journey Plan (PJP).
+ * This will NOT delete associated Daily Tasks.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const claims = await getTokenClaims();
+
+    // 1. Authentication Check
+    if (!claims || !claims.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Fetch Current User to get their ID, role, and companyId
+    const currentUser = await prisma.user.findUnique({
+      where: { workosUserId: claims.sub },
+      select: { id: true, role: true, companyId: true },
+    });
+
+    // 3. Role-based Authorization
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json(
+        {
+          error: `Forbidden: Only the following roles can delete PJPs: ${allowedRoles.join(
+            ', ',
+          )}`,
+        },
+        { status: 403 },
+      );
+    }
+
+    // 4. Extract pjpId from the query parameters
+    const url = new URL(request.url);
+    const pjpId = url.searchParams.get('id');
+
+    if (!pjpId) {
+      return NextResponse.json({ error: 'Missing PJP ID in request' }, { status: 400 });
+    }
+
+    // 5. Verify the PJP exists and belongs to the current user's company (multi-tenancy check)
+    const pjpToDelete = await prisma.permanentJourneyPlan.findUnique({
+      where: { id: pjpId },
+      include: {
+        user: {
+          select: { companyId: true }, // Select the related user's companyId for tenancy check
+        },
+      },
+    });
+
+    if (!pjpToDelete) {
+      return NextResponse.json(
+        { error: 'Permanent Journey Plan not found' },
+        { status: 404 },
+      );
+    }
+
+    // This checks if the PJP's salesman (user) belongs to the admin's company
+    if (
+      !pjpToDelete.user ||
+      pjpToDelete.user.companyId !== currentUser.companyId
+    ) {
+      return NextResponse.json(
+        { error: 'Forbidden: Cannot delete a PJP from another company' },
+        { status: 403 },
+      );
+    }
+
+    // 6. Delete the Permanent Journey Plan itself
+    // We are no longer deleting associated tasks per the request.
+    await prisma.permanentJourneyPlan.delete({
+      where: { id: pjpId },
+    });
+
+    return NextResponse.json(
+      { message: 'PJP deleted successfully' },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error('Error deleting PJP (DELETE):', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to delete permanent journey plan',
+        details: (error as Error).message,
+      },
+      { status: 500 },
+    );
+  }
+}

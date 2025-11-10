@@ -61,13 +61,18 @@ export default function PJPVerifyPage() {
   const [isModificationDialogOpen, setIsModificationDialogOpen] = useState(false);
   const [pjpToModify, setPjpToModify] = useState<PJPModificationState | null>(null);
   const [isPatching, setIsPatching] = useState(false);
+  // Delete handler
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  // filters
+  const [selectedSalesmanFilter, setSelectedSalesmanFilter] = useState<string>('all');
+  const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>('all');
 
   // API URIs
   const pjpVerificationAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan/pjp-verification`;
   const dealerAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement`;
   const locationAPI = `${dealerAPI}/dealer-locations`;
 
-  // --- NEW: Fetch Locations and Dealers ---
+  // --- Fetch Locations and Dealers ---
   const fetchLocationsAndDealers = useCallback(async () => {
     try {
       // 1. Fetch Locations (Areas)
@@ -181,7 +186,7 @@ export default function PJPVerifyPage() {
   }));
 
   // --- 2. Handle Verification/Rejection Action (PUT request) ---
-  const handleVerificationAction = async (pjpId: string, action: 'VERIFIED' | 'REJECTED') => {
+  const handleVerificationAction = async (pjpId: string, action: 'VERIFIED') => {
     toast.loading(`Updating PJP status to ${action}...`, { id: 'verification-status' });
 
     try {
@@ -242,6 +247,63 @@ export default function PJPVerifyPage() {
     }
   };
 
+  // ---  Handler to DELETE a PJP (replaces 'REJECT' logic) ---
+  const handleDeletePjp = async (id: string) => {
+    setDeletingId(id); // Set loading state for this specific button
+    const toastId = `delete-${id}`;
+    toast.loading(`Rejecting and deleting PJP...`, { id: toastId });
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan?id=${id}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete PJP');
+      }
+
+      toast.success('PJP Rejected and Deleted', { id: toastId });
+      fetchPendingPJPs(); // Refresh the list
+    } catch (e: any) {
+      toast.error(e.message, { id: toastId });
+    } finally {
+      setDeletingId(null); // Clear loading state
+    }
+  };
+
+  // ---  Derived lists for filter dropdowns ---
+  const salesmanOptions = React.useMemo(() => {
+    const names = new Set<string>();
+    pendingPJPs.forEach((p) => {
+      if (p.salesmanName) names.add(p.salesmanName);
+    });
+    return ['all', ...Array.from(names).sort()];
+  }, [pendingPJPs]);
+
+  const regionOptions = React.useMemo(() => {
+    const regions = new Set<string>();
+    pendingPJPs.forEach((p) => {
+      if (p.salesmanRegion) regions.add(p.salesmanRegion);
+    });
+    return ['all', ...Array.from(regions).sort()];
+  }, [pendingPJPs]);
+
+  // --- Client-side Filtering ---
+  const filteredPJPs = React.useMemo(() => {
+    return pendingPJPs.filter((pjp) => {
+      const matchesSalesman =
+        selectedSalesmanFilter === 'all' ? true : pjp.salesmanName === selectedSalesmanFilter;
+
+      const matchesRegion =
+        selectedRegionFilter === 'all' ? true : pjp.salesmanRegion === selectedRegionFilter;
+
+      return matchesSalesman && matchesRegion;
+    });
+  }, [pendingPJPs, selectedSalesmanFilter, selectedRegionFilter]);
+
   // --- Columns for PENDING PJPs Table ---
   const pjpVerificationColumns: ColumnDef<PermanentJourneyPlanVerification>[] = [
     { accessorKey: 'salesmanName', header: 'Salesman', minSize: 150 },
@@ -276,6 +338,7 @@ export default function PJPVerifyPage() {
             size="sm"
             className="bg-green-500 hover:bg-green-700"
             onClick={() => handleVerificationAction(row.original.id, 'VERIFIED')}
+            disabled={deletingId === row.original.id}
           >
             Verify
           </Button>
@@ -284,15 +347,18 @@ export default function PJPVerifyPage() {
             size="sm"
             onClick={() => openModificationDialog(row.original)}
             className="text-white bg-blue-500 hover:bg-blue-600"
+            disabled={deletingId === row.original.id}
           >
             Edit & Apply
           </Button>
           <Button
             className="bg-red-800 hover:bg-red-900 text-white"
             size="sm"
-            onClick={() => handleVerificationAction(row.original.id, 'REJECTED')}
+            // --- MODIFIED: onClick and disabled state ---
+            onClick={() => handleDeletePjp(row.original.id)}
+            disabled={deletingId === row.original.id}
           >
-            Reject
+            {deletingId === row.original.id ? 'Rejecting...' : 'Reject'}
           </Button>
         </div>
       ),
@@ -309,6 +375,43 @@ export default function PJPVerifyPage() {
       </CardHeader>
 
       <CardContent className="p-6">
+
+        {/* --- Filter Controls --- */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <Select
+            value={selectedSalesmanFilter}
+            onValueChange={setSelectedSalesmanFilter}
+          >
+            <SelectTrigger className="w-full md:w-[250px]">
+              <SelectValue placeholder="Filter by Salesman Name" />
+            </SelectTrigger>
+            <SelectContent>
+              {salesmanOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name === 'all' ? 'All Salesmen' : name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={selectedRegionFilter}
+            onValueChange={setSelectedRegionFilter}
+          >
+            <SelectTrigger className="w-full md:w-[250px]">
+              <SelectValue placeholder="Filter by Region" />
+            </SelectTrigger>
+            <SelectContent>
+              {regionOptions.map((region) => (
+                <SelectItem key={region} value={region}>
+                  {region === 'all' ? 'All Regions' : region}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* --- END: Filter Controls --- */}
+
         {loading ? (
           <div className="text-center py-12 text-blue-500 flex items-center justify-center space-x-2">
             <span>Loading pending PJPs...</span>
@@ -327,9 +430,9 @@ export default function PJPVerifyPage() {
           <div className="w-full overflow-x-auto">
             <DataTableReusable
               columns={pjpVerificationColumns}
-              data={pendingPJPs}
+              data={filteredPJPs}
               enableRowDragging={false}
-              onRowOrderChange={() => {}}
+              onRowOrderChange={() => { }}
             />
           </div>
         )}

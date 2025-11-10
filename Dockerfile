@@ -1,5 +1,4 @@
 # Stage 1: Dependencies - Install all dependencies
-# We use node:20-alpine for a lightweight base image with Node.js 20.
 FROM node:25 AS deps
 # Install necessary packages for Prisma and Node.js
 # libc6-compat is required for Prisma engines on Alpine.
@@ -14,7 +13,6 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 # Stage 2: Builder - Build the Next.js application
-# This stage takes the dependencies and builds the application for production.
 FROM node:25 AS builder
 WORKDIR /app
 

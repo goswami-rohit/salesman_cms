@@ -44,3 +44,4 @@ prisma/migrations
 .gitignore
 .git
 README.md
+src/WORKING.md
