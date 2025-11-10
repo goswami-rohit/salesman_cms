@@ -3,7 +3,7 @@
 import {
     LucideIcon, User, Car, BadgeIndianRupeeIcon, ListTodo, ClipboardCheck, BandageIcon,
     CalendarCheck, PencilRuler, ChartNoAxesCombined, MapPin, Award, Star, Boxes,
-    Building, Briefcase,
+    Construction, UsersRound, Gift, HandCoins, ScrollText, UserCheck, Users,
     Building2
 } from 'lucide-react';
 
@@ -56,7 +56,7 @@ export const tablesMetadata: TableMeta[] = [
             'latitude', 'longitude', 'visitType', 'dealerTotalPotential', 'dealerBestPotential',
             'brandSelling', 'contactPerson', 'contactPersonPhoneNo', 'todayOrderMt',
             'todayCollectionRupees', 'overdueAmount', 'feedbacks', 'solutionBySalesperson',
-            'anyRemarks', 'checkInTime', 'checkOutTime', 'inTimeImageUrl', 'outTimeImageUrl',
+            'anyRemarks', 'checkInTime', 'timeSpentinLoc', 'checkOutTime', 'inTimeImageUrl', 'outTimeImageUrl',
             'createdAt', 'updatedAt'
         ],
     },
@@ -72,7 +72,9 @@ export const tablesMetadata: TableMeta[] = [
             'associatedPartyName', 'influencerType', 'serviceType', 'qualityComplaint',
             'promotionalActivity', 'channelPartnerVisit', 'siteVisitType',
             'dhalaiVerificationCode', 'isVerificationStatus', 'meetingId', 'createdAt',
-            'updatedAt', 'salesmanName', 'salesmanEmail'
+            'updatedAt', 'salesmanName', 'salesmanEmail', 'timeSpentinLoc', 'purposeOfVisit', 'sitePhotoUrl',
+            'firstVisitTime', 'lastVisitTime', 'firstVisitDay', 'lastVisitDay', 'siteVisitsCount',
+            'otherVisitsCount', 'totalVisitsCount', 'region', 'area', 'latitude', 'longitude', 'pjpId', 'masonId'
         ],
     },
     {
@@ -148,6 +150,67 @@ export const tablesMetadata: TableMeta[] = [
         icon: Star,
         columns: ['id', 'area', 'region', 'rating', 'salesmanName', 'salesmanEmail'],
     },
+    {
+    id: 'tsoMeetings',
+    title: 'TSO Meetings',
+    icon: UsersRound,
+    columns: [
+      'id', 'type', 'date', 'location', 'budgetAllocated', 'participantsCount',
+      'createdByUserName', 'createdByUserEmail', 'createdAt', 'updatedAt'
+    ],
+  },
+  {
+    id: 'giftInventory',
+    title: 'Gift Inventory',
+    icon: Gift,
+    columns: [
+      'id', 'itemName', 'unitPrice', 'totalAvailableQuantity', 'createdAt', 'updatedAt'
+    ],
+  },
+  {
+    id: 'giftAllocationLogs',
+    title: 'Gift Allocation Logs',
+    icon: HandCoins,
+    columns: [
+      'id', 'itemName', 'salesmanName', 'salesmanEmail', 'transactionType',
+      'quantity', 'sourceUserName', 'destinationUserName', 'technicalVisitReportId',
+      'dealerVisitReportId', 'createdAt'
+    ],
+  },
+  {
+    id: 'masonPCSide',
+    title: 'Masons & Contractors',
+    icon: Construction,
+    columns: [
+      'id', 'name', 'phoneNumber', 'kycDocumentName', 'kycDocumentIdNum',
+      'verificationStatus', 'bagsLifted', 'pointsGained', 'isReferred',
+      'referredByUser', 'referredToUser', 'dealerName', 'associatedSalesman'
+    ],
+  },
+  {
+    id: 'schemesOffers',
+    title: 'Schemes & Offers',
+    icon: ScrollText,
+    columns: [
+      'id', 'name', 'description', 'startDate', 'endDate'
+    ],
+  },
+  {
+    id: 'masonsOnSchemes',
+    title: 'Masons on Schemes',
+    icon: UserCheck,
+    columns: [
+      'masonId', 'masonName', 'schemeId', 'schemeName', 'enrolledAt', 'status'
+    ],
+  },
+  {
+    id: 'masonsOnMeetings',
+    title: 'Masons on Meetings',
+    icon: Users,
+    columns: [
+      'masonId', 'masonName', 'meetingId', 'meetingType', 'meetingDate', 'attendedAt'
+    ],
+  },
 
 ];
 export type ReportFormat = 'csv' | 'xlsx';

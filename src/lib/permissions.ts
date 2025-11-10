@@ -49,6 +49,13 @@ export interface DashboardPermissions {
   salesmanAttendance: boolean;
   salesmanLeaves: boolean;
   salesmanGeotracking: boolean;
+  masonpcSide: {
+    masonpc: boolean;
+    tsoMeetings: boolean;
+    schemesOffers: boolean;
+    masonOnSchemes: boolean;
+    masonOnMeetings: boolean;
+  },
   scoresAndRatings: {
     dealerScores: boolean;
     salesmanRatings: boolean;
@@ -93,6 +100,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -132,6 +146,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -171,6 +192,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -212,6 +240,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -251,6 +286,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -290,6 +332,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -329,6 +378,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -368,6 +424,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -409,6 +472,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: false,
     salesmanLeaves: true,
     salesmanGeotracking: true,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -448,6 +518,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: false,
     salesmanGeotracking: false,
+    masonpcSide: {
+      masonpc: true,
+      tsoMeetings: true,
+      schemesOffers: true,
+      masonOnSchemes: true,
+      masonOnMeetings: true,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -487,6 +564,13 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanAttendance: true,
     salesmanLeaves: false,
     salesmanGeotracking: false,
+    masonpcSide: {
+      masonpc: false,
+      tsoMeetings: false,
+      schemesOffers: false,
+      masonOnSchemes: false,
+      masonOnMeetings: false,
+    },
     scoresAndRatings: {
       dealerScores: true,
       salesmanRatings: true,
@@ -499,10 +583,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
 // Build a type of all leaf boolean paths like "reports.dailyVisitReports"
 type LeafPaths<T, P extends string = ''> =
   T extends boolean
-    ? P
-    : { [K in keyof T & string]:
-          LeafPaths<T[K], P extends '' ? K : `${P}.${K}`>
-      }[keyof T & string];
+  ? P
+  : { [K in keyof T & string]:
+    LeafPaths<T[K], P extends '' ? K : `${P}.${K}`>
+  }[keyof T & string];
 
 export type PermPath = LeafPaths<DashboardPermissions>;
 

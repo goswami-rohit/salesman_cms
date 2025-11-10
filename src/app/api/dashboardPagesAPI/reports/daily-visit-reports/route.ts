@@ -93,6 +93,7 @@ export async function GET() {
         anyRemarks: report.anyRemarks,
         checkInTime: report.checkInTime.toISOString(),
         checkOutTime: report.checkOutTime?.toISOString() || null,
+        timeSpentinLoc: report.timeSpentinLoc || null,
         inTimeImageUrl: report.inTimeImageUrl,
         outTimeImageUrl: report.outTimeImageUrl,
       };

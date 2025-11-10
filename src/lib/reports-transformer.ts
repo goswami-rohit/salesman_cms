@@ -231,6 +231,7 @@ export type FlattenedDailyVisitReport = {
     anyRemarks: string | null;
     checkInTime: string;
     checkOutTime: string | null;
+    timeSpentinLoc: string | null;
     inTimeImageUrl: string | null;
     outTimeImageUrl: string | null;
     createdAt: string;
@@ -252,7 +253,8 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
             brandSelling: true, contactPerson: true, contactPersonPhoneNo: true,
             todayOrderMt: true, todayCollectionRupees: true, overdueAmount: true,
             feedbacks: true, solutionBySalesperson: true, anyRemarks: true,
-            checkInTime: true, checkOutTime: true, inTimeImageUrl: true, outTimeImageUrl: true,
+            checkInTime: true, checkOutTime: true, timeSpentinLoc: true, 
+            inTimeImageUrl: true, outTimeImageUrl: true,
             createdAt: true, updatedAt: true,
 
             user: { select: { firstName: true, lastName: true, email: true } },
@@ -287,6 +289,7 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
         anyRemarks: r.anyRemarks ?? null,
         checkInTime: r.checkInTime.toISOString(),
         checkOutTime: r.checkOutTime?.toISOString() ?? null,
+        timeSpentinLoc: r.timeSpentinLoc ?? null,
         inTimeImageUrl: r.inTimeImageUrl ?? null,
         outTimeImageUrl: r.outTimeImageUrl ?? null,
         createdAt: r.createdAt.toISOString(),
@@ -296,6 +299,7 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
     }));
 }
 
+// TVR
 // TVR
 export type FlattenedTechnicalVisitReport = {
     // All scalar fields from TechnicalVisitReport
@@ -309,6 +313,7 @@ export type FlattenedTechnicalVisitReport = {
     salespersonRemarks: string;
     checkInTime: string; // Converted from DateTime (Timestamp)
     checkOutTime: string | null; // Converted from DateTime (Timestamp)
+    timeSpentinLoc: string | null; // <-- ADDED
     inTimeImageUrl: string | null;
     outTimeImageUrl: string | null;
     siteVisitBrandInUse: string; // Converted from String[]
@@ -329,6 +334,24 @@ export type FlattenedTechnicalVisitReport = {
     createdAt: string; // Converted from DateTime (Timestamp)
     updatedAt: string; // Converted from DateTime (Timestamp)
 
+    // --- NEW FIELDS ---
+    purposeOfVisit: string | null;
+    sitePhotoUrl: string | null;
+    firstVisitTime: string | null;
+    lastVisitTime: string | null;
+    firstVisitDay: string | null;
+    lastVisitDay: string | null;
+    siteVisitsCount: number | null;
+    otherVisitsCount: number | null;
+    totalVisitsCount: number | null;
+    region: string | null;
+    area: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    pjpId: string | null;
+    masonId: string | null;
+    // --- END NEW FIELDS ---
+
     // Flattened fields from the related User model (salesperson)
     salesmanName: string;
     salesmanEmail: string;
@@ -341,11 +364,30 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
             // All scalar fields included explicitly
             id: true, userId: true, reportDate: true, visitType: true, siteNameConcernedPerson: true, phoneNo: true,
             emailId: true, clientsRemarks: true, salespersonRemarks: true, checkInTime: true, checkOutTime: true,
+            timeSpentinLoc: true, // <-- ADDED
             inTimeImageUrl: true, outTimeImageUrl: true, createdAt: true, updatedAt: true,
             siteVisitBrandInUse: true, siteVisitStage: true, conversionFromBrand: true, conversionQuantityValue: true,
             conversionQuantityUnit: true, associatedPartyName: true, influencerType: true, serviceType: true,
             qualityComplaint: true, promotionalActivity: true, channelPartnerVisit: true, siteVisitType: true,
             dhalaiVerificationCode: true, isVerificationStatus: true, meetingId: true,
+
+            // --- NEW FIELDS ---
+            purposeOfVisit: true,
+            sitePhotoUrl: true,
+            firstVisitTime: true,
+            lastVisitTime: true,
+            firstVisitDay: true,
+            lastVisitDay: true,
+            siteVisitsCount: true,
+            otherVisitsCount: true,
+            totalVisitsCount: true,
+            region: true,
+            area: true,
+            latitude: true,
+            longitude: true,
+            pjpId: true,
+            masonId: true,
+            // --- END NEW FIELDS ---
 
             // Nested query for the relation:
             user: {
@@ -376,6 +418,7 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
         dhalaiVerificationCode: r.dhalaiVerificationCode ?? null,
         isVerificationStatus: r.isVerificationStatus ?? null,
         meetingId: r.meetingId ?? null,
+        timeSpentinLoc: r.timeSpentinLoc ?? null, // <-- ADDED
         inTimeImageUrl: r.inTimeImageUrl ?? null,
         outTimeImageUrl: r.outTimeImageUrl ?? null,
 
@@ -393,8 +436,24 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
         siteVisitBrandInUse: r.siteVisitBrandInUse.join(', '),
         influencerType: r.influencerType.join(', '),
 
+        purposeOfVisit: r.purposeOfVisit ?? null,
+        sitePhotoUrl: r.sitePhotoUrl ?? null,
+        firstVisitTime: r.firstVisitTime?.toISOString() ?? null,
+        lastVisitTime: r.lastVisitTime?.toISOString() ?? null,
+        firstVisitDay: r.firstVisitDay ?? null,
+        lastVisitDay: r.lastVisitDay ?? null,
+        siteVisitsCount: r.siteVisitsCount ?? null,
+        otherVisitsCount: r.otherVisitsCount ?? null,
+        totalVisitsCount: r.totalVisitsCount ?? null,
+        region: r.region ?? null,
+        area: r.area ?? null,
+        latitude: r.latitude?.toNumber() ?? null,
+        longitude: r.longitude?.toNumber() ?? null,
+        pjpId: r.pjpId ?? null,
+        masonId: r.masonId ?? null,
+
         // Custom, flattened fields:
-        salesmanName: `${r.user.firstName} ${r.user.lastName}`,
+        salesmanName: `${r.user.firstName ?? ''} ${r.user.lastName ?? ''}`.trim() || r.user.email,
         salesmanEmail: r.user.email,
     }));
 }
@@ -1103,6 +1162,311 @@ export async function getFlattenedDealerBrandCapacities(
     }));
 }
 
+//  TSO Meeting
+export type FlattenedTSOMeeting = {
+  id: string;
+  type: string;
+  date: string;
+  location: string;
+  budgetAllocated: number | null;
+  participantsCount: number | null;
+  createdByUserName: string;
+  createdByUserEmail: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getFlattenedTSOMeeetings(companyId: number): Promise<FlattenedTSOMeeting[]> {
+  const raw = await prisma.tSOMeeting.findMany({
+    where: { createdBy: { companyId } },
+    select: {
+      id: true,
+      type: true,
+      date: true,
+      location: true,
+      budgetAllocated: true,
+      participantsCount: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: {
+        select: { firstName: true, lastName: true, email: true },
+      },
+    },
+    orderBy: { date: 'desc' },
+  });
+
+  return raw.map(r => ({
+    id: r.id,
+    type: r.type,
+    date: r.date.toISOString().slice(0, 10),
+    location: r.location,
+    budgetAllocated: r.budgetAllocated?.toNumber() ?? null,
+    participantsCount: r.participantsCount ?? null,
+    createdByUserName: `${r.createdBy.firstName ?? ''} ${r.createdBy.lastName ?? ''}`.trim() || r.createdBy.email,
+    createdByUserEmail: r.createdBy.email,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+  }));
+}
+
+// Gift Inventory
+// Note: This is a master list and has no companyId. The function fetches all items.
+export type FlattenedGiftInventory = {
+  id: number;
+  itemName: string;
+  unitPrice: number;
+  totalAvailableQuantity: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getFlattenedGiftInventory(): Promise<FlattenedGiftInventory[]> {
+  const raw = await prisma.giftInventory.findMany({
+    select: {
+      id: true,
+      itemName: true,
+      unitPrice: true,
+      totalAvailableQuantity: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { itemName: 'asc' },
+  });
+
+  return raw.map(r => ({
+    id: r.id,
+    itemName: r.itemName,
+    unitPrice: r.unitPrice.toNumber(),
+    totalAvailableQuantity: r.totalAvailableQuantity,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+  }));
+}
+
+// Gift Allocation Log
+export type FlattenedGiftAllocationLog = {
+  id: string;
+  itemName: string; // from giftId
+  salesmanName: string; // from userId
+  salesmanEmail: string; // from userId
+  transactionType: string;
+  quantity: number;
+  sourceUserName: string | null;
+  destinationUserName: string | null;
+  technicalVisitReportId: string | null;
+  dealerVisitReportId: string | null;
+  createdAt: string;
+};
+
+export async function getFlattenedGiftAllocationLogs(companyId: number): Promise<FlattenedGiftAllocationLog[]> {
+  const raw = await prisma.giftAllocationLog.findMany({
+    where: { user: { companyId } },
+    select: {
+      id: true,
+      transactionType: true,
+      quantity: true,
+      technicalVisitReportId: true,
+      dealerVisitReportId: true,
+      createdAt: true,
+      giftItem: {
+        select: { itemName: true },
+      },
+      user: {
+        select: { firstName: true, lastName: true, email: true },
+      },
+      sourceUser: {
+        select: { firstName: true, lastName: true, email: true },
+      },
+      destinationUser: {
+        select: { firstName: true, lastName: true, email: true },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return raw.map(r => ({
+    id: r.id,
+    itemName: r.giftItem.itemName,
+    salesmanName: `${r.user.firstName ?? ''} ${r.user.lastName ?? ''}`.trim() || r.user.email,
+    salesmanEmail: r.user.email,
+    transactionType: r.transactionType,
+    quantity: r.quantity,
+    sourceUserName: r.sourceUser ? (`${r.sourceUser.firstName ?? ''} ${r.sourceUser.lastName ?? ''}`.trim() || r.sourceUser.email) : null,
+    destinationUserName: r.destinationUser ? (`${r.destinationUser.firstName ?? ''} ${r.destinationUser.lastName ?? ''}`.trim() || r.destinationUser.email) : null,
+    technicalVisitReportId: r.technicalVisitReportId ?? null,
+    dealerVisitReportId: r.dealerVisitReportId ?? null,
+    createdAt: r.createdAt.toISOString(),
+  }));
+}
+
+// Mason PC Side
+export type FlattenedMasonPCSide = {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  kycDocumentName: string | null;
+  kycDocumentIdNum: string | null;
+  verificationStatus: string | null;
+  bagsLifted: number | null;
+  pointsGained: number | null;
+  isReferred: boolean | null;
+  referredByUser: string | null;
+  referredToUser: string | null;
+  dealerName: string | null; // from dealerId
+  associatedSalesman: string | null; // from userId
+};
+
+export async function getFlattenedMasonPCSide(companyId: number): Promise<FlattenedMasonPCSide[]> {
+  const raw = await prisma.mason_PC_Side.findMany({
+    // Finds Masons associated with a User (salesman) from the company
+    where: { user: { companyId } },
+    select: {
+      id: true,
+      name: true,
+      phoneNumber: true,
+      kycDocumentName: true,
+      kycDocumentIdNum: true,
+      verificationStatus: true,
+      bagsLifted: true,
+      pointsGained: true,
+      isReferred: true,
+      referredByUser: true,
+      referredToUser: true,
+      dealer: {
+        select: { name: true },
+      },
+      user: {
+        select: { firstName: true, lastName: true, email: true },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  return raw.map(r => ({
+    id: r.id,
+    name: r.name,
+    phoneNumber: r.phoneNumber,
+    kycDocumentName: r.kycDocumentName ?? null,
+    kycDocumentIdNum: r.kycDocumentIdNum ?? null,
+    verificationStatus: r.verificationStatus ?? null,
+    bagsLifted: r.bagsLifted ?? null,
+    pointsGained: r.pointsGained ?? null,
+    isReferred: r.isReferred ?? null,
+    referredByUser: r.referredByUser ?? null,
+    referredToUser: r.referredToUser ?? null,
+    dealerName: r.dealer?.name ?? null,
+    associatedSalesman: r.user ? (`${r.user.firstName ?? ''} ${r.user.lastName ?? ''}`.trim() || r.user.email) : null,
+  }));
+}
+
+// Schemes & Offers
+// Note: This is a master list and has no companyId. The function fetches all schemes.
+export type FlattenedSchemesOffers = {
+  id: string;
+  name: string;
+  description: string | null;
+  startDate: string | null;
+  endDate: string | null;
+};
+
+export async function getFlattenedSchemesOffers(): Promise<FlattenedSchemesOffers[]> {
+  const raw = await prisma.schemesOffers.findMany({
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      startDate: true,
+      endDate: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  return raw.map(r => ({
+    id: r.id,
+    name: r.name,
+    description: r.description ?? null,
+    startDate: r.startDate?.toISOString().slice(0, 10) ?? null,
+    endDate: r.endDate?.toISOString().slice(0, 10) ?? null,
+  }));
+}
+
+// Mason on Scheme (Join Table)
+export type FlattenedMasonOnScheme = {
+  masonId: string;
+  masonName: string;
+  schemeId: string;
+  schemeName: string;
+  enrolledAt: string | null;
+  status: string | null;
+};
+
+export async function getFlattenedMasonsOnSchemes(companyId: number): Promise<FlattenedMasonOnScheme[]> {
+  const raw = await prisma.masonOnScheme.findMany({
+    // Finds enrollments for Masons associated with a User from the company
+    where: { mason: { user: { companyId } } },
+    select: {
+      masonId: true,
+      schemeId: true,
+      enrolledAt: true,
+      status: true,
+      mason: {
+        select: { name: true },
+      },
+      scheme: {
+        select: { name: true },
+      },
+    },
+    orderBy: { enrolledAt: 'desc' },
+  });
+
+  return raw.map(r => ({
+    masonId: r.masonId,
+    masonName: r.mason.name,
+    schemeId: r.schemeId,
+    schemeName: r.scheme.name,
+    enrolledAt: r.enrolledAt?.toISOString() ?? null,
+    status: r.status ?? null,
+  }));
+}
+
+// Masons on Meetings (Join Table)
+export type FlattenedMasonsOnMeetings = {
+  masonId: string;
+  masonName: string;
+  meetingId: string;
+  meetingType: string;
+  meetingDate: string;
+  attendedAt: string;
+};
+
+export async function getFlattenedMasonsOnMeetings(companyId: number): Promise<FlattenedMasonsOnMeetings[]> {
+  const raw = await prisma.masonsOnMeetings.findMany({
+    // Finds participants of Meetings created by a User from the company
+    where: { meeting: { createdBy: { companyId } } },
+    select: {
+      masonId: true,
+      meetingId: true,
+      attendedAt: true,
+      mason: {
+        select: { name: true },
+      },
+      meeting: {
+        select: { type: true, date: true },
+      },
+    },
+    orderBy: { attendedAt: 'desc' },
+  });
+
+  return raw.map(r => ({
+    masonId: r.masonId,
+    masonName: r.mason.name,
+    meetingId: r.meetingId,
+    meetingType: r.meeting.type,
+    meetingDate: r.meeting.date.toISOString().slice(0, 10),
+    attendedAt: r.attendedAt.toISOString(),
+  }));
+}
+
 export const transformerMap = {
     // Core Report Models
     users: getFlattenedUsers,
@@ -1123,4 +1487,12 @@ export const transformerMap = {
     dealerReportsAndScores: getFlattenedDealerReportsAndScores,
     salesmanRating: getFlattenedRatings,
     dealerBrandCapacities: getFlattenedDealerBrandCapacities,
+
+    tsoMeetings: getFlattenedTSOMeeetings,
+    giftInventory: getFlattenedGiftInventory,
+    giftAllocationLogs: getFlattenedGiftAllocationLogs,
+    masonPCSide: getFlattenedMasonPCSide,
+    schemesOffers: getFlattenedSchemesOffers,
+    masonsOnSchemes: getFlattenedMasonsOnSchemes,
+    masonsOnMeetings: getFlattenedMasonsOnMeetings,
 };

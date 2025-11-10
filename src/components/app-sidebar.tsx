@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Building2 } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -52,6 +51,7 @@ const ITEM_PERMISSIONS = {
   "Salesman Leaves": 'salesmanLeaves' as const,
   "Salesman Geotracking": 'salesmanGeotracking' as const,
   "Permanent Journey Plan": 'permanentJourneyPlan.pjpList' as const,
+  "Mason - Petty Contractor": 'masonpcSide.masonpc' as const,
   "Scores And Ratings": 'scoresAndRatings.salesmanRatings' as const,
 
   "Account": 'account' as const,
@@ -122,6 +122,11 @@ const menuItems: MenuItem[] = [
         title: "Salesman Attendance",
         url: "/dashboard/slmAttendance",
         permission: ITEM_PERMISSIONS["Salesman Attendance"]
+      },
+      {
+        title: "Mason - Petty Contractor",
+        url: "/dashboard/masonpcSide",
+        permission: ITEM_PERMISSIONS["Mason - Petty Contractor"]
       },
       {
         title: "Salesman Geotracking",

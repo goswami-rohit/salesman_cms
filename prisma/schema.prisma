@@ -78,11 +78,11 @@ model User {
   noOfPJP Int?            @map("no_of_pjp")
   dealerBrandMappings     DealerBrandMapping[]
 
-  createdMeetings                     TSOMeeting[]             @relation("UserCreatedMeetings") 
+  createdMeetings                     TSOMeeting[]          @relation("UserCreatedMeetings") 
   giftLogs                            GiftAllocationLog[]   @relation("UserGiftLogs")
   giftTransfersSent                   GiftAllocationLog[]   @relation("SourceUserTransfers")
   giftTransfersReceived               GiftAllocationLog[]   @relation("DestinationUserTransfers")
-  //masonPcSide.                        mason_pc_side[]
+  masons                              Mason_PC_Side[]
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -190,7 +190,7 @@ model Dealer {
   dailyVisitReportsAsDealer     DailyVisitReport[]      @relation("DVR_Dealer")
   dailyVisitReportsAsSubDealer  DailyVisitReport[]      @relation("DVR_SubDealer")
   permanentJourneyPlansAsDealer PermanentJourneyPlan[]  @relation("PJP_Dealer")
-  //masonPcSide           mason_pc_side[]
+  masons                        Mason_PC_Side[]
 
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
@@ -226,6 +226,7 @@ model DailyVisitReport {
   anyRemarks            String?   @map("any_remarks") @db.VarChar(500)
   checkInTime           DateTime  @map("check_in_time") @db.Timestamptz(6)
   checkOutTime          DateTime? @map("check_out_time") @db.Timestamptz(6)
+  timeSpentinLoc        String?   @map("time_spent_in_loc")
   inTimeImageUrl        String?   @map("in_time_image_url") @db.VarChar(500)
   outTimeImageUrl       String?   @map("out_time_image_url") @db.VarChar(500)
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -235,6 +236,7 @@ model DailyVisitReport {
   salesOrders           SalesOrder[] @relation("OrderDVR") //relation back to sales_orders
   pjpId                 String?   @map("pjp_id") @db.VarChar(255)
   permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_DVR", fields: [pjpId], references: [id], onDelete: SetNull)
+  giftAllocationLogs   GiftAllocationLog[]
 
   @@index([userId], map: "idx_daily_visit_reports_user_id")
   @@index([dealerId], map: "idx_dvr_dealer_id")
@@ -255,6 +257,7 @@ model TechnicalVisitReport {
   salespersonRemarks      String    @map("salesperson_remarks") @db.VarChar(500)
   checkInTime             DateTime  @map("check_in_time") @db.Timestamptz(6)
   checkOutTime            DateTime? @map("check_out_time") @db.Timestamptz(6)
+  timeSpentinLoc          String?   @map("time_spent_in_loc")
   inTimeImageUrl          String?   @map("in_time_image_url") @db.VarChar(500)
   outTimeImageUrl         String?   @map("out_time_image_url") @db.VarChar(500)
   createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -278,9 +281,27 @@ model TechnicalVisitReport {
   meetingId               String?   @map("meeting_id") @db.VarChar(255)
   meeting                 TSOMeeting?  @relation("TVRMeeting", fields: [meetingId], references: [id])
 
+  purposeOfVisit          String?   @map("purpose_of_visit") @db.VarChar(500)
+  sitePhotoUrl            String?   @map("site_photo_url") @db.VarChar(500)
+  firstVisitTime          DateTime? @map("first_visit_time")
+  lastVisitTime           DateTime? @map("last_visit_time")
+  firstVisitDay           String?   @map("first_visit_day") 
+  lastVisitDay            String?   @map("last_visit_day")
+  siteVisitsCount         Int?      @map("site_visits_count")
+  otherVisitsCount        Int?      @map("other_visits_count")
+  totalVisitsCount        Int?      @map("total_visits_count")
+  
+  region                  String?   @map("region") @db.VarChar(100)
+  area                    String?   @map("area") @db.VarChar(100)
+  latitude     Decimal?  @map("latitude") @db.Decimal(9, 6)
+  longitude    Decimal?  @map("longitude") @db.Decimal(9, 6)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   pjpId                 String?   @map("pjp_id") @db.VarChar(255)
   permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_TVR", fields: [pjpId], references: [id], onDelete: SetNull)
+  masonId                 String?       @map("mason_id") @db.Uuid // FK to Mason_PC_Side
+  mason                   Mason_PC_Side? @relation(fields: [masonId], references: [id], onDelete: SetNull)
+  giftAllocationLogs   GiftAllocationLog[]
 
   @@index([userId], map: "idx_technical_visit_reports_user_id")
   @@index([meetingId], map: "idx_technical_visit_reports_meeting_id")
@@ -301,6 +322,7 @@ model TSOMeeting {
   // The user who created/organized the meeting
   createdByUserId       Int       @map("created_by_user_id")
   createdBy             User      @relation("UserCreatedMeetings", fields: [createdByUserId], references: [id])
+  participants          MasonsOnMeetings[]
   
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -335,13 +357,17 @@ model GiftAllocationLog {
   // Audit fields
   sourceUserId            Int?      @map("source_user_id") // For transfers (from whom)
   destinationUserId       Int?      @map("destination_user_id") // For transfers (to whom)
-  relatedReportId         String?   @map("related_report_id") @db.VarChar(255) // DVR or TVR where distributed
   
   // Relations
   giftItem                GiftInventory @relation(fields: [giftId], references: [id])
   user                    User          @relation("UserGiftLogs", fields: [userId], references: [id])
   sourceUser              User?         @relation("SourceUserTransfers", fields: [sourceUserId], references: [id], onDelete: SetNull)
   destinationUser         User?         @relation("DestinationUserTransfers", fields: [destinationUserId], references: [id], onDelete: SetNull)
+  
+  technicalVisitReportId String?  @map("technical_visit_report_id") @db.VarChar(255)
+  dealerVisitReportId    String?  @map("dealer_visit_report_id") @db.VarChar(255)
+  technicalVisitReport TechnicalVisitReport? @relation(fields: [technicalVisitReportId], references: [id], onDelete: SetNull)
+  dealerVisitReport DailyVisitReport? @relation(fields: [dealerVisitReportId], references: [id], onDelete: SetNull)
 
   createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   
@@ -349,6 +375,8 @@ model GiftAllocationLog {
   @@index([userId])
   @@index([sourceUserId])
   @@index([destinationUserId])
+  @@index([technicalVisitReportId])
+  @@index([dealerVisitReportId])    
   @@map("gift_allocation_logs")
 }
 
@@ -683,23 +711,101 @@ model tally_raw {
 }
 
 // Mason and Petty Contractor side
-//model mason_pc_side {
-//  id             String   @id @default(uuid())
-//  name           String   @map("name") @db.VarChar(100)
-//  phoneNumber    String   @map("phone_number")
-//  kycDocumentName    String?  @map("kyc_doc_name")  @db.VarChar(100)
-//  kycDocumentIdNum   String?  @map("kyc_doc_id_num")  @db.VarChar(150)
-//  verificationStatus String?  @map("verification_status") @db.VarChar(50)
+model Mason_PC_Side {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String   @map("name") @db.VarChar(100)
+  phoneNumber        String   @map("phone_number")
+  kycDocumentName    String?  @map("kyc_doc_name")  @db.VarChar(100)
+  kycDocumentIdNum   String?  @map("kyc_doc_id_num")  @db.VarChar(150)
+  verificationStatus String?  @map("verification_status") @db.VarChar(50)
+
+  // Bags-Points section
+  bagsLifted         Int? @map("bags_lifted")
+  pointsGained       Int? @map("points_gained")
+
+  // Referral Section
+  isReferred         Boolean? @map("is_referred")
+  referredByUser     String? @map("referred_by_user")
+  referredToUser     String? @map("referred_to_user")
 
   // Relation to Dealer
-//  dealerId           String?  @map("dealer_id")
-//  dealer             Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  dealerId     String?  @map("dealer_id") @db.VarChar(255)
+  dealer       Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   // Relation to User
-//  userId             Int?     @map("user_id")
-//  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  userId             Int?     @map("user_id")
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
- // @@index([dealerId], map: "idx_mason_pc_side_dealer_id")
- // @@index([userId], map: "idx_mason_pc_side_user_id")
- // @@map("mason_pc_side")
-//}
+  // Relation to SchemesOffers
+  schemes            MasonOnScheme[]
+  technicalVisitReports TechnicalVisitReport[] // This Mason's visit reports
+  meetings              MasonsOnMeetings[]     // Meetings this Mason attended
+
+  otps                 OtpVerification[]
+
+  @@index([dealerId], map: "idx_mason_pc_side_dealer_id")
+  @@index([userId], map: "idx_mason_pc_side_user_id")
+  @@map("mason_pc_side")
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid()) @db.Uuid
+  otpCode   String   @map("otp_code") @db.VarChar(10) // The 6-digit code
+  expiresAt DateTime @map("expires_at") // e.g., 5 minutes from now
+
+  // --- Relation to Mason ---
+  // Links this OTP to a specific Mason
+  masonId   String        @map("mason_id") @db.Uuid
+  mason     Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+
+  @@index([masonId])
+  @@map("otp_verifications")
+}
+
+// Schems & Offers for Mason_PC_Side
+model SchemesOffers{
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String  @map("name") @db.VarChar(200)
+  description String? @map("description") @db.Text
+  startDate   DateTime? @map("start_date")
+  endDate     DateTime? @map("end_date")
+
+  // Relation to Mason_PC_Side
+  masons      MasonOnScheme[]
+
+  @@map("schemes_offers")
+}
+
+// JOIN TABLE for Mason_PC_Side & SchemesOffers ---
+model MasonOnScheme {
+  // Relation to Mason_PC_Side
+  masonId String        @map("mason_id") @db.Uuid
+  mason   Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Relation to SchemesOffers
+  schemeId String        @map("scheme_id") @db.Uuid
+  scheme   SchemesOffers @relation(fields: [schemeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Extra data about the relationship
+  enrolledAt DateTime? @default(now()) @map("enrolled_at")
+  status     String?   @map("status") // e.g., 'active', 'completed', 'cancelled', 'pending', 'inactive'
+
+  // A composite primary key ensures a mason can only be in a scheme ONCE.
+  @@id([masonId, schemeId])
+  @@map("mason_on_scheme")
+}
+
+// Join table for Masons and Meetings
+model MasonsOnMeetings {
+  masonId   String     @map("mason_id") @db.Uuid
+  mason     Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+  
+  meetingId String     @map("meeting_id") @db.VarChar(255)
+  meeting   TSOMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  attendedAt DateTime @default(now()) @map("attended_at")
+
+  @@id([masonId, meetingId]) // Composite primary key
+  @@index([meetingId])
+  @@map("masons_on_meetings")
+}

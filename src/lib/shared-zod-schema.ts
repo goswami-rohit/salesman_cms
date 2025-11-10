@@ -335,6 +335,7 @@ export const dailyVisitReportSchema = z.object({
   anyRemarks: z.string().nullable(),
   checkInTime: z.string(), // ISO string
   checkOutTime: z.string().nullable(), // ISO string or null
+  timeSpentinLoc: z.string().optional().nullable(),
   inTimeImageUrl: z.string().nullable(),
   outTimeImageUrl: z.string().nullable(),
 });
@@ -438,9 +439,25 @@ export const technicalVisitReportSchema = z.object({
   qualityComplaint: z.string(),
   promotionalActivity: z.string(),
   channelPartnerVisit: z.string(),
-
   // Numeric field, converted to number or null
-  conversionQuantityValue: z.number().nullable(), // FIX: Confirms it can be null
+  conversionQuantityValue: z.number().nullable(),
+  // New fields
+  timeSpentinLoc: z.string().optional().nullable(),
+  purposeOfVisit: z.string().nullable(),
+  sitePhotoUrl: z.string().nullable(),
+  firstVisitTime: z.string().nullable(), // ISO String
+  lastVisitTime: z.string().nullable(), // ISO String
+  firstVisitDay: z.string().nullable(),
+  lastVisitDay: z.string().nullable(),
+  siteVisitsCount: z.number().int().nullable(),
+  otherVisitsCount: z.number().int().nullable(),
+  totalVisitsCount: z.number().int().nullable(),
+  region: z.string().nullable(),
+  area: z.string().nullable(),
+  latitude: z.number().nullable(), // Prisma Decimal is handled as number
+  longitude: z.number().nullable(), // Prisma Decimal is handled as number
+  pjpId: z.string().nullable(),
+  masonId: z.string().uuid().nullable(), // Matches @db.Uuid
 });
 
 // salesman & dealer rating-scores
@@ -575,6 +592,84 @@ export const updateLeaveApplicationSchema = z.object({
   adminRemarks: z.string().nullable().optional(), // Can be string, null, or undefined (if not sent)
 });
 
+export const tsoMeetingSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  date: z.string(), // ISO String
+  location: z.string(),
+  budgetAllocated: z.number().nullable(),
+  participantsCount: z.number().int().nullable(),
+  createdByUserId: z.number().int(),
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string(), // ISO String
+});
+
+export const giftInventorySchema = z.object({
+  id: z.number().int(),
+  itemName: z.string(),
+  unitPrice: z.number(),
+  totalAvailableQuantity: z.number().int(),
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string(), // ISO String
+});
+
+export const giftAllocationLogSchema = z.object({
+  id: z.string(),
+  giftId: z.number().int(),
+  userId: z.number().int(),
+  transactionType: z.string(),
+  quantity: z.number().int(),
+  sourceUserId: z.number().int().nullable(),
+  destinationUserId: z.number().int().nullable(),
+  technicalVisitReportId: z.string().nullable(),
+  dealerVisitReportId: z.string().nullable(),
+  createdAt: z.string(), // ISO String
+});
+
+export const masonPCSideSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  phoneNumber: z.string(),
+  kycDocumentName: z.string().nullable(),
+  kycDocumentIdNum: z.string().nullable(),
+  verificationStatus: z.string().nullable(),
+  bagsLifted: z.number().int().nullable(),
+  pointsGained: z.number().int().nullable(),
+  isReferred: z.boolean().nullable(),
+  referredByUser: z.string().nullable(),
+  referredToUser: z.string().nullable(),
+  dealerId: z.string().nullable(),
+  userId: z.number().int().nullable(),
+});
+
+export const otpVerificationSchema = z.object({
+  id: z.string().uuid(),
+  otpCode: z.string(),
+  expiresAt: z.string(), // ISO String
+  masonId: z.string().uuid(),
+});
+
+export const schemesOffersSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  startDate: z.string().nullable(), // ISO String
+  endDate: z.string().nullable(), // ISO String
+});
+
+export const masonOnSchemeSchema = z.object({
+  masonId: z.string().uuid(),
+  schemeId: z.string().uuid(),
+  enrolledAt: z.string().nullable(), // ISO String
+  status: z.string().nullable(),
+});
+
+export const masonsOnMeetingsSchema = z.object({
+  masonId: z.string().uuid(),
+  meetingId: z.string(),
+  attendedAt: z.string(), // ISO String
+});
+
 export type AssignTaskSchema = z.infer<typeof assignTaskSchema>;
 export type DailyTaskSchema = z.infer<typeof dailyTaskSchema>;
 export type BaseDealerBrandMappingSchema = z.infer<typeof baseDealerBrandMappingSchema>;
@@ -594,3 +689,11 @@ export type SalesmanAttendanceSchema = z.infer<typeof salesmanAttendanceSchema>;
 export type GeoTrackingSchema = z.infer<typeof geoTrackingSchema>;
 export type SalesmanLeaveApplicationSchema = z.infer<typeof salesmanLeaveApplicationSchema>;
 export type UpdateLeaveApplicationSchema = z.infer<typeof updateLeaveApplicationSchema>;
+export type TsoMeetingSchema = z.infer<typeof tsoMeetingSchema>;
+export type GiftInventorySchema = z.infer<typeof giftInventorySchema>;
+export type GiftAllocationLogSchema = z.infer<typeof giftAllocationLogSchema>;
+export type MasonPCSideSchema = z.infer<typeof masonPCSideSchema>;
+export type OtpVerificationSchema = z.infer<typeof otpVerificationSchema>;
+export type SchemesOffersSchema = z.infer<typeof schemesOffersSchema>;
+export type MasonOnSchemeSchema = z.infer<typeof masonOnSchemeSchema>;
+export type MasonsOnMeetingsSchema = z.infer<typeof masonsOnMeetingsSchema>;

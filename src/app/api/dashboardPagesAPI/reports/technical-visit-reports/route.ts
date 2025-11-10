@@ -107,6 +107,21 @@ export async function GET() {
 
         // Decimal field conversion to number or null
         conversionQuantityValue: report.conversionQuantityValue ? parseFloat(report.conversionQuantityValue.toString()) : null,
+
+        timeSpentinLoc: report.timeSpentinLoc || null,
+        purposeOfVisit: report.purposeOfVisit || null,
+        sitePhotoUrl: report.sitePhotoUrl || null,
+        firstVisitTime: report.firstVisitTime?.toISOString() || null,
+        lastVisitTime: report.lastVisitTime?.toISOString() || null,
+        firstVisitDay: report.firstVisitDay || null,
+        lastVisitDay: report.lastVisitDay || null,
+        siteVisitsCount: report.siteVisitsCount || null,
+        otherVisitsCount: report.otherVisitsCount || null,
+        totalVisitsCount: report.totalVisitsCount || null,
+        latitude: report.latitude ? parseFloat(report.latitude.toString()) : null,
+        longitude: report.longitude ? parseFloat(report.longitude.toString()) : null,
+        pjpId: report.pjpId || null,
+        masonId: report.masonId || null,
       };
     });
 
