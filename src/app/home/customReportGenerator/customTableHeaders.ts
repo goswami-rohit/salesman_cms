@@ -160,11 +160,18 @@ export const tablesMetadata: TableMeta[] = [
     ],
   },
   {
-    id: 'giftInventory',
-    title: 'Gift Inventory',
+    id: 'rewards', // Updated from 'giftInventory'
+    title: 'Rewards Inventory', // Updated title
     icon: Gift,
     columns: [
-      'id', 'itemName', 'unitPrice', 'totalAvailableQuantity', 'createdAt', 'updatedAt'
+      'id', 
+      'itemName', 
+      'pointCost', // Updated from 'unitPrice'
+      'totalAvailableQuantity', 
+      'stock', // New field
+      'isActive', // New field
+      'createdAt', 
+      'updatedAt'
     ],
   },
   {
@@ -183,7 +190,10 @@ export const tablesMetadata: TableMeta[] = [
     icon: Construction,
     columns: [
       'id', 'name', 'phoneNumber', 'kycDocumentName', 'kycDocumentIdNum',
-      'verificationStatus', 'bagsLifted', 'pointsGained', 'isReferred',
+      'kycStatus', // Updated from 'verificationStatus'
+      'bagsLifted', 
+      'pointsBalance', // Updated from 'pointsGained'
+      'isReferred',
       'referredByUser', 'referredToUser', 'dealerName', 'associatedSalesman'
     ],
   },

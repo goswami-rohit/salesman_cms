@@ -246,9 +246,15 @@ export default function MasonPcPage() {
   const masonPcColumns: ColumnDef<MasonPc>[] = [
     { accessorKey: "name", header: "Mason Name" },
     { accessorKey: "phoneNumber", header: "Phone No." },
-    { accessorKey: "verificationStatus", header: "Status" },
+    { 
+      accessorKey: "kycStatus",
+      header: "KYC Status" 
+    },
     { accessorKey: "bagsLifted", header: "Bags Lifted" },
-    { accessorKey: "pointsGained", header: "Points Gained" },
+    { 
+      accessorKey: "pointsBalance", 
+      header: "Points Balance" 
+    },
     { accessorKey: "kycDocumentName", header: "KYC Doc" },
     { 
       accessorKey: "kycDocumentIdNum", 
@@ -256,8 +262,14 @@ export default function MasonPcPage() {
       cell: ({ row }) => <span className="max-w-[150px] truncate block">{row.original.kycDocumentIdNum ?? 'N/A'}</span>,
     },
     { accessorKey: "isReferred", header: "Referred?" },
-    { accessorKey: "salesmanName", header: "Associated User" },
-    { accessorKey: "role", header: "User Role" },
+    { 
+      accessorKey: "associatedSalesman", 
+      header: "Associated Salesman" 
+    },
+    { 
+      accessorKey: "dealerName", 
+      header: "Associated Dealer" 
+    },
     { accessorKey: "area", header: "Area" },
     { accessorKey: "region", header: "Region" },
   ];

@@ -614,27 +614,28 @@ export const giftInventorySchema = z.object({
 });
 
 export const giftAllocationLogSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   giftId: z.number().int(),
   userId: z.number().int(),
-  transactionType: z.string(),
+  transactionType: z.string().max(50),
   quantity: z.number().int(),
   sourceUserId: z.number().int().nullable(),
   destinationUserId: z.number().int().nullable(),
-  technicalVisitReportId: z.string().nullable(),
-  dealerVisitReportId: z.string().nullable(),
-  createdAt: z.string(), // ISO String
+  technicalVisitReportId: z.string().uuid().nullable(),
+  dealerVisitReportId: z.string().uuid().nullable(),
+  createdAt: z.string().datetime(), // ISO Date String
 });
 
 export const masonPCSideSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   phoneNumber: z.string(),
+  firebaseUid: z.string().nullable(),
   kycDocumentName: z.string().nullable(),
   kycDocumentIdNum: z.string().nullable(),
-  verificationStatus: z.string().nullable(),
+  kycStatus: z.string().nullable(), 
   bagsLifted: z.number().int().nullable(),
-  pointsGained: z.number().int().nullable(),
+  pointsBalance: z.number().int().nullable(), 
   isReferred: z.boolean().nullable(),
   referredByUser: z.string().nullable(),
   referredToUser: z.string().nullable(),

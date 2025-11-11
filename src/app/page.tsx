@@ -1,6 +1,6 @@
 // src/app/page.tsx
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
-//import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import SignedInHomePage from '@/app/home/page'; 
 import SignedOutHomePage from '@/app/home/signedOutHomePage'; 
 
@@ -9,7 +9,7 @@ export default async function LandingPage() {
 
   // If the user is signed in, render the signed-in page.
   if (claims && claims.sub) {
-    return <SignedInHomePage />;
+    redirect('/dashboard'); // <-- CRITICAL FIX: Redirect to the security gate
   }
 
   // If the user is not signed in, render the signed-out page.

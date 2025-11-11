@@ -18,20 +18,18 @@ This is the core of the Next.js App Router. All routing, UI pages, and backend A
         * **`Toaster`**: This component is included at the root level so that "toast" notifications (e.g., "User created!", "Error!") can be triggered from any component and will render correctly.
     3.  **Styles:** It imports the global stylesheet `globals.css` to apply base styles to the entire application.
 
-### `src/app/page.tsx`
+You want to update the architectural analysis document to reflect the change made to the root `src/app/page.tsx` file's logic.
+
+---
+
+### `src/app/page.tsx` (UPDATED)
 
 * **File:** `src/app/page.tsx`
 * **Purpose:** This is the public-facing landing page (the `/` route). It's a **Server Component**.
 * **Logic:**
-    1.  **Authentication Check:** The page's primary logic is to determine if a user is already authenticated. It calls `getSignInUrl()` from WorkOS AuthKit.
-    2.  **Session Fetch:** It also uses `getSSRSession()` to check if a session already exists.
-    3.  **Conditional Rendering:**
-        * **If Logged In:** It renders the `SignedOutHomePage` component, which is a client component that displays a "Go to Dashboard" button, directing the user to their protected content.
-        * **If Not Logged In:** It renders a "Sign In" button. This button is an `<a>` tag whose `href` is set to the `authUrl` obtained from the `getSignInUrl()` function. This is what initiates the WorkOS login flow.
-
----
-
-Here is the hyper-specific, updated analysis of the `src/app/api/` directory, with detailed logic for every file and sub-folder.
+    1.  **Authentication Check:** The page's primary logic is to determine if a user is already authenticated by calling `getTokenClaims()` from WorkOS AuthKit.
+    2.  **CRITICAL REDIRECT (Stale Session Fix):** **If a session/claims are detected**, the page no longer renders a client component (`SignedInHomePage`). Instead, it immediately calls `redirect('/dashboard')`. This enforces that **all session validation and expiry checks** are handled by the robust server-side security logic in `src/app/dashboard/layout.tsx`, resolving the issue of rendering a non-functional page with a stale cookie.
+    3.  **Conditional Rendering (Signed Out):** If no valid claims are present, it renders the `SignedOutHomePage` component. This component displays a "Sign In" button, initiating the WorkOS login flow.
 
 ---
 

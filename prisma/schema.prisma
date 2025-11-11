@@ -83,6 +83,9 @@ model User {
   giftTransfersSent                   GiftAllocationLog[]   @relation("SourceUserTransfers")
   giftTransfersReceived               GiftAllocationLog[]   @relation("DestinationUserTransfers")
   masons                              Mason_PC_Side[]
+
+  tsoAssignments TSOAssignment[] @relation("TSOAssignments")
+  bagLiftApprovals BagLift[] @relation("BagLiftApprovals")
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -191,6 +194,8 @@ model Dealer {
   dailyVisitReportsAsSubDealer  DailyVisitReport[]      @relation("DVR_SubDealer")
   permanentJourneyPlansAsDealer PermanentJourneyPlan[]  @relation("PJP_Dealer")
   masons                        Mason_PC_Side[]
+
+  bagLifts BagLift[] @relation("DealerBagLifts")
 
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
@@ -329,55 +334,6 @@ model TSOMeeting {
   
   @@index([createdByUserId])
   @@map("tso_meetings")
-}
-
-// GiftInventory: Master list of gifts for the TSO/CRM activity
-model GiftInventory {
-  id                      Int       @id @default(autoincrement())
-  itemName                String    @map("item_name") @unique @db.VarChar(255) // e.g., "T-Shirt", "Key Chain"
-  unitPrice               Decimal   @map("unit_price") @db.Decimal(10, 2)
-  totalAvailableQuantity  Int       @map("total_available_quantity")
-  // Relations
-  logs                    GiftAllocationLog[]
-
-  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  @@map("gift_inventory")
-}
-
-// GiftAllocationLog: Tracks allocation to TSO and distribution
-model GiftAllocationLog {
-  id                      String    @id @default(uuid()) @db.VarChar(255)
-  giftId                  Int       @map("gift_id") // FK to GiftInventory
-  userId                  Int       @map("user_id") // The TSO/User receiving or distributing the gift
-  transactionType         String    @map("transaction_type") @db.VarChar(50) // "Allocation", "Transfer", "Distribution", "Deduction"
-  quantity                Int
-  
-  // Audit fields
-  sourceUserId            Int?      @map("source_user_id") // For transfers (from whom)
-  destinationUserId       Int?      @map("destination_user_id") // For transfers (to whom)
-  
-  // Relations
-  giftItem                GiftInventory @relation(fields: [giftId], references: [id])
-  user                    User          @relation("UserGiftLogs", fields: [userId], references: [id])
-  sourceUser              User?         @relation("SourceUserTransfers", fields: [sourceUserId], references: [id], onDelete: SetNull)
-  destinationUser         User?         @relation("DestinationUserTransfers", fields: [destinationUserId], references: [id], onDelete: SetNull)
-  
-  technicalVisitReportId String?  @map("technical_visit_report_id") @db.VarChar(255)
-  dealerVisitReportId    String?  @map("dealer_visit_report_id") @db.VarChar(255)
-  technicalVisitReport TechnicalVisitReport? @relation(fields: [technicalVisitReportId], references: [id], onDelete: SetNull)
-  dealerVisitReport DailyVisitReport? @relation(fields: [dealerVisitReportId], references: [id], onDelete: SetNull)
-
-  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  
-  @@index([giftId])
-  @@index([userId])
-  @@index([sourceUserId])
-  @@index([destinationUserId])
-  @@index([technicalVisitReportId])
-  @@index([dealerVisitReportId])    
-  @@map("gift_allocation_logs")
 }
 
 // Permanent Journey Plans
@@ -710,42 +666,108 @@ model tally_raw {
   @@map("tally_raw")
 }
 
-// Mason and Petty Contractor side
+ // Mason and Petty Contractor side
+ // Mason_PC_Side (Columns Renamed and Modified)
 model Mason_PC_Side {
-  id                 String   @id @default(uuid()) @db.Uuid
-  name               String   @map("name") @db.VarChar(100)
-  phoneNumber        String   @map("phone_number")
-  kycDocumentName    String?  @map("kyc_doc_name")  @db.VarChar(100)
-  kycDocumentIdNum   String?  @map("kyc_doc_id_num")  @db.VarChar(150)
-  verificationStatus String?  @map("verification_status") @db.VarChar(50)
+  id                 String     @id @default(uuid()) @db.Uuid
+  name               String     @map("name") @db.VarChar(100)
+  phoneNumber        String     @map("phone_number")
+  kycDocumentName    String?    @map("kyc_doc_name") @db.VarChar(100)
+  kycDocumentIdNum   String?    @map("kyc_doc_id_num") @db.VarChar(150)
 
-  // Bags-Points section
-  bagsLifted         Int? @map("bags_lifted")
-  pointsGained       Int? @map("points_gained")
+  // MODIFIED: Renamed verification_status to kyc_status, set default 'none'
+  kycStatus          String?    @default("none") @map("kyc_status") @db.VarChar(50) 
 
-  // Referral Section
+  // MODIFIED: bagsLifted remains (for now, based on current model)
+  bagsLifted         Int?       @map("bags_lifted")
+
+  // MODIFIED: Renamed points_gained to points_balance, set default 0
+  pointsBalance      Int?       @default(0) @map("points_balance") 
+  
+  firebaseUid           String?    @unique @map("firebase_uid") @db.VarChar(128)
+
+  // Referral Section (unchanged)
   isReferred         Boolean? @map("is_referred")
   referredByUser     String? @map("referred_by_user")
   referredToUser     String? @map("referred_to_user")
 
-  // Relation to Dealer
-  dealerId     String?  @map("dealer_id") @db.VarChar(255)
-  dealer       Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-
-  // Relation to User
-  userId             Int?     @map("user_id")
-  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-
-  // Relation to SchemesOffers
+  // Relations (unchanged)
+  dealerId           String? @map("dealer_id") @db.VarChar(255)
+  dealer             Dealer? @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  userId             Int? @map("user_id")
+  user               User? @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   schemes            MasonOnScheme[]
-  technicalVisitReports TechnicalVisitReport[] // This Mason's visit reports
-  meetings              MasonsOnMeetings[]     // Meetings this Mason attended
+  technicalVisitReports TechnicalVisitReport[]
+  meetings           MasonsOnMeetings[]
+  otps               OtpVerification[]
 
-  otps                 OtpVerification[]
+  // NEW RELATIONS
+  kycSubmissions     KYCSubmission[]
+  tsoAssignments     TSOAssignment[] @relation("MasonAssignments")
+  bagLifts           BagLift[]
+  pointsLedger       PointsLedger[]
+  rewardRedemptions  RewardRedemption[]
 
   @@index([dealerId], map: "idx_mason_pc_side_dealer_id")
   @@index([userId], map: "idx_mason_pc_side_user_id")
   @@map("mason_pc_side")
+}
+
+// Rewards (RENAMED FROM GiftInventory, Columns Modified)
+model Rewards {
+  id                      Int       @id @default(autoincrement())
+  name                    String    @map("item_name") @unique @db.VarChar(255)
+  pointCost               Int       @map("point_cost") // Renamed from unit_price, Type changed to Int
+  
+  // NEW/MODIFIED FIELDS
+  categoryId              Int?      @map("category_id")
+  stock                   Int       @default(0)
+  totalAvailableQuantity  Int       @map("total_available_quantity") // Kept for existing logic
+  isActive                Boolean   @default(true) @map("is_active")
+  meta                    Json?
+
+  // Relations
+  category                RewardCategory? @relation(fields: [categoryId], references: [id], onDelete: NoAction)
+  logs                    GiftAllocationLog[]
+  redemptions             RewardRedemption[]
+
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([categoryId])
+  @@map("rewards")
+}
+
+// GiftAllocationLog (FK updated to point to Rewards)
+model GiftAllocationLog {
+  id                      String    @id @default(uuid()) @db.VarChar(255)
+  giftId                  Int       @map("gift_id")
+  userId                  Int       @map("user_id")
+  transactionType         String    @map("transaction_type") @db.VarChar(50)
+  quantity                Int
+  sourceUserId            Int?      @map("source_user_id")
+  destinationUserId       Int?      @map("destination_user_id")
+
+  // Relation updated: giftItem now points to Rewards
+  giftItem                Rewards @relation(fields: [giftId], references: [id])
+  user                    User          @relation("UserGiftLogs", fields: [userId], references: [id])
+  sourceUser              User?         @relation("SourceUserTransfers", fields: [sourceUserId], references: [id], onDelete: SetNull)
+  destinationUser         User?         @relation("DestinationUserTransfers", fields: [destinationUserId], references: [id], onDelete: SetNull)
+
+  technicalVisitReportId String?  @map("technical_visit_report_id") @db.VarChar(255)
+  dealerVisitReportId    String?  @map("dealer_visit_report_id") @db.VarChar(255)
+  technicalVisitReport TechnicalVisitReport? @relation(fields: [technicalVisitReportId], references: [id], onDelete: SetNull)
+  dealerVisitReport DailyVisitReport? @relation(fields: [dealerVisitReportId], references: [id], onDelete: SetNull)
+
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([giftId])
+  @@index([userId])
+  @@index([sourceUserId])
+  @@index([destinationUserId])
+  @@index([technicalVisitReportId])
+  @@index([dealerVisitReportId])
+  @@map("gift_allocation_logs")
 }
 
 model OtpVerification {
@@ -808,4 +830,123 @@ model MasonsOnMeetings {
   @@id([masonId, meetingId]) // Composite primary key
   @@index([meetingId])
   @@map("masons_on_meetings")
+}
+
+//  RewardCategory
+model RewardCategory {
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(120) @unique
+
+  rewards Rewards[]
+
+  @@map("reward_categories")
+}
+
+//  KYCSubmissions (New Table)
+model KYCSubmission {
+  id String @id @default(uuid()) @db.Uuid
+  masonId String @map("mason_id") @db.Uuid
+  aadhaarNumber String? @map("aadhaar_number") @db.VarChar(20)
+  panNumber String? @map("pan_number") @db.VarChar(20)
+  voterIdNumber String? @map("voter_id_number") @db.VarChar(20)
+  documents Json?
+  // Status as String
+  status String @default("pending") @db.VarChar(20) // "pending", "approved", "rejected"
+  remark String? @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  mason Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+
+  @@index([masonId])
+  @@map("kyc_submissions")
+}
+
+//  TSOAssignment (New Table - Composite PK)
+model TSOAssignment {
+  tsoId     Int       @map("tso_id")
+  masonId   String    @map("mason_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // tso is opposite of User.tsoAssignments
+  tso       User          @relation("TSOAssignments", fields: [tsoId], references: [id])
+  // mason is opposite of Mason_PC_Side.tsoAssignments
+  mason     Mason_PC_Side @relation("MasonAssignments", fields: [masonId], references: [id], onDelete: Cascade)
+
+  @@id([tsoId, masonId])
+  @@index([tsoId])
+  @@map("tso_assignments")
+}
+
+// BagLifts (New Table - for point source tracking)
+model BagLift {
+  id String @id @default(uuid()) @db.Uuid
+  masonId String @map("mason_id") @db.Uuid
+  dealerId String? @map("dealer_id") @db.VarChar(255)
+  purchaseDate DateTime @map("purchase_date") @db.Timestamptz(6)
+  bagCount Int @map("bag_count")
+  pointsCredited Int @map("points_credited")
+  // Status as String
+  status String @default("pending") @db.VarChar(20)
+  approvedBy Int? @map("approved_by")
+  approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  mason Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+  dealer Dealer? @relation("DealerBagLifts", fields: [dealerId], references: [id], onDelete: SetNull) // FIX: Added named relation
+  approver User? @relation("BagLiftApprovals", fields: [approvedBy], references: [id], onDelete: SetNull) // FIX: Added named relation
+
+  pointsLedgerRecord PointsLedger? @relation("BagLiftPointsLedger")
+
+  @@index([masonId])
+  @@index([dealerId])
+  @@index([status])
+  @@map("bag_lifts")
+}
+
+// RewardRedemptions (New Table - Missing Orders concept)
+model RewardRedemption {
+  id String @id @default(uuid()) @db.Uuid
+  masonId String @map("mason_id") @db.Uuid
+  rewardId Int @map("reward_id")
+  quantity Int @default(1)
+  // Status as String
+  status String @default("placed") @db.VarChar(20) // "placed", "approved", "shipped", "delivered", "rejected"
+  pointsDebited Int @map("points_debited")
+  deliveryName String? @map("delivery_name") @db.VarChar(160)
+  deliveryPhone String? @map("delivery_phone") @db.VarChar(20)
+  deliveryAddress String? @map("delivery_address") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  mason Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+  reward Rewards @relation(fields: [rewardId], references: [id], onDelete: NoAction)
+
+  pointsLedgerRecord PointsLedger? @relation("RedemptionPointsLedger")
+
+  @@index([masonId])
+  @@index([status])
+  @@map("reward_redemptions")
+}
+
+// PointsLedger (New Table - Dedicated Audit Log)
+model PointsLedger {
+  id String @id @default(uuid()) @db.Uuid
+  masonId String @map("mason_id") @db.Uuid
+  sourceType String @map("source_type") @db.VarChar(32)
+  sourceId String? @map("source_id") @db.Uuid
+  points Int
+  memo String? @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  mason Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+
+  // Explicit constraint naming ensures no conflicts (already done in previous steps)
+  bagLift BagLift? @relation("BagLiftPointsLedger", fields: [sourceId], references: [id], onDelete: Cascade, map: "points_ledger_baglift_sourceId_fkey")
+  rewardRedemption RewardRedemption? @relation("RedemptionPointsLedger", fields: [sourceId], references: [id], onDelete: Cascade, map: "points_ledger_redemption_sourceId_fkey") 
+
+  @@unique([sourceId], map: "points_ledger_source_id_unique")
+  @@index([masonId])
+  @@index([sourceId])
+  @@map("points_ledger")
 }
