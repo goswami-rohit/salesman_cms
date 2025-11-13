@@ -82,10 +82,9 @@ model User {
   giftLogs                            GiftAllocationLog[]   @relation("UserGiftLogs")
   giftTransfersSent                   GiftAllocationLog[]   @relation("SourceUserTransfers")
   giftTransfersReceived               GiftAllocationLog[]   @relation("DestinationUserTransfers")
-  masons                              Mason_PC_Side[]
-
-  tsoAssignments TSOAssignment[] @relation("TSOAssignments")
-  bagLiftApprovals BagLift[] @relation("BagLiftApprovals")
+  assignedMasons                      Mason_PC_Side[] @relation("MasonAssignments")
+  tsoAssignments                      TSOAssignment[] @relation("TSOAssignments")
+  bagLiftApprovals                    BagLift[] @relation("BagLiftApprovals")
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -666,7 +665,7 @@ model tally_raw {
   @@map("tally_raw")
 }
 
- // Mason and Petty Contractor side
+// Mason and Petty Contractor side
 model Mason_PC_Side {
   id                 String     @id @default(uuid()) @db.Uuid
   name               String     @map("name") @db.VarChar(100)
@@ -689,7 +688,7 @@ model Mason_PC_Side {
   dealerId           String? @map("dealer_id") @db.VarChar(255)
   dealer             Dealer? @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   userId             Int? @map("user_id")
-  user               User? @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  user               User? @relation("MasonAssignments", fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   schemes            MasonOnScheme[]
   technicalVisitReports TechnicalVisitReport[]
   meetings           MasonsOnMeetings[]

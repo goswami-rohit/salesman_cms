@@ -32,6 +32,7 @@ interface TeamMember {
   managesReports: { name: string; role: string }[];
   area?: string | null;
   region?: string | null;
+  isTechnicalRole: boolean;
 }
 
 const allRoles = ROLE_HIERARCHY;
@@ -84,7 +85,7 @@ function EditRoleCell({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-          size="icon" 
+          size="icon"
           disabled={!canEdit}>
           <PencilIcon className="h-4 w-4" />
         </Button>
@@ -183,7 +184,7 @@ function EditMappingCell({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-          size="icon" 
+          size="icon"
           disabled={!currentUserRole}>
           <UsersIcon className="h-4 w-4" />
         </Button>
@@ -336,7 +337,7 @@ function EditDealerMappingCell({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-          size="icon" 
+          size="icon"
           disabled={!currentUserRole}>
           <StoreIcon className="h-4 w-4" />
         </Button>
@@ -416,11 +417,220 @@ function EditDealerMappingCell({
   );
 }
 
+function EditMasonMappingCell({
+  row,
+  onSaveMasonMapping,
+  currentUserRole,
+}: {
+  row: any;
+  onSaveMasonMapping: (userId: number, masonIds: string[]) => void;
+  currentUserRole: string | null;
+}) {
+  const member: TeamMember = row.original;
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedMasonIds, setSelectedMasonIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [masonOptions, setMasonOptions] = useState<{ value: string; label: string }[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [masonSearchQuery, setMasonSearchQuery] = useState('');
+
+  // STATE FOR FILTERS (Copied from EditDealerMappingCell)
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const ALL = "all";
+
+  // Use the hook to get available filter options
+  const { locations, loading: locationsLoading } = useDealerLocations(); 
+
+  const isTechnical = member.isTechnicalRole === true;
+  const isDisabled = !currentUserRole || !isTechnical;
+
+  // Fetch masons for this user when popover opens, OR when filters change
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset filters when the popover closes
+      setSelectedArea(null);
+      setSelectedRegion(null);
+      setMasonSearchQuery('');
+      return;
+    }
+    
+    // Only fetch if locations are not loading
+    if (locationsLoading) {
+        return;
+    }
+
+    (async () => {
+      setIsLoading(true);
+      try {
+        const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMasonMapping`);
+        url.searchParams.append('userId', String(member.id));
+
+        // 💡 ADD FILTERS TO URL
+        if (selectedArea) {
+          url.searchParams.append('area', selectedArea);
+        }
+        if (selectedRegion) {
+          url.searchParams.append('region', selectedRegion);
+        }
+        // END ADD FILTERS
+
+        const res = await fetch(url.toString());
+        if (res.ok) {
+          const data = await res.json();
+          // Map mason data to MultiSelect options
+          setMasonOptions(data.masons.map((m: any) => ({
+            value: m.id,
+            // Include dealer area/region in the label for clarity
+            label: `${m.name} (${m.dealer?.name || 'No Dealer'}) - ${m.dealer?.area || 'N/A'}/${m.dealer?.region || 'N/A'}`
+          })));
+          setSelectedMasonIds(data.assignedMasonIds ?? []);
+        } else {
+          console.error("Failed to fetch masons", res.status);
+          toast.error("Failed to load masons. Please try again.");
+        }
+      } catch (e) {
+        console.error("Failed to fetch masons", e);
+        toast.error("An error occurred while loading masons.");
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [
+    isOpen, 
+    member.id, 
+    locationsLoading, 
+    selectedArea, 
+    selectedRegion,
+  ]);
+
+  // Filter mason options based on search query
+  const filteredMasonOptions = useMemo(() => {
+    if (!masonSearchQuery) {
+      return masonOptions;
+    }
+    const query = masonSearchQuery.toLowerCase();
+    return masonOptions.filter((option) => option.label.toLowerCase().includes(query));
+  }, [masonOptions, masonSearchQuery]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSaveMasonMapping(member.id, selectedMasonIds);
+      setIsOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // CLEAR FILTER FUNCTION
+  const handleClearFilters = () => {
+    setSelectedArea(null);
+    setSelectedRegion(null);
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+          size="icon"
+          disabled={isDisabled}
+          title={!isTechnical ? "Only assignable to Technical Roles" : "Edit Mason Mapping"}
+        >
+          <UsersIcon className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96 border border-border/30 bg-popover/50 backdrop-blur-lg">
+        <h4 className="font-bold mb-2">Edit Mason/PC Mapping</h4>
+        <p className="text-sm text-gray-500 mb-4">Salesman: {member.name}</p>
+
+        {/* 💡 NEW FILTER UI BLOCK (Copied from EditDealerMappingCell) */}
+        <div className="flex gap-2 mb-4">
+          {/* Area */}
+          <Select
+            value={selectedArea ?? ALL}
+            onValueChange={(val) => setSelectedArea(val === ALL ? null : val)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Area" />
+            </SelectTrigger>
+            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
+              <SelectItem value={ALL}>All Areas</SelectItem>
+              {locations.areas.sort().map((area) => (
+                <SelectItem key={area} value={area}>
+                  {area}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Region */}
+          <Select
+            value={selectedRegion ?? ALL}
+            onValueChange={(val) => setSelectedRegion(val === ALL ? null : val)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Region" />
+            </SelectTrigger>
+            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
+              <SelectItem value={ALL}>All Regions</SelectItem>
+              {locations.regions.sort().map((region) => (
+                <SelectItem key={region} value={region}>
+                  {region}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clear Filters Button */}
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" onClick={handleClearFilters} disabled={!selectedArea && !selectedRegion}>
+            Clear Filters
+          </Button>
+        </div>
+        {/* 💡 END NEW FILTER UI BLOCK */}
+
+        {isLoading || locationsLoading ? (
+          <div className="py-4 text-center text-gray-500">Loading masons/locations...</div>
+        ) : (
+          <>
+            <Input
+              placeholder="Search masons..."
+              value={masonSearchQuery}
+              onChange={(e) => setMasonSearchQuery(e.target.value)}
+              className="mb-4"
+            />
+            <MultiSelect
+              options={filteredMasonOptions}
+              selectedValues={selectedMasonIds}
+              onValueChange={setSelectedMasonIds}
+              placeholder="Assign masons to salesman.."
+            />
+          </>
+        )}
+
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const getTeamColumns = (
   teamData: TeamMember[],
   onSaveRole: (userId: number, newRole: string) => void,
   onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void,
   onSaveDealerMapping: (userId: number, dealerIds: string[]) => void,
+  onSaveMasonMapping: (userId: number, masonIds: string[]) => void,
   currentUserRole: string | null
 ): ColumnDef<TeamMember>[] => {
   return [
@@ -436,8 +646,8 @@ const getTeamColumns = (
           <Popover>
             <PopoverTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-              size="icon" 
-              disabled={managesReports.length === 0}>
+                size="icon"
+                disabled={managesReports.length === 0}>
                 <EyeIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
@@ -478,6 +688,13 @@ const getTeamColumns = (
         <EditDealerMappingCell row={row} currentUserRole={currentUserRole} onSaveDealerMapping={onSaveDealerMapping} />
       ),
     },
+    {
+      id: 'editMasonMapping',
+      header: 'Edit Mason Mapping',
+      cell: ({ row }) => (
+        <EditMasonMappingCell row={row} currentUserRole={currentUserRole} onSaveMasonMapping={onSaveMasonMapping} />
+      ),
+    },
   ];
 };
 
@@ -493,6 +710,7 @@ export function TeamTabContent() {
   const editRoleURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editRole`;
   const editMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMapping`;
   const editDealerMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editDealerMapping`;
+  const editMasonMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMasonMapping`;
   const currentUserURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/me`;
 
   const loadTeamData = useCallback(
@@ -619,6 +837,28 @@ export function TeamTabContent() {
     [editDealerMappingURI, loadTeamData]
   );
 
+  const handleSaveMasonMapping = useCallback(
+    async (userId: number, masonIds: string[]) => {
+      try {
+        const response = await fetch(editMasonMappingURI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, masonIds }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update mason mapping');
+        }
+        toast.success('Mason/PC mapping updated successfully!');
+        await loadTeamData();
+      } catch (err: any) {
+        console.error('Failed to update mason mapping:', err);
+        toast.error(err.message || 'Failed to update mason mapping');
+      }
+    },
+    [editMasonMappingURI, loadTeamData]
+  );
+
   const filteredData = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return teamData.filter((member) => {
@@ -628,8 +868,8 @@ export function TeamTabContent() {
   }, [teamData, searchQuery]);
 
   const teamColumns = useMemo(
-    () => getTeamColumns(teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, currentUserRole),
-    [teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, currentUserRole]
+    () => getTeamColumns(teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, handleSaveMasonMapping, currentUserRole),
+    [teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, handleSaveMasonMapping, currentUserRole]
   );
 
   if (isLoading) {
@@ -693,8 +933,8 @@ export function TeamTabContent() {
         {filteredData.length === 0 ? (
           <div className="text-center text-neutral-500 py-8">No team members found for this company with the selected filters.</div>
         ) : (
-          <DataTableReusable 
-            columns={teamColumns} 
+          <DataTableReusable
+            columns={teamColumns}
             data={filteredData} />
         )}
       </CardContent>

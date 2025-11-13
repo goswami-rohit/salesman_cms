@@ -55,7 +55,16 @@ export async function GET(request: NextRequest) {
     // The include block is updated to use the correct relation names from your schema: 'reportsTo' and 'reports'.
     const teamMembers = await prisma.user.findMany({
       where: whereClause,
-      include: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        area: true, // You may need area/region for display/future filtering
+        region: true,
+        reportsToId: true,
+  
+        isTechnicalRole: true, 
         reportsTo: true, // Includes the manager's data
         reports: true, // Includes the list of direct reports
       },
@@ -94,6 +103,7 @@ export async function GET(request: NextRequest) {
         managesReports,
         managedById: member.reportsToId,
         managesIds,
+        isTechnicalRole: member.isTechnicalRole,
       };
     });
 
