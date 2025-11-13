@@ -28,8 +28,8 @@ const EMAIL_TIMEOUT_MS = 12000;
 
 const transportOptions: SMTPTransport.Options = {
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
     auth: { user: process.env.GMAIL_USER!, pass: process.env.GMAIL_APP_PASSWORD! },
     connectionTimeout: 10000,
     greetingTimeout: 7000,

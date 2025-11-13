@@ -667,21 +667,15 @@ model tally_raw {
 }
 
  // Mason and Petty Contractor side
- // Mason_PC_Side (Columns Renamed and Modified)
 model Mason_PC_Side {
   id                 String     @id @default(uuid()) @db.Uuid
   name               String     @map("name") @db.VarChar(100)
   phoneNumber        String     @map("phone_number")
   kycDocumentName    String?    @map("kyc_doc_name") @db.VarChar(100)
   kycDocumentIdNum   String?    @map("kyc_doc_id_num") @db.VarChar(150)
-
-  // MODIFIED: Renamed verification_status to kyc_status, set default 'none'
   kycStatus          String?    @default("none") @map("kyc_status") @db.VarChar(50) 
 
-  // MODIFIED: bagsLifted remains (for now, based on current model)
   bagsLifted         Int?       @map("bags_lifted")
-
-  // MODIFIED: Renamed points_gained to points_balance, set default 0
   pointsBalance      Int?       @default(0) @map("points_balance") 
   
   firebaseUid           String?    @unique @map("firebase_uid") @db.VarChar(128)
@@ -707,6 +701,7 @@ model Mason_PC_Side {
   bagLifts           BagLift[]
   pointsLedger       PointsLedger[]
   rewardRedemptions  RewardRedemption[]
+  authSessions       AuthSession[]
 
   @@index([dealerId], map: "idx_mason_pc_side_dealer_id")
   @@index([userId], map: "idx_mason_pc_side_user_id")
@@ -784,6 +779,22 @@ model OtpVerification {
   @@map("otp_verifications")
 }
 
+model AuthSession {
+  sessionId     String   @id @default(dbgenerated("gen_random_uuid()")) @map("session_id") @db.Uuid
+  
+  // mason_id uuid NOT NULL REFERENCES mason_pc_side(id) ON DELETE CASCADE,
+  masonId       String   @map("mason_id") @db.Uuid // Foreign key field
+  Mason_PC_Side Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+
+  // session_token text NOT NULL UNIQUE,
+  sessionToken  String   @unique @map("session_token") @db.Text
+  
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  @@map("auth_sessions")
+}
+
 // Schems & Offers for Mason_PC_Side
 model SchemesOffers{
   id          String   @id @default(uuid()) @db.Uuid
@@ -842,7 +853,7 @@ model RewardCategory {
   @@map("reward_categories")
 }
 
-//  KYCSubmissions (New Table)
+//  KYCSubmissions
 model KYCSubmission {
   id String @id @default(uuid()) @db.Uuid
   masonId String @map("mason_id") @db.Uuid
@@ -862,7 +873,7 @@ model KYCSubmission {
   @@map("kyc_submissions")
 }
 
-//  TSOAssignment (New Table - Composite PK)
+//  TSOAssignment
 model TSOAssignment {
   tsoId     Int       @map("tso_id")
   masonId   String    @map("mason_id") @db.Uuid
@@ -878,7 +889,7 @@ model TSOAssignment {
   @@map("tso_assignments")
 }
 
-// BagLifts (New Table - for point source tracking)
+// BagLifts
 model BagLift {
   id String @id @default(uuid()) @db.Uuid
   masonId String @map("mason_id") @db.Uuid
@@ -904,7 +915,7 @@ model BagLift {
   @@map("bag_lifts")
 }
 
-// RewardRedemptions (New Table - Missing Orders concept)
+// RewardRedemptions
 model RewardRedemption {
   id String @id @default(uuid()) @db.Uuid
   masonId String @map("mason_id") @db.Uuid
@@ -929,7 +940,7 @@ model RewardRedemption {
   @@map("reward_redemptions")
 }
 
-// PointsLedger (New Table - Dedicated Audit Log)
+// PointsLedger
 model PointsLedger {
   id String @id @default(uuid()) @db.Uuid
   masonId String @map("mason_id") @db.Uuid
@@ -940,8 +951,6 @@ model PointsLedger {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   mason Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
-
-  // Explicit constraint naming ensures no conflicts (already done in previous steps)
   bagLift BagLift? @relation("BagLiftPointsLedger", fields: [sourceId], references: [id], onDelete: Cascade, map: "points_ledger_baglift_sourceId_fkey")
   rewardRedemption RewardRedemption? @relation("RedemptionPointsLedger", fields: [sourceId], references: [id], onDelete: Cascade, map: "points_ledger_redemption_sourceId_fkey") 
 

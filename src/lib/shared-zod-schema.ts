@@ -78,7 +78,7 @@ export const getDealersSchema = z.object({
   id: z.string(), 
   name: z.string().min(1, "Dealer name is required."),
   type: z.string().min(1, "Dealer type is required."),
-  parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
+  parentDealerId: z.string().nullable().optional(),
   parentDealerName: optionalStringSchema, // Custom field from parentDealer relation
   region: z.string().min(1, "Region is required."),
   area: z.string().min(1, "Area is required."),
@@ -163,7 +163,7 @@ export const getDealersSchema = z.object({
 export const postDealersSchema = z.object({
   name: z.string().min(1, "Dealer name is required."),
   type: z.string(),
-  parentDealerId: z.string().uuid("Parent Dealer ID must be a valid UUID if provided.").nullable().optional(),
+  parentDealerId: z.string().nullable().optional(),
   region: z.string(),
   area: z.string(),
   phoneNo: z.string().min(1, "Phone number is required.").max(20, "Phone number is too long."),
@@ -457,7 +457,7 @@ export const technicalVisitReportSchema = z.object({
   latitude: z.number().nullable(), // Prisma Decimal is handled as number
   longitude: z.number().nullable(), // Prisma Decimal is handled as number
   pjpId: z.string().nullable(),
-  masonId: z.string().uuid().nullable(), // Matches @db.Uuid
+  masonId: z.string().nullable(), // Matches @db.Uuid
 });
 
 // salesman & dealer rating-scores
@@ -614,20 +614,20 @@ export const giftInventorySchema = z.object({
 });
 
 export const giftAllocationLogSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   giftId: z.number().int(),
   userId: z.number().int(),
   transactionType: z.string().max(50),
   quantity: z.number().int(),
   sourceUserId: z.number().int().nullable(),
   destinationUserId: z.number().int().nullable(),
-  technicalVisitReportId: z.string().uuid().nullable(),
-  dealerVisitReportId: z.string().uuid().nullable(),
-  createdAt: z.string().datetime(), // ISO Date String
+  technicalVisitReportId: z.string().nullable(),
+  dealerVisitReportId: z.string().nullable(),
+  createdAt: z.string(), // ISO Date String
 });
 
 export const masonPCSideSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   phoneNumber: z.string(),
   firebaseUid: z.string().nullable(),
@@ -644,14 +644,14 @@ export const masonPCSideSchema = z.object({
 });
 
 export const otpVerificationSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   otpCode: z.string(),
   expiresAt: z.string(), // ISO String
-  masonId: z.string().uuid(),
+  masonId: z.string(),
 });
 
 export const schemesOffersSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   startDate: z.string().nullable(), // ISO String
@@ -659,14 +659,14 @@ export const schemesOffersSchema = z.object({
 });
 
 export const masonOnSchemeSchema = z.object({
-  masonId: z.string().uuid(),
-  schemeId: z.string().uuid(),
+  masonId: z.string(),
+  schemeId: z.string(),
   enrolledAt: z.string().nullable(), // ISO String
   status: z.string().nullable(),
 });
 
 export const masonsOnMeetingsSchema = z.object({
-  masonId: z.string().uuid(),
+  masonId: z.string(),
   meetingId: z.string(),
   attendedAt: z.string(), // ISO String
 });

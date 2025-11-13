@@ -22,7 +22,7 @@ You want to update the architectural analysis document to reflect the change mad
 
 ---
 
-### `src/app/page.tsx` (UPDATED)
+### `src/app/page.tsx`
 
 * **File:** `src/app/page.tsx`
 * **Purpose:** This is the public-facing landing page (the `/` route). It's a **Server Component**.
