@@ -1,4 +1,5 @@
 // src/app/home/layout.tsx
+export const dynamic = 'force-dynamic';
 import { withAuth, getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';

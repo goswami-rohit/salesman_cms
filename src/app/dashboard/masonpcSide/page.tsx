@@ -1,6 +1,6 @@
 // src/app/dashboard/masonpcSide/page.tsx
 // --- NO 'use client' --- This is the Server Component.
-
+export const dynamic = 'force-dynamic';
 // Import the new client component from 'tabsLoader.tsx'
 import { MasonPcTabs } from './tabsLoader';
 

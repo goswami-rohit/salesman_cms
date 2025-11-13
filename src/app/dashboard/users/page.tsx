@@ -1,4 +1,5 @@
 // src/app/dashboard/users/page.tsx
+export const dynamic = 'force-dynamic';
 import { withAuth, getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { redirect } from 'next/navigation';
 import UsersManagement from './userManagement';
