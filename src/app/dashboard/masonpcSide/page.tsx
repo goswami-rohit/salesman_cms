@@ -1,4 +1,3 @@
-// src/app/dashboard/masonpcSide/page.tsx
 // --- NO 'use client' --- This is the Server Component.
 export const dynamic = 'force-dynamic';
 // Import the new client component from 'tabsLoader.tsx'
@@ -47,8 +46,13 @@ export default async function MasonPcPage() {
   const canSeeMasonOnSchemes = hasPermission(roleToCheck, 'masonpcSide.masonOnSchemes');
   const canSeeMasonOnMeetings = hasPermission(roleToCheck, 'masonpcSide.masonOnMeetings');
 
+  const canSeeBagsLift = hasPermission(roleToCheck, 'masonpcSide.bagsLift');
+  const canSeePointsLedger = hasPermission(roleToCheck, 'masonpcSide.pointsLedger');
+  const canSeeRewardsRedemption = hasPermission(roleToCheck, 'masonpcSide.rewardsRedemption');
+  const canSeeRewardsMaster = hasPermission(roleToCheck, 'masonpcSide.rewards');
+
   // Check if the user can see any of the tabs
-  const canSeeAnything = canSeeMasonPc || canSeeTsoMeetings || canSeeSchemesOffers || canSeeMasonOnSchemes || canSeeMasonOnMeetings;
+  const canSeeAnything = canSeeMasonPc || canSeeTsoMeetings || canSeeSchemesOffers || canSeeMasonOnSchemes || canSeeMasonOnMeetings || canSeeBagsLift || canSeePointsLedger || canSeeRewardsRedemption || canSeeRewardsMaster;
 
   // 3. Handle users who can't see anything
   if (!canSeeAnything) {
@@ -80,6 +84,10 @@ export default async function MasonPcPage() {
         canSeeSchemesOffers={canSeeSchemesOffers}
         canSeeMasonOnSchemes={canSeeMasonOnSchemes}
         canSeeMasonOnMeetings={canSeeMasonOnMeetings}
+        canSeeBagsLift={canSeeBagsLift}
+        canSeePointsLedger={canSeePointsLedger}
+        canSeeRewardsRedemption={canSeeRewardsRedemption}
+        canSeeRewardsMaster={canSeeRewardsMaster}
       />
     </div>
   );

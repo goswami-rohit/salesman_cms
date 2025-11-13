@@ -119,6 +119,11 @@ This folder is a key architectural pattern. It doesn't contain generic CRUD logi
     * **`schemes-offers/route.ts`:** `GET` handler that lists all `SchemesOffers` records. This route is *not* company-filtered and returns global schemes.
     * **`masonOnMeetings/route.ts`:** `GET` handler that lists all `MasonsOnMeetings` (join table) records where the `mason`'s associated `user` belongs to the `currentUser.companyId`.
     * **`masonOnSchemes/route.ts`:** `GET` handler that lists all `MasonOnScheme` (join table) records where the `mason`'s associated `user` belongs to the `currentUser.companyId`.
+    * **`bags-lift/route.ts`:** `GET` handler that lists all `BagLift` records for the `currentUser.companyId` by filtering via the associated `mason`. It joins and flattens data to include `masonName`, `dealerName`, and `approverName`.
+    * **`points-ledger/route.ts`:** `GET` handler that lists all `PointsLedger` records for the `currentUser.companyId` by filtering via the associated `mason`. It joins and flattens data to include `masonName`.
+    * **`rewards/route.ts`:** `GET` handler that lists all `Rewards` records from the master list (not company-filtered). It joins and flattens data to include `categoryName`.
+    * **`reward-categories/route.ts`:** `GET` handler that lists all `RewardCategory` records from the master list (not company-filtered) to populate filters.
+    * **`rewards-redemption/route.ts`:** `GET` handler that lists all `RewardRedemption` records for the `currentUser.companyId` by filtering via the associated `mason`. It joins and flattens data to include `masonName` and `rewardName`.
 
 * **`.../permanent-journey-plan/` (Folder):**
     * **`route.ts`:**
@@ -273,19 +278,20 @@ This folder contains all the frontend UI pages and components that are only acce
         * **Purpose**: The server-side entry point for the "Mason/PC Management" section.
         * **Logic**: This is a Server Component.
         * **RBAC**: It fetches the user's role on the server by calling `getCurrentUserRole()`.
-        * It uses `hasPermission()` to check for permissions like `masonpcSide.masonpc`, `masonpcSide.tsoMeetings`, `masonpcSide.schemesOffers`, etc..
-        * **Data Passing**: It passes these boolean permissions as props to the `<MasonPcTabs />` client component.
+        * It uses `hasPermission()` to check for permissions like `masonpcSide.masonpc`, `masonpcSide.tsoMeetings`, `masonpcSide.schemesOffers`, `masonpcSide.bagsLift`, `masonpcSide.pointsLedger`, `masonpcSide.rewardsRedemption`, and `masonpcSide.rewards`.
+        * **Data Passing**: It passes all these boolean permissions as props to the `<MasonPcTabs />` client component.
         * If the user has no permissions, it renders an "Access Denied" message.
     * **`tabsLoader.tsx`**:
         * **Purpose**: The client-side container for the "Mason/PC Management" tabs.
         * **Logic**: This is a Client Component (`'use client'`).
-        * **Props**: Receives permission booleans (e.g., `canSeeMasonPc`, `canSeeTsoMeetings`) from `page.tsx`.
-        * **Rendering**: It renders the `<Tabs>` component and conditionally renders the `<TabsTrigger>` and `<TabsContent>` for each sub-page (e.g., `<MasonPcPage />`, `<TsoMeetingsPage />`) based on the props it received.
-    * **`masonpc.tsx` / `tsoMeetings.tsx` / `schemesOffers.tsx` / `masonOnSchemes.tsx` / `masonOnMeetings.tsx`**:
+        * **Props**: Receives permission booleans (e.g., `canSeeMasonPc`, `canSeeTsoMeetings`, `canSeeBagsLift`, `canSeePointsLedger`, `canSeeRewardsMaster`) from `page.tsx`.
+        * **Rendering**: It renders the `<Tabs>` component and conditionally renders the `<TabsTrigger>` and `<TabsContent>` for each sub-page (e.g., `<MasonPcPage />`, `<BagsLiftPage />`, `<RewardsMasterListPage />`) based on the props it received. (Note: `MasonOnSchemesPage` and `MasonOnMeetingsPage` are commented out in this file).
+    * **`masonpc.tsx` / `tsoMeetings.tsx` / `schemesOffers.tsx` / `bagsLift.tsx` / `pointsLedger.tsx` / `rewardRedemption.tsx` / `rewards.tsx`**:
         * **Purpose**: These are the client components for each respective tab.
-        * **Logic**: They all follow a standard report pattern.
-        * **Data Fetching**: `useEffect` calls a data-fetching function (e.g., `fetchMasonPcRecords`) that hits its specific API endpoint (e.g., `/api/dashboardPagesAPI/masonpc-side/mason-pc`). Most also fetch locations and roles for filters.
-        * **Filtering**: Filters (search, role, area, region) are applied client-side using `useMemo`. `schemesOffers.tsx` only has a search filter.
+        * **Logic**: They all follow a standard report pattern:
+        * **Data Fetching**: `useEffect` calls a data-fetching function (e.g., `fetchMasonPcRecords`, `fetchBagLiftRecords`) that hits its specific API endpoint (e.g., `/api/dashboardPagesAPI/masonpc-side/mason-pc`, `/api/dashboardPagesAPI/masonpc-side/bags-lift`).
+        * **Filter Data**: Most also fetch options for filters, like roles and locations (from `/api/users/user-locations` and `/api/users/user-roles`), or categories (from `/api/dashboardPagesAPI/masonpc-side/reward-categories`).
+        * **Filtering**: Filters (e.g., search, role, area, region, status, category) are applied client-side using `useMemo`.
         * **Rendering**: They render `DataTableReusable` with paginated data.
 
 * **`src/app/dashboard/permanentJourneyPlan/`**

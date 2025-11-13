@@ -33,7 +33,6 @@ const transportOptions: SMTPTransport.Options = {
     connectionTimeout: 10000,
     greetingTimeout: 7000,
     socketTimeout: 15000,
-    // nodemailer typings may not expose 'family'; it's harmless at runtime
     // @ts-ignore
     family: 4,
 };

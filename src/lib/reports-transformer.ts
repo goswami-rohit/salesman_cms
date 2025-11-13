@@ -1162,7 +1162,7 @@ export async function getFlattenedDealerBrandCapacities(
   }));
 }
 
-//  TSO Meeting
+// TSO Meeting (No change needed, but included for context)
 export type FlattenedTSOMeeting = {
   id: string;
   type: string;
@@ -1200,7 +1200,8 @@ export async function getFlattenedTSOMeeetings(companyId: number): Promise<Flatt
     type: r.type,
     date: r.date.toISOString().slice(0, 10),
     location: r.location,
-    budgetAllocated: r.budgetAllocated?.toNumber() ?? null,
+    // Ensure all BigInts are converted safely (assuming 'budgetAllocated' is BigInt)
+    budgetAllocated: r.budgetAllocated ? Number(r.budgetAllocated) : null,
     participantsCount: r.participantsCount ?? null,
     createdByUserName: `${r.createdBy.firstName ?? ''} ${r.createdBy.lastName ?? ''}`.trim() || r.createdBy.email,
     createdByUserEmail: r.createdBy.email,
@@ -1209,7 +1210,7 @@ export async function getFlattenedTSOMeeetings(companyId: number): Promise<Flatt
   }));
 }
 
-// Gift Inventory --- changed to -> Reward 
+// Rewards (UPDATED: Formerly Gift Inventory)
 export type FlattenedReward = {
   id: number;
   itemName: string; // Mapped from Rewards.name (@map("item_name"))
@@ -1239,7 +1240,7 @@ export async function getFlattenedRewards(): Promise<FlattenedReward[]> {
   return raw.map(r => ({
     id: r.id,
     itemName: r.name, // Mapping 'name' to the desired output key 'itemName'
-    pointCost: r.pointCost, // Type is now Int, so no need for .toNumber() if using the standard client
+    pointCost: r.pointCost, // Type is Int, no need for .toNumber()
     totalAvailableQuantity: r.totalAvailableQuantity,
     stock: r.stock,
     isActive: r.isActive,
@@ -1248,6 +1249,7 @@ export async function getFlattenedRewards(): Promise<FlattenedReward[]> {
   }));
 }
 
+// Gift Allocation Log (UPDATED)
 export type FlattenedGiftAllocationLog = {
   id: string;
   itemName: string; // from giftId
@@ -1263,6 +1265,7 @@ export type FlattenedGiftAllocationLog = {
 };
 
 // Select object for clarity and reusability
+// NOTE: Assuming Prisma is imported as 'Prisma'
 const giftLogSelect = Prisma.validator<Prisma.GiftAllocationLogSelect>()({
   id: true,
   transactionType: true,
@@ -1275,13 +1278,13 @@ const giftLogSelect = Prisma.validator<Prisma.GiftAllocationLogSelect>()({
     select: { name: true }, // Use 'name' from the Rewards model 
   },
   user: {
-    select: { firstName: true, lastName: true, email: true }, // User model has firstName, lastName, email [cite: 8, 9]
+    select: { firstName: true, lastName: true, email: true }, // User model has firstName, lastName, email
   },
   sourceUser: {
-    select: { firstName: true, lastName: true, email: true }, // User model [cite: 8, 9]
+    select: { firstName: true, lastName: true, email: true }, // User model
   },
   destinationUser: {
-    select: { firstName: true, lastName: true, email: true }, // User model [cite: 8, 9]
+    select: { firstName: true, lastName: true, email: true }, // User model
   },
 });
 
@@ -1379,8 +1382,7 @@ export async function getFlattenedMasonPCSide(companyId: number): Promise<Flatte
   }));
 }
 
-// Schemes & Offers
-// Note: This is a master list and has no companyId. The function fetches all schemes.
+// Schemes & Offers (Master List)
 export type FlattenedSchemesOffers = {
   id: string;
   name: string;
@@ -1487,6 +1489,269 @@ export async function getFlattenedMasonsOnMeetings(companyId: number): Promise<F
   }));
 }
 
+// Helper to format user name or default to email (used in TSOAssignment)
+const formatUserName = (user: { firstName: string | null, lastName: string | null, email: string } | null) => {
+    if (!user) return null;
+    const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+    return name || user.email;
+};
+
+
+// RewardCategory (Master List - No company filter needed)
+export type FlattenedRewardCategory = {
+    id: number;
+    name: string;
+};
+
+export async function getFlattenedRewardCategories(): Promise<FlattenedRewardCategory[]> {
+    const raw = await prisma.rewardCategory.findMany({
+        select: {
+            id: true,
+            name: true,
+        },
+        orderBy: { name: 'asc' },
+    });
+
+    return raw.map(r => ({
+        id: r.id,
+        name: r.name,
+    }));
+}
+
+// KYCSubmissions
+export type FlattenedKYCSubmission = {
+    id: string;
+    masonId: string;
+    masonName: string;
+    aadhaarNumber: string | null;
+    panNumber: string | null;
+    voterIdNumber: string | null;
+    status: string;
+    remark: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export async function getFlattenedKYCSubmissions(companyId: number): Promise<FlattenedKYCSubmission[]> {
+    const raw = await prisma.kYCSubmission.findMany({
+        // Filter by Masons whose associated user belongs to the company
+        where: { mason: { user: { companyId } } },
+        select: {
+            id: true,
+            masonId: true,
+            aadhaarNumber: true,
+            panNumber: true,
+            voterIdNumber: true,
+            status: true,
+            remark: true,
+            createdAt: true,
+            updatedAt: true,
+            mason: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    return raw.map(r => ({
+        id: r.id,
+        masonId: r.masonId,
+        masonName: r.mason.name,
+        aadhaarNumber: r.aadhaarNumber ?? null,
+        panNumber: r.panNumber ?? null,
+        voterIdNumber: r.voterIdNumber ?? null,
+        status: r.status,
+        remark: r.remark ?? null,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+    }));
+}
+
+// TSOAssignment (Join Table)
+export type FlattenedTSOAssignment = {
+    masonId: string;
+    masonName: string;
+    tsoId: number;
+    tsoName: string;
+    tsoEmail: string;
+    createdAt: string;
+};
+
+export async function getFlattenedTSOAssignments(companyId: number): Promise<FlattenedTSOAssignment[]> {
+    const raw = await prisma.tSOAssignment.findMany({
+        // Filter by TSO (User) belonging to the company
+        where: { tso: { companyId } },
+        select: {
+            masonId: true,
+            tsoId: true,
+            createdAt: true,
+            mason: { select: { name: true } },
+            tso: { select: { firstName: true, lastName: true, email: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    return raw.map(r => ({
+        masonId: r.masonId,
+        masonName: r.mason.name,
+        tsoId: r.tsoId,
+        tsoName: formatUserName(r.tso)!,
+        tsoEmail: r.tso.email,
+        createdAt: r.createdAt.toISOString(),
+    }));
+}
+
+// BagLifts
+export type FlattenedBagLift = {
+    id: string;
+    masonId: string;
+    masonName: string;
+    dealerId: string | null;
+    dealerName: string | null;
+    purchaseDate: string;
+    bagCount: number;
+    pointsCredited: number;
+    status: string;
+    approvedByUserId: number | null;
+    approverName: string | null;
+    approvedAt: string | null;
+    createdAt: string;
+};
+
+export async function getFlattenedBagLifts(companyId: number): Promise<FlattenedBagLift[]> {
+    const raw = await prisma.bagLift.findMany({
+        // Filter by Masons whose associated user belongs to the company
+        where: { mason: { user: { companyId } } },
+        select: {
+            id: true,
+            masonId: true,
+            dealerId: true,
+            purchaseDate: true,
+            bagCount: true,
+            pointsCredited: true,
+            status: true,
+            approvedBy: true,
+            approvedAt: true,
+            createdAt: true,
+            mason: { select: { name: true } },
+            dealer: { select: { name: true } },
+            approver: { select: { firstName: true, lastName: true, email: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    return raw.map(r => ({
+        id: r.id,
+        masonId: r.masonId,
+        masonName: r.mason.name,
+        dealerId: r.dealerId ?? null,
+        dealerName: r.dealer?.name ?? null,
+        purchaseDate: r.purchaseDate.toISOString().slice(0, 10),
+        bagCount: r.bagCount,
+        pointsCredited: r.pointsCredited,
+        status: r.status,
+        approvedByUserId: r.approvedBy ?? null,
+        approverName: formatUserName(r.approver),
+        approvedAt: r.approvedAt?.toISOString() ?? null,
+        createdAt: r.createdAt.toISOString(),
+    }));
+}
+
+// RewardRedemptions
+export type FlattenedRewardRedemption = {
+    id: string;
+    masonId: string;
+    masonName: string;
+    rewardId: number;
+    rewardName: string;
+    quantity: number;
+    status: string;
+    pointsDebited: number;
+    deliveryName: string | null;
+    deliveryPhone: string | null;
+    deliveryAddress: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export async function getFlattenedRewardRedemptions(companyId: number): Promise<FlattenedRewardRedemption[]> {
+    const raw = await prisma.rewardRedemption.findMany({
+        // Filter by Masons whose associated user belongs to the company
+        where: { mason: { user: { companyId } } },
+        select: {
+            id: true,
+            masonId: true,
+            rewardId: true,
+            quantity: true,
+            status: true,
+            pointsDebited: true,
+            deliveryName: true,
+            deliveryPhone: true,
+            deliveryAddress: true,
+            createdAt: true,
+            updatedAt: true,
+            mason: { select: { name: true } },
+            reward: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    return raw.map(r => ({
+        id: r.id,
+        masonId: r.masonId,
+        masonName: r.mason.name,
+        rewardId: r.rewardId,
+        rewardName: r.reward.name,
+        quantity: r.quantity,
+        status: r.status,
+        pointsDebited: r.pointsDebited,
+        deliveryName: r.deliveryName ?? null,
+        deliveryPhone: r.deliveryPhone ?? null,
+        deliveryAddress: r.deliveryAddress ?? null,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+    }));
+}
+
+// PointsLedger
+export type FlattenedPointsLedger = {
+    id: string;
+    masonId: string;
+    masonName: string;
+    sourceType: string;
+    sourceId: string | null;
+    points: number;
+    memo: string | null;
+    createdAt: string;
+};
+
+export async function getFlattenedPointsLedger(companyId: number): Promise<FlattenedPointsLedger[]> {
+    const raw = await prisma.pointsLedger.findMany({
+        // Filter by Masons whose associated user belongs to the company
+        where: { mason: { user: { companyId } } },
+        select: {
+            id: true,
+            masonId: true,
+            sourceType: true,
+            sourceId: true,
+            points: true,
+            memo: true,
+            createdAt: true,
+            mason: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    return raw.map(r => ({
+        id: r.id,
+        masonId: r.masonId,
+        masonName: r.mason.name,
+        sourceType: r.sourceType,
+        sourceId: r.sourceId ?? null,
+        points: r.points,
+        memo: r.memo ?? null,
+        createdAt: r.createdAt.toISOString(),
+    }));
+}
+
 export const transformerMap = {
   // Core Report Models
   users: getFlattenedUsers,
@@ -1509,10 +1774,16 @@ export const transformerMap = {
   dealerBrandCapacities: getFlattenedDealerBrandCapacities,
 
   tsoMeetings: getFlattenedTSOMeeetings,
-  flattendRewards: getFlattenedRewards,
+  flattendRewards: getFlattenedRewards, 
   giftAllocationLogs: getFlattenedGiftAllocationLogs,
   masonPCSide: getFlattenedMasonPCSide,
   schemesOffers: getFlattenedSchemesOffers,
   masonsOnSchemes: getFlattenedMasonsOnSchemes,
-  masonsOnMeetings: getFlattenedMasonsOnMeetings,
+  masonsOnMeetings: getFlattenedMasonsOnMeetings, 
+  rewardCategories: getFlattenedRewardCategories,
+  kycSubmissions: getFlattenedKYCSubmissions,
+  tsoAssignments: getFlattenedTSOAssignments,
+  bagLifts: getFlattenedBagLifts,
+  rewardRedemptions: getFlattenedRewardRedemptions,
+  pointsLedger: getFlattenedPointsLedger,
 };

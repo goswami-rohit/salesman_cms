@@ -34,7 +34,7 @@ const transportOptions: SMTPTransport.Options = {
     connectionTimeout: 10000,
     greetingTimeout: 7000,
     socketTimeout: 15000,
-    // @ts-ignore
+    // @ts-ignore 
     family: 4,
 };
 

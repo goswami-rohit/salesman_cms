@@ -604,15 +604,18 @@ export const tsoMeetingSchema = z.object({
   updatedAt: z.string(), // ISO String
 });
 
-export const giftInventorySchema = z.object({
+export const rewardSchema = z.object({
   id: z.number().int(),
-  itemName: z.string(),
-  unitPrice: z.number(),
+  name: z.string(), // Renamed from itemName
+  pointCost: z.number().int(), // Renamed from unitPrice, changed to Int
+  categoryId: z.number().int().nullable(),
+  stock: z.number().int(),
   totalAvailableQuantity: z.number().int(),
+  isActive: z.boolean(),
+  meta: z.any().optional().nullable(),
   createdAt: z.string(), // ISO String
   updatedAt: z.string(), // ISO String
 });
-
 export const giftAllocationLogSchema = z.object({
   id: z.string(),
   giftId: z.number().int(),
@@ -671,6 +674,75 @@ export const masonsOnMeetingsSchema = z.object({
   attendedAt: z.string(), // ISO String
 });
 
+export const rewardCategorySchema = z.object({
+  id: z.number().int(),
+  name: z.string().max(120),
+});
+
+export const kycSubmissionSchema = z.object({
+  id: z.string(),
+  masonId: z.string(),
+  aadhaarNumber: z.string().nullable(),
+  panNumber: z.string().nullable(),
+  voterIdNumber: z.string().nullable(),
+  documents: z.any().optional().nullable(), // Json field
+  status: z.string(), // "pending", "approved", "rejected"
+  remark: z.string().nullable(),
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string(), // ISO String
+});
+
+export const tsoAssignmentSchema = z.object({
+  tsoId: z.number().int(),
+  masonId: z.string(),
+  createdAt: z.string(), // ISO String
+});
+
+export const bagLiftSchema = z.object({
+  id: z.string(),
+  masonId: z.string(),
+  dealerId: z.string().nullable(),
+  purchaseDate: z.string(), // ISO String
+  bagCount: z.number().int(),
+  pointsCredited: z.number().int(),
+  status: z.string(), // "pending", "approved", etc.
+  approvedBy: z.number().int().nullable(),
+  approvedAt: z.string().nullable(), // ISO String
+  createdAt: z.string(), // ISO String
+});
+
+export const rewardRedemptionSchema = z.object({
+  id: z.string(),
+  masonId: z.string(),
+  rewardId: z.number().int(),
+  quantity: z.number().int(),
+  status: z.string(), // "placed", "approved", "shipped", etc.
+  pointsDebited: z.number().int(),
+  deliveryName: z.string().nullable(),
+  deliveryPhone: z.string().nullable(),
+  deliveryAddress: z.string().nullable(),
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string(), // ISO String
+});
+
+export const pointsLedgerSchema = z.object({
+  id: z.string(),
+  masonId: z.string(),
+  sourceType: z.string().max(32),
+  sourceId: z.string().nullable(),
+  points: z.number().int(),
+  memo: z.string().nullable(),
+  createdAt: z.string(), // ISO String
+});
+
+export const authSessionSchema = z.object({
+  sessionId: z.string(),
+  masonId: z.string(),
+  sessionToken: z.string(),
+  createdAt: z.string(), // ISO String
+  expiresAt: z.string().nullable(), // ISO String
+});
+
 export type AssignTaskSchema = z.infer<typeof assignTaskSchema>;
 export type DailyTaskSchema = z.infer<typeof dailyTaskSchema>;
 export type BaseDealerBrandMappingSchema = z.infer<typeof baseDealerBrandMappingSchema>;
@@ -690,11 +762,19 @@ export type SalesmanAttendanceSchema = z.infer<typeof salesmanAttendanceSchema>;
 export type GeoTrackingSchema = z.infer<typeof geoTrackingSchema>;
 export type SalesmanLeaveApplicationSchema = z.infer<typeof salesmanLeaveApplicationSchema>;
 export type UpdateLeaveApplicationSchema = z.infer<typeof updateLeaveApplicationSchema>;
+
 export type TsoMeetingSchema = z.infer<typeof tsoMeetingSchema>;
-export type GiftInventorySchema = z.infer<typeof giftInventorySchema>;
+export type RewardSchema = z.infer<typeof rewardSchema>;
 export type GiftAllocationLogSchema = z.infer<typeof giftAllocationLogSchema>;
 export type MasonPCSideSchema = z.infer<typeof masonPCSideSchema>;
 export type OtpVerificationSchema = z.infer<typeof otpVerificationSchema>;
 export type SchemesOffersSchema = z.infer<typeof schemesOffersSchema>;
 export type MasonOnSchemeSchema = z.infer<typeof masonOnSchemeSchema>;
 export type MasonsOnMeetingsSchema = z.infer<typeof masonsOnMeetingsSchema>;
+export type RewardCategorySchema = z.infer<typeof rewardCategorySchema>;
+export type KYCSubmissionSchema = z.infer<typeof kycSubmissionSchema>;
+export type TSOAssignmentSchema = z.infer<typeof tsoAssignmentSchema>;
+export type BagLiftSchema = z.infer<typeof bagLiftSchema>;
+export type RewardRedemptionSchema = z.infer<typeof rewardRedemptionSchema>;
+export type PointsLedgerSchema = z.infer<typeof pointsLedgerSchema>;
+export type AuthSessionSchema = z.infer<typeof authSessionSchema>;

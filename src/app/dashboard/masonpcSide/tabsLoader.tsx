@@ -1,4 +1,3 @@
-// src/app/dashboard/masonpcSide/tabsLoader.tsx
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +7,11 @@ import SchemesOffersPage from '@/app/dashboard/masonpcSide/schemesOffers';
 import MasonOnSchemesPage from '@/app/dashboard/masonpcSide/masonOnSchemes';
 import MasonOnMeetingsPage from '@/app/dashboard/masonpcSide/masonOnMeetings';
 
+import BagsLiftPage from '@/app/dashboard/masonpcSide/bagsLift';
+import PointsLedgerPage from '@/app/dashboard/masonpcSide/pointsLedger';
+import RewardsRedemptionPage from '@/app/dashboard/masonpcSide/rewardRedemption';
+import RewardsMasterListPage from '@/app/dashboard/masonpcSide/rewards'; // For rewards.tsx
+
 // This component receives the permissions as props
 // from the server component (page.tsx)
 interface MasonPcTabsProps {
@@ -16,6 +20,10 @@ interface MasonPcTabsProps {
   canSeeSchemesOffers: boolean;
   canSeeMasonOnSchemes: boolean;
   canSeeMasonOnMeetings: boolean;
+  canSeeBagsLift: boolean;
+  canSeePointsLedger: boolean;
+  canSeeRewardsRedemption: boolean;
+  canSeeRewardsMaster: boolean; // For rewards.tsx
 }
 
 export function MasonPcTabs({
@@ -24,6 +32,10 @@ export function MasonPcTabs({
   canSeeSchemesOffers,
   canSeeMasonOnSchemes,
   canSeeMasonOnMeetings,
+  canSeeBagsLift,
+  canSeePointsLedger,
+  canSeeRewardsRedemption,
+  canSeeRewardsMaster,
 }: MasonPcTabsProps) {
 
   // Determine the default tab based on the first permission they have
@@ -33,6 +45,11 @@ export function MasonPcTabs({
   else if (canSeeSchemesOffers) defaultTab = "schemesOffers";
   else if (canSeeMasonOnSchemes) defaultTab = "masonOnSchemes";
   else if (canSeeMasonOnMeetings) defaultTab = "masonOnMeetings";
+  else if (canSeeBagsLift) defaultTab = "bagsLift";
+  else if (canSeePointsLedger) defaultTab = "pointsLedger";
+  else if (canSeeRewardsRedemption) defaultTab = "rewardsRedemption";
+  else if (canSeeRewardsMaster) defaultTab = "rewardsMaster";
+
 
   return (
     <Tabs defaultValue={defaultTab} className="space-y-4">
@@ -46,11 +63,23 @@ export function MasonPcTabs({
         {canSeeSchemesOffers && (
           <TabsTrigger value="schemesOffers">Schemes & Offers</TabsTrigger>
         )}
-         {canSeeMasonOnSchemes && (
+         {/* {canSeeMasonOnSchemes && (
           <TabsTrigger value="masonOnSchemes">Mason on Schemes</TabsTrigger>
         )}
          {canSeeMasonOnMeetings && (
           <TabsTrigger value="masonOnMeetings">Mason on Meetings</TabsTrigger>
+        )} */}
+        {canSeeBagsLift && (
+          <TabsTrigger value="bagsLift">Bags Lift Records</TabsTrigger>
+        )}
+        {canSeePointsLedger && (
+          <TabsTrigger value="pointsLedger">Points Ledger</TabsTrigger>
+        )}
+        {canSeeRewardsRedemption && (
+          <TabsTrigger value="rewardsRedemption">Rewards Redemption</TabsTrigger>
+        )}
+        {canSeeRewardsMaster && (
+          <TabsTrigger value="rewardsMaster">Rewards Master List</TabsTrigger>
         )}
       </TabsList>
 
@@ -70,7 +99,7 @@ export function MasonPcTabs({
           <SchemesOffersPage />
         </TabsContent>
       )}
-      {canSeeMasonOnSchemes && (
+      {/* {canSeeMasonOnSchemes && (
         <TabsContent value="masonOnSchemes" className="space-y-4">
           <MasonOnSchemesPage />
         </TabsContent>
@@ -78,6 +107,26 @@ export function MasonPcTabs({
       {canSeeMasonOnMeetings && (
         <TabsContent value="masonOnMeetings" className="space-y-4">
           <MasonOnMeetingsPage />
+        </TabsContent>
+      )} */}
+      {canSeeBagsLift && (
+        <TabsContent value="bagsLift" className="space-y-4">
+          <BagsLiftPage />
+        </TabsContent>
+      )}
+      {canSeePointsLedger && (
+        <TabsContent value="pointsLedger" className="space-y-4">
+          <PointsLedgerPage />
+        </TabsContent>
+      )}
+      {canSeeRewardsRedemption && (
+        <TabsContent value="rewardsRedemption" className="space-y-4">
+          <RewardsRedemptionPage />
+        </TabsContent>
+      )}
+      {canSeeRewardsMaster && (
+        <TabsContent value="rewardsMaster" className="space-y-4">
+          <RewardsMasterListPage />
         </TabsContent>
       )}
     </Tabs>

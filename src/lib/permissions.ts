@@ -55,6 +55,10 @@ export interface DashboardPermissions {
     schemesOffers: boolean;
     masonOnSchemes: boolean;
     masonOnMeetings: boolean;
+    bagsLift: boolean;
+    pointsLedger: boolean;
+    rewards: boolean;
+    rewardsRedemption: boolean;
   },
   scoresAndRatings: {
     dealerScores: boolean;
@@ -106,6 +110,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -152,6 +160,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -198,6 +210,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -246,6 +262,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -292,6 +312,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -338,6 +362,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -384,6 +412,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -430,6 +462,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -478,6 +514,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -524,6 +564,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: true,
       masonOnSchemes: true,
       masonOnMeetings: true,
+      bagsLift: true,
+      pointsLedger: true,
+      rewards: true,
+      rewardsRedemption: true,
     },
     scoresAndRatings: {
       dealerScores: true,
@@ -570,6 +614,10 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       schemesOffers: false,
       masonOnSchemes: false,
       masonOnMeetings: false,
+      bagsLift: false,
+      pointsLedger: false,
+      rewards: false,
+      rewardsRedemption: false,
     },
     scoresAndRatings: {
       dealerScores: true,
