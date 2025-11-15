@@ -15,7 +15,8 @@ const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
 
 // Define acceptable status values for type safety in the FE, but use z.string() for schema validation.
 export type KycStatus = 'none' | 'pending' | 'verified' | 'rejected';
-export type KycVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'NOT_SUBMITTED';
+// FIX 1: Replaced 'NOT_SUBMITTED' with 'NONE'
+export type KycVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'NONE';
 
 
 // Define a separate schema for the full report including KYC details
@@ -24,7 +25,8 @@ const masonPcFullSchema = masonPCSideSchema.extend({
   kycStatus: z.string().nullable().optional(),
 
   // Use string for FE display status, defaulted for safety
-  kycVerificationStatus: z.string().default('NOT_SUBMITTED'),
+  // FIX 2: Defaulted to 'NONE'
+  kycVerificationStatus: z.string().default('NONE'),
 
   // KYC details from KYCSubmission, all are nullable strings
   kycAadhaarNumber: z.string().nullable().optional(),
@@ -63,25 +65,24 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
 
-    // Build the WHERE clause
-    const whereClause: any = {
-      user: {
-        companyId: currentUser.companyId,
-      },
+    // FIX 3: Removed the highly restrictive user.companyId filter.
+    // This allows unassigned masons (where user is NULL) to be returned.
+    const whereClause: any = {};
+
+    const kycStatusFilter = searchParams.get('kycStatus'); // We read the string value
+
+    const filterToDbMap: Partial<Record<string, KycStatus>> = {
+      'PENDING': 'pending',
+      'VERIFIED': 'verified',
+      'REJECTED': 'rejected',
+      'NONE': 'none', 
     };
-
-    const kycStatusFilter = searchParams.get('kycStatus') as KycVerificationStatus | null;
-
-    const filterToDbMap: Partial<Record<KycVerificationStatus, KycStatus>> = {
-      PENDING: 'pending',
-      VERIFIED: 'verified',
-      REJECTED: 'rejected',
-      NOT_SUBMITTED: 'none',
-    };
-
+    
+    // Apply KYC status filter if a specific status is requested.
     if (kycStatusFilter && filterToDbMap[kycStatusFilter]) {
       whereClause.kycStatus = filterToDbMap[kycStatusFilter];
     }
+    // If kycStatusFilter is 'all' or null, whereClause remains empty ({}), fetching all masons.
 
     // Fetch Mason_PC_Side Records for the current user's company, including user and KYC submissions
     const masonPcRecords = await prisma.mason_PC_Side.findMany({
@@ -103,6 +104,7 @@ export async function GET(request: NextRequest) {
 
     // 5. Format the data to include joined user/kyc fields
     const formattedRecords = masonPcRecords.map(record => {
+      // NOTE: record.user can be null here, which is why we must use optional chaining/null checks
       const salesmanName = [record.user?.firstName, record.user?.lastName]
         .filter(Boolean)
         .join(' ') || 'N/A';
@@ -127,7 +129,8 @@ export async function GET(request: NextRequest) {
 
         case 'none':
         default:
-          displayStatus = 'NOT_SUBMITTED';
+          // Output 'NONE' for records with kycStatus: 'none'
+          displayStatus = 'NONE';
           break;
       }
 
@@ -144,10 +147,11 @@ export async function GET(request: NextRequest) {
         isReferred: record.isReferred,
 
         // Joined User fields for filtering/display
+        // Use 'N/A' if user is null (unassigned)
         salesmanName: salesmanName,
-        role: record.user?.role ?? '',
-        area: record.user?.area ?? '',
-        region: record.user?.region ?? '',
+        role: record.user?.role ?? 'N/A',
+        area: record.user?.area ?? 'N/A',
+        region: record.user?.region ?? 'N/A',
 
         // Joined KYC fields (from KYCSubmission)
         kycVerificationStatus: displayStatus as KycVerificationStatus,

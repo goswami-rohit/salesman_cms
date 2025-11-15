@@ -39,7 +39,7 @@ const MASON_PC_ACTION_API_BASE = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboa
 const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
 
 export type KycStatus = 'none' | 'pending' | 'verified' | 'rejected';
-export type KycVerificationStatus = 'none'| 'pending' | 'verified' | 'rejected';
+export type KycVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'NONE';
 
 export interface MasonPcFullDetails {
   id: string;
@@ -96,6 +96,7 @@ const renderSelectFilter = (
         )}
       </SelectTrigger>
       <SelectContent>
+        {/* 'all' item for showing all records */}
         <SelectItem value="all">All {label}s</SelectItem>
         {options.map(option => (
           <SelectItem key={option} value={option}>
@@ -117,7 +118,8 @@ export default function MasonPcPage() {
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [kycStatusFilter, setKycStatusFilter] = useState('PENDING'); // Default to PENDING for verification
+  // Set default filter value to 'all' to fetch all records initially
+  const [kycStatusFilter, setKycStatusFilter] = useState<KycVerificationStatus | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   // --- Filter Options States (omitted for brevity) ---
@@ -142,10 +144,10 @@ export default function MasonPcPage() {
       // Fetch data based on the selected status filter
       const url = new URL(MASON_PC_API_ENDPOINT);
       if (kycStatusFilter && kycStatusFilter !== 'all') {
-        // 'NOT_SUBMITTED' is mapped to 'none' in the backend
-        const status = kycStatusFilter === 'NOT_SUBMITTED' ? 'none' : kycStatusFilter;
-        url.searchParams.set('kycStatus', status);
+        // Only set the search param if a specific filter is selected (PENDING, VERIFIED, REJECTED, NONE)
+        url.searchParams.set('kycStatus', kycStatusFilter);
       } else {
+        // If 'all' is selected, delete the search param to fetch all records
         url.searchParams.delete('kycStatus');
       }
 
@@ -199,7 +201,7 @@ export default function MasonPcPage() {
   }, [fetchMasonPcRecords, fetchRoles]);
 
 
-  // --- Action Handlers ---
+  // --- Action Handlers (omitted for brevity) ---
   const handleVerificationAction = async (id: string, action: 'VERIFIED' | 'REJECTED', remarks: string = '') => {
     setIsUpdatingId(id);
     const toastId = `kyc-update-${id}`;
@@ -245,7 +247,7 @@ export default function MasonPcPage() {
   };
 
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering and Pagination Logic (omitted for brevity) ---
   const filteredRecords = useMemo<MasonPcFullDetails[]>(() => {
     setCurrentPage(1);
 
@@ -261,7 +263,6 @@ export default function MasonPcPage() {
       return nameMatch && roleMatch;
     });
   }, [allMasonPcRecords, searchQuery, roleFilter]);
-
 
 
   const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
@@ -283,9 +284,10 @@ export default function MasonPcPage() {
       cell: ({ row }) => {
         const status = row.original.kycVerificationStatus;
         let color = 'text-gray-500';
-        if (status === 'verified') color = 'text-green-500';
-        if (status === 'pending') color = 'text-yellow-500';
-        if (status === 'rejected') color = 'text-red-500';
+        if (status === 'VERIFIED') color = 'text-green-500';
+        if (status === 'PENDING') color = 'text-yellow-500';
+        if (status === 'REJECTED') color = 'text-red-500';
+        // 'NONE' uses the default gray color
 
         return <span className={`font-medium ${color}`}>{status}</span>;
       }
@@ -322,7 +324,6 @@ export default function MasonPcPage() {
               disabled={isUpdating}
               className="text-blue-500 border-blue-500 hover:bg-blue-50"
             >
-              {/* FIX: Use corrected imports */}
               <Eye className="h-4 w-4 mr-1" /> View
             </Button>
 
@@ -369,7 +370,7 @@ export default function MasonPcPage() {
     </div>
   );
 
-  const kycStatusOptions = ['PENDING', 'VERIFIED', 'REJECTED', 'NOT_SUBMITTED'];
+  const kycStatusOptions: KycVerificationStatus[] = ['PENDING', 'VERIFIED', 'REJECTED', 'NONE'];
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -386,7 +387,7 @@ export default function MasonPcPage() {
           {renderSelectFilter(
             'KYC Status',
             kycStatusFilter,
-            (v) => { setKycStatusFilter(v); },
+            (v) => { setKycStatusFilter(v as KycVerificationStatus | 'all'); },
             kycStatusOptions,
             false
           )}
@@ -549,7 +550,7 @@ export default function MasonPcPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      )};
+      )}
 
       {/* --- Action with Remark Modal (for Accept/Reject) --- */}
       {selectedRecord && pendingAction && (

@@ -89,14 +89,19 @@ export function MasonPcTabs({
           <MasonPcPage />
         </TabsContent>
       )}
-      {canSeeTsoMeetings && (
-        <TabsContent value="tsoMeetings" className="space-y-4">
-          <TsoMeetingsPage />
-        </TabsContent>
-      )}
       {canSeeSchemesOffers && (
         <TabsContent value="schemesOffers" className="space-y-4">
           <SchemesOffersPage />
+        </TabsContent>
+      )}
+      {canSeeBagsLift && (
+        <TabsContent value="bagsLift" className="space-y-4">
+          <BagsLiftPage />
+        </TabsContent>
+      )}
+      {canSeePointsLedger && (
+        <TabsContent value="pointsLedger" className="space-y-4">
+          <PointsLedgerPage />
         </TabsContent>
       )}
       {/* {canSeeMasonOnSchemes && (
@@ -109,16 +114,11 @@ export function MasonPcTabs({
           <MasonOnMeetingsPage />
         </TabsContent>
       )} */}
-      {canSeeBagsLift && (
-        <TabsContent value="bagsLift" className="space-y-4">
-          <BagsLiftPage />
+      {/* {canSeeTsoMeetings && (
+        <TabsContent value="tsoMeetings" className="space-y-4">
+          <TsoMeetingsPage />
         </TabsContent>
-      )}
-      {canSeePointsLedger && (
-        <TabsContent value="pointsLedger" className="space-y-4">
-          <PointsLedgerPage />
-        </TabsContent>
-      )}
+      )} */}
       {canSeeRewardsRedemption && (
         <TabsContent value="rewardsRedemption" className="space-y-4">
           <RewardsRedemptionPage />
