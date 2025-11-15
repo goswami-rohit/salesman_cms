@@ -1,8 +1,8 @@
 // src/app/login/magicAuth/page.tsx
 'use client';
 
-import { useState } from 'react';
-import {  useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 // Assume your components/ui are available for Input, Button, Card, Separator, etc.
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 
-export default function MagicAuthPage() {
+function MagicAuthForm() {
     //const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -101,7 +101,7 @@ export default function MagicAuthPage() {
                 // to force a full browser navigation. This allows the middleware 
                 // to correctly handle the AuthKit redirect without conflict.
                 setMessage('Account successfully activated. Redirecting for final login...');
-                window.location.href = data.redirectUrl; 
+                window.location.href = data.redirectUrl;
                 return;
             }
 
@@ -209,5 +209,20 @@ export default function MagicAuthPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+// This prevents the server from attempting to render useSearchParams() during the static build.
+export default function MagicAuthPage() {
+    const fallbackUI = (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+
+    return (
+        <Suspense fallback={fallbackUI}>
+            <MagicAuthForm />
+        </Suspense>
     );
 }
