@@ -45,3 +45,4 @@ prisma/migrations
 .git
 README.md
 src/WORKING.md
+src/app/api/users/*.csv

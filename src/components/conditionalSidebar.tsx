@@ -72,7 +72,8 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
                     // dashboard doesnt auto apply sidebar everywhere. That decision is made by dashboardShell
                     || pathname.startsWith('/dashboard')
                     // home doesnt auto apply sidebar everywhere. That decision is made by homeShell
-                    || pathname.startsWith('/home'); 
+                    || pathname.startsWith('/home')
+                    || pathname.startsWith('/login/magicAuth'); 
   
   if (hideSidebar) {
     return <>{children}</>;

@@ -705,6 +705,7 @@ export const bagLiftSchema = z.object({
   purchaseDate: z.string(), // ISO String
   bagCount: z.number().int(),
   pointsCredited: z.number().int(),
+  imageUrl: z.string().nullable(),
   status: z.string(), // "pending", "approved", etc.
   approvedBy: z.number().int().nullable(),
   approvedAt: z.string().nullable(), // ISO String

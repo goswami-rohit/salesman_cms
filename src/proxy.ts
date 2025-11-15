@@ -26,7 +26,13 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
      unauthenticatedPaths: [
        '/',
        '/login',
+       '/login/magicAuth',
+       '/auth-invite',
        '/auth/callback',
+       '/auth/magic-auth',       
+       '/auth/magic-auth/verify', 
+       '/auth/magic-auth',
+       '/login?account_activated=true',
      ],
    },
  })(request, event);

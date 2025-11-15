@@ -1,5 +1,3 @@
-import { boolean } from "zod";
-
 // src/lib/permissions.ts
 export type WorkOSRole =
   | 'president'

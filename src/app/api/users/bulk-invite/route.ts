@@ -131,6 +131,11 @@ async function processSingleInvitation(
         throw new Error(`WorkOS invitation failed for ${email}: ${workosError.message}`);
     }
 
+    // --- START: MODIFIED INVITATION URL LOGIC ---
+    // Construct a custom invitation URL pointing to the new Magic Auth page
+    const customInviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login/magicAuth?email=${encodeURIComponent(email)}&token=${workosInvitation.id}`;
+    // --- END: MODIFIED INVITATION URL LOGIC ---
+
     // 4. Create/Update user in your database
     // --- UPDATED: Added new technical fields ---
     const userData = {
@@ -172,6 +177,7 @@ async function processSingleInvitation(
             companyName, 
             adminName,
             inviteUrl: workosInvitation.acceptInvitationUrl,
+            //inviteUrl: customInviteUrl,
             role: workosRole,
             fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
             salesmanLoginId: salesmanLoginId,

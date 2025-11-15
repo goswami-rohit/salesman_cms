@@ -898,6 +898,7 @@ model BagLift {
   pointsCredited Int @map("points_credited")
   // Status as String
   status String @default("pending") @db.VarChar(20)
+  imageUrl String? @map("image_url") @db.Text
   approvedBy Int? @map("approved_by")
   approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

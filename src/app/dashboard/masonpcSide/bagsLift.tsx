@@ -25,32 +25,43 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils'; // Assuming this utility exists
+import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Check, X, Eye } from 'lucide-react';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
 // API Endpoints
 const BAG_LIFT_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/bags-lift`;
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`; 
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`; 
+const BAG_LIFT_ACTION_API_BASE = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/bags-lift`;
+const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
   regions: string[];
 }
 interface RolesResponse {
-    roles: string[]; 
+  roles: string[];
 }
 
 // Type for data coming from the API (must match the flattened response structure)
 type BagLiftRecord = z.infer<typeof bagLiftSchema> & {
-    masonName: string;
-    dealerName: string | null;
-    approverName: string | null;
-    // Assuming the API also adds location/role from the associated user for filtering
-    role: string;         
-    area: string;         
-    region: string;       
+  masonName: string;
+  dealerName: string | null;
+  approverName: string | null;
+  // Assuming the API also adds location/role from the associated user for filtering
+  role: string;
+  area: string;
+  region: string;
 };
 
 
@@ -111,17 +122,17 @@ const formatDate = (dateString: string | null | undefined) => {
  * Gets the color variant for the status badge.
  */
 const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-        case 'approved':
-        case 'verified':
-            return 'bg-green-100 text-green-700 hover:bg-green-200';
-        case 'rejected':
-            return 'bg-red-100 text-red-700 hover:bg-red-200';
-        case 'pending':
-            return 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200';
-        default:
-            return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
-    }
+  switch (status.toLowerCase()) {
+    case 'approved':
+    case 'verified':
+      return 'bg-green-100 text-green-700 hover:bg-green-200';
+    case 'rejected':
+      return 'bg-red-100 text-red-700 hover:bg-red-200';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200';
+    default:
+      return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+  }
 };
 
 
@@ -145,12 +156,16 @@ export default function BagsLiftPage() {
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [availableAreas, setAvailableAreas] = useState<string[]>([]);
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
-  
+
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
-  
+
   const [locationError, setLocationError] = useState<string | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<BagLiftRecord | null>(null);
+  const [isUpdatingId, setIsUpdatingId] = useState<string | null>(null);
 
 
   // --- Data Fetching Functions ---
@@ -164,7 +179,7 @@ export default function BagsLiftPage() {
     try {
       const response = await fetch(BAG_LIFT_API_ENDPOINT);
       if (!response.ok) {
-         if (response.status === 401) {
+        if (response.status === 401) {
           toast.error('You are not authenticated. Redirecting to login.');
           window.location.href = '/login';
           return;
@@ -186,7 +201,7 @@ export default function BagsLiftPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []); 
+  }, []);
 
 
   /**
@@ -223,7 +238,7 @@ export default function BagsLiftPage() {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      const data: RolesResponse = await response.json(); 
+      const data: RolesResponse = await response.json();
       const roles = data.roles && Array.isArray(data.roles) ? data.roles : [];
       setAvailableRoles(roles.filter(Boolean));
     } catch (err: any) {
@@ -242,32 +257,76 @@ export default function BagsLiftPage() {
     fetchRoles();
   }, [fetchBagLiftRecords, fetchLocations, fetchRoles]);
 
+  const openViewModal = (record: BagLiftRecord) => {
+    setSelectedRecord(record);
+    setIsViewModalOpen(true);
+  };
+
+  const handleStatusUpdate = async (id: string, newStatus: 'approved' | 'rejected') => {
+    setIsUpdatingId(id);
+    const toastId = `baglift-${id}-${newStatus}`;
+
+    toast.loading(
+      `${newStatus === 'approved' ? 'Approving' : 'Rejecting'} bag lift...`,
+      { id: toastId }
+    );
+
+    try {
+      const response = await fetch(`${BAG_LIFT_ACTION_API_BASE}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error('You are not authenticated. Redirecting to login.', { id: toastId });
+          window.location.href = '/login';
+          return;
+        }
+        if (response.status === 403) {
+          toast.error('You do not have permission to update Bag Lifts.', { id: toastId });
+          return;
+        }
+
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || 'Update failed.');
+      }
+
+      toast.success(`Bag Lift successfully ${newStatus}.`, { id: toastId });
+      await fetchBagLiftRecords();
+    } catch (err: any) {
+      toast.error(err.message || 'An unknown error occurred.', { id: toastId });
+    } finally {
+      setIsUpdatingId(null);
+    }
+  };
 
   // --- Filtering and Pagination Logic ---
   const filteredRecords = useMemo(() => {
     setCurrentPage(1); // Reset page on filter change
-    
+
     return bagLiftRecords.filter((record) => {
       // 1. Mason Name Search
       const nameMatch = !searchQuery ||
         record.masonName.toLowerCase().includes(searchQuery.toLowerCase());
 
       // 2. Status Filter
-      const statusMatch = statusFilter === 'all' || 
-        record.status.toLowerCase() === statusFilter.toLowerCase(); 
+      const statusMatch = statusFilter === 'all' ||
+        record.status.toLowerCase() === statusFilter.toLowerCase();
 
       // 3. Role Filter (from assumed joined `role` field)
-      const roleMatch = roleFilter === 'all' || 
-        record.role?.toLowerCase() === roleFilter.toLowerCase(); 
+      const roleMatch = roleFilter === 'all' ||
+        record.role?.toLowerCase() === roleFilter.toLowerCase();
 
       // 4. Area Filter (from assumed joined `area` field)
-      const areaMatch = areaFilter === 'all' || 
-        record.area?.toLowerCase() === areaFilter.toLowerCase(); 
+      const areaMatch = areaFilter === 'all' ||
+        record.area?.toLowerCase() === areaFilter.toLowerCase();
 
       // 5. Region Filter (from assumed joined `region` field)
-      const regionMatch = regionFilter === 'all' || 
+      const regionMatch = regionFilter === 'all' ||
         record.region?.toLowerCase() === regionFilter.toLowerCase();
-      
+
       // Combine all conditions
       return nameMatch && statusMatch && roleMatch && areaMatch && regionMatch;
     });
@@ -281,26 +340,26 @@ export default function BagsLiftPage() {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
-  
+
 
   // --- 3. Define Columns for Bag Lift DataTable ---
   const bagLiftColumns: ColumnDef<BagLiftRecord>[] = [
     { accessorKey: "id", header: "Record ID", cell: ({ row }) => <span className="text-xs font-mono">{row.original.id.substring(0, 8)}...</span> },
     { accessorKey: "masonName", header: "Mason Name" },
     { accessorKey: "dealerName", header: "Dealer Name" },
-    { 
-      accessorKey: "purchaseDate", 
+    {
+      accessorKey: "purchaseDate",
       header: "Purchase Date",
       cell: ({ row }) => formatDate(row.original.purchaseDate)
     },
     { accessorKey: "bagCount", header: "Bags" },
-    { 
-      accessorKey: "pointsCredited", 
+    {
+      accessorKey: "pointsCredited",
       header: "Points",
       cell: ({ row }) => <div className='font-medium text-primary flex items-center'>{row.original.pointsCredited} <IndianRupee className='w-3 h-3 ml-1' /></div>
     },
-    { 
-      accessorKey: "status", 
+    {
+      accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
         <Badge className={cn("capitalize", getStatusBadgeVariant(row.original.status))}>
@@ -309,13 +368,64 @@ export default function BagsLiftPage() {
       ),
     },
     { accessorKey: "approverName", header: "Approved By" },
-    { 
-      accessorKey: "approvedAt", 
+    {
+      accessorKey: "approvedAt",
       header: "Approved On",
       cell: ({ row }) => formatDate(row.original.approvedAt)
     },
     { accessorKey: "area", header: "Area" },
     { accessorKey: "region", header: "Region" },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const record = row.original;
+        const isPending = record.status.toLowerCase() === 'pending';
+        const isUpdating = isUpdatingId === record.id;
+
+        return (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openViewModal(record)}
+              className="text-blue-500 border-blue-500 hover:bg-blue-50"
+            >
+              <Eye className="h-4 w-4 mr-1" /> View
+            </Button>
+
+            {isPending && (
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => handleStatusUpdate(record.id, 'approved')}
+                  disabled={isUpdating}
+                >
+                  {isUpdating && isUpdatingId === record.id
+                    ? <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    : <Check className="h-4 w-4 mr-1" />}
+                  Approve
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleStatusUpdate(record.id, 'rejected')}
+                  disabled={isUpdating}
+                >
+                  {isUpdating && isUpdatingId === record.id
+                    ? <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    : <X className="h-4 w-4 mr-1" />}
+                  Reject
+                </Button>
+              </>
+            )}
+          </div>
+        );
+      },
+    },
   ];
 
   const handleBagLiftOrderChange = (newOrder: BagLiftRecord[]) => {
@@ -362,18 +472,18 @@ export default function BagsLiftPage() {
 
           {/* 2. Status Filter */}
           {renderSelectFilter(
-            'Status', 
-            statusFilter, 
-            (v) => { setStatusFilter(v); }, 
+            'Status',
+            statusFilter,
+            (v) => { setStatusFilter(v); },
             statusOptions
           )}
 
           {/* 3. Role Filter */}
           {renderSelectFilter(
-            'Role', 
-            roleFilter, 
-            (v) => { setRoleFilter(v); }, 
-            availableRoles, 
+            'Role',
+            roleFilter,
+            (v) => { setRoleFilter(v); },
+            availableRoles,
             isLoadingRoles
           )}
 
@@ -394,7 +504,7 @@ export default function BagsLiftPage() {
             availableRegions, 
             isLoadingLocations
           )} */}
-          
+
           {/* Display filter option errors if any */}
           {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
           {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
@@ -410,16 +520,16 @@ export default function BagsLiftPage() {
               <DataTableReusable
                 columns={bagLiftColumns}
                 data={currentRecords} // Use filtered and paginated data
-                enableRowDragging={false} 
+                enableRowDragging={false}
                 onRowOrderChange={handleBagLiftOrderChange}
               />
-              
+
               {/* --- Pagination --- */}
               <Pagination className="mt-6">
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(currentPage - 1)} 
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(currentPage - 1)}
                       aria-disabled={currentPage === 1}
                       tabIndex={currentPage === 1 ? -1 : undefined}
                     />
@@ -435,8 +545,8 @@ export default function BagsLiftPage() {
                     </PaginationItem>
                   ))}
                   <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(currentPage + 1)} 
+                    <PaginationNext
+                      onClick={() => handlePageChange(currentPage + 1)}
                       aria-disabled={currentPage === totalPages}
                       tabIndex={currentPage === totalPages ? -1 : undefined}
                     />
@@ -448,6 +558,85 @@ export default function BagsLiftPage() {
           )}
         </div>
       </div>
+
+      {selectedRecord && (
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Bag Lift Details</DialogTitle>
+              <DialogDescription>
+                Review the full Bag Lift information for this Mason.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="md:col-span-2 text-lg font-semibold border-b pb-2">
+                Mason & Dealer Info
+              </div>
+
+              <div>
+                <Label>Mason Name</Label>
+                <Input value={selectedRecord.masonName} readOnly />
+              </div>
+              <div>
+                <Label>Dealer Name</Label>
+                <Input value={selectedRecord.dealerName || 'N/A'} readOnly />
+              </div>
+
+              <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+                Bag Lift Details
+              </div>
+
+              <div>
+                <Label>Purchase Date</Label>
+                <Input value={formatDate(selectedRecord.purchaseDate)} readOnly />
+              </div>
+              <div>
+                <Label>Bag Count</Label>
+                <Input value={selectedRecord.bagCount} readOnly />
+              </div>
+              <div>
+                <Label>Points Credited</Label>
+                <Input value={selectedRecord.pointsCredited} readOnly />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Input value={selectedRecord.status} readOnly />
+              </div>
+
+              <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+                Approval Info
+              </div>
+
+              <div>
+                <Label>Approved By</Label>
+                <Input value={selectedRecord.approverName || 'N/A'} readOnly />
+              </div>
+              <div>
+                <Label>Approved At</Label>
+                <Input value={formatDate(selectedRecord.approvedAt)} readOnly />
+              </div>
+
+              {selectedRecord.imageUrl && (
+                <div className="md:col-span-2">
+                  <Label>Bag Lift Image</Label>
+                  <div className="mt-2">
+                    <img
+                      src={selectedRecord.imageUrl}
+                      alt="Bag Lift"
+                      className="max-h-64 rounded-md border"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setIsViewModalOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

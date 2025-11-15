@@ -124,11 +124,6 @@ const menuItems: MenuItem[] = [
         permission: ITEM_PERMISSIONS["Salesman Attendance"]
       },
       {
-        title: "Mason - Petty Contractor",
-        url: "/dashboard/masonpcSide",
-        permission: ITEM_PERMISSIONS["Mason - Petty Contractor"]
-      },
-      {
         title: "Salesman Geotracking",
         url: "/dashboard/slmGeotracking",
         permission: ITEM_PERMISSIONS["Salesman Geotracking"]
@@ -137,6 +132,11 @@ const menuItems: MenuItem[] = [
         title: "Scores & Ratings",
         url: "/dashboard/scoresAndRatings",
         permission: ITEM_PERMISSIONS["Scores And Ratings"]
+      },
+      {
+        title: "Mason - PC Side",
+        url: "/dashboard/masonpcSide",
+        permission: ITEM_PERMISSIONS["Mason - Petty Contractor"]
       },
     ],
   },

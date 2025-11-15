@@ -364,7 +364,7 @@ export default function UsersManagement({ adminUser }: Props) {
     },
     {
       accessorKey: "region",
-      header: "Region",
+      header: "Region/Zone",
       cell: ({ row }) => row.original.region || '-',
     },
     {
@@ -597,45 +597,35 @@ export default function UsersManagement({ adminUser }: Props) {
                     </Label>
                   </div>
 
+                  {/* --- REGION & AREA: NOW SIDE-BY-SIDE --- */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="region">Region</Label>
-                      <Select value={formData.region} onValueChange={(value) => setFormData({ ...formData, region: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Region" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {locations.regions.map(region => (
-                            <SelectItem key={region} value={region}>{region}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="region">Region(Zone)</Label>
+                      <Input
+                        id="region"
+                        placeholder="Enter Region"
+                        value={formData.region}
+                        onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                      />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="area">Area</Label>
-                      <Select value={formData.area} onValueChange={(value) => setFormData({ ...formData, area: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Area" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {locations.areas.map(area => (
-                            <SelectItem key={area} value={area}>{area}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        id="area"
+                        placeholder="Enter Area"
+                        value={formData.area}
+                        onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                      />
                     </div>
                   </div>
+                  {/* --- END REGION & AREA --- */}
 
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button
-                      type="submit"
-                      className="flex items-center"
-                      disabled={loading}
-                    >
+                  {/* --- BUTTONS: MOVED INSIDE FORM --- */}
+                  <div className="flex space-x-2 pt-4">
+                    <Button type="submit" disabled={loading} className="flex-1">
                       {loading ? 'Creating...' : 'Create User'}
                     </Button>
-
                     <Button
                       type="button"
                       variant="outline"
@@ -647,7 +637,7 @@ export default function UsersManagement({ adminUser }: Props) {
                       Cancel
                     </Button>
                   </div>
-
+                  {/* --- END BUTTONS --- */}
                 </form>
               </DialogContent>
             </Dialog>
@@ -727,7 +717,7 @@ export default function UsersManagement({ adminUser }: Props) {
                   <div className="grid grid-cols-2 gap-4">
                     {/* Region changed from Select to Input */}
                     <div className="space-y-2">
-                      <Label htmlFor="edit-region">Region</Label>
+                      <Label htmlFor="edit-region">Region(Zone)</Label>
                       <Input
                         id="edit-region"
                         value={formData.region}
@@ -802,6 +792,6 @@ export default function UsersManagement({ adminUser }: Props) {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </div >
   );
 }

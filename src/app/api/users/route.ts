@@ -385,6 +385,12 @@ export async function POST(request: NextRequest) {
             }, { status: 500 });
         }
 
+        // --- START: MODIFIED INVITATION URL LOGIC ---
+        // Construct a custom invitation URL pointing to the new Magic Auth page
+        // We use the workosInvitation.id (which acts as the invitation token)
+        const customInviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login/magicAuth?email=${encodeURIComponent(email)}&inviteKey=${workosInvitation.id}`;
+        // --- END: MODIFIED INVITATION URL LOGIC ---
+        
         // Use the existing user record if it's a new invitation
         let newUser;
         if (existingUser) {
@@ -447,6 +453,7 @@ export async function POST(request: NextRequest) {
                 companyName: adminUser.company.companyName,
                 adminName: `${adminUser.firstName} ${adminUser.lastName}`,
                 inviteUrl: workosInvitation.acceptInvitationUrl, // Pass the WorkOS URL here
+                //inviteUrl: customInviteUrl,
                 role: workosRole,
                 fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
                 // Pass salesman details

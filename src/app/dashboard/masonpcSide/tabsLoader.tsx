@@ -57,8 +57,11 @@ export function MasonPcTabs({
         {canSeeMasonPc && (
           <TabsTrigger value="masonPc">Mason - Petty Contractors</TabsTrigger>
         )}
-        {canSeeTsoMeetings && (
-          <TabsTrigger value="tsoMeetings">TSO Meetings</TabsTrigger>
+        {canSeeBagsLift && (
+          <TabsTrigger value="bagsLift">Bags Lift Records</TabsTrigger>
+        )}
+        {canSeePointsLedger && (
+          <TabsTrigger value="pointsLedger">Points Ledger</TabsTrigger>
         )}
         {canSeeSchemesOffers && (
           <TabsTrigger value="schemesOffers">Schemes & Offers</TabsTrigger>
@@ -69,12 +72,9 @@ export function MasonPcTabs({
          {canSeeMasonOnMeetings && (
           <TabsTrigger value="masonOnMeetings">Mason on Meetings</TabsTrigger>
         )} */}
-        {canSeeBagsLift && (
-          <TabsTrigger value="bagsLift">Bags Lift Records</TabsTrigger>
-        )}
-        {canSeePointsLedger && (
-          <TabsTrigger value="pointsLedger">Points Ledger</TabsTrigger>
-        )}
+        {/* {canSeeTsoMeetings && (
+          <TabsTrigger value="tsoMeetings">TSO Meetings</TabsTrigger>
+        )} */}
         {canSeeRewardsRedemption && (
           <TabsTrigger value="rewardsRedemption">Rewards Redemption</TabsTrigger>
         )}
