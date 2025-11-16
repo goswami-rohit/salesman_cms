@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { ChartAreaInteractive } from '@/components/chart-area-reusable';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 import {
   RawGeoTrackingRecord,
@@ -181,13 +182,12 @@ export default function DashboardGraphs() {
     setLoading(true);
     setError(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
 
       const [geoRes, dailyRes, salesRes, usersRes] = await Promise.all([
-        fetch(`${baseUrl}/api/dashboardPagesAPI/slm-geotracking`, { cache: 'no-store' }),
-        fetch(`${baseUrl}/api/dashboardPagesAPI/reports/daily-visit-reports`, { cache: 'no-store' }),
-        fetch(`${baseUrl}/api/dashboardPagesAPI/reports/sales-orders`, { cache: 'no-store' }),
-        fetch(`${baseUrl}/api/users`, { cache: 'no-store' }),
+        fetch(`/api/dashboardPagesAPI/slm-geotracking`, { cache: 'no-store' }),
+        fetch(`/api/dashboardPagesAPI/reports/daily-visit-reports`, { cache: 'no-store' }),
+        fetch(`/api/dashboardPagesAPI/reports/sales-orders`, { cache: 'no-store' }),
+        fetch(`/api/users`, { cache: 'no-store' }),
       ]);
 
       if (!geoRes.ok) throw new Error(`Geo API: ${geoRes.status}`);

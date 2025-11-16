@@ -113,9 +113,6 @@ This code will expire in 10 minutes. If you did not request this code, please ig
 if (!process.env.WORKOS_API_KEY) {
     throw new Error('WORKOS_API_KEY is not set in environment variables');
 }
-if (!process.env.WORKOS_CLIENT_ID) {
-    throw new Error('WORKOS_CLIENT_ID is not set in environment variables');
-}
 const workos = new WorkOS(process.env.WORKOS_API_KEY);
 
 /**

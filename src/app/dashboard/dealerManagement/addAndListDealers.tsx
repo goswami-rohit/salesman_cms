@@ -32,6 +32,7 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 import { dealerTypes, brands } from '@/lib/Reusable-constants'
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
 import { getDealersSchema} from '@/lib/shared-zod-schema';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // Schema for form submission, which transforms string inputs to numbers.
 const addDealerFormSchema = z.object({
@@ -96,7 +97,7 @@ export default function AddAndListDealersPage() {
     const [parentDealerId, setParentDealerId] = useState<string | null>(null);
     const isSubDealer = type.startsWith("Sub Dealer");
 
-    const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement`;
+    const apiURI = `/api/dashboardPagesAPI/dealerManagement`;
 
     // --- Fetch Dealers for the Table (UPDATED to fetch ONLY VERIFIED dealers) ---
     const fetchDealers = useCallback(async () => {

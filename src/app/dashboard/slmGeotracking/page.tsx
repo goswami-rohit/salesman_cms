@@ -28,6 +28,7 @@ import { geoTrackingSchema } from '@/lib/shared-zod-schema';
 import { format, addDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from '@/lib/utils';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 type GeoTrack = z.infer<typeof geoTrackingSchema> & {
@@ -39,8 +40,8 @@ type GeoTrack = z.infer<typeof geoTrackingSchema> & {
 type DisplayGeoTrack = GeoTrack & { displayDate: string; displayCheckInTime: string; displayCheckOutTime: string };
 
 const ITEMS_PER_PAGE = 10;
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
@@ -168,12 +169,12 @@ export default function SalesmanGeoTrackingPage() {
   }, []);
 
   // --- Main Data Fetching ---
-  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-geotracking`;
+  const apiURI = `/api/dashboardPagesAPI/slm-geotracking`;
   const fetchTracks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(apiURI);
+      const url = new URL(apiURI, window.location.origin);
       if (dateRange?.from) {
         url.searchParams.append('startDate', format(dateRange.from, 'yyyy-MM-dd'));
       }

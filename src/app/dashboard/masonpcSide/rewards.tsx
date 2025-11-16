@@ -1,7 +1,7 @@
 // src/app/dashboard/masonpcSide/rewards.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -25,13 +25,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 // Assuming a Progress component exists for stock level
 import { Progress } from '@/components/ui/progress'; 
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
 // API Endpoints
-const REWARDS_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/rewards`;
-const CATEGORIES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/reward-categories`;
+const REWARDS_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/rewards`;
+const CATEGORIES_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/reward-categories`;
 
 // Type for data coming from the API (must match the flattened response structure)
 type RewardRecord = {

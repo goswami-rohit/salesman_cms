@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 function MagicAuthForm() {
     //const router = useRouter();
@@ -44,7 +45,7 @@ function MagicAuthForm() {
 
         try {
             // *** UPDATED ENDPOINT: Use the dedicated CREATE route ***
-            const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/auth/magic-auth`, {
+            const response = await fetch(`/auth/magic-auth`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -81,7 +82,7 @@ function MagicAuthForm() {
 
         try {
             // *** UPDATED ENDPOINT: Use the dedicated VERIFY route ***
-            const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/auth/magic-auth/verify`, {
+            const response = await fetch(`/auth/magic-auth/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

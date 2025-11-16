@@ -36,14 +36,15 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Check, X, Eye } from 'lucide-react';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
 // API Endpoints
-const BAG_LIFT_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/bags-lift`;
-const BAG_LIFT_ACTION_API_BASE = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/bags-lift`;
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
+const BAG_LIFT_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/bags-lift`;
+const BAG_LIFT_ACTION_API_BASE = `/api/dashboardPagesAPI/masonpc-side/bags-lift`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];

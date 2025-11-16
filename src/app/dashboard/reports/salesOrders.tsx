@@ -22,11 +22,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Loader2 } from 'lucide-react';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
@@ -323,7 +324,7 @@ const SalesOrdersTable = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/sales-orders`);
+      const response = await fetch(`/api/dashboardPagesAPI/reports/sales-orders`);
       if (!response.ok) {
         if (response.status === 401) {
           toast.error('You are not authenticated. Redirecting to login.');

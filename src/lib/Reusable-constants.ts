@@ -1,5 +1,7 @@
 // src/lib/Reusable-constants.ts
 
+export const BASE_URL = process.env.NEXT_PUBLIC_APP_URL;
+
 export const brands = [
   "Star", "Amrit", "Dalmia", 
   "Topcem", "Black Tiger", "Surya Gold", 

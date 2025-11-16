@@ -40,14 +40,15 @@ import { Search, Loader2 } from 'lucide-react';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { cn } from '@/lib/utils';
 import { salesmanAttendanceSchema } from '@/lib/shared-zod-schema';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 type SalesmanAttendanceReport = z.infer<typeof salesmanAttendanceSchema>;
 
 const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 // --- API Endpoints and Types for Filters ---
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
@@ -125,7 +126,7 @@ export default function SlmAttendancePage() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-attendance`);
+      const url = new URL(`/api/dashboardPagesAPI/slm-attendance`, window.location.origin);
       if (dateRange?.from) {
         url.searchParams.append('startDate', format(dateRange.from, 'yyyy-MM-dd'));
       }

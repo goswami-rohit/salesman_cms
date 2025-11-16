@@ -24,11 +24,12 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { Search, Loader2 } from 'lucide-react';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`; 
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`; 
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`; 
+const ROLES_API_ENDPOINT = `/api/users/user-roles`; 
 
 interface LocationsResponse {
   areas: string[];
@@ -116,7 +117,7 @@ export default function TechnicalVisitReportsPage() {
     setError(null);
     try {
       // Fetch from the API path
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/technical-visit-reports`);
+      const response = await fetch(`/api/dashboardPagesAPI/reports/technical-visit-reports`);
       if (!response.ok) {
          if (response.status === 401) {
           toast.error('You are not authenticated. Redirecting to login.');

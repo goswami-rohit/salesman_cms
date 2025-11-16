@@ -22,6 +22,7 @@ import {
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { dailyVisitReportSchema } from '@/lib/shared-zod-schema';
 import { Search, Loader2 } from 'lucide-react';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 type DailyVisitReport = z.infer<typeof dailyVisitReportSchema> & {
   // Manually adding fields expected by the filter logic and table columns, 
@@ -34,8 +35,8 @@ const columnHelper = createColumnHelper<DailyVisitReport>();
 const ITEMS_PER_PAGE = 10;
 
 // API Endpoints for filter options
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 // Type definitions for API responses
 interface LocationsResponse {
@@ -112,7 +113,7 @@ export default function DailyVisitReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/daily-visit-reports`);
+      const response = await fetch(`/api/dashboardPagesAPI/reports/daily-visit-reports`);
       if (!response.ok) {
         if (response.status === 401) {
           toast.error('You are not authenticated. Redirecting to login.');

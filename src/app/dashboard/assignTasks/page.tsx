@@ -36,6 +36,7 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
 import { dailyTaskSchema } from "@/lib/shared-zod-schema";
+import { BASE_URL } from "@/lib/Reusable-constants";
 
 // --- Zod Schemas for Data and Form Validation ---
 
@@ -126,7 +127,7 @@ export default function AssignTasksPage() {
   const [description, setDescription] = useState<string>("");
   const { locations, loading: locationsLoading, error: locationsError } = useDealerLocations();
 
-  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/assign-tasks`;
+  const apiURI = `/api/dashboardPagesAPI/assign-tasks`;
 
   // --- Fetch Form Data (Salesmen, Dealers) and Tasks for the Table ---
   const fetchAllData = useCallback(async () => {

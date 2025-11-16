@@ -15,11 +15,12 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
 import { getDealersSchema } from '@/lib/shared-zod-schema';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 type DealerRecord = z.infer<typeof getDealersSchema>;
 
-const DEALER_LOCATIONS_API = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement`;
-const DEALER_TYPES_API = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement/dealer-types`;
+const DEALER_LOCATIONS_API = `/api/dashboardPagesAPI/dealerManagement`;
+const DEALER_TYPES_API = `/api/dashboardPagesAPI/dealerManagement/dealer-types`;
 
 export default function ListDealersPage() {
   // --- State for Dealer Listing ---

@@ -1,6 +1,7 @@
 // src/components/reusable-user-locations.tsx
 //'use client';
 
+import { BASE_URL } from '@/lib/Reusable-constants';
 import * as React from 'react';
 import { toast } from 'sonner';
 
@@ -22,7 +23,7 @@ export function useUserLocations() {
     const fetchLocations = async () => {
       try {
         // Change the API endpoint to the new route
-        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`);
+        const response = await fetch(`/api/users/user-locations`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

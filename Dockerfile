@@ -1,8 +1,8 @@
 # Stage 1: Dependencies - Install all dependencies
 FROM node:25 AS deps
 # Install necessary packages for Prisma and Node.js
-# libc6-compat is required for Prisma engines on Alpine.
-# openssl is needed for a variety of packages.
+# libc6-compat is required for Prisma engines on Alpine
+# openssl is needed for a variety of packages
 #RUN apk add --no-cache libc6-compat openssl #Not needed for debian base image (node:25) needed for others
 WORKDIR /app
 
@@ -34,7 +34,7 @@ ENV NEXT_PRIVATE_STANDALONE=true
 # The Prisma client must be generated before the Next.js build process can use it.
 # SKIP_ENV_VALIDATION=1 is used to allow the build to proceed even if the .env file is not present in the container
 RUN npx prisma generate
-RUN --mount=type=secret,id=WORKOS_API_KEY,env=WORKOS_API_KEY npm run build
+RUN --mount=type=secret,id=WORKOS_API_KEY,env=WORKOS_API_KEY --mount=type=secret,id=WORKOS_CLIENT_ID,env=WORKOS_CLIENT_ID npm run build
 
 # Stage 3: Runner - The final production image
 # This stage uses a super-lightweight distroless base image for security and size.
@@ -52,7 +52,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 #COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-#COPY --from=builder /app/public ./public
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 
 # Expose the default Next.js port

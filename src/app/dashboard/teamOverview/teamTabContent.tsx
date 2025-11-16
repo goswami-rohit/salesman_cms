@@ -20,6 +20,7 @@ import { PencilIcon, EyeIcon, UsersIcon, Loader2, StoreIcon } from 'lucide-react
 import { MultiSelect } from '@/components/multi-select';
 import { ROLE_HIERARCHY, canAssignRole } from '@/lib/roleHierarchy';
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 interface TeamMember {
   id: number;
@@ -281,7 +282,7 @@ function EditDealerMappingCell({
       setIsLoading(true);
       try {
         // Construct the URL with area and region query parameters
-        const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editDealerMapping`);
+        const url = new URL(`/api/dashboardPagesAPI/team-overview/editDealerMapping`);
         url.searchParams.append('userId', String(member.id));
         // Use selected filters instead of member's area/region
         if (selectedArea) {
@@ -463,7 +464,7 @@ function EditMasonMappingCell({
     (async () => {
       setIsLoading(true);
       try {
-        const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMasonMapping`);
+        const url = new URL(`/api/dashboardPagesAPI/team-overview/editMasonMapping`);
         url.searchParams.append('userId', String(member.id));
 
         // 💡 ADD FILTERS TO URL
@@ -706,12 +707,12 @@ export function TeamTabContent() {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
-  const dataFetchURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/dataFetch`;
-  const editRoleURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editRole`;
-  const editMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMapping`;
-  const editDealerMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editDealerMapping`;
-  const editMasonMappingURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/editMasonMapping`;
-  const currentUserURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/me`;
+  const dataFetchURI = `/api/dashboardPagesAPI/team-overview/dataFetch`;
+  const editRoleURI = `/api/dashboardPagesAPI/team-overview/editRole`;
+  const editMappingURI = `/api/dashboardPagesAPI/team-overview/editMapping`;
+  const editDealerMappingURI = `api/dashboardPagesAPI/team-overview/editDealerMapping`;
+  const editMasonMappingURI = `/api/dashboardPagesAPI/team-overview/editMasonMapping`;
+  const currentUserURI = `/api/me`;
 
   const loadTeamData = useCallback(
     async (roleOverride?: string) => {

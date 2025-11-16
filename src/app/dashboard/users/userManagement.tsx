@@ -47,6 +47,7 @@ import { useUserLocations } from '@/components/reusable-user-locations';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { ColumnDef } from '@tanstack/react-table';
 import { BulkInviteDialog } from './bulkInvite';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 interface User {
   id: number;
@@ -151,7 +152,7 @@ export default function UsersManagement({ adminUser }: Props) {
     fetchUsers();
   }, []);
 
-  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/users`;
+  const apiURI = `/api/users`;
   const fetchUsers = async () => {
     try {
       const response = await fetch(apiURI);

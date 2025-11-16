@@ -12,6 +12,7 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
+import { BASE_URL } from '@/lib/Reusable-constants';
 //import {baseDealerBrandMappingSchema} from '@/app/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping/route';
 
 // Define a type for the dealer brand mapping data, including a record for dynamic brand columns.
@@ -43,7 +44,7 @@ export default function DealerBrandMappingPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping`);
+      const response = await fetch(`/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping`);
       if (!response.ok) {
         throw new Error('Failed to fetch brand mapping data');
       }

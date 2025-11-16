@@ -41,7 +41,7 @@ export function BulkInviteDialog({ onSuccess, onError, onRefreshUsers }: BulkInv
   const [loading, setLoading] = useState(false);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
 
-  const bulkInviteURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/bulk-invite`;
+  const bulkInviteURI = `/api/users/bulk-invite`;
 
   // Function to parse CSV or TSV data from a string
   const parseBulkData = (data: string): UserPayload[] => {

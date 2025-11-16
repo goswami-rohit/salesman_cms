@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { dealerVerificationSchema } from '@/lib/shared-zod-schema';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 
 type DealerRecord = z.infer<typeof dealerVerificationSchema>;
@@ -43,8 +44,8 @@ export default function VerifyDealersPage() {
     // --- Delete loading state ---
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement/dealer-verify`;
-    const deleteApiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement`;
+    const apiURI = `/api/dashboardPagesAPI/dealerManagement/dealer-verify`;
+    const deleteApiURI = `/api/dashboardPagesAPI/dealerManagement`;
 
     // --- Fetch Pending Dealers ---
     const fetchPendingDealers = useCallback(async () => {

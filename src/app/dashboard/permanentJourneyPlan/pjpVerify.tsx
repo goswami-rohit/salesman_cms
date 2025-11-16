@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTableReusable } from '@/components/data-table-reusable';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 import {
   permanentJourneyPlanVerificationSchema,
@@ -68,8 +69,8 @@ export default function PJPVerifyPage() {
   const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>('all');
 
   // API URIs
-  const pjpVerificationAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan/pjp-verification`;
-  const dealerAPI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement`;
+  const pjpVerificationAPI = `/api/dashboardPagesAPI/permanent-journey-plan/pjp-verification`;
+  const dealerAPI = `/api/dashboardPagesAPI/dealerManagement`;
   const locationAPI = `${dealerAPI}/dealer-locations`;
 
   // --- Fetch Locations and Dealers ---
@@ -254,7 +255,7 @@ export default function PJPVerifyPage() {
     toast.loading(`Rejecting and deleting PJP...`, { id: toastId });
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan?id=${id}`,
+        `/api/dashboardPagesAPI/permanent-journey-plan?id=${id}`,
         {
           method: 'DELETE',
         },

@@ -32,6 +32,7 @@ import { IconCalendar } from '@tabler/icons-react';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { salesmanLeaveApplicationSchema } from '@/lib/shared-zod-schema';
 import { cn } from '@/lib/utils';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // IMPORTANT: do NOT augment the z.infer type with role/area/region — those fields are NOT part of the leave schema.
 // We'll still fetch available roles/areas/regions from the endpoints and compare at runtime (safely).
@@ -40,8 +41,8 @@ type SalesmanLeaveApplication = z.infer<typeof salesmanLeaveApplicationSchema>;
 const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 // --- API Endpoints and Types for Filters ---
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`;
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
@@ -151,12 +152,12 @@ export default function SlmLeavesPage() {
 
 
   // --- Data Fetching Logic ---
-  const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/slm-leaves`
+  const apiURI = `/api/dashboardPagesAPI/slm-leaves`
   const fetchLeaveApplications = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(apiURI);
+      const url = new URL(apiURI, window.location.origin);
       // Append date range to API call
       if (dateRange?.from) {
         url.searchParams.append('startDate', format(dateRange.from, 'yyyy-MM-dd'));

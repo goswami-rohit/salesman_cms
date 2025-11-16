@@ -1,7 +1,7 @@
 // src/app/dashboard/masonpcSide/rewardsRedemption.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -23,13 +23,14 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
+import { BASE_URL } from '@/lib/Reusable-constants';
 // Assuming cn utility exists for conditional class merging
 // import { cn } from '@/lib/utils'; // Not importing due to path issue, using direct classes
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
 // API Endpoint
-const REDEMPTION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/rewards-redemption`;
+const REDEMPTION_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/rewards-redemption`;
 
 // Type for data coming from the API (must match the flattened response structure)
 type RedemptionRecord = {

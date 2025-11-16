@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { permanentJourneyPlanSchema } from '@/lib/shared-zod-schema';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // Infer the TypeScript type from the Zod schema
 type PermanentJourneyPlan = z.infer<typeof permanentJourneyPlanSchema>;
@@ -72,7 +73,7 @@ export default function PJPListPage() {
     setError(null);
     try {
       // Use the new, correct API endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan?verificationStatus=VERIFIED`);
+      const response = await fetch(`/api/dashboardPagesAPI/permanent-journey-plan?verificationStatus=VERIFIED`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -106,7 +107,7 @@ export default function PJPListPage() {
     setDeletingId(id); // Set loading state for this specific button
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/permanent-journey-plan?id=${id}`,
+        `/api/dashboardPagesAPI/permanent-journey-plan?id=${id}`,
         {
           method: 'DELETE',
         },

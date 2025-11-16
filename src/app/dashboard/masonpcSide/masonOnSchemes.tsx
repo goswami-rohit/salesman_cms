@@ -1,7 +1,7 @@
 // src/app/dashboard/masonpcSide/masonOnSchemes.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 // Removed: import { useRouter } from 'next/navigation'; - Replaced with window.location
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
@@ -25,13 +25,14 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { Search, Loader2 } from 'lucide-react';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
 // API Endpoints
-const MASON_ON_SCHEMES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/masonOnSchemes`;
-const LOCATION_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-locations`; 
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`; 
+const MASON_ON_SCHEMES_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/masonOnSchemes`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`; 
+const ROLES_API_ENDPOINT = `/api/users/user-roles`; 
 
 interface LocationsResponse {
   areas: string[];

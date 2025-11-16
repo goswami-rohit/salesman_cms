@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 
 export default function SetupCompanyForm() {
@@ -40,7 +41,7 @@ export default function SetupCompanyForm() {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/setup-company`, {
+      const response = await fetch(`/api/setup-company`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

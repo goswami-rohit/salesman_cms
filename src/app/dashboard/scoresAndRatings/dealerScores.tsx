@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Loader2 } from 'lucide-react';
 import { dealerScoreSchema } from '@/lib/shared-zod-schema';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 type DealerScore = z.infer<typeof dealerScoreSchema>;
 
@@ -117,7 +118,7 @@ export default function DealerScores() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/scores-ratings?type=dealer`);
+      const res = await fetch(`/api/dashboardPagesAPI/scores-ratings?type=dealer`);
       if (!res.ok) throw new Error('Failed to fetch dealer scores');
       const raw = await res.json();
       const validated = z.array(dealerScoreSchema).parse(raw);
@@ -136,7 +137,7 @@ export default function DealerScores() {
     setIsLoadingLocations(true);
     setLocationError(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement/dealer-locations`);
+      const res = await fetch(`/api/dashboardPagesAPI/dealerManagement/dealer-locations`);
       if (!res.ok) throw new Error('Failed to fetch dealer locations');
       const j = await res.json();
       const regions = Array.isArray(j.regions) ? j.regions.filter(Boolean) : [];
@@ -156,7 +157,7 @@ export default function DealerScores() {
     setIsLoadingTypes(true);
     setTypeError(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/dealerManagement/dealer-types`);
+      const res = await fetch(`/api/dashboardPagesAPI/dealerManagement/dealer-types`);
       if (!res.ok) throw new Error('Failed to fetch dealer types');
       const j = await res.json();
       // endpoint returns { type: [...] }

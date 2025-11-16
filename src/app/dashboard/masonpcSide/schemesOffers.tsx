@@ -1,7 +1,7 @@
 // src/app/dashboard/masonpcSide/schemesOffers.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 // Removed: import { useRouter } from 'next/navigation'; - Replaced with window.location
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
@@ -25,11 +25,12 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { Search, Loader2 } from 'lucide-react';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
 // API Endpoints
-const SCHEMES_OFFERS_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/schemes-offers`;
+const SCHEMES_OFFERS_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/schemes-offers`;
 // Note: Location and Role endpoints are not needed for this page.
 
 // The Zod schema provides the full type definition needed.

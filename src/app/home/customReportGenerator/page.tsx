@@ -20,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { DataTableReusable, DragHandle } from '@/components/data-table-reusable';
 import { ColumnDef } from '@tanstack/react-table';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 import {
   tablesMetadata,
@@ -64,7 +65,7 @@ interface SelectedColumnsState {
   [tableId: string]: string[];
 }
 
-const apiURI = `${process.env.NEXT_PUBLIC_APP_URL}/api/custom-report-generator`;
+const apiURI = `/api/custom-report-generator`;
 
 export default function CustomReportGeneratorPage() {
   const [downloading, setDownloading] = useState(false);

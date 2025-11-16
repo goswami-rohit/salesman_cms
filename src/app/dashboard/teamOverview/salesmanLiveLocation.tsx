@@ -13,6 +13,7 @@ import { MapPin } from 'lucide-react';
 import { renderToStaticMarkup } from "react-dom/server";
 import "leaflet/dist/leaflet.css";
 import { useUserLocations } from '@/components/reusable-user-locations';
+import { BASE_URL } from "@/lib/Reusable-constants";
 
 const roles = [
   "senior-manager",
@@ -155,7 +156,7 @@ export function SalesmanLiveLocation() {
     const fetchLocations = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/team-overview/slmLiveLocation`
+          `/api/dashboardPagesAPI/team-overview/slmLiveLocation`
         );
         if (!response.ok) throw new Error("Failed to fetch locations");
 

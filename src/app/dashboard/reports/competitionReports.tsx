@@ -31,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { competitionReportSchema } from '@/lib/shared-zod-schema'
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // Infer the TypeScript type from the Zod schema
 type CompetitionReport = z.infer<typeof competitionReportSchema>;
@@ -52,7 +53,7 @@ export default function CompetitionReportsPage() {
     setError(null);
     try {
       // Use the new, correct API endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/reports/competition-reports`);
+      const response = await fetch(`/api/dashboardPagesAPI/reports/competition-reports`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -1,10 +1,10 @@
 // src/app/dashboard/masonpcSide/pointsLedger.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { Search, Loader2, IndianRupee } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 
 // Import the reusable DataTable (using aliased path as requested)
 import { DataTableReusable } from '@/components/data-table-reusable';
@@ -22,11 +22,12 @@ import {
   PaginationNext,
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
 // API Endpoint
-const POINTS_LEDGER_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/points-ledger`;
+const POINTS_LEDGER_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/points-ledger`;
 
 // Type for data coming from the API (must match the flattened response structure)
 type PointsLedgerRecord = {

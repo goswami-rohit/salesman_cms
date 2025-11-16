@@ -31,12 +31,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 const ITEMS_PER_PAGE = 10;
-const MASON_PC_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/mason-pc`;
-const MASON_PC_ACTION_API_BASE = `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboardPagesAPI/masonpc-side/mason-pc`;
-const ROLES_API_ENDPOINT = `${process.env.NEXT_PUBLIC_APP_URL}/api/users/user-roles`;
+const MASON_PC_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/mason-pc`;
+const MASON_PC_ACTION_API_BASE = `/api/dashboardPagesAPI/masonpc-side/mason-pc`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 export type KycStatus = 'none' | 'pending' | 'verified' | 'rejected';
 export type KycVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'NONE';
@@ -142,7 +143,7 @@ export default function MasonPcPage() {
     setError(null);
     try {
       // Fetch data based on the selected status filter
-      const url = new URL(MASON_PC_API_ENDPOINT);
+      const url = new URL(MASON_PC_API_ENDPOINT, window.location.origin);
       if (kycStatusFilter && kycStatusFilter !== 'all') {
         // Only set the search param if a specific filter is selected (PENDING, VERIFIED, REJECTED, NONE)
         url.searchParams.set('kycStatus', kycStatusFilter);
