@@ -5,25 +5,16 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { IndianRupee, Search, Loader2 } from 'lucide-react';
+import { IndianRupee, Search, Loader2, Check, X, Eye, ExternalLink } from 'lucide-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
-// Assuming the BagLiftSchema is sufficient for validation (though we use a response schema below)
 import { bagLiftSchema } from '@/lib/shared-zod-schema';
 
-// UI Components for Filtering/Pagination
+// UI Components
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -35,12 +26,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Check, X, Eye } from 'lucide-react';
-import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
-// API Endpoints
 const BAG_LIFT_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/bags-lift`;
 const BAG_LIFT_ACTION_API_BASE = `/api/dashboardPagesAPI/masonpc-side/bags-lift`;
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
@@ -54,12 +41,11 @@ interface RolesResponse {
   roles: string[];
 }
 
-// Type for data coming from the API (must match the flattened response structure)
+// Type for data coming from the API
 type BagLiftRecord = z.infer<typeof bagLiftSchema> & {
   masonName: string;
   dealerName: string | null;
   approverName: string | null;
-  // Assuming the API also adds location/role from the associated user for filtering
   role: string;
   area: string;
   region: string;
@@ -68,9 +54,6 @@ type BagLiftRecord = z.infer<typeof bagLiftSchema> & {
 
 // --- HELPER FUNCTIONS ---
 
-/**
- * Helper function to render the Select filter component
- */
 const renderSelectFilter = (
   label: string,
   value: string,
@@ -103,9 +86,6 @@ const renderSelectFilter = (
   </div>
 );
 
-/**
- * Formats an ISO date string to a readable date (no time).
- */
 const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return 'N/A';
   try {
@@ -119,9 +99,6 @@ const formatDate = (dateString: string | null | undefined) => {
   }
 };
 
-/**
- * Gets the color variant for the status badge.
- */
 const getStatusBadgeVariant = (status: string) => {
   switch (status.toLowerCase()) {
     case 'approved':
@@ -145,12 +122,14 @@ export default function BagsLiftPage() {
   const [error, setError] = useState<string | null>(null);
 
   // --- Filter States ---
-  const [searchQuery, setSearchQuery] = useState(''); // Mason Name search
-  const [statusFilter, setStatusFilter] = useState('all'); // Bag Lift Status
-  const [roleFilter, setRoleFilter] = useState('all'); // User Role
-  const [areaFilter, setAreaFilter] = useState('all'); // User Area
-  const [regionFilter, setRegionFilter] = useState('all'); // User Region
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [areaFilter, setAreaFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
+
+  // REMOVED: currentPage state (let the table handle it)
+
   const statusOptions = ['pending', 'approved', 'rejected'];
 
   // --- Filter Options States ---
@@ -170,10 +149,6 @@ export default function BagsLiftPage() {
 
 
   // --- Data Fetching Functions ---
-
-  /**
-   * Fetches the main Bag Lift data.
-   */
   const fetchBagLiftRecords = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -204,10 +179,6 @@ export default function BagsLiftPage() {
     }
   }, []);
 
-
-  /**
-   * Fetches unique areas and regions for the filter dropdowns.
-   */
   const fetchLocations = useCallback(async () => {
     setIsLoadingLocations(true);
     setLocationError(null);
@@ -222,15 +193,11 @@ export default function BagsLiftPage() {
     } catch (err: any) {
       console.error('Failed to fetch filter locations:', err);
       setLocationError('Failed to load Area/Region filters.');
-      // toast.error('Failed to load location filters.'); // Don't spam toast on filter error
     } finally {
       setIsLoadingLocations(false);
     }
   }, []);
 
-  /**
-   * Fetches unique roles for the filter dropdowns.
-   */
   const fetchRoles = useCallback(async () => {
     setIsLoadingRoles(true);
     setRoleError(null);
@@ -245,13 +212,11 @@ export default function BagsLiftPage() {
     } catch (err: any) {
       console.error('Failed to fetch filter roles:', err);
       setRoleError('Failed to load Role filters.');
-      // toast.error('Failed to load role filters.'); // Don't spam toast on filter error
     } finally {
       setIsLoadingRoles(false);
     }
   }, []);
 
-  // Initial data loads for reports and filter options
   React.useEffect(() => {
     fetchBagLiftRecords();
     fetchLocations();
@@ -266,11 +231,7 @@ export default function BagsLiftPage() {
   const handleStatusUpdate = async (id: string, newStatus: 'approved' | 'rejected') => {
     setIsUpdatingId(id);
     const toastId = `baglift-${id}-${newStatus}`;
-
-    toast.loading(
-      `${newStatus === 'approved' ? 'Approving' : 'Rejecting'} bag lift...`,
-      { id: toastId }
-    );
+    toast.loading(`${newStatus === 'approved' ? 'Approving' : 'Rejecting'} bag lift...`, { id: toastId });
 
     try {
       const response = await fetch(`${BAG_LIFT_ACTION_API_BASE}/${id}`, {
@@ -280,16 +241,6 @@ export default function BagsLiftPage() {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          toast.error('You are not authenticated. Redirecting to login.', { id: toastId });
-          window.location.href = '/login';
-          return;
-        }
-        if (response.status === 403) {
-          toast.error('You do not have permission to update Bag Lifts.', { id: toastId });
-          return;
-        }
-
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || errorData.error || 'Update failed.');
       }
@@ -303,44 +254,21 @@ export default function BagsLiftPage() {
     }
   };
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic ---
   const filteredRecords = useMemo(() => {
-    setCurrentPage(1); // Reset page on filter change
-
+    // Removed setCurrentPage(1) because we aren't managing page state anymore
     return bagLiftRecords.filter((record) => {
-      // 1. Mason Name Search
-      const nameMatch = !searchQuery ||
-        record.masonName.toLowerCase().includes(searchQuery.toLowerCase());
+      const nameMatch = !searchQuery || record.masonName.toLowerCase().includes(searchQuery.toLowerCase());
+      const statusMatch = statusFilter === 'all' || record.status.toLowerCase() === statusFilter.toLowerCase();
+      const roleMatch = roleFilter === 'all' || record.role?.toLowerCase() === roleFilter.toLowerCase();
+      // const areaMatch = areaFilter === 'all' || record.area?.toLowerCase() === areaFilter.toLowerCase();
+      // const regionMatch = regionFilter === 'all' || record.region?.toLowerCase() === regionFilter.toLowerCase();
 
-      // 2. Status Filter
-      const statusMatch = statusFilter === 'all' ||
-        record.status.toLowerCase() === statusFilter.toLowerCase();
-
-      // 3. Role Filter (from assumed joined `role` field)
-      const roleMatch = roleFilter === 'all' ||
-        record.role?.toLowerCase() === roleFilter.toLowerCase();
-
-      // 4. Area Filter (from assumed joined `area` field)
-      const areaMatch = areaFilter === 'all' ||
-        record.area?.toLowerCase() === areaFilter.toLowerCase();
-
-      // 5. Region Filter (from assumed joined `region` field)
-      const regionMatch = regionFilter === 'all' ||
-        record.region?.toLowerCase() === regionFilter.toLowerCase();
-
-      // Combine all conditions
-      return nameMatch && statusMatch && roleMatch && areaMatch && regionMatch;
+      return nameMatch && statusMatch && roleMatch; // && areaMatch && regionMatch;
     });
-  }, [bagLiftRecords, searchQuery, statusFilter, roleFilter, areaFilter, regionFilter]);
+  }, [bagLiftRecords, searchQuery, statusFilter, roleFilter]);
+  // Removed areaFilter/regionFilter from deps as they are commented out above
 
-
-  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
-  // Slice the filtered data for the current page
-  const currentRecords = filteredRecords.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
 
 
   // --- 3. Define Columns for Bag Lift DataTable ---
@@ -520,41 +448,10 @@ export default function BagsLiftPage() {
             <>
               <DataTableReusable
                 columns={bagLiftColumns}
-                data={currentRecords} // Use filtered and paginated data
+                data={filteredRecords}
                 enableRowDragging={false}
                 onRowOrderChange={handleBagLiftOrderChange}
               />
-
-              {/* --- Pagination --- */}
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-              {/* --- End Pagination --- */}
             </>
           )}
         </div>
@@ -618,14 +515,25 @@ export default function BagsLiftPage() {
                 <Input value={formatDate(selectedRecord.approvedAt)} readOnly />
               </div>
 
+              {/* --- UPDATED IMAGE PREVIEW SECTION --- */}
               {selectedRecord.imageUrl && (
                 <div className="md:col-span-2">
-                  <Label>Bag Lift Image</Label>
-                  <div className="mt-2">
+                  <Label htmlFor="bagLiftImage">Bag Lift Image</Label>
+                  <div id="bagLiftImage" className="mt-2 border p-2 rounded-md bg-muted/50">
+                    {/* Link to open original image */}
+                    <a
+                      href={selectedRecord.imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline flex items-center text-sm font-medium mb-2"
+                    >
+                      View Original Image <ExternalLink className="h-4 w-4 ml-1" />
+                    </a>
+                    {/* Bigger Image (w-full) */}
                     <img
                       src={selectedRecord.imageUrl}
                       alt="Bag Lift"
-                      className="max-h-64 rounded-md border"
+                      className="w-full h-auto rounded-md border"
                     />
                   </div>
                 </div>

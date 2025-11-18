@@ -5,15 +5,12 @@ import { NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-import { bagLiftSchema } from '@/lib/shared-zod-schema'; // Assuming BagLiftSchema is exported here
 
-// Re-using the allowed roles from your sample. Adjust as needed.
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
   'senior-executive',];
 
-// Helper function to format user name or default to email
 const formatUserName = (user: { firstName: string | null, lastName: string | null, email: string } | null) => {
   if (!user) return null;
   const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
@@ -24,31 +21,26 @@ export async function GET() {
   try {
     const claims = await getTokenClaims();
 
-    // 1. Authentication Check
     if (!claims || !claims.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Fetch Current User to check role and companyId
     const currentUser = await prisma.user.findUnique({
       where: { workosUserId: claims.sub },
       select: { role: true, companyId: true }
     });
 
-    // 3. Authorization Check
     if (!currentUser || !allowedRoles.includes(currentUser.role)) {
-      return NextResponse.json({ error: `Forbidden: Only allowed roles can access this data.` }, { status: 403 });
+      return NextResponse.json({ error: `Forbidden` }, { status: 403 });
     }
 
-    // 4. Fetch BagLift Records for the current user's company
     const bagLiftRecords = await prisma.bagLift.findMany({
       where: {
-        // Filter records where the associated mason's user belongs to the current user's company
-        mason: {
-          user: {
-            companyId: currentUser.companyId,
-          },
-        },
+        // FIX 1: Use OR to include Unassigned Masons
+        OR: [
+          { mason: { user: { companyId: currentUser.companyId } } }, // Assigned to us
+          { mason: { userId: null } } // Unassigned (shows the missing records)
+        ]
       },
       select: {
         id: true,
@@ -60,43 +52,52 @@ export async function GET() {
         approvedBy: true,
         approvedAt: true,
         createdAt: true,
-        mason: { select: { name: true } },
+        // FIX 2: Explicitly select imageUrl
+        imageUrl: true, 
+        mason: { 
+            select: { 
+                name: true,
+                // FIX 3: Select User details so filters work
+                user: {
+                    select: {
+                        role: true,
+                        area: true,
+                        region: true
+                    }
+                }
+            } 
+        },
         dealer: { select: { name: true } },
         approver: { select: { firstName: true, lastName: true, email: true } },
       },
       orderBy: {
         purchaseDate: 'desc',
       },
-      take: 1000, // Add a reasonable limit
+      take: 1000,
     });
 
-    // 5. Format and Flatten the data
     const formattedReports = bagLiftRecords.map(record => ({
       id: record.id,
       masonId: record.masonId,
-      masonName: record.mason.name, // Flattened field
-      dealerName: record.dealer?.name ?? null, // Flattened field
-      purchaseDate: record.purchaseDate.toISOString(), // Keep as full ISO string for frontend date handling
+      masonName: record.mason.name,
+      dealerName: record.dealer?.name ?? null,
+      purchaseDate: record.purchaseDate.toISOString(),
       bagCount: record.bagCount,
       pointsCredited: record.pointsCredited,
       status: record.status,
       approvedBy: record.approvedBy,
-      approverName: formatUserName(record.approver), // Flattened field
+      approverName: formatUserName(record.approver),
       approvedAt: record.approvedAt?.toISOString() ?? null,
       createdAt: record.createdAt.toISOString(),
-      // The shared schema requires only the fields defined in the model,
-      // but we return the full flattened structure for the UI.
-      // We will validate the core BagLift fields below.
+      imageUrl: record.imageUrl, // Pass the image URL
+      
+      // FIX 4: Map the user details for the filters
+      role: record.mason.user?.role ?? 'N/A',
+      area: record.mason.user?.area ?? 'N/A',
+      region: record.mason.user?.region ?? 'N/A',
     }));
     
-    // NOTE: Zod validation here is tricky because the API response includes 
-    // flattened fields (masonName, dealerName, approverName) that are not in 
-    // the core bagLiftSchema. We must validate the core fields separately 
-    // or create a dedicated API response schema. For security, we validate 
-    // the core data structure to ensure data integrity.
-    
-    // 6. Validate core data structure (simplified for this context)
-    // Create a temporary schema for the API response structure.
+    // Zod validation to ensure type safety
     const bagLiftResponseSchema = z.object({
         id: z.string(),
         masonId: z.string(),
@@ -110,6 +111,10 @@ export async function GET() {
         approverName: z.string().nullable(),
         approvedAt: z.string().nullable(),
         createdAt: z.string(),
+        imageUrl: z.string().nullable().optional(),
+        role: z.string().optional(),
+        area: z.string().optional(),
+        region: z.string().optional(),
     });
 
     const validatedReports = z.array(bagLiftResponseSchema).parse(formattedReports);
@@ -118,11 +123,9 @@ export async function GET() {
     
   } catch (error) {
     console.error('Error fetching bag-lift data:', error);
-    // Handle Zod validation errors specifically
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.message }, { status: 400 });
     }
-    // Return a 500 status with a generic error message
     return NextResponse.json({ error: 'Failed to fetch bag-lift data' }, { status: 500 });
   }
 }
