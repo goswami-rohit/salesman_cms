@@ -3,17 +3,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
-import { BASE_URL } from '@/lib/Reusable-constants';
-//import {baseDealerBrandMappingSchema} from '@/app/api/dashboardPagesAPI/dealerManagement/dealer-brand-mapping/route';
+// import { BASE_URL } from '@/lib/Reusable-constants'; // Keep if needed elsewhere
 
 // Define a type for the dealer brand mapping data, including a record for dynamic brand columns.
 type DealerBrandMappingData = {
@@ -25,19 +16,12 @@ type DealerBrandMappingData = {
 
 const columnHelper = createColumnHelper<DealerBrandMappingData>();
 
-/**
- * A React component that fetches and displays dealer brand mapping reports.
- * It uses a reusable data table component and handles dynamic column generation
- * based on the brands returned from the API.
- */
 export default function DealerBrandMappingPage() {
+  // Pass ALL fetched data to DataTableReusable
   const [data, setData] = useState<DealerBrandMappingData[]>([]);
   const [columns, setColumns] = useState<ColumnDef<DealerBrandMappingData, any>[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 10;
 
   // Use useCallback to memoize the fetch logic and prevent unnecessary re-creations.
   const fetchReports = useCallback(async () => {
@@ -91,7 +75,7 @@ export default function DealerBrandMappingPage() {
 
       // Set the columns and data states
       setColumns([...staticColumns, ...dynamicColumns]);
-      setData(fetchedData);
+      setData(fetchedData); // Set the full data array
     } catch (err: any) {
       console.error('Fetch error:', err);
       setError(err.message || 'An unexpected error occurred.');
@@ -104,17 +88,6 @@ export default function DealerBrandMappingPage() {
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
-
-  // Pagination logic
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentReports = data.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
 
   return (
     <div className="flex min-h-screen w-full flex-col p-6">
@@ -134,33 +107,13 @@ export default function DealerBrandMappingPage() {
             </div>
           ) : (
             <>
+              {/* Pass the FULL data array to DataTableReusable */}
               <DataTableReusable
                 columns={columns}
-                data={currentReports}
-                // We are not using row dragging for this report
+                data={data} 
                 enableRowDragging={false}
                 onRowOrderChange={() => {}}
               />
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </div>

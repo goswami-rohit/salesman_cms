@@ -6,14 +6,6 @@ import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { salesmanRatingSchema } from '@/lib/shared-zod-schema';
@@ -22,11 +14,10 @@ import { salesmanRatingSchema } from '@/lib/shared-zod-schema';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button'; // Added Button for Retry
-import { BASE_URL } from '@/lib/Reusable-constants';
+import { Button } from '@/components/ui/button';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
 const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
@@ -39,8 +30,6 @@ interface RolesResponse {
 }
 
 // Infer the TypeScript type from the Zod schema and extend it
-// We assume the API provides the salesman's role for filtering purposes, 
-// even though it's not explicitly in the displayed columns.
 type SalesmanRating = z.infer<typeof salesmanRatingSchema> & {
   salesmanRole: string; // Assumed key for role filtering
 };
@@ -81,7 +70,7 @@ const columns: ColumnDef<SalesmanRating, any>[] = [
   }),
 ];
 
-// Helper function to render the Select filter component
+// Helper function to render the Select filter component (PRESERVED AS IS)
 const renderSelectFilter = (
   label: string,
   value: string,
@@ -127,10 +116,6 @@ export default function SalesmanRatings() {
   const [areaFilter, setAreaFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = ITEMS_PER_PAGE;
-
   // --- Filter Options States ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [availableAreas, setAvailableAreas] = useState<string[]>([]);
@@ -164,8 +149,12 @@ export default function SalesmanRatings() {
         throw new Error('Failed to fetch salesman ratings');
       }
       const rawData = await response.json();
-      // Validate the fetched data using the Zod schema
-      const validatedData = z.array(salesmanRatingSchema).parse(rawData) as SalesmanRating[];
+      // Validate and ensure data has a UniqueIdentifier 'id' for DataTableReusable
+      const validatedData = z.array(salesmanRatingSchema).parse(rawData).map(d => ({
+        ...d,
+        id: (d as any).id?.toString() || d.salesPersonName, // Assuming 'id' exists or using name as fallback ID
+      })) as SalesmanRating[];
+
       setData(validatedData);
       toast.success("Salesman ratings loaded successfully!");
     } catch (err: any) {
@@ -219,10 +208,8 @@ export default function SalesmanRatings() {
   }, [fetchData, fetchLocations, fetchRoles]);
 
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic
   const filteredRatings = useMemo(() => {
-    // Reset page to 1 on filter change
-    setCurrentPage(1);
     const lowerCaseSearch = searchQuery.toLowerCase();
 
     return data.filter((rating) => {
@@ -246,19 +233,6 @@ export default function SalesmanRatings() {
       return searchMatch && roleMatch && areaMatch && regionMatch;
     });
   }, [data, searchQuery, roleFilter, areaFilter, regionFilter]);
-
-
-  // Pagination logic applied to filtered data
-  const totalPages = Math.ceil(filteredRatings.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentRatings = filteredRatings.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
 
   return (
     <>
@@ -339,38 +313,10 @@ export default function SalesmanRatings() {
             <>
               <DataTableReusable
                 columns={columns}
-                data={currentRatings}
+                data={filteredRatings}
                 enableRowDragging={false}
                 onRowOrderChange={() => { }}
               />
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </CardContent>

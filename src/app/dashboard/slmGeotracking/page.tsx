@@ -9,14 +9,6 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Search, Loader2 } from 'lucide-react';
@@ -28,7 +20,7 @@ import { geoTrackingSchema } from '@/lib/shared-zod-schema';
 import { format, addDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from '@/lib/utils';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
 type GeoTrack = z.infer<typeof geoTrackingSchema> & {
@@ -39,7 +31,6 @@ type GeoTrack = z.infer<typeof geoTrackingSchema> & {
 };
 type DisplayGeoTrack = GeoTrack & { displayDate: string; displayCheckInTime: string; displayCheckOutTime: string };
 
-const ITEMS_PER_PAGE = 10;
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
 const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
@@ -51,7 +42,7 @@ interface RolesResponse {
   roles: string[];
 }
 
-// Helper function to render the Select filter component
+// Helper function to render the Select filter component (KEPT, as it's correctly used for filter UI)
 const renderSelectFilter = (
   label: string,
   value: string,
@@ -91,7 +82,6 @@ export default function SalesmanGeoTrackingPage() {
 
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [roleFilter, setRoleFilter] = useState('all');
   const [areaFilter, setAreaFilter] = useState('all');
@@ -129,7 +119,7 @@ export default function SalesmanGeoTrackingPage() {
     });
   };
 
-  // --- Filter Options Fetching ---
+  // --- Filter Options Fetching (NO CHANGES) ---
   const fetchLocations = useCallback(async () => {
     setIsLoadingLocations(true);
     setLocationError(null);
@@ -168,7 +158,7 @@ export default function SalesmanGeoTrackingPage() {
     }
   }, []);
 
-  // --- Main Data Fetching ---
+  // --- Main Data Fetching (NO CHANGES) ---
   const apiURI = `/api/dashboardPagesAPI/slm-geotracking`;
   const fetchTracks = useCallback(async () => {
     setLoading(true);
@@ -194,14 +184,16 @@ export default function SalesmanGeoTrackingPage() {
       const validatedData = rawData
         .map((item: unknown) => {
           try {
-            return geoTrackingSchema.parse(item) as GeoTrack;
+            // Ensure data passed to reusable table has an 'id' property (if not from schema, assume one exists or map unique field)
+            const validated = geoTrackingSchema.parse(item) as GeoTrack;
+            return { ...validated, id: validated.journeyId } as DisplayGeoTrack; // Using journeyId as UniqueIdentifier
           } catch (e) {
             console.error('Data validation failed for item:', item, 'ZodError', e);
             return null;
           }
         })
-        .filter((item: GeoTrack | null): item is GeoTrack => item !== null)
-        .map((item: GeoTrack) => ({
+        .filter((item: DisplayGeoTrack | null): item is DisplayGeoTrack => item !== null)
+        .map((item: DisplayGeoTrack) => ({
           ...item,
           displayDate: formatDate(item.recordedAt),
           displayCheckInTime: formatTime(item.checkInTime),
@@ -228,11 +220,11 @@ export default function SalesmanGeoTrackingPage() {
     fetchRoles();
   }, [fetchLocations, fetchRoles]);
 
-  // --- Filtering and Pagination Logic ---
-  const filteredAndPaginatedData = useMemo(() => {
+  // --- Filtering Logic (PAGINATION LOGIC REMOVED) ---
+  const allFilteredTracks = useMemo(() => {
     const lowerCaseSearch = (searchQuery || '').toLowerCase();
 
-    const filteredTracks = tracks.filter(track => {
+    return tracks.filter(track => {
       const salesmanName = (track.salesmanName || '').toString();
       const journeyId = (track.journeyId || '').toString();
       const siteName = (track.siteName || '').toString();
@@ -266,27 +258,7 @@ export default function SalesmanGeoTrackingPage() {
 
       return matchesSearch && roleMatch && areaMatch && regionMatch;
     });
-
-    const totalPages = Math.max(1, Math.ceil(filteredTracks.length / ITEMS_PER_PAGE));
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    const currentTracks = filteredTracks.slice(startIndex, endIndex);
-
-    return { filteredTracks, totalPages, currentTracks };
-  }, [tracks, searchQuery, roleFilter, areaFilter, regionFilter, currentPage]);
-
-  const { filteredTracks: allFilteredTracks, totalPages, currentTracks } = filteredAndPaginatedData;
-
-  // Reset page to 1 when filters/search/dateRange change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, roleFilter, areaFilter, regionFilter, dateRange]);
-
-  const handlePageChange = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
+  }, [tracks, searchQuery, roleFilter, areaFilter, regionFilter]);
 
   const columns: ColumnDef<DisplayGeoTrack>[] = [
     {
@@ -422,7 +394,7 @@ export default function SalesmanGeoTrackingPage() {
 
             {/* 5. Region Filter */}
             {renderSelectFilter(
-              'Region',
+              'Region(Zone)',
               regionFilter,
               setRegionFilter,
               availableRegions,
@@ -452,38 +424,10 @@ export default function SalesmanGeoTrackingPage() {
             <>
               <DataTableReusable
                 columns={columns}
-                data={currentTracks}
+                data={allFilteredTracks} 
                 enableRowDragging={false}
                 onRowOrderChange={() => { }}
               />
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </div>

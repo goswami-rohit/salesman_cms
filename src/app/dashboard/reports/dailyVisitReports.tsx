@@ -11,28 +11,17 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { dailyVisitReportSchema } from '@/lib/shared-zod-schema';
 import { Search, Loader2 } from 'lucide-react';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 type DailyVisitReport = z.infer<typeof dailyVisitReportSchema> & {
-  // Manually adding fields expected by the filter logic and table columns, 
-  // assuming they are present in the actual API data.
   role: string;
   area: string;
   region: string;
 };
 const columnHelper = createColumnHelper<DailyVisitReport>();
-const ITEMS_PER_PAGE = 10;
 
 // API Endpoints for filter options
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
@@ -44,7 +33,6 @@ interface LocationsResponse {
   regions: string[];
 }
 interface RolesResponse {
-  // FIX: Expecting roles under the 'roles' key
   roles: string[];
 }
 
@@ -86,7 +74,6 @@ export default function DailyVisitReportsPage() {
   const [reports, setReports] = useState<DailyVisitReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
   // --- Individual Filter States ---
@@ -131,8 +118,12 @@ export default function DailyVisitReportsPage() {
       const data: DailyVisitReport[] = await response.json();
       const validated = data.map((item) => {
         try {
-          // Assuming DailyVisitReport now includes salesmanRole, area, and region for filtering
-          return dailyVisitReportSchema.parse(item) as DailyVisitReport;
+          // Add ID property needed by DataTableReusable
+          const validatedItem = dailyVisitReportSchema.parse(item) as DailyVisitReport;
+          return { 
+            ...validatedItem, 
+            id: (validatedItem as any).id?.toString() || `${validatedItem.salesmanName}-${validatedItem.reportDate}-${Math.random()}` 
+          } as DailyVisitReport;
         } catch (e) {
           console.error('Validation error on report item:', e);
           return null;
@@ -189,7 +180,6 @@ export default function DailyVisitReportsPage() {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      // FIX: Now expecting roles under the 'roles' key
       const data: RolesResponse = await response.json();
       const roles = data.roles && Array.isArray(data.roles) ? data.roles : [];
 
@@ -212,12 +202,7 @@ export default function DailyVisitReportsPage() {
     fetchRoles();
   }, [fetchReports, fetchLocations, fetchRoles]);
 
-
-  // Memoized function for comprehensive filtering
   const filteredReports = useMemo(() => {
-    // Reset page on filter change
-    setCurrentPage(1);
-
     const q = searchQuery.trim().toLowerCase();
 
     return reports.filter((report) => {
@@ -249,36 +234,28 @@ export default function DailyVisitReportsPage() {
     });
   }, [reports, searchQuery, roleFilter, areaFilter, regionFilter]);
 
-
-  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
-  const currentReports = filteredReports.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-
   // Define columns (Including the fixed Role, Area, Region accessors)
   const dailyVisitReportColumns: ColumnDef<DailyVisitReport, any>[] = [
-    columnHelper.accessor('salesmanName', { header: 'Salesman' }),
-    columnHelper.accessor('role', { header: 'Role' }), // Uses 'role' accessor
-    columnHelper.accessor('area', { header: 'Area' }),
-    columnHelper.accessor('region', { header: 'Region' }),
-    columnHelper.accessor('reportDate', { header: 'Date' }),
-    columnHelper.accessor('dealerType', { header: 'Dealer Type' }),
-    columnHelper.accessor('dealerName', { header: 'Dealer Name', cell: info => info.getValue() || 'N/A' }),
-    columnHelper.accessor('subDealerName', { header: 'Sub Dealer Name', cell: info => info.getValue() || 'N/A' }),
-    columnHelper.accessor('location', { header: 'Location' }),
-    columnHelper.accessor('visitType', { header: 'Visit Type' }),
-    columnHelper.accessor('todayOrderMt', { header: 'Order (MT)', cell: info => info.getValue().toFixed(2) }),
-    columnHelper.accessor('todayCollectionRupees', { header: 'Collection (₹)', cell: info => info.getValue().toFixed(2) }),
-    columnHelper.accessor('overdueAmount', {
-      header: 'Overdue (₹)',
+    { accessorKey: 'salesmanName', header: 'Salesman' },
+    { accessorKey: 'role', header: 'Role' }, // Uses 'role' accessor
+    { accessorKey: 'area', header: 'Area' },
+    { accessorKey: 'region', header: 'Region(Zone)' },
+    { accessorKey: 'reportDate', header: 'Date' },
+    { accessorKey: 'dealerType', header: 'Dealer Type' },
+    { accessorKey: 'dealerName', header: 'Dealer Name', cell: info => info.getValue() || 'N/A' },
+    { accessorKey: 'subDealerName', header: 'Sub Dealer Name', cell: info => info.getValue() || 'N/A' },
+    { accessorKey: 'location', header: 'Location' },
+    { accessorKey: 'visitType', header: 'Visit Type' },
+    { accessorKey: 'todayOrderMt', header: 'Order (MT)', cell: info => info.getValue().toFixed(2) },
+    { accessorKey: 'todayCollectionRupees', header: 'Collection (₹)', cell: info => info.getValue().toFixed(2) },
+    { accessorKey: 'overdueAmount', 
+      header: 'Overdue (₹)', 
       cell: info => info.getValue() ? info.getValue().toFixed(2) : '0.00'
-    }),
-    columnHelper.accessor('feedbacks', {
-      header: 'Feedbacks',
+    },
+    { accessorKey: 'feedbacks', 
+      header: 'Feedbacks', 
       cell: info => <span className="max-w-[250px] truncate block">{info.getValue()}</span>
-    })
+    }
   ];
 
   if (loading) return <div className="flex justify-center items-center min-h-screen">Loading daily visit reports...</div>;
@@ -313,7 +290,7 @@ export default function DailyVisitReportsPage() {
             </div>
           </div>
 
-          {/* 2. Role Filter (Now displays dynamically fetched roles from the 'roles' key) */}
+          {/* 2. Role Filter */}
           {renderSelectFilter(
             'Role',
             roleFilter,
@@ -322,23 +299,23 @@ export default function DailyVisitReportsPage() {
             isLoadingRoles
           )}
 
-          {/* 3. Area Filter */}
-          {/* {renderSelectFilter(
+          {/* 3. Area Filter (Commented out in original but kept for display) */}
+          {renderSelectFilter(
             'Area', 
             areaFilter, 
             (v) => { setAreaFilter(v); }, 
             availableAreas, 
             isLoadingLocations
-          )} */}
+          )}
 
-          {/* 4. Region Filter */}
-          {/* {renderSelectFilter(
-            'Region', 
+          {/* 4. Region Filter (Commented out in original but kept for display) */}
+          {renderSelectFilter(
+            'Region(Zone)', 
             regionFilter, 
             (v) => { setRegionFilter(v); }, 
             availableRegions, 
             isLoadingLocations
-          )} */}
+          )}
 
           {/* Display filter option errors if any */}
           {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
@@ -353,39 +330,10 @@ export default function DailyVisitReportsPage() {
             <>
               <DataTableReusable
                 columns={dailyVisitReportColumns} 
-                data={currentReports}
+                data={filteredReports} 
                 enableRowDragging={false}
                 onRowOrderChange={() => { }}
               />
-
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </div>

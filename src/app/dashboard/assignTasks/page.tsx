@@ -36,7 +36,7 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 // Define the valid regions and areas
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
 import { dailyTaskSchema } from "@/lib/shared-zod-schema";
-import { BASE_URL } from "@/lib/Reusable-constants";
+//import { BASE_URL } from "@/lib/Reusable-constants";
 
 // --- Zod Schemas for Data and Form Validation ---
 
@@ -345,10 +345,10 @@ export default function AssignTasksPage() {
               </div>
             </div>
 
-            {/* Region Selector - NEW */}
+            {/* Region Selector - */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="region" className="text-right">
-                Region
+                Region(Zone)
               </Label>
               <div className="col-span-3">
                 <Select value={selectedRegion} onValueChange={setSelectedRegion}>

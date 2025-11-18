@@ -11,16 +11,9 @@ import { DateRange } from "react-day-picker";
 
 // Import your Shadcn UI components
 import { Button } from '@/components/ui/button';
-import { IconCheck, IconX, IconExternalLink, IconCalendar } from '@tabler/icons-react';
+import { IconCheck, IconX, IconCalendar } from '@tabler/icons-react';
+import { ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from "@/components/ui/pagination";
 import {
   Dialog,
   DialogContent,
@@ -40,11 +33,9 @@ import { Search, Loader2 } from 'lucide-react';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { cn } from '@/lib/utils';
 import { salesmanAttendanceSchema } from '@/lib/shared-zod-schema';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 type SalesmanAttendanceReport = z.infer<typeof salesmanAttendanceSchema>;
-
-const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 // --- API Endpoints and Types for Filters ---
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
@@ -58,7 +49,7 @@ interface RolesResponse {
   roles: string[];
 }
 
-// Helper function to render the Select filter component
+// Helper function to render the Select filter component (KEPT)
 const renderSelectFilter = (
   label: string,
   value: string,
@@ -102,11 +93,9 @@ export default function SlmAttendancePage() {
   const [roleFilter, setRoleFilter] = React.useState('all');
   const [areaFilter, setAreaFilter] = React.useState('all');
   const [regionFilter, setRegionFilter] = React.useState('all');
-
-  const [currentPage, setCurrentPage] = React.useState(1);
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
 
-  // --- Filter Options States ---
+  // --- Filter Options States (KEPT) ---
   const [availableRoles, setAvailableRoles] = React.useState<string[]>([]);
   const [availableAreas, setAvailableAreas] = React.useState<string[]>([]);
   const [availableRegions, setAvailableRegions] = React.useState<string[]>([]);
@@ -116,12 +105,11 @@ export default function SlmAttendancePage() {
   const [locationError, setLocationError] = React.useState<string | null>(null);
   const [roleError, setRoleError] = React.useState<string | null>(null);
 
-  // Modal states
+  // Modal states (KEPT)
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedReport, setSelectedReport] = React.useState<SalesmanAttendanceReport | null>(null);
 
-
-  // --- Data Fetching Logic ---
+  // --- Data Fetching Logic (KEPT) ---
   const fetchAttendanceReports = React.useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -152,7 +140,9 @@ export default function SlmAttendancePage() {
       const data: SalesmanAttendanceReport[] = await response.json();
       const validatedData = data.map((item) => {
         try {
-          return salesmanAttendanceSchema.parse(item);
+          // Add ID property needed by DataTableReusable (assuming ID is available in schema)
+          const validated = salesmanAttendanceSchema.parse(item);
+          return { ...validated, id: validated.id.toString() };
         } catch (e) {
           console.error("Validation error for item:", item, e);
           return null;
@@ -170,9 +160,6 @@ export default function SlmAttendancePage() {
     }
   }, [dateRange, router]);
 
-  /**
-   * Fetches unique areas and regions for the filter dropdowns.
-   */
   const fetchLocations = React.useCallback(async () => {
     setIsLoadingLocations(true);
     setLocationError(null);
@@ -195,9 +182,6 @@ export default function SlmAttendancePage() {
     }
   }, []);
 
-  /**
-   * Fetches unique roles for the filter dropdowns.
-   */
   const fetchRoles = React.useCallback(async () => {
     setIsLoadingRoles(true);
     setRoleError(null);
@@ -224,10 +208,9 @@ export default function SlmAttendancePage() {
     fetchRoles();
   }, [fetchLocations, fetchRoles]);
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic (PAGINATION REMOVED) ---
   const filteredReports = React.useMemo(() => {
-    // Reset page to 1 when filters or search change
-    setCurrentPage(1);
+    // REMOVED: setCurrentPage(1); // Not needed when relying on DataTableReusable
     const lowerCaseSearch = (searchQuery || '').toLowerCase();
 
     return attendanceReports.filter((report) => {
@@ -256,26 +239,12 @@ export default function SlmAttendancePage() {
     });
   }, [attendanceReports, searchQuery, roleFilter, areaFilter, regionFilter]);
 
-
-  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedReports = filteredReports.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
   const handleViewReport = (report: SalesmanAttendanceReport) => {
     setSelectedReport(report);
     setIsViewModalOpen(true);
   };
 
-  // --- NEW: Helper function to format time in IST ---
+  // --- NEW: Helper function to format time in IST (KEPT) ---
   const formatTimeIST = (isoString: string | null | undefined) => {
     if (!isoString) return 'N/A';
     try {
@@ -290,7 +259,7 @@ export default function SlmAttendancePage() {
     }
   };
 
-  // --- Columns Definition ---
+  // --- Columns Definition (FIXED CELL RETURNS) ---
   const salesmanAttendanceColumns: ColumnDef<SalesmanAttendanceReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
     {
@@ -315,24 +284,24 @@ export default function SlmAttendancePage() {
     {
       accessorKey: 'inTime',
       header: 'In Time',
-      cell: ({ row }) => {
+      cell: ({ row }) => ( // ADDED PARENTHESES TO IMPLICITLY RETURN SPAN
         <span>
           {row.original.inTime
             ? formatTimeIST(row.original.inTime)
             : 'N/A'}
         </span>
-      },
+      ),
     },
     {
       accessorKey: 'outTime',
       header: 'Out Time',
-      cell: ({ row }) => {
+      cell: ({ row }) => ( // ADDED PARENTHESES TO IMPLICITLY RETURN SPAN
         <span>
           {row.original.outTime
             ? formatTimeIST(row.original.outTime)
             : 'N/A (Still In)'}
         </span>
-      },
+      ),
     },
     {
       id: "inTimeImage",
@@ -342,7 +311,7 @@ export default function SlmAttendancePage() {
           {row.original.inTimeImageCaptured ? (
             row.original.inTimeImageUrl ? (
               <a href={row.original.inTimeImageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
-                <IconCheck className="h-4 w-4 text-green-500" /> View <IconExternalLink size={14} />
+                <IconCheck className="h-4 w-4 text-green-500" /> View <ExternalLink size={14} />
               </a>
             ) : (
               <span className="flex items-center gap-1"><IconCheck className="h-4 w-4 text-green-500" /> Yes</span>
@@ -361,7 +330,7 @@ export default function SlmAttendancePage() {
           {row.original.outTimeImageCaptured ? (
             row.original.outTimeImageUrl ? (
               <a href={row.original.outTimeImageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
-                <IconCheck className="h-4 w-4 text-green-500" /> View <IconExternalLink size={14} />
+                <IconCheck className="h-4 w-4 text-green-500" /> View <ExternalLink size={14} />
               </a>
             ) : (
               <span className="flex items-center gap-1"><IconCheck className="h-4 w-4 text-green-500" /> Yes</span>
@@ -495,7 +464,7 @@ export default function SlmAttendancePage() {
 
           {/* 5. Region Filter */}
           {renderSelectFilter(
-            'Region',
+            'Region(Zone)',
             regionFilter,
             (v) => { setRegionFilter(v); },
             availableRegions,
@@ -510,44 +479,16 @@ export default function SlmAttendancePage() {
 
         {/* Data Table Section */}
         <div className="bg-card p-6 rounded-lg border border-border">
-          {paginatedReports.length === 0 && !loading && !error ? (
+          {filteredReports.length === 0 && !loading && !error ? (
             <div className="text-center text-gray-500 py-8">No salesman attendance reports found matching the filters.</div>
           ) : (
             <>
               <DataTableReusable
                 columns={salesmanAttendanceColumns}
-                data={paginatedReports}
+                data={filteredReports}
                 enableRowDragging={false}
                 onRowOrderChange={handleSalesmanAttendanceOrderChange}
               />
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </div>
@@ -590,10 +531,22 @@ export default function SlmAttendancePage() {
               {selectedReport.inTimeImageUrl && (
                 <div className="md:col-span-2">
                   <Label htmlFor="inTimeImageUrl">Image URL</Label>
-                  <a href={selectedReport.inTimeImageUrl} target="_blank" rel="noopener noreferrer" className="block text-blue-500 hover:underline break-all">
-                    {selectedReport.inTimeImageUrl}
-                  </a>
-                  <img src={selectedReport.inTimeImageUrl} alt="In Time" className="mt-2 max-w-full h-auto rounded-md border" />
+                  <div id="inTimeImageUrl" className="mt-2 border p-2 rounded-md bg-muted/50">
+                    {/* Link to open original image */}
+                    <a
+                      href={selectedReport.inTimeImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline flex items-center text-sm font-medium mb-2"
+                    >
+                      View Original Image <ExternalLink className="h-4 w-4 ml-1" />
+                    </a>
+                    <img
+                      src={selectedReport.inTimeImageUrl}
+                      alt="In Time"
+                      className="w-full h-auto rounded-md border"
+                    />
+                  </div>
                 </div>
               )}
               <div>
@@ -603,22 +556,6 @@ export default function SlmAttendancePage() {
               <div>
                 <Label htmlFor="inTimeLongitude">Longitude</Label>
                 <Input id="inTimeLongitude" value={selectedReport.inTimeLongitude?.toFixed(7) || 'N/A'} readOnly />
-              </div>
-              <div>
-                <Label htmlFor="inTimeAccuracy">Accuracy (m)</Label>
-                <Input id="inTimeAccuracy" value={selectedReport.inTimeAccuracy?.toFixed(2) || 'N/A'} readOnly />
-              </div>
-              <div>
-                <Label htmlFor="inTimeSpeed">Speed (m/s)</Label>
-                <Input id="inTimeSpeed" value={selectedReport.inTimeSpeed?.toFixed(2) || 'N/A'} readOnly />
-              </div>
-              <div>
-                <Label htmlFor="inTimeHeading">Heading (°)</Label>
-                <Input id="inTimeHeading" value={selectedReport.inTimeHeading?.toFixed(2) || 'N/A'} readOnly />
-              </div>
-              <div>
-                <Label htmlFor="inTimeAltitude">Altitude (m)</Label>
-                <Input id="inTimeAltitude" value={selectedReport.inTimeAltitude?.toFixed(2) || 'N/A'} readOnly />
               </div>
 
               {/* Out-Time Details */}
@@ -634,10 +571,21 @@ export default function SlmAttendancePage() {
               {selectedReport.outTimeImageUrl && (
                 <div className="md:col-span-2">
                   <Label htmlFor="outTimeImageUrl">Image URL</Label>
-                  <a href={selectedReport.outTimeImageUrl} target="_blank" rel="noopener noreferrer" className="block text-blue-500 hover:underline break-all">
-                    {selectedReport.outTimeImageUrl}
-                  </a>
-                  <img src={selectedReport.outTimeImageUrl} alt="Out Time" className="mt-2 max-w-full h-auto rounded-md border" />
+                  <div id="outTimeImageUrl" className="mt-2 border p-2 rounded-md bg-muted/50">
+                    <a
+                      href={selectedReport.outTimeImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline flex items-center text-sm font-medium mb-2"
+                    >
+                      View Original Image <ExternalLink className="h-4 w-4 ml-1" />
+                    </a>
+                    <img
+                      src={selectedReport.outTimeImageUrl}
+                      alt="Out Time"
+                      className="w-full h-auto rounded-md border"
+                    />
+                  </div>
                 </div>
               )}
               <div>

@@ -2,33 +2,22 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-// Removed: import { useRouter } from 'next/navigation'; - Replaced with window.location
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Search, Loader2 } from 'lucide-react';
 
-// Import the reusable DataTable (using aliased path as requested)
+// Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
-// Import the schema for this page (using aliased path as requested)
 import { masonsOnMeetingsSchema } from '@/lib/shared-zod-schema';
 
-// UI Components for Filtering/Pagination (using aliased paths as requested)
+// UI Components for Filtering
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
-import { Search, Loader2 } from 'lucide-react';
-import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
+
 // API Endpoints
 const MASON_ON_MEETINGS_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/masonOnMeetings`;
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`; 
@@ -44,12 +33,12 @@ interface RolesResponse {
 
 // Type for data coming from the API (based on schema + assumed joins)
 type ApiMasonOnMeeting = z.infer<typeof masonsOnMeetingsSchema> & {
-    masonName: string;    // Assuming API provides (from masonId)
-    meetingType: string;  // Assuming API provides (from meetingId)
-    salesmanName: string; // Assuming API provides (from mason's user)
-    role: string;         // Assuming API provides (from mason's user)
-    area: string;         // Assuming API provides (from mason's user)
-    region: string;       // Assuming API provides (from mason's user)
+    masonName: string;
+    meetingType: string;
+    salesmanName: string;
+    role: string;
+    area: string;
+    region: string;
 };
 
 // Type for data used in the table (must include a unique `id`)
@@ -96,7 +85,7 @@ const renderSelectFilter = (
 );
 
 /**
- * Formats an ISO date string to a more readable format (e.g., "Jan 1, 2024")
+ * Formats an ISO date string to a more readable format (e.g., "Jan 1, 2024, 10:30 PM")
  */
 const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return 'N/A';
@@ -116,18 +105,15 @@ const formatDate = (dateString: string | null | undefined) => {
 // --- MAIN COMPONENT ---
 
 export default function MasonOnMeetingsPage() {
-  // Removed: const router = useRouter();
-  // Use the new TableMasonOnMeeting type for state
-  const [masonOnMeetings, setMasonOnMeetings] = React.useState<TableMasonOnMeeting[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [masonOnMeetings, setMasonOnMeetings] = useState<TableMasonOnMeeting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // --- Filter States ---
-  const [searchQuery, setSearchQuery] = useState(''); // Mason Name
-  const [roleFilter, setRoleFilter] = useState('all'); // User Role
-  const [areaFilter, setAreaFilter] = useState('all'); // User Area
-  const [regionFilter, setRegionFilter] = useState('all'); // User Region
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [areaFilter, setAreaFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
 
   // --- Filter Options States ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
@@ -146,7 +132,7 @@ export default function MasonOnMeetingsPage() {
   /**
    * Fetches the main Mason on Meetings data.
    */
-  const fetchMasonOnMeetings = React.useCallback(async () => {
+  const fetchMasonOnMeetings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -164,7 +150,6 @@ export default function MasonOnMeetingsPage() {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      // Data from API matches ApiMasonOnMeeting
       const data: ApiMasonOnMeeting[] = await response.json();
       
       // Map data to create a unique `id` for the table
@@ -173,7 +158,7 @@ export default function MasonOnMeetingsPage() {
         id: `${record.masonId}-${record.meetingId}` // Create a unique composite ID
       }));
 
-      setMasonOnMeetings(tableData); // Set state with table-ready data
+      setMasonOnMeetings(tableData);
       toast.success("Mason/Meeting records loaded successfully!");
     } catch (error: any) {
       console.error("Failed to fetch Mason/Meeting records:", error);
@@ -232,31 +217,29 @@ export default function MasonOnMeetingsPage() {
   }, []);
 
   // Initial data loads for reports and filter options
-  React.useEffect(() => {
+  useEffect(() => {
     fetchMasonOnMeetings();
     fetchLocations();
     fetchRoles();
   }, [fetchMasonOnMeetings, fetchLocations, fetchRoles]);
 
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic (No Manual Paging) ---
   const filteredMeetings = useMemo(() => {
-    setCurrentPage(1); // Reset page on filter change
-    
     return masonOnMeetings.filter((record) => {
-      // 1. Mason Name Search (from assumed joined `masonName` field)
+      // 1. Mason Name Search
       const nameMatch = !searchQuery ||
         record.masonName.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // 2. Role Filter (from assumed joined `role` field)
+      // 2. Role Filter
       const roleMatch = roleFilter === 'all' || 
         record.role?.toLowerCase() === roleFilter.toLowerCase(); 
 
-      // 3. Area Filter (from assumed joined `area` field)
+      // 3. Area Filter
       const areaMatch = areaFilter === 'all' || 
         record.area?.toLowerCase() === areaFilter.toLowerCase(); 
 
-      // 4. Region Filter (from assumed joined `region` field)
+      // 4. Region Filter
       const regionMatch = regionFilter === 'all' || 
         record.region?.toLowerCase() === regionFilter.toLowerCase();
       
@@ -265,18 +248,7 @@ export default function MasonOnMeetingsPage() {
     });
   }, [masonOnMeetings, searchQuery, roleFilter, areaFilter, regionFilter]);
 
-
-  const totalPages = Math.ceil(filteredMeetings.length / ITEMS_PER_PAGE);
-  // Slice the filtered data for the current page
-  const currentMeetings = filteredMeetings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-  
-
-  // --- 3. Define Columns for Mason on Meetings DataTable ---
-  // Use the new TableMasonOnMeeting type for ColumnDef
+  // --- Define Columns for Mason on Meetings DataTable ---
   const masonOnMeetingColumns: ColumnDef<TableMasonOnMeeting>[] = [
     { accessorKey: "masonName", header: "Mason Name" },
     { accessorKey: "meetingType", header: "Meeting Type" },
@@ -288,22 +260,26 @@ export default function MasonOnMeetingsPage() {
     { accessorKey: "salesmanName", header: "Associated User" },
     { accessorKey: "role", header: "User Role" },
     { accessorKey: "area", header: "Area" },
-    { accessorKey: "region", header: "Region" },
+    { accessorKey: "region", header: "Region(Zone)" },
   ];
 
-  // Use the new TableMasonOnMeeting type for the handler
   const handleMasonOnMeetingOrderChange = (newOrder: TableMasonOnMeeting[]) => {
-    console.log("New mason-on-meeting order:", newOrder.map(r => r.id)); // Use the new composite id
+    console.log("New mason-on-meeting order:", newOrder.map(r => r.id));
   };
 
-  if (isLoading) return <div className="flex justify-center items-center min-h-screen">Loading mason/meeting records...</div>;
-
-  if (error) return (
-    <div className="text-center text-red-500 min-h-screen pt-10">
-      Error: {error}
-      <Button onClick={fetchMasonOnMeetings} className="ml-4">Retry</Button>
-    </div>
-  );
+  // --- Loading / Error Gates ---
+  if (isLoading || isLoadingLocations || isLoadingRoles) {
+      return <div className="flex justify-center items-center min-h-screen">Loading mason/meeting records...</div>;
+  }
+  
+  if (error || locationError || roleError) {
+      return (
+          <div className="text-center text-red-500 min-h-screen pt-10">
+              Error: {error || locationError || roleError}
+              <Button onClick={fetchMasonOnMeetings} className="ml-4">Retry</Button>
+          </div>
+      );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -338,23 +314,23 @@ export default function MasonOnMeetingsPage() {
             isLoadingRoles
           )}
 
-          {/* 3. Area Filter (Commented out to match sample) */}
-          {/* {renderSelectFilter(
+          {/* 3. Area Filter */}
+          {renderSelectFilter(
             'Area', 
             areaFilter, 
             (v) => { setAreaFilter(v); }, 
             availableAreas, 
             isLoadingLocations
-          )} */}
+          )}
 
-          {/* 4. Region Filter (Commented out to match sample) */}
-          {/* {renderSelectFilter(
+          {/* 4. Region Filter */}
+          {renderSelectFilter(
             'Region', 
             regionFilter, 
             (v) => { setRegionFilter(v); }, 
             availableRegions, 
             isLoadingLocations
-          )} */}
+          )}
           
           {/* Display filter option errors if any */}
           {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
@@ -367,45 +343,12 @@ export default function MasonOnMeetingsPage() {
           {filteredMeetings.length === 0 ? (
             <div className="text-center text-gray-500 py-8">No mason/meeting records found matching the selected filters.</div>
           ) : (
-            <>
-              <DataTableReusable
-                columns={masonOnMeetingColumns}
-                data={currentMeetings} // Use filtered and paginated data
-                enableRowDragging={false} 
-                onRowOrderChange={handleMasonOnMeetingOrderChange}
-              />
-              
-              {/* --- Pagination --- */}
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(currentPage - 1)} 
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(currentPage + 1)} 
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-              {/* --- End Pagination --- */}
-            </>
+            <DataTableReusable
+              columns={masonOnMeetingColumns}
+              data={filteredMeetings}
+              enableRowDragging={false} 
+              onRowOrderChange={handleMasonOnMeetingOrderChange}
+            />
           )}
         </div>
       </div>

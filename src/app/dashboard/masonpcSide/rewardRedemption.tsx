@@ -1,34 +1,21 @@
 // src/app/dashboard/masonpcSide/rewardsRedemption.tsx
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import { Search, Loader2, IndianRupee, Package, CheckCircle, XCircle } from 'lucide-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 
-// UI Components for Filtering/Pagination
+// UI Components for Filtering
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
-import { BASE_URL } from '@/lib/Reusable-constants';
-// Assuming cn utility exists for conditional class merging
-// import { cn } from '@/lib/utils'; // Not importing due to path issue, using direct classes
+// import { BASE_URL } from '@/lib/Reusable-constants'; // Keep if needed elsewhere
 
-// --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
 // API Endpoint
 const REDEMPTION_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/rewards-redemption`;
 
@@ -135,22 +122,20 @@ const getStatusBadgeProps = (status: string) => {
 // --- MAIN COMPONENT ---
 
 export default function RewardsRedemptionPage() {
-  const [redemptionRecords, setRedemptionRecords] = React.useState<RedemptionRecord[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [redemptionRecords, setRedemptionRecords] = useState<RedemptionRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState(''); // Mason Name search
   const [statusFilter, setStatusFilter] = useState('all'); // Redemption Status filter
-  const [currentPage, setCurrentPage] = useState(1);
-
 
   // --- Data Fetching Function ---
 
   /**
    * Fetches the main Rewards Redemption data.
    */
-  const fetchRedemptionRecords = React.useCallback(async () => {
+  const fetchRedemptionRecords = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -181,14 +166,14 @@ export default function RewardsRedemptionPage() {
   }, []); 
 
   // Initial data load
-  React.useEffect(() => {
+  useEffect(() => {
     fetchRedemptionRecords();
   }, [fetchRedemptionRecords]);
 
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic ---
   const filteredRecords = useMemo(() => {
-    setCurrentPage(1); // Reset page on filter change
+    // ⚠️ Removed manual reset of currentPage state
     
     return redemptionRecords.filter((record) => {
       // 1. Mason Name Search
@@ -199,22 +184,11 @@ export default function RewardsRedemptionPage() {
       const statusMatch = statusFilter === 'all' || 
         record.status.toLowerCase() === statusFilter.toLowerCase(); 
 
-      // Combine all conditions
       return nameMatch && statusMatch;
     });
   }, [redemptionRecords, searchQuery, statusFilter]);
 
-
-  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
-  // Slice the filtered data for the current page
-  const currentRecords = filteredRecords.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-  
-
-  // --- 3. Define Columns for Rewards Redemption DataTable ---
+  // --- Define Columns for Rewards Redemption DataTable (unchanged) ---
   const redemptionColumns: ColumnDef<RedemptionRecord>[] = [
     { 
         accessorKey: "createdAt", 
@@ -280,6 +254,7 @@ export default function RewardsRedemptionPage() {
     console.log("New Redemption order:", newOrder.map(r => r.id));
   };
 
+  // --- Loading / Error Gates ---
   if (isLoading) return (
     <div className="flex justify-center items-center min-h-screen">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -334,45 +309,13 @@ export default function RewardsRedemptionPage() {
           {filteredRecords.length === 0 ? (
             <div className="text-center text-gray-500 py-8">No Rewards Redemption records found matching the selected filters.</div>
           ) : (
-            <>
-              <DataTableReusable
-                columns={redemptionColumns}
-                data={currentRecords} // Use filtered and paginated data
-                enableRowDragging={false} 
-                onRowOrderChange={handleRedemptionOrderChange}
-              />
-              
-              {/* --- Pagination --- */}
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(currentPage - 1)} 
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(currentPage + 1)} 
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-              {/* --- End Pagination --- */}
-            </>
+            <DataTableReusable
+              columns={redemptionColumns}
+              data={filteredRecords} 
+              enableRowDragging={false} 
+              onRowOrderChange={handleRedemptionOrderChange}
+            />
+            
           )}
         </div>
       </div>

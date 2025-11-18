@@ -133,7 +133,7 @@ export default function ListDealersPage() {
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'type', header: 'Type' },
     { accessorKey: 'parentDealerName', header: 'Parent Dealer', cell: info => info.getValue() || '-' },
-    { accessorKey: 'region', header: 'Region' },
+    { accessorKey: 'region', header: 'Region(Zone)' },
     { accessorKey: 'area', header: 'Area' },
     { accessorKey: 'nameOfFirm', header: 'Firm Name' },
     { accessorKey: 'underSalesPromoterName', header: 'SP Name' },
@@ -194,7 +194,7 @@ export default function ListDealersPage() {
               <SelectValue placeholder="Filter by Region" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
+              <SelectItem value="all">All Regions(Zones)</SelectItem>
               {(locations.regions || []).filter(Boolean).sort().map(region => (
                 <SelectItem key={region} value={region}>{region}</SelectItem>
               ))}

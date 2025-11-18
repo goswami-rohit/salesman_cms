@@ -5,21 +5,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { z } from 'zod';
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
-
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Loader2 } from 'lucide-react';
 import { dealerScoreSchema } from '@/lib/shared-zod-schema';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 type DealerScore = z.infer<typeof dealerScoreSchema>;
 
@@ -94,10 +85,6 @@ export default function DealerScores() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 10;
-
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [areaFilter, setAreaFilter] = useState('all');
@@ -113,7 +100,7 @@ export default function DealerScores() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [typeError, setTypeError] = useState<string | null>(null);
 
-  // Fetch dealer scores
+  // Fetch dealer scores (KEPT)
   const fetchScores = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -121,7 +108,12 @@ export default function DealerScores() {
       const res = await fetch(`/api/dashboardPagesAPI/scores-ratings?type=dealer`);
       if (!res.ok) throw new Error('Failed to fetch dealer scores');
       const raw = await res.json();
-      const validated = z.array(dealerScoreSchema).parse(raw);
+      // Ensure data has a UniqueIdentifier 'id' for DataTableReusable
+      const validated = z.array(dealerScoreSchema).parse(raw).map(d => ({
+        ...d,
+        id: (d as any).id?.toString() || d.dealerName, // Assuming 'id' exists or using dealerName as fallback ID
+      })) as DealerScore[];
+
       setData(validated);
     } catch (err: any) {
       console.error('Fetching error:', err);
@@ -132,7 +124,7 @@ export default function DealerScores() {
     }
   }, []);
 
-  // Fetch locations (areas/regions) from your dealer-locations endpoint
+  // Fetch locations (KEPT)
   const fetchLocations = useCallback(async () => {
     setIsLoadingLocations(true);
     setLocationError(null);
@@ -152,7 +144,7 @@ export default function DealerScores() {
     }
   }, []);
 
-  // Fetch dealer types
+  // Fetch dealer types (KEPT)
   const fetchTypes = useCallback(async () => {
     setIsLoadingTypes(true);
     setTypeError(null);
@@ -177,10 +169,7 @@ export default function DealerScores() {
     fetchTypes();
   }, [fetchScores, fetchLocations, fetchTypes]);
 
-  // Filtering logic: defensive checks so we don't explode if the score object lacks region/area/type
   const filteredData = useMemo(() => {
-    setCurrentPage(1); // when filters change, return to page 1
-
     const q = (searchQuery || '').toLowerCase().trim();
 
     return data.filter(d => {
@@ -210,18 +199,6 @@ export default function DealerScores() {
     });
   }, [data, searchQuery, areaFilter, regionFilter, typeFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentScores = filteredData.slice(startIndex, startIndex + itemsPerPage);
-
-  // Reset page when filters or search change (stable deps)
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, areaFilter, regionFilter, typeFilter]);
-
-  const handlePageChange = (page: number) => {
-    if (page > 0 && page <= totalPages) setCurrentPage(page);
-  };
 
   return (
     <>
@@ -242,7 +219,8 @@ export default function DealerScores() {
                   placeholder="Dealer name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-9 input bg-input rounded-md w-full"
+                  // Tailwind classes for input need to be checked/adjusted based on your CSS setup
+                  className="pl-8 h-9 input bg-input rounded-md w-full border border-input/30" 
                 />
               </div>
             </div>
@@ -275,39 +253,10 @@ export default function DealerScores() {
             <>
               <DataTableReusable
                 columns={columns}
-                data={currentScores}
+                data={filteredData}
                 enableRowDragging={false}
                 onRowOrderChange={() => { }}
               />
-
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                    />
-                  </PaginationItem>
-
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </CardContent>

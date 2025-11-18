@@ -15,14 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge'; // For status badges
 import { Input } from '@/components/ui/input'; // For search input
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from "@/components/ui/pagination"; // For pagination
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Search, Loader2 } from 'lucide-react';
@@ -31,14 +23,9 @@ import { IconCalendar } from '@tabler/icons-react';
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { salesmanLeaveApplicationSchema } from '@/lib/shared-zod-schema';
-import { cn } from '@/lib/utils';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
-// IMPORTANT: do NOT augment the z.infer type with role/area/region — those fields are NOT part of the leave schema.
-// We'll still fetch available roles/areas/regions from the endpoints and compare at runtime (safely).
 type SalesmanLeaveApplication = z.infer<typeof salesmanLeaveApplicationSchema>;
-
-const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 // --- API Endpoints and Types for Filters ---
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
@@ -52,38 +39,38 @@ interface RolesResponse {
   roles: string[];
 }
 
-// Helper function to render the Select filter component
-const renderSelectFilter = (
-  label: string,
-  value: string,
-  onValueChange: (v: string) => void,
-  options: string[],
-  isLoading: boolean = false
-) => (
-  <div className="flex flex-col space-y-1 w-full sm:w-[150px] min-w-[120px]">
-    <label className="text-sm font-medium text-muted-foreground">{label}</label>
-    <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
-      <SelectTrigger className="h-9">
-        {isLoading ? (
-          <div className="flex flex-row items-center space-x-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-muted-foreground">Loading...</span>
-          </div>
-        ) : (
-          <SelectValue placeholder={`Select ${label}`} />
-        )}
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All {label}s</SelectItem>
-        {options.map(option => (
-          <SelectItem key={option} value={option}>
-            {option}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-);
+// Helper function to render the Select filter component - KEPT FOR REFERENCE, but not used in final JSX
+// const renderSelectFilter = (
+//   label: string,
+//   value: string,
+//   onValueChange: (v: string) => void,
+//   options: string[],
+//   isLoading: boolean = false
+// ) => (
+//   <div className="flex flex-col space-y-1 w-full sm:w-[150px] min-w-[120px]">
+//     <label className="text-sm font-medium text-muted-foreground">{label}</label>
+//     <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
+//       <SelectTrigger className="h-9">
+//         {isLoading ? (
+//           <div className="flex flex-row items-center space-x-2">
+//             <Loader2 className="h-4 w-4 animate-spin" />
+//             <span className="text-muted-foreground">Loading...</span>
+//           </div>
+//         ) : (
+//           <SelectValue placeholder={`Select ${label}`} />
+//         )}
+//       </SelectTrigger>
+//       <SelectContent>
+//         <SelectItem value="all">All {label}s</SelectItem>
+//         {options.map(option => (
+//           <SelectItem key={option} value={option}>
+//             {option}
+//           </SelectItem>
+//         ))}
+//       </SelectContent>
+//     </Select>
+//   </div>
+// );
 
 
 export default function SlmLeavesPage() {
@@ -94,7 +81,7 @@ export default function SlmLeavesPage() {
 
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [currentPage, setCurrentPage] = React.useState(1);
+  // currentPage state REMOVED as DataTableReusable manages it.
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   const [roleFilter, setRoleFilter] = React.useState('all');
   const [areaFilter, setAreaFilter] = React.useState('all');
@@ -184,7 +171,9 @@ export default function SlmLeavesPage() {
       const data: SalesmanLeaveApplication[] = await response.json();
       const validatedData = data.map((item) => {
         try {
-          return salesmanLeaveApplicationSchema.parse(item) as SalesmanLeaveApplication;
+          // Use id as UniqueIdentifier for DataTableReusable
+          const validated = salesmanLeaveApplicationSchema.parse(item);
+          return { ...validated, id: validated.id.toString() } as SalesmanLeaveApplication; 
         } catch (e) {
           console.error("Validation error for item:", item, e);
           return null;
@@ -214,7 +203,6 @@ export default function SlmLeavesPage() {
   // --- Handle Leave Approval/Rejection ---
   const handleLeaveAction = async (id: UniqueIdentifier, newStatus: "Approved" | "Rejected", remarks: string | null = null) => {
     try {
-      setLoading(true);
       const response = await fetch(apiURI, {
         method: 'PATCH',
         headers: {
@@ -241,16 +229,14 @@ export default function SlmLeavesPage() {
     } catch (e: any) {
       console.error("Failed to update leave application:", e);
       toast.error(e.message || "Failed to update leave application.");
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
-  // --- Filtering and Pagination Logic ---
-  const filteredAndPaginatedData = React.useMemo(() => {
+  // --- Filtering Logic
+  const filteredData = React.useMemo(() => {
     const lowerCaseSearch = (searchQuery || '').toLowerCase();
 
-    const filteredApplications = leaveApplications.filter((app) => {
+    return leaveApplications.filter((app) => {
       // 1. Search Filter (Salesman, Leave Type, Reason, Status, Admin Remarks, Start/End dates)
       const matchesSearch =
         !lowerCaseSearch ||
@@ -277,36 +263,7 @@ export default function SlmLeavesPage() {
 
       return matchesSearch && roleMatch && areaMatch && regionMatch;
     });
-
-    const totalPages = Math.max(1, Math.ceil(filteredApplications.length / ITEMS_PER_PAGE));
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const paginatedApplications = filteredApplications.slice(
-      startIndex,
-      startIndex + ITEMS_PER_PAGE
-    );
-
-    return { filteredApplications, totalPages, paginatedApplications };
-  }, [leaveApplications, searchQuery, roleFilter, areaFilter, regionFilter, currentPage]);
-
-  const { filteredApplications: allFilteredApplications, totalPages, paginatedApplications } = filteredAndPaginatedData;
-
-  // Reset page to 1 when filters/search/dateRange change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    searchQuery,
-    roleFilter,
-    areaFilter,
-    regionFilter,
-    // stringify dateRange so the dep is a primitive and stable in shape
-    dateRange ? `${dateRange.from?.toISOString() ?? ''}|${dateRange.to?.toISOString() ?? ''}` : ''
-  ]);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
+  }, [leaveApplications, searchQuery, roleFilter, areaFilter, regionFilter]);
 
   // --- Define Columns for Salesman Leave Applications DataTable ---
   const salesmanLeaveColumns: ColumnDef<SalesmanLeaveApplication>[] = [
@@ -361,6 +318,7 @@ export default function SlmLeavesPage() {
 
         const onReject = async () => {
           const remark = window.prompt(`Reason for rejecting ${app.salesmanName}'s leave (optional):`, '');
+          // Pass null if user cancels the prompt (remark === null), otherwise pass the string (which might be empty)
           await handleLeaveAction(app.id, 'Rejected', remark === null ? null : remark);
         };
 
@@ -379,7 +337,7 @@ export default function SlmLeavesPage() {
   ];
 
   const handleSalesmanLeaveOrderChange = (newOrder: SalesmanLeaveApplication[]) => {
-    console.log("New salesman leave report order:", newOrder.map(r => (r as any).id));
+    console.log("New salesman leave report order (for draggable table):", newOrder.map(r => (r as any).id));
   };
 
   // --- Loading and Error States ---
@@ -496,7 +454,7 @@ export default function SlmLeavesPage() {
 
             {/* 5) Region */}
             <div className="flex flex-col space-y-1">
-              <label className="text-sm font-medium text-muted-foreground">Region</label>
+              <label className="text-sm font-medium text-muted-foreground">Region(Zone)</label>
               <Select value={regionFilter} onValueChange={setRegionFilter} disabled={isLoadingLocations}>
                 <SelectTrigger className="h-9">
                   {isLoadingLocations ? <span className="text-muted-foreground">Loading…</span> : <SelectValue placeholder="All Regions" />}
@@ -520,44 +478,16 @@ export default function SlmLeavesPage() {
 
         {/* Data Table Section */}
         <div className="bg-card p-6 rounded-lg border border-border">
-          {allFilteredApplications.length === 0 && !loading && !error ? (
+          {filteredData.length === 0 && !loading && !error ? (
             <div className="text-center text-gray-500 py-8">No salesman leave applications found matching the selected filters.</div>
           ) : (
             <>
               <DataTableReusable
                 columns={salesmanLeaveColumns}
-                data={paginatedApplications}
+                data={filteredData} 
                 enableRowDragging={false}
                 onRowOrderChange={handleSalesmanLeaveOrderChange}
               />
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </div>

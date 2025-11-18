@@ -1,7 +1,7 @@
 // src/app/dashboard/reports/competitionReports.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -11,14 +11,6 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from "@/components/ui/pagination";
 import {
   Dialog,
   DialogContent,
@@ -31,19 +23,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { competitionReportSchema } from '@/lib/shared-zod-schema'
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 // Infer the TypeScript type from the Zod schema
 type CompetitionReport = z.infer<typeof competitionReportSchema>;
-
-const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 export default function CompetitionReportsPage() {
   const [reports, setReports] = useState<CompetitionReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<CompetitionReport | null>(null);
 
@@ -58,10 +47,12 @@ export default function CompetitionReportsPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data: CompetitionReport[] = await response.json();
-      // Validate each item against the schema
+      // Validate and ensure the required 'id' property exists for DataTableReusable
       const validatedData = data.map((item) => {
         try {
-          return competitionReportSchema.parse(item);
+          const validated = competitionReportSchema.parse(item);
+          // Assuming the schema includes an 'id' or we can use a unique field like 'date' + 'salesmanName' as fallback ID
+          return { ...validated, id: (validated as any).id?.toString() || `${validated.salesmanName}-${validated.date}` }; 
         } catch (e) {
           console.error("Validation error for item:", item, e);
           toast.error("Invalid report data received from server.");
@@ -84,34 +75,26 @@ export default function CompetitionReportsPage() {
   }, [fetchReports]);
 
 
-  // --- Filtering and Pagination Logic ---
-  const filteredReports = reports.filter((report) => {
-    const matchesSearch =
-      report.salesmanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.remarks.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  // --- Filtering Logic ---
+  const filteredReports = useMemo(() => {
+    const q = searchQuery.toLowerCase();
 
-  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentReports = filteredReports.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
+    return reports.filter((report) => {
+      const matchesSearch =
+        report.salesmanName.toLowerCase().includes(q) ||
+        report.brandName.toLowerCase().includes(q) ||
+        report.remarks.toLowerCase().includes(q);
+      return matchesSearch;
+    });
+  }, [reports, searchQuery]);
 
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
 
   const handleViewReport = (report: CompetitionReport) => {
     setSelectedReport(report);
     setIsViewModalOpen(true);
   };
 
-  // --- 3. Define Columns for Competition Report DataTable ---
+  // --- 3. Define Columns for Competition Report DataTable (KEPT) ---
   const competitionReportColumns: ColumnDef<CompetitionReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
     { accessorKey: "brandName", header: "Competitor Brand" },
@@ -190,39 +173,10 @@ export default function CompetitionReportsPage() {
             <>
               <DataTableReusable
                 columns={competitionReportColumns}
-                data={currentReports} // Pass the paginated & filtered data
-                //filterColumnAccessorKey="brandName"      
+                data={filteredReports}    
                 enableRowDragging={false}               
                 onRowOrderChange={() => {}}
               />
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </div>
@@ -268,6 +222,7 @@ export default function CompetitionReportsPage() {
               </div>
               <div>
                 <Label htmlFor="avgSchemeCost">Avg Scheme Cost (₹)</Label>
+                {/* Ensure avgSchemeCost is a number before toFixed if necessary, assuming Zod handles this */}
                 <Input id="avgSchemeCost" value={selectedReport.avgSchemeCost.toFixed(2)} readOnly />
               </div>
               <div className="col-span-1">

@@ -7,33 +7,21 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from "@/components/ui/pagination";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { permanentJourneyPlanSchema } from '@/lib/shared-zod-schema';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 // Infer the TypeScript type from the Zod schema
 type PermanentJourneyPlan = z.infer<typeof permanentJourneyPlanSchema>;
-
-const ITEMS_PER_PAGE = 10; // Define items per page for pagination
 
 export default function PJPListPage() {
   const [pjps, setPjps] = React.useState<PermanentJourneyPlan[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [currentPage, setCurrentPage] = React.useState(1);
-
-  // NEW: filters for role and status
   // filters
   const [selectedRoleFilter, setSelectedRoleFilter] = React.useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = React.useState<string>('all');
@@ -80,7 +68,9 @@ export default function PJPListPage() {
       const data: PermanentJourneyPlan[] = await response.json();
       const validatedData = data.map((item) => {
         try {
-          return permanentJourneyPlanSchema.parse(item);
+          const validated = permanentJourneyPlanSchema.parse(item);
+          // Ensure 'id' is available and a string for DataTableReusable
+          return { ...validated, id: validated.id.toString() };
         } catch (e) {
           console.error("Validation error for item:", item, e);
           toast.error("Invalid PJP data received from server.");
@@ -127,7 +117,7 @@ export default function PJPListPage() {
     }
   };
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic (PAGINATION REMOVED) ---
   const filteredPjps = React.useMemo(() => {
     return pjps.filter((pjp) => {
       const matchesSearch =
@@ -143,20 +133,7 @@ export default function PJPListPage() {
       return matchesSearch && matchesRole && matchesStatus && matchesSalesman;
     });
   }, [pjps, searchQuery, selectedRoleFilter, selectedStatusFilter, selectedSalesmanFilter,]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredPjps.length / ITEMS_PER_PAGE));
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentPjps = filteredPjps.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
   React.useEffect(() => {
-    // Reset page to 1 when filters/search change
-    setCurrentPage(1);
   }, [searchQuery, selectedRoleFilter, selectedStatusFilter, selectedSalesmanFilter,]);
 
   // --- 3. Define Columns for Permanent Journey Plan DataTable ---
@@ -298,38 +275,10 @@ export default function PJPListPage() {
             <>
               <DataTableReusable
                 columns={permanentJourneyPlanColumns}
-                data={currentPjps}
+                data={filteredPjps} 
                 enableRowDragging={false}
                 onRowOrderChange={handlePermanentJourneyPlanOrderChange}
               />
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </>
           )}
         </div>

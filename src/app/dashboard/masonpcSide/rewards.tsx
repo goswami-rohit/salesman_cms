@@ -1,35 +1,22 @@
 // src/app/dashboard/masonpcSide/rewards.tsx
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import { Search, Loader2, IndianRupee, CheckCircle2, XCircle, Ban, TrendingUp } from 'lucide-react';
 
-// NOTE: Using the aliased path. If this fails again, a relative path must be provided by the user.
+// Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 
-// UI Components for Filtering/Pagination
+// UI Components for Filtering
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
-// Assuming a Progress component exists for stock level
 import { Progress } from '@/components/ui/progress'; 
-import { BASE_URL } from '@/lib/Reusable-constants';
+// import { BASE_URL } from '@/lib/Reusable-constants'; // Keep if needed elsewhere
 
-
-// --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
 // API Endpoints
 const REWARDS_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/rewards`;
 const CATEGORIES_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/reward-categories`;
@@ -57,7 +44,6 @@ type CategoryOption = {
 
 /**
  * Helper function to render the Select filter component.
- * Note: This accepts CategoryOption[] but is also used for the static statusOptions (which are mapped to CategoryOption type before calling).
  */
 const renderSelectFilter = (
   label: string,
@@ -125,8 +111,12 @@ const getStatusBadgeProps = (isActive: boolean, stock: number) => {
             text: 'Out of Stock'
         };
     }
+    // Calculate stock percentage robustly
+    const total = stock + (stock > 0 ? 1 : 0); // Use totalAvailableQuantity if reliable, otherwise this estimate
+    const safeTotal = total > 0 ? total : 1; 
+    const stockPercentage = stock / safeTotal;
+    
     // Check if stock is low (e.g., less than 20% of total)
-    const stockPercentage = stock / (stock + (stock > 0 ? 1 : 0)); // Avoid division by zero, approximate total if not provided.
     if (stock > 0 && stockPercentage < 0.2) {
         return {
             icon: TrendingUp, // Using an alternative icon for low stock
@@ -145,10 +135,10 @@ const getStatusBadgeProps = (isActive: boolean, stock: number) => {
 // --- MAIN COMPONENT ---
 
 export default function RewardsPage() {
-  const [rewardRecords, setRewardRecords] = React.useState<RewardRecord[]>([]);
+  const [rewardRecords, setRewardRecords] = useState<RewardRecord[]>([]);
   const [availableCategories, setAvailableCategories] = useState<CategoryOption[]>([]);
   
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -156,16 +146,15 @@ export default function RewardsPage() {
   const [searchQuery, setSearchQuery] = useState(''); // Reward Name search
   const [categoryFilter, setCategoryFilter] = useState('all'); // Category filter
   const [statusFilter, setStatusFilter] = useState('all'); // Status filter (Active/Inactive/Out of Stock)
-  const [currentPage, setCurrentPage] = useState(1);
   const statusOptions = ['Active', 'Inactive', 'Out of Stock', 'Low Stock'];
 
 
-  // --- Data Fetching Functions ---
+  // --- Data Fetching Functions (unchanged) ---
 
   /**
    * Fetches the main Rewards data.
    */
-  const fetchRewardRecords = React.useCallback(async () => {
+  const fetchRewardRecords = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -216,15 +205,14 @@ export default function RewardsPage() {
   }, []);
 
   // Initial data loads
-  React.useEffect(() => {
+  useEffect(() => {
     fetchRewardRecords();
     fetchCategories();
   }, [fetchRewardRecords, fetchCategories]);
 
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic ---
   const filteredRecords = useMemo(() => {
-    setCurrentPage(1); // Reset page on filter change
     
     return rewardRecords.filter((record) => {
       // 1. Reward Name Search
@@ -245,17 +233,7 @@ export default function RewardsPage() {
     });
   }, [rewardRecords, searchQuery, categoryFilter, statusFilter]);
 
-
-  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
-  // Slice the filtered data for the current page
-  const currentRecords = filteredRecords.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-  
-
-  // --- 3. Define Columns for Rewards DataTable ---
+  // --- Define Columns for Rewards DataTable (stock cell slightly adjusted) ---
   const rewardsColumns: ColumnDef<RewardRecord>[] = [
     { 
         accessorKey: "name", 
@@ -302,13 +280,12 @@ export default function RewardsPage() {
             barColor = 'bg-red-500';
         }
         
-        // FIX: Remove indicatorClassName and append barColor to className
         return (
           <div className="flex flex-col space-y-1 w-[120px]">
             <p className="text-sm font-mono text-right">{stock} / {totalAvailableQuantity}</p>
             <Progress 
                 value={progressValue} 
-                className={`h-2 ${barColor}`} // Apply barColor here for the indicator background
+                className={`h-2 ${barColor}`} // Apply barColor here
             />
           </div>
         );
@@ -346,6 +323,7 @@ export default function RewardsPage() {
     console.log("New Rewards order:", newOrder.map(r => r.id));
   };
 
+  // --- Loading / Error Gates ---
   if (isLoading) return (
     <div className="flex justify-center items-center min-h-screen">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -414,45 +392,12 @@ export default function RewardsPage() {
           {filteredRecords.length === 0 ? (
             <div className="text-center text-gray-500 py-8">No Rewards found matching the selected filters.</div>
           ) : (
-            <>
-              <DataTableReusable
-                columns={rewardsColumns}
-                data={currentRecords} // Use filtered and paginated data
-                enableRowDragging={false} 
-                onRowOrderChange={handleRewardsOrderChange}
-              />
-              
-              {/* --- Pagination --- */}
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(currentPage - 1)} 
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(currentPage + 1)} 
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-              {/* --- End Pagination --- */}
-            </>
+            <DataTableReusable
+              columns={rewardsColumns}
+              data={filteredRecords} 
+              enableRowDragging={false} 
+              onRowOrderChange={handleRewardsOrderChange}
+            />
           )}
         </div>
       </div>

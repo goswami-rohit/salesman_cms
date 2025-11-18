@@ -1,6 +1,7 @@
 // src/app/dashboard/reports/tabsLoader.tsx
 'use client';
 
+import * as React from 'react'; // Import React for useEffect and useState
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CompetitionReportsPage from './competitionReports';
 import SalesOrdersTable from './salesOrders';
@@ -29,16 +30,38 @@ export function ReportsTabs({
   canSeeSalesVdvr,
 }: ReportsTabsProps) {
 
-  // The logic for the default tab now lives here
-  let defaultTab = "";
-  if (canSeeDVR) defaultTab = "dailyVisitReport";
-  else if (canSeeTVR) defaultTab = "technicalVisitReport";
-  else if (canSeeSalesOrders) defaultTab = "salesOrderReport";
-  else if (canSeeCompetition) defaultTab = "competitionReport";
-  else if (canSeeDvrVpjp) defaultTab = "dvrVpjp";
-  else if (canSeeSalesVdvr) defaultTab = "salesVdvr";
+  // 1. State to track hydration completion
+  const [isClient, setIsClient] = React.useState(false);
 
+  // 2. Set the client state after mounting
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Determine the default tab based on permissions
+  const defaultTab = React.useMemo(() => {
+    if (canSeeDVR) return "dailyVisitReport";
+    if (canSeeTVR) return "technicalVisitReport";
+    if (canSeeSalesOrders) return "salesOrderReport";
+    if (canSeeCompetition) return "competitionReport";
+    if (canSeeDvrVpjp) return "dvrVpjp";
+    if (canSeeSalesVdvr) return "salesVdvr";
+    return ""; // Should not happen if canSeeAnyReport is checked in parent
+  }, [canSeeDVR, canSeeTVR, canSeeSalesOrders, canSeeCompetition, canSeeDvrVpjp, canSeeSalesVdvr]);
+
+
+  // 3. Prevent rendering the component that generates unstable IDs during SSR
+  if (!isClient) {
+    // Render a safe, placeholder div during SSR/Hydration
+    // This allows the browser to show *something* quickly without triggering the mismatch.
+    return <div className="min-h-[300px] w-full flex items-center justify-center text-muted-foreground">
+      Loading Reports UI...
+    </div>;
+  }
+
+  // 4. Render the full component only on the client
   return (
+    // Note: We use the memoized defaultTab value
     <Tabs defaultValue={defaultTab} className="space-y-4">
       <TabsList>
         {canSeeDVR && (

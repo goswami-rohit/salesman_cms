@@ -43,11 +43,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useUserLocations } from '@/components/reusable-user-locations';
 
-// 1. Corrected Import: Using DataTableReusable as specified
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { ColumnDef } from '@tanstack/react-table';
 import { BulkInviteDialog } from './bulkInvite';
-import { BASE_URL } from '@/lib/Reusable-constants';
 
 interface User {
   id: number;
@@ -56,8 +54,8 @@ interface User {
   lastName: string | null;
   phoneNumber: string | null;
   role: string;
-  region: string | null; // Added new field
-  area: string | null;   // Added new field
+  region: string | null;
+  area: string | null;
   workosUserId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -84,7 +82,6 @@ interface Props {
   adminUser: AdminUser;
 }
 
-// Helper function moved outside component to avoid re-creation
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
     case 'president':
@@ -116,7 +113,6 @@ const isUserActive = (workosUserId: string | null) => {
   return workosUserId && !workosUserId.startsWith('pending_') && !workosUserId.startsWith('temp_');
 };
 
-
 export default function UsersManagement({ adminUser }: Props) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,7 +133,6 @@ export default function UsersManagement({ adminUser }: Props) {
     isTechnical: false,
   });
 
-  // New useEffect hook to set initial form data for user locations
   useEffect(() => {
     if (locations.regions.length > 0 && locations.areas.length > 0) {
       setFormData(prev => ({
@@ -176,11 +171,10 @@ export default function UsersManagement({ adminUser }: Props) {
     setSuccess('');
 
     try {
-      // invitation for new users is set in /api/user
       const response = await fetch(apiURI, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData) // formData now includes region and area
+        body: JSON.stringify(formData)
       });
 
       if (response.ok) {
@@ -192,7 +186,6 @@ export default function UsersManagement({ adminUser }: Props) {
         if (data.user && data.user.salesmanLoginId) {
           successMsg += ` Employee ID for mobile app: ${data.user.salesmanLoginId}. Password sent via email.`;
         }
-        // Add tech login ID to success message if it exists
         if (data.user && data.user.techLoginId) {
           successMsg += ` Technical ID for mobile app: ${data.user.techLoginId}.`;
         }
@@ -219,7 +212,7 @@ export default function UsersManagement({ adminUser }: Props) {
       const response = await fetch(`${apiURI}/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData) // formData now includes region and area
+        body: JSON.stringify(formData)
       });
 
       if (response.ok) {
@@ -250,7 +243,6 @@ export default function UsersManagement({ adminUser }: Props) {
 
       if (response.ok) {
         if (workosUserId) {
-          console.log(`Attempting to delete WorkOS user: ${workosUserId}`);
           const workosDeleteResponse = await fetch('/api/delete-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -258,11 +250,9 @@ export default function UsersManagement({ adminUser }: Props) {
           });
 
           if (workosDeleteResponse.ok) {
-            //console.log(`✅ WorkOS user ${workosUserId} deleted successfully.`);
             setSuccess('User deleted successfully.');
           } else {
             const errorData = await workosDeleteResponse.json();
-            //console.error('❌ Failed to delete user from WorkOS:', errorData.error);
             setError(`User deletion done locally. Issue in deleting from Auth Side. Contact Authenticator: ${errorData.error}`);
           }
         } else {
@@ -309,21 +299,19 @@ export default function UsersManagement({ adminUser }: Props) {
     setError('');
   };
 
-  // Custom setter for success messages
   const handleSuccess = (message: string) => {
     setError('');
     setSuccess(message);
     setTimeout(() => setSuccess(''), 5000);
   };
 
-  // Custom setter for error messages
   const handleError = (message: string) => {
     setSuccess('');
     setError(message);
     setTimeout(() => setError(''), 10000);
   };
 
-  // 2. Define Columns for the DataTable
+  // Defined columns
   const columns: ColumnDef<User>[] = useMemo(() => [
     {
       accessorKey: "id",
@@ -333,12 +321,8 @@ export default function UsersManagement({ adminUser }: Props) {
     {
       accessorKey: "fullName",
       header: "Name",
-      // Custom sorting function based on firstName and lastName
-      sortingFn: (rowA, rowB, columnId) => {
-        const nameA = `${rowA.original.firstName} ${rowA.original.lastName}`;
-        const nameB = `${rowB.original.firstName} ${rowB.original.lastName}`;
-        return nameA.localeCompare(nameB);
-      },
+      // We use an accessorFn so that "fullName" is a searchable/sortable string
+      accessorFn: row => `${row.firstName ?? ''} ${row.lastName ?? ''}`.trim(),
       cell: ({ row }) => (
         <div className="font-medium">
           {row.original.firstName} {row.original.lastName}
@@ -365,7 +349,7 @@ export default function UsersManagement({ adminUser }: Props) {
     },
     {
       accessorKey: "region",
-      header: "Region/Zone",
+      header: "Region(Zone)",
       cell: ({ row }) => row.original.region || '-',
     },
     {
@@ -416,7 +400,6 @@ export default function UsersManagement({ adminUser }: Props) {
         const user = row.original;
         return (
           <div className="flex items-center space-x-2">
-            {/* Edit Button - now just sets the user to be edited */}
             <Button
               variant="outline"
               size="sm"
@@ -425,7 +408,6 @@ export default function UsersManagement({ adminUser }: Props) {
               <Edit className="w-4 h-4" />
             </Button>
 
-            {/* Delete Dialog - Conditional Rendering (kept inline as it doesn't use parent state updates) */}
             {user.id !== adminUser.id && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -457,8 +439,7 @@ export default function UsersManagement({ adminUser }: Props) {
         );
       },
     },
-    // Removed formData from dependencies, as it's no longer used to render the dialog content here
-  ], [editingUser, loading, locations.areas, locations.regions, adminUser.id]);
+  ], [adminUser.id]);
 
 
   if (loading || locationsLoading) {
@@ -485,7 +466,6 @@ export default function UsersManagement({ adminUser }: Props) {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-foreground">User Management</h1>
@@ -494,16 +474,12 @@ export default function UsersManagement({ adminUser }: Props) {
             </p>
           </div>
           <div className="flex space-x-3">
-
-            {/* --- ADD BULK USER INVITE BUTTON --- */}
             <BulkInviteDialog
               onSuccess={handleSuccess}
               onError={handleError}
               onRefreshUsers={fetchUsers}
             />
-            {/* --- END ADD BULK USER --- */}
 
-            {/* --- ADD SINGLE USER DIALOG --- */}
             <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
               <DialogTrigger asChild>
                 <Button>
@@ -527,7 +503,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       required
                     />
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
@@ -539,7 +514,6 @@ export default function UsersManagement({ adminUser }: Props) {
                         required
                       />
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last Name</Label>
                       <Input
@@ -551,7 +525,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="phoneNumber">Phone Number</Label>
                     <Input
@@ -562,7 +535,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       placeholder="9999900000"
                     />
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
                     <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
@@ -584,7 +556,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="flex items-center space-x-2 pt-2">
                     <Checkbox
                       id="isTechnical-create"
@@ -597,8 +568,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       Check if Technical Role
                     </Label>
                   </div>
-
-                  {/* --- REGION & AREA: NOW SIDE-BY-SIDE --- */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="region">Region(Zone)</Label>
@@ -609,7 +578,6 @@ export default function UsersManagement({ adminUser }: Props) {
                         onChange={(e) => setFormData({ ...formData, region: e.target.value })}
                       />
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="area">Area</Label>
                       <Input
@@ -620,9 +588,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       />
                     </div>
                   </div>
-                  {/* --- END REGION & AREA --- */}
-
-                  {/* --- BUTTONS: MOVED INSIDE FORM --- */}
                   <div className="flex space-x-2 pt-4">
                     <Button type="submit" disabled={loading} className="flex-1">
                       {loading ? 'Creating...' : 'Create User'}
@@ -638,15 +603,11 @@ export default function UsersManagement({ adminUser }: Props) {
                       Cancel
                     </Button>
                   </div>
-                  {/* --- END BUTTONS --- */}
                 </form>
               </DialogContent>
             </Dialog>
-            {/* --- END ADD USER DIALOG --- */}
 
-            {/* --- EDIT DIALOG --- */}
             <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-              {/* Note: No DialogTrigger needed here, the button in the table cell acts as the trigger via state change */}
               <DialogContent key={editingUser?.id}>
                 <DialogHeader>
                   <DialogTitle>Edit User</DialogTitle>
@@ -664,7 +625,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       disabled
                     />
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="edit-firstName">First Name</Label>
@@ -676,7 +636,6 @@ export default function UsersManagement({ adminUser }: Props) {
                         required
                       />
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="edit-lastName">Last Name</Label>
                       <Input
@@ -688,7 +647,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="edit-phoneNumber">Phone Number</Label>
                     <Input
@@ -699,9 +657,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
-
-                  {/* Role section edit in Team Overview  */}
-
                   <div className="flex items-center space-x-2 pt-2">
                     <Checkbox
                       id="isTechnical-edit"
@@ -714,9 +669,7 @@ export default function UsersManagement({ adminUser }: Props) {
                       Check if Technical Role
                     </Label>
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Region changed from Select to Input */}
                     <div className="space-y-2">
                       <Label htmlFor="edit-region">Region(Zone)</Label>
                       <Input
@@ -726,8 +679,6 @@ export default function UsersManagement({ adminUser }: Props) {
                         placeholder="North"
                       />
                     </div>
-
-                    {/* Area changed from Select to Input */}
                     <div className="space-y-2">
                       <Label htmlFor="edit-area">Area</Label>
                       <Input
@@ -738,7 +689,6 @@ export default function UsersManagement({ adminUser }: Props) {
                       />
                     </div>
                   </div>
-
                   <div className="flex space-x-2 pt-4">
                     <Button type="submit" disabled={loading} className="flex-1">
                       {loading ? 'Updating...' : 'Update User'}
@@ -757,25 +707,21 @@ export default function UsersManagement({ adminUser }: Props) {
                 </form>
               </DialogContent>
             </Dialog>
-            {/* --- END EDIT DIALOG --- */}
           </div>
         </div>
 
-        {/* Success Message */}
         {success && (
           <Alert className="border-green-200 bg-green-800 text-blue-200">
             <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 
-        {/* Error Alert */}
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        {/* Users Table (now using DataTableReusable component) */}
         <Card>
           <CardHeader>
             <CardTitle>Team Members</CardTitle>
@@ -784,15 +730,13 @@ export default function UsersManagement({ adminUser }: Props) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* 3. Using DataTableReusable component */}
             <DataTableReusable
               data={users}
               columns={columns}
-            //filterColumn="email" // Allow filtering by email
             />
           </CardContent>
         </Card>
       </div>
-    </div >
+    </div>
   );
 }

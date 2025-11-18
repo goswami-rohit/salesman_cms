@@ -1,34 +1,22 @@
 // src/app/dashboard/masonpcSide/tsoMeetings.tsx
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Search, Loader2 } from 'lucide-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 // Import the schema for this page
 import { tsoMeetingSchema } from '@/lib/shared-zod-schema';
 
-// UI Components for Filtering/Pagination
+// UI Components for Filtering
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
-import { Search, Loader2 } from 'lucide-react';
-import { BASE_URL } from '@/lib/Reusable-constants';
-
-// --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
 // API Endpoints
 const TSO_MEETINGS_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/tso-meetings`;
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`; 
@@ -43,7 +31,6 @@ interface RolesResponse {
 }
 
 // Extend the inferred type to include the creator's info needed for filtering.
-// These are assumed to be attached to the meeting object by the API via the `createdByUserId`.
 type TsoMeeting = z.infer<typeof tsoMeetingSchema> & {
     creatorName: string; // Assuming API provides this
     role: string;        // Assuming API provides this
@@ -104,9 +91,6 @@ const formatDate = (dateString: string | null | undefined) => {
   }
 };
 
-/**
- * Formats a number as Indian Rupees (e.g., "₹10,000")
- */
 const formatCurrency = (value: number | null | undefined) => {
     if (value === null || value === undefined) return 'N/A';
     return new Intl.NumberFormat('en-IN', {
@@ -120,8 +104,8 @@ const formatCurrency = (value: number | null | undefined) => {
 
 export default function TsoMeetingsPage() {
   const router = useRouter();
-  const [tsoMeetings, setTsoMeetings] = React.useState<TsoMeeting[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [tsoMeetings, setTsoMeetings] = useState<TsoMeeting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // --- Filter States ---
@@ -129,7 +113,6 @@ export default function TsoMeetingsPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [areaFilter, setAreaFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
 
   // --- Filter Options States ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
@@ -148,7 +131,7 @@ export default function TsoMeetingsPage() {
   /**
    * Fetches the main TSO meeting data.
    */
-  const fetchTsoMeetings = React.useCallback(async () => {
+  const fetchTsoMeetings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -234,17 +217,16 @@ export default function TsoMeetingsPage() {
   }, []);
 
   // Initial data loads for reports and filter options
-  React.useEffect(() => {
+  useEffect(() => {
     fetchTsoMeetings();
     fetchLocations();
     fetchRoles();
   }, [fetchTsoMeetings, fetchLocations, fetchRoles]);
 
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic ---
   const filteredMeetings = useMemo(() => {
-    // Recalculate filtered data whenever meetings or filter states change
-    setCurrentPage(1); // Reset page on filter change
+    // ⚠️ Removed manual reset of currentPage state
     
     return tsoMeetings.filter((meeting) => {
       // 1. Creator Name Search (fuzzy match)
@@ -268,17 +250,7 @@ export default function TsoMeetingsPage() {
     });
   }, [tsoMeetings, searchQuery, roleFilter, areaFilter, regionFilter]);
 
-
-  const totalPages = Math.ceil(filteredMeetings.length / ITEMS_PER_PAGE);
-  // Slice the filtered data for the current page
-  const currentMeetings = filteredMeetings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-  
-
-  // --- 3. Define Columns for TSO Meeting DataTable ---
+  // --- Define Columns for TSO Meeting DataTable (unchanged) ---
   const tsoMeetingColumns: ColumnDef<TsoMeeting>[] = [
     { accessorKey: "creatorName", header: "Creator" },
     { accessorKey: "role", header: "Creator Role" },
@@ -300,7 +272,7 @@ export default function TsoMeetingsPage() {
       cell: ({ row }) => formatCurrency(row.original.budgetAllocated)
     },
     { accessorKey: "area", header: "Area" },
-    { accessorKey: "region", header: "Region" },
+    { accessorKey: "region", header: "Region(Zone)" },
     { 
       accessorKey: "createdAt", 
       header: "Reported At",
@@ -312,6 +284,7 @@ export default function TsoMeetingsPage() {
     console.log("New TSO meeting order:", newOrder.map(r => r.id));
   };
 
+  // --- Loading / Error Gates ---
   if (isLoading) return <div className="flex justify-center items-center min-h-screen">Loading TSO meetings...</div>;
 
   if (error) return (
@@ -354,23 +327,23 @@ export default function TsoMeetingsPage() {
             isLoadingRoles
           )}
 
-          {/* 3. Area Filter (Commented out to match sample) */}
-          {/* {renderSelectFilter(
+          {/* 3. Area Filter */}
+          {renderSelectFilter(
             'Area', 
             areaFilter, 
             (v) => { setAreaFilter(v); }, 
             availableAreas, 
             isLoadingLocations
-          )} */}
+          )}
 
-          {/* 4. Region Filter (Commented out to match sample) */}
-          {/* {renderSelectFilter(
+          {/* 4. Region Filter */}
+          {renderSelectFilter(
             'Region', 
             regionFilter, 
             (v) => { setRegionFilter(v); }, 
             availableRegions, 
             isLoadingLocations
-          )} */}
+          )}
           
           {/* Display filter option errors if any */}
           {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
@@ -383,45 +356,12 @@ export default function TsoMeetingsPage() {
           {filteredMeetings.length === 0 ? (
             <div className="text-center text-gray-500 py-8">No TSO meetings found matching the selected filters.</div>
           ) : (
-            <>
-              <DataTableReusable
-                columns={tsoMeetingColumns}
-                data={currentMeetings} // Use filtered and paginated data
-                enableRowDragging={false} 
-                onRowOrderChange={handleTsoMeetingOrderChange}
-              />
-              
-              {/* --- Pagination --- */}
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(currentPage - 1)} 
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(currentPage + 1)} 
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-              {/* --- End Pagination --- */}
-            </>
+            <DataTableReusable
+              columns={tsoMeetingColumns}
+              data={filteredMeetings} 
+              enableRowDragging={false} 
+              onRowOrderChange={handleTsoMeetingOrderChange}
+            />
           )}
         </div>
       </div>

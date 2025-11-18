@@ -6,14 +6,6 @@ import { useRouter } from 'next/navigation';
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { salesOrderSchema } from '@/lib/shared-zod-schema'
 
@@ -22,10 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Loader2 } from 'lucide-react';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
 const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
@@ -42,10 +33,6 @@ type SalesOrder = z.infer<typeof salesOrderSchema>;
 
 // Column definitions for the sales order table
 const columnHelper = createColumnHelper<SalesOrder>();
-
-// Assuming you have:
-// import { ColumnDef } from '@tanstack/react-table';
-// const columnHelper = createColumnHelper<SalesOrder>();
 
 const num = (v: number | null | undefined) =>
   new Intl.NumberFormat('en-IN').format(v ?? 0);
@@ -257,7 +244,6 @@ export const salesOrderColumns: ColumnDef<SalesOrder, any>[] = [
   }),
 ];
 
-// Helper function to render the Select filter component (reused from previous implementation)
 const renderSelectFilter = (
   label: string,
   value: string,
@@ -303,8 +289,6 @@ const SalesOrdersTable = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [areaFilter, setAreaFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = ITEMS_PER_PAGE;
 
   // --- Filter Options States ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
@@ -340,8 +324,12 @@ const SalesOrdersTable = () => {
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       const orders: SalesOrder[] = await response.json();
-      // Ensure data structure matches expected SalesOrder type for filtering
-      const validatedOrders = z.array(salesOrderSchema).parse(orders);
+      // Ensure data structure matches expected SalesOrder type and has 'id'
+      const validatedOrders = z.array(salesOrderSchema).parse(orders).map(order => ({
+        ...order,
+        id: order.id.toString(), // Ensure id is UniqueIdentifier string
+      })) as SalesOrder[];
+
       setData(validatedOrders);
       toast.success("Sales orders loaded successfully!");
     } catch (error) {
@@ -414,14 +402,7 @@ const SalesOrdersTable = () => {
     fetchRoles();
   }, [fetchSalesOrders, fetchLocations, fetchRoles]);
 
-
-  // --- Filtering and Pagination Logic ---
   const filteredOrders = useMemo(() => {
-    // Note: We deliberately reset the page here, but the state update
-    // should happen outside of useMemo if possible. However, setting the page 
-    // to 1 here ensures correct pagination when filters change.
-    setCurrentPage(1);
-
     const lowerCaseSearch = searchQuery.toLowerCase();
 
     return data.filter((order) => {
@@ -446,18 +427,6 @@ const SalesOrdersTable = () => {
       return searchMatch && roleMatch && areaMatch && regionMatch;
     });
   }, [data, searchQuery, roleFilter, areaFilter, regionFilter]);
-
-
-  // Pagination logic applied to filtered data
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -538,38 +507,10 @@ const SalesOrdersTable = () => {
           <>
             <DataTableReusable
               columns={salesOrderColumns}
-              data={currentOrders} // Use filtered and paginated data
+              data={filteredOrders}
               enableRowDragging={false}
               onRowOrderChange={() => { }}
             />
-            <Pagination className="mt-6">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    aria-disabled={currentPage === 1}
-                    tabIndex={currentPage === 1 ? -1 : undefined}
-                  />
-                </PaginationItem>
-                {[...Array(totalPages)].map((_, index) => (
-                  <PaginationItem key={index}>
-                    <PaginationLink
-                      onClick={() => handlePageChange(index + 1)}
-                      isActive={currentPage === index + 1}
-                    >
-                      {index + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    aria-disabled={currentPage === totalPages}
-                    tabIndex={currentPage === totalPages ? -1 : undefined}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
           </>
         )}
       </div>

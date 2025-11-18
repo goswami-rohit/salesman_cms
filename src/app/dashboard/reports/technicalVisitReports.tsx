@@ -15,19 +15,10 @@ import { technicalVisitReportSchema } from '@/lib/shared-zod-schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { Search, Loader2 } from 'lucide-react';
-import { BASE_URL } from '@/lib/Reusable-constants';
+//import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
 const LOCATION_API_ENDPOINT = `/api/users/user-locations`; 
 const ROLES_API_ENDPOINT = `/api/users/user-roles`; 
 
@@ -40,7 +31,6 @@ interface RolesResponse {
 }
 
 // Extend the inferred type to explicitly include the salesman's info needed for filtering.
-// These are assumed to be attached to the report object by the API, e.g., via a joined user object.
 type TechnicalVisitReport = z.infer<typeof technicalVisitReportSchema> & {
     salesmanName: string; 
     role: string;         // Required for Role filter
@@ -93,7 +83,7 @@ export default function TechnicalVisitReportsPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [areaFilter, setAreaFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  // REMOVED: const [currentPage, setCurrentPage] = useState(1);
 
   // --- Filter Options States ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
@@ -131,8 +121,25 @@ export default function TechnicalVisitReportsPage() {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: TechnicalVisitReport[] = await response.json();
-      setTechnicalReports(data);
+      const rawData: TechnicalVisitReport[] = await response.json();
+      
+      // Validate and ensure the required 'id' property exists for DataTableReusable
+      const validatedData = rawData.map((item) => {
+        try {
+          const validated = technicalVisitReportSchema.parse(item);
+          // Assuming a composite ID if 'id' isn't guaranteed by schema
+          return { 
+            ...validated, 
+            id: (validated as any).id?.toString() || `${validated.salesmanName}-${validated.date}-${Math.random()}` 
+          } as TechnicalVisitReport;
+        } catch (e) {
+          console.error("Validation error for item:", item, e);
+          toast.error("Invalid report data received from server.");
+          return null;
+        }
+      }).filter(Boolean) as TechnicalVisitReport[];
+
+      setTechnicalReports(validatedData);
       toast.success("Technical visit reports loaded successfully!");
     } catch (error: any) {
       console.error("Failed to fetch technical visit reports:", error);
@@ -206,15 +213,14 @@ export default function TechnicalVisitReportsPage() {
   }, [fetchTechnicalReports, fetchLocations, fetchRoles]);
 
 
-  // --- Filtering and Pagination Logic ---
+  // --- Filtering Logic 
   const filteredReports = useMemo(() => {
-    // Recalculate filtered data whenever reports or filter states change
-    setCurrentPage(1); // Reset page on filter change
+    const q = searchQuery.toLowerCase();
     
     return technicalReports.filter((report) => {
       // 1. Salesman Name Search (fuzzy match)
       const usernameMatch = !searchQuery ||
-        report.salesmanName.toLowerCase().includes(searchQuery.toLowerCase());
+        report.salesmanName.toLowerCase().includes(q);
 
       // 2. Role Filter 
       const roleMatch = roleFilter === 'all' || 
@@ -232,15 +238,6 @@ export default function TechnicalVisitReportsPage() {
       return usernameMatch && roleMatch && areaMatch && regionMatch;
     });
   }, [technicalReports, searchQuery, roleFilter, areaFilter, regionFilter]);
-
-
-  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
-  // Slice the filtered data for the current page
-  const currentReports = filteredReports.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
   
 
   // --- 3. Define Columns for Technical Visit Report DataTable (UNCHANGED) ---
@@ -330,23 +327,23 @@ export default function TechnicalVisitReportsPage() {
             isLoadingRoles
           )}
 
-          {/* 3. Area Filter */}
-          {/* {renderSelectFilter(
+          {/* 3. Area Filter (Commented out in original but kept for display) */}
+          {renderSelectFilter(
             'Area', 
             areaFilter, 
             (v) => { setAreaFilter(v); }, 
             availableAreas, 
             isLoadingLocations
-          )} */}
+          )}
 
-          {/* 4. Region Filter */}
-          {/* {renderSelectFilter(
-            'Region', 
+          {/* 4. Region Filter (Commented out in original but kept for display) */}
+          {renderSelectFilter(
+            'Region(Zone)', 
             regionFilter, 
             (v) => { setRegionFilter(v); }, 
             availableRegions, 
             isLoadingLocations
-          )} */}
+          )}
           
           {/* Display filter option errors if any */}
           {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
@@ -362,42 +359,13 @@ export default function TechnicalVisitReportsPage() {
             <>
               <DataTableReusable
                 columns={technicalVisitReportColumns}
-                data={currentReports} // Use filtered and paginated data
-                //filterColumnAccessorKey="siteNameConcernedPerson" // Filter by site name
+                data={filteredReports} // PASS THE FULL FILTERED DATA
+                //filterColumnAccessorKey="siteNameConcernedPerson" 
                 enableRowDragging={false} 
                 onRowOrderChange={handleTechnicalVisitReportOrderChange}
               />
               
-              {/* --- Pagination --- */}
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(currentPage - 1)} 
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(currentPage + 1)} 
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-              {/* --- End Pagination --- */}
+              {/* REMOVED: Custom Pagination Component */}
             </>
           )}
         </div>

@@ -303,7 +303,7 @@ export default function BagsLiftPage() {
       cell: ({ row }) => formatDate(row.original.approvedAt)
     },
     { accessorKey: "area", header: "Area" },
-    { accessorKey: "region", header: "Region" },
+    { accessorKey: "region", header: "Region(Zone)" },
     {
       id: 'actions',
       header: 'Actions',
