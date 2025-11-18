@@ -4,7 +4,7 @@ import {
     LucideIcon, User, Car, BadgeIndianRupeeIcon, ListTodo, ClipboardCheck, BandageIcon,
     CalendarCheck, PencilRuler, ChartNoAxesCombined, MapPin, Award, Star, Boxes,
     Construction, UsersRound, Gift, HandCoins, ScrollText, UserCheck, Users,
-    Building2
+    Building2, ShoppingBag
 } from 'lucide-react';
 
 export interface TableColumn {
@@ -190,11 +190,21 @@ export const tablesMetadata: TableMeta[] = [
     icon: Construction,
     columns: [
       'id', 'name', 'phoneNumber', 'kycDocumentName', 'kycDocumentIdNum',
-      'kycStatus', // Updated from 'verificationStatus'
+      'kycStatus', 
       'bagsLifted', 
-      'pointsBalance', // Updated from 'pointsGained'
+      'pointsBalance', 
       'isReferred',
       'referredByUser', 'referredToUser', 'dealerName', 'associatedSalesman'
+    ],
+  },
+  {
+    id: 'bagLifts',
+    title: 'Bag Lifts',
+    icon: ShoppingBag,
+    columns: [
+      'id', 'masonId', 'masonName',
+      'dealerId', 'dealerName', 'purchaseDate', 'bagCount', 'pointsCredited',
+      'status', 'approvedByUserId', 'approverName', 'approvedAt', 'createdAt',
     ],
   },
   // {

@@ -1624,7 +1624,12 @@ export type FlattenedBagLift = {
 export async function getFlattenedBagLifts(companyId: number): Promise<FlattenedBagLift[]> {
     const raw = await prisma.bagLift.findMany({
         // Filter by Masons whose associated user belongs to the company
-        where: { mason: { user: { companyId } } },
+        where: {
+            OR: [
+                { mason: { user: { companyId } } }, // Case 1: Assigned to a user in this company
+                { mason: { userId: null } }         // Case 2: Mason is Unassigned
+            ]
+        },
         select: {
             id: true,
             masonId: true,
