@@ -33,8 +33,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
         '/auth/callback',
         '/auth/magic-auth',
         '/auth/magic-auth/verify',
-        '/auth/magic-auth',
-        '/login?account_activated=true',
       ],
     },
   })(request, event);
@@ -52,7 +50,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     }
 
     // Set other necessary CORS headers.
-    authkitResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    authkitResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     authkitResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 

@@ -10,6 +10,7 @@ export const assignTaskSchema = z.object({
   relatedDealerIds: z.array(z.string()).optional().nullable(), // ✅ accept multiple dealers
   siteName: z.string().min(1, "Site name is required for Technical Visit.").optional().nullable(),
   description: z.string().optional().nullable(),
+  siteId: z.string().optional().nullable(),
 });
 
 // Zod schema for the GET response for daily tasks - DEFINED HERE
@@ -24,6 +25,7 @@ export const dailyTaskSchema = z.object({
   description: z.string().nullable().optional(),
   status: z.string(),
   createdAt: z.string(),
+  siteId: z.string().optional().nullable(),
 });
 
 // dealer brand mapping + brands 
@@ -61,8 +63,8 @@ export const dealerVerificationSchema = z.object({
   dealerPicUrl: z.string().nullable().optional(),
   blankChequePicUrl: z.string().nullable().optional(),
   partnershipDeedPicUrl: z.string().nullable().optional(),
-
   remarks: z.string().nullable().optional(),
+  siteId: z.string().optional().nullable(),
 });
 
 export const verificationUpdateSchema = z.object({
@@ -154,6 +156,7 @@ export const getDealersSchema = z.object({
   dealerPicUrl: optionalStringSchema,
   blankChequePicUrl: optionalStringSchema,
   partnershipDeedPicUrl: optionalStringSchema,
+  siteId: z.string().optional().nullable(),
 
   createdAt: z.string(), // Expecting ISO string
   updatedAt: z.string(), // Expecting ISO string
@@ -234,6 +237,8 @@ export const postDealersSchema = z.object({
   dealerPicUrl: optionalStringSchema,
   blankChequePicUrl: optionalStringSchema,
   partnershipDeedPicUrl: optionalStringSchema,
+
+  siteId: z.string().optional().nullable(),
 });
 
 // pjp 
@@ -252,6 +257,7 @@ export const permanentJourneyPlanSchema = z.object({
   visitDealerName: z.string().nullable().optional(),
   verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
   additionalVisitRemarks: z.string().nullable(),
+  siteId: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -273,6 +279,7 @@ export const permanentJourneyPlanVerificationSchema = z.object({
   additionalVisitRemarks: z.string().nullable(),
   salesmanRegion: z.string().nullable(),
   salesmanArea: z.string().nullable(),
+  siteId: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -289,6 +296,7 @@ export const pjpModificationSchema = z.object({
   dealerId: z.string().nullable().optional(),
   visitDealerName: z.string().nullable().optional(),
   additionalVisitRemarks: z.string().max(500).optional().nullable(),
+  siteId: z.string().optional().nullable(),
 });
 
 // competition report
@@ -458,6 +466,7 @@ export const technicalVisitReportSchema = z.object({
   longitude: z.number().nullable(), // Prisma Decimal is handled as number
   pjpId: z.string().nullable(),
   masonId: z.string().nullable(), // Matches @db.Uuid
+  siteId: z.string().optional().nullable(),
 });
 
 // salesman & dealer rating-scores
@@ -565,6 +574,7 @@ export const geoTrackingSchema = z.object({
   salesmanRole: z.string().optional(),
   area: z.string().optional(),
   region: z.string().optional(),
+  siteId: z.string().optional().nullable(),
 });
 
 // leave application
@@ -600,6 +610,34 @@ export const tsoMeetingSchema = z.object({
   budgetAllocated: z.number().nullable(),
   participantsCount: z.number().int().nullable(),
   createdByUserId: z.number().int(),
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string(), // ISO String
+  siteId: z.string().optional().nullable(),
+});
+
+export const technicalSiteSchema = z.object({
+  id: z.string(),
+  siteName: z.string(),
+  concernedPerson: z.string(),
+  phoneNo: z.string(),
+  address: z.string().nullable().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  siteType: z.string().nullable().optional(),
+  area: z.string().nullable().optional(),
+  region: z.string().nullable().optional(),
+  keyPersonName: z.string().nullable().optional(),
+  keyPersonPhoneNum: z.string().nullable().optional(),
+  stageOfConstruction: z.string().nullable().optional(),
+  constructionStartDate: z.string().nullable().optional(), // ISO Date String
+  constructionEndDate: z.string().nullable().optional(),   // ISO Date String
+  convertedSite: z.boolean().nullable().optional(),
+  firstVistDate: z.string().nullable().optional(), // ISO Date String
+  lastVisitDate: z.string().nullable().optional(),  // ISO Date String
+  needFollowUp: z.boolean().nullable().optional(),
+  relatedDealerID: z.string().nullable().optional(),
+  relatedMasonpcID: z.string().nullable().optional(),
+
   createdAt: z.string(), // ISO String
   updatedAt: z.string(), // ISO String
 });
@@ -644,6 +682,7 @@ export const masonPCSideSchema = z.object({
   referredToUser: z.string().nullable(),
   dealerId: z.string().nullable(),
   userId: z.number().int().nullable(),
+  siteId: z.string().optional().nullable(),
 });
 
 export const otpVerificationSchema = z.object({
@@ -666,6 +705,7 @@ export const masonOnSchemeSchema = z.object({
   schemeId: z.string(),
   enrolledAt: z.string().nullable(), // ISO String
   status: z.string().nullable(),
+  siteId: z.string().optional().nullable(),
 });
 
 export const masonsOnMeetingsSchema = z.object({
@@ -678,7 +718,7 @@ export const rewardCategorySchema = z.object({
   id: z.number().int(),
   name: z.string().max(120),
 });
-
+ 
 export const kycSubmissionSchema = z.object({
   id: z.string(),
   masonId: z.string(),
@@ -765,6 +805,7 @@ export type SalesmanLeaveApplicationSchema = z.infer<typeof salesmanLeaveApplica
 export type UpdateLeaveApplicationSchema = z.infer<typeof updateLeaveApplicationSchema>;
 
 export type TsoMeetingSchema = z.infer<typeof tsoMeetingSchema>;
+export type TechnicalSiteSchema = z.infer<typeof technicalSiteSchema>;
 export type RewardSchema = z.infer<typeof rewardSchema>;
 export type GiftAllocationLogSchema = z.infer<typeof giftAllocationLogSchema>;
 export type MasonPCSideSchema = z.infer<typeof masonPCSideSchema>;

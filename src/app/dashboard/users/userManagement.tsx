@@ -559,7 +559,7 @@ export default function UsersManagement({ adminUser }: Props) {
                       type="tel"
                       value={formData.phoneNumber}
                       onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                      placeholder="+91 9999900000"
+                      placeholder="9999900000"
                     />
                   </div>
 

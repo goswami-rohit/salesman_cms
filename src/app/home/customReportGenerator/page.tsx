@@ -125,7 +125,7 @@ export default function CustomReportGeneratorPage() {
       const payload = {
         columns,
         format: 'json',
-        limit: 10,
+        limit: 100,
         tableId,
       };
 

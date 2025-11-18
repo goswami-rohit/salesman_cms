@@ -85,10 +85,13 @@ model User {
   assignedMasons                      Mason_PC_Side[] @relation("MasonAssignments")
   tsoAssignments                      TSOAssignment[] @relation("TSOAssignments")
   bagLiftApprovals                    BagLift[] @relation("BagLiftApprovals")
+  siteId        String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site          TechnicalSite? @relation("UserTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
   @@index([workosUserId], map: "idx_workos_user_id")
+  @@index([siteId], map: "idx_user_site_id")
   @@map("users")
 }
 
@@ -196,8 +199,14 @@ model Dealer {
 
   bagLifts BagLift[] @relation("DealerBagLifts")
 
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation("DealerTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
+
+  primaryTechnicalSites TechnicalSite[] @relation("SitePrimaryDealer")
+
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
+  @@index([siteId], map: "idx_dealers_site_id")
   @@map("dealers")
 }
 
@@ -248,93 +257,6 @@ model DailyVisitReport {
   @@map("daily_visit_reports")
 }
 
-// Technical Visit Reports
-model TechnicalVisitReport {
-  id                      String    @id @default(uuid()) @db.VarChar(255)
-  userId                  Int       @map("user_id") // Foreign Key to User.id
-  reportDate              DateTime  @map("report_date") @db.Date
-  visitType               String    @map("visit_type") @db.VarChar(50) // "Installation", "Repair", "Maintenance"
-  siteNameConcernedPerson String    @map("site_name_concerned_person") @db.VarChar(255)
-  phoneNo                 String    @map("phone_no") @db.VarChar(20)
-  emailId                 String?   @map("email_id") @db.VarChar(255)
-  clientsRemarks          String    @map("clients_remarks") @db.VarChar(500)
-  salespersonRemarks      String    @map("salesperson_remarks") @db.VarChar(500)
-  checkInTime             DateTime  @map("check_in_time") @db.Timestamptz(6)
-  checkOutTime            DateTime? @map("check_out_time") @db.Timestamptz(6)
-  timeSpentinLoc          String?   @map("time_spent_in_loc")
-  inTimeImageUrl          String?   @map("in_time_image_url") @db.VarChar(500)
-  outTimeImageUrl         String?   @map("out_time_image_url") @db.VarChar(500)
-  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  siteVisitBrandInUse     String[] @map("site_visit_brand_in_use") // e.g., "Star/Dalmia/Ultratech" [cite: 99]
-  siteVisitStage          String? @map("site_visit_stage")      // e.g., "Foundation/column/slab casting" [cite: 100]
-  conversionFromBrand     String?  @map("conversion_from_brand")      // e.g., "Dalmia/Star" [cite: 102]
-  conversionQuantityValue Decimal? @map("conversion_quantity_value") @db.Decimal(10, 2)
-  conversionQuantityUnit  String?  @map("conversion_quantity_unit")  @db.VarChar(20) // "Bag" or "MT" [cite: 103]
-  associatedPartyName     String?  @map("associated_party_name")     // Dealer, Sub dealer name [cite: 104]
-  influencerType          String[] @map("influencer_type") // e.g., "Contractor", "Engineer" etc. [cite: 106, 107, 108, 109, 110, 111]
-  serviceType             String? @map("service_type") // e.g., "Dhalai Attend" [cite: 113]
-  qualityComplaint        String? @map("quality_complaint") // e.g., "Slow Setting", "Cracks" etc. [cite: 116, 117, 118, 119]
-  promotionalActivity     String? @map("promotional_activity") // e.g., "Mason Meet" [cite: 122]
-  channelPartnerVisit     String? @map("channel_partner_visit") // e.g., "Dealer Visit" [cite: 129]
-
-  siteVisitType           String?   @map("site_visit_type") @db.VarChar(50) // e.g., "Dealer", "Project",...
-  dhalaiVerificationCode  String?   @map("dhalai_verification_code") @db.VarChar(50)   
-  isVerificationStatus    String?   @map("is_verification_status") @db.VarChar(50) // e.g., "Verified", "Pending", "Rejected"
-  meetingId               String?   @map("meeting_id") @db.VarChar(255)
-  meeting                 TSOMeeting?  @relation("TVRMeeting", fields: [meetingId], references: [id])
-
-  purposeOfVisit          String?   @map("purpose_of_visit") @db.VarChar(500)
-  sitePhotoUrl            String?   @map("site_photo_url") @db.VarChar(500)
-  firstVisitTime          DateTime? @map("first_visit_time")
-  lastVisitTime           DateTime? @map("last_visit_time")
-  firstVisitDay           String?   @map("first_visit_day") 
-  lastVisitDay            String?   @map("last_visit_day")
-  siteVisitsCount         Int?      @map("site_visits_count")
-  otherVisitsCount        Int?      @map("other_visits_count")
-  totalVisitsCount        Int?      @map("total_visits_count")
-  
-  region                  String?   @map("region") @db.VarChar(100)
-  area                    String?   @map("area") @db.VarChar(100)
-  latitude     Decimal?  @map("latitude") @db.Decimal(9, 6)
-  longitude    Decimal?  @map("longitude") @db.Decimal(9, 6)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pjpId                 String?   @map("pjp_id") @db.VarChar(255)
-  permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_TVR", fields: [pjpId], references: [id], onDelete: SetNull)
-  masonId                 String?       @map("mason_id") @db.Uuid // FK to Mason_PC_Side
-  mason                   Mason_PC_Side? @relation(fields: [masonId], references: [id], onDelete: SetNull)
-  giftAllocationLogs   GiftAllocationLog[]
-
-  @@index([userId], map: "idx_technical_visit_reports_user_id")
-  @@index([meetingId], map: "idx_technical_visit_reports_meeting_id")
-  @@map("technical_visit_reports")
-}
-
-// Meeting: Stores records of Head Mason Meets, Engineer Meets, etc.
-model TSOMeeting {
-  id                    String    @id @default(uuid()) @db.VarChar(255)
-  type                  String    @db.VarChar(100) // e.g., "Head Mason Meet", "Counter Meet"
-  date                  DateTime  @db.Date
-  location              String    @db.VarChar(500)
-  budgetAllocated       Decimal?  @map("budget_allocated") @db.Decimal(12, 2) // Budget for the event/month
-  participantsCount     Int?      @map("participants_count") // Total number of attendees
-  // If the meeting was recorded on a TVR, link back
-  technicalVisitReports TechnicalVisitReport[] @relation("TVRMeeting")
-  
-  // The user who created/organized the meeting
-  createdByUserId       Int       @map("created_by_user_id")
-  createdBy             User      @relation("UserCreatedMeetings", fields: [createdByUserId], references: [id])
-  participants          MasonsOnMeetings[]
-  
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  @@index([createdByUserId])
-  @@map("tso_meetings")
-}
-
 // Permanent Journey Plans
 model PermanentJourneyPlan {
   id              String   @id @default(uuid()) @db.VarChar(255)
@@ -358,6 +280,9 @@ model PermanentJourneyPlan {
   technicalVisitReports   TechnicalVisitReport[] @relation("PJPReports_TVR")
   salesOrders             SalesOrder[] @relation("PJP_Sales_Orders")
 
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
   dealerId                String?  @map("dealer_id") @db.VarChar(255)
   dealer                  Dealer?  @relation("PJP_Dealer", fields: [dealerId], references: [id], onDelete: SetNull)
   verificationStatus      String?  @map("verification_status") @db.VarChar(50)
@@ -375,7 +300,7 @@ model PermanentJourneyPlan {
   @@index([bulkOpId], map: "idx_pjp_bulk_op_id")
   @@unique([userId, dealerId, planDate], map: "uniq_pjp_user_dealer_plan_date")
   @@unique([idempotencyKey], map: "uniq_pjp_idempotency_key_not_null")
-  
+  @@index([siteId], map: "idx_pjp_site_id")
   @@map("permanent_journey_plans")
 }
 
@@ -482,15 +407,16 @@ model GeoTracking {
 
   // Relationship to the User (junior-exec, exec, etc...)
   user User @relation("UserGeoTracking", fields: [userId], references: [id], onDelete: Cascade)
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-   // INDEXES THAT MATTER
   @@index([userId, recordedAt], map: "idx_geo_user_time")
   @@index([journeyId, recordedAt], map: "idx_geo_journey_time")
   @@index([isActive], map: "idx_geo_active")
-  //-----------------
+  @@index([siteId], map: "idx_geo_site_id")
   @@index([userId], map: "idx_geo_tracking_user_id")
   @@index([recordedAt], map: "idx_geo_tracking_recorded_at") // Useful for time-based queries
   @@map("geo_tracking") // Table name in DB
@@ -517,6 +443,9 @@ model DailyTask {
   relatedDealer     Dealer?   @relation("DealerDailyTasks", fields: [relatedDealerId], references: [id], onDelete: SetNull) // Named relation
   permanentJourneyPlan PermanentJourneyPlan? @relation("PJPTasks", fields: [pjpId], references: [id], onDelete: SetNull) // Named relation
 
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
   @@index([userId], map: "idx_daily_tasks_user_id")
   @@index([assignedByUserId], map: "idx_daily_tasks_assigned_by_user_id")
   @@index([taskDate], map: "idx_daily_tasks_task_date")
@@ -524,6 +453,7 @@ model DailyTask {
   @@index([relatedDealerId], map: "idx_daily_tasks_related_dealer_id")
   @@index([taskDate, userId], map: "idx_daily_tasks_date_user")
   @@index([status], map: "idx_daily_tasks_status")
+  @@index([siteId], map: "idx_daily_tasks_site_id")
   @@map("daily_tasks")
 }
 
@@ -665,6 +595,158 @@ model tally_raw {
   @@map("tally_raw")
 }
 
+// Technical Visit Reports
+model TechnicalVisitReport {
+  id                      String    @id @default(uuid()) @db.VarChar(255)
+  userId                  Int       @map("user_id") // Foreign Key to User.id
+  reportDate              DateTime  @map("report_date") @db.Date
+  visitType               String    @map("visit_type") @db.VarChar(50) // "Installation", "Repair", "Maintenance"
+  siteNameConcernedPerson String    @map("site_name_concerned_person") @db.VarChar(255)
+  phoneNo                 String    @map("phone_no") @db.VarChar(20)
+  emailId                 String?   @map("email_id") @db.VarChar(255)
+  clientsRemarks          String    @map("clients_remarks") @db.VarChar(500)
+  salespersonRemarks      String    @map("salesperson_remarks") @db.VarChar(500)
+  checkInTime             DateTime  @map("check_in_time") @db.Timestamptz(6)
+  checkOutTime            DateTime? @map("check_out_time") @db.Timestamptz(6)
+  timeSpentinLoc          String?   @map("time_spent_in_loc")
+  inTimeImageUrl          String?   @map("in_time_image_url") @db.VarChar(500)
+  outTimeImageUrl         String?   @map("out_time_image_url") @db.VarChar(500)
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  siteVisitBrandInUse     String[] @map("site_visit_brand_in_use") // e.g., "Star/Dalmia/Ultratech" [cite: 99]
+  siteVisitStage          String? @map("site_visit_stage")      // e.g., "Foundation/column/slab casting" [cite: 100]
+  conversionFromBrand     String?  @map("conversion_from_brand")      // e.g., "Dalmia/Star" [cite: 102]
+  conversionQuantityValue Decimal? @map("conversion_quantity_value") @db.Decimal(10, 2)
+  conversionQuantityUnit  String?  @map("conversion_quantity_unit")  @db.VarChar(20) // "Bag" or "MT" [cite: 103]
+  associatedPartyName     String?  @map("associated_party_name")     // Dealer, Sub dealer name [cite: 104]
+  influencerType          String[] @map("influencer_type") // e.g., "Contractor", "Engineer" etc. [cite: 106, 107, 108, 109, 110, 111]
+  serviceType             String? @map("service_type") // e.g., "Dhalai Attend" [cite: 113]
+  qualityComplaint        String? @map("quality_complaint") // e.g., "Slow Setting", "Cracks" etc. [cite: 116, 117, 118, 119]
+  promotionalActivity     String? @map("promotional_activity") // e.g., "Mason Meet" [cite: 122]
+  channelPartnerVisit     String? @map("channel_partner_visit") // e.g., "Dealer Visit" [cite: 129]
+
+  siteVisitType           String?   @map("site_visit_type") @db.VarChar(50) // e.g., "Dealer", "Project",...
+  dhalaiVerificationCode  String?   @map("dhalai_verification_code") @db.VarChar(50)   
+  isVerificationStatus    String?   @map("is_verification_status") @db.VarChar(50) // e.g., "Verified", "Pending", "Rejected"
+  meetingId               String?   @map("meeting_id") @db.VarChar(255)
+  meeting                 TSOMeeting?  @relation("TVRMeeting", fields: [meetingId], references: [id])
+
+  purposeOfVisit          String?   @map("purpose_of_visit") @db.VarChar(500)
+  sitePhotoUrl            String?   @map("site_photo_url") @db.VarChar(500)
+  firstVisitTime          DateTime? @map("first_visit_time")
+  lastVisitTime           DateTime? @map("last_visit_time")
+  firstVisitDay           String?   @map("first_visit_day") 
+  lastVisitDay            String?   @map("last_visit_day")
+  siteVisitsCount         Int?      @map("site_visits_count")
+  otherVisitsCount        Int?      @map("other_visits_count")
+  totalVisitsCount        Int?      @map("total_visits_count")
+  
+  region                  String?   @map("region") @db.VarChar(100)
+  area                    String?   @map("area") @db.VarChar(100)
+  latitude     Decimal?  @map("latitude") @db.Decimal(9, 6)
+  longitude    Decimal?  @map("longitude") @db.Decimal(9, 6)
+
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pjpId                 String?   @map("pjp_id") @db.VarChar(255)
+  permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_TVR", fields: [pjpId], references: [id], onDelete: SetNull)
+  masonId                 String?       @map("mason_id") @db.Uuid // FK to Mason_PC_Side
+  mason                   Mason_PC_Side? @relation(fields: [masonId], references: [id], onDelete: SetNull)
+  giftAllocationLogs   GiftAllocationLog[]
+
+  @@index([userId], map: "idx_technical_visit_reports_user_id")
+  @@index([meetingId], map: "idx_technical_visit_reports_meeting_id")
+  @@index([siteId], map: "idx_tvr_site_id")
+  @@map("technical_visit_reports")
+}
+
+// Meeting: Stores records of Head Mason Meets, Engineer Meets, etc.
+model TSOMeeting {
+  id                    String    @id @default(uuid()) @db.VarChar(255)
+  type                  String    @db.VarChar(100) // e.g., "Head Mason Meet", "Counter Meet"
+  date                  DateTime  @db.Date
+  location              String    @db.VarChar(500)
+  budgetAllocated       Decimal?  @map("budget_allocated") @db.Decimal(12, 2) // Budget for the event/month
+  participantsCount     Int?      @map("participants_count") // Total number of attendees
+  // If the meeting was recorded on a TVR, link back
+  technicalVisitReports TechnicalVisitReport[] @relation("TVRMeeting")
+  
+  // The user who created/organized the meeting
+  createdByUserId       Int       @map("created_by_user_id")
+  createdBy             User      @relation("UserCreatedMeetings", fields: [createdByUserId], references: [id])
+  participants          MasonsOnMeetings[]
+
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  @@index([createdByUserId])
+  @@index([siteId], map: "idx_meeting_site_id")
+  @@map("tso_meetings")
+}
+
+model TechnicalSite {
+  id                      String                  @id @default(uuid()) @db.Uuid
+  siteName                String                  @map("site_name") @db.VarChar(255)
+  
+  // PRIMARY CONTACT INFO
+  concernedPerson         String                  @map("concerned_person") @db.VarChar(255) 
+  phoneNo                 String                  @map("phone_no") @db.VarChar(20)          
+  address                 String?                 @db.Text
+  
+  // LOCATION AND GEOGRAPHY
+  latitude                Decimal?                @db.Decimal(10, 7)
+  longitude               Decimal?                @db.Decimal(10, 7)
+  siteType                String?                 @map("site_type") @db.VarChar(50) 
+  area                    String?                 @map("area") @db.VarChar(100)
+  region                  String?                 @map("region") @db.VarChar(100)
+  
+  // KEYPERSON DETAILS
+  keyPersonName           String?                 @map("key_person_name") @db.VarChar(255)
+  keyPersonPhoneNum       String?                 @map("key_person_phone_num") @db.VarChar(20)
+  
+  // PROJECT/CONSTRUCTION STATUS
+  stageOfConstruction     String?                 @map("stage_of_construction") @db.VarChar(100)
+  constructionStartDate   DateTime?               @map("construction_start_date") @db.Date
+  constructionEndDate     DateTime?               @map("construction_end_date") @db.Date
+  
+  // SALES/TSO TRACKING FIELDS
+  convertedSite           Boolean?                @map("converted_site") @default(false)
+  firstVistDate           DateTime?               @map("first_visit_date") @db.Date
+  lastVisitDate           DateTime?               @map("last_visit_date") @db.Date
+  needFollowUp            Boolean?                @map("need_follow_up") @default(false)
+  
+  // --- PRIMARY RELATIONS (FKs defined here) ---
+  relatedDealerID         String?                 @map("related_dealer_id") @db.VarChar(255) 
+  dealer                  Dealer?                 @relation("SitePrimaryDealer", fields: [relatedDealerID], references: [id], onDelete: SetNull)
+  
+  relatedMasonpcID        String?                 @map("related_mason_pc_id") @db.Uuid
+  masonpc                 Mason_PC_Side?          @relation("SitePrimaryMason", fields: [relatedMasonpcID], references: [id], onDelete: SetNull)
+  
+  // --- INVERSE RELATIONS (FKs defined in other tables) ---
+  technicalVisitReports   TechnicalVisitReport[]  
+  meetings                TSOMeeting[]            
+  users                   User[]                  @relation("UserTechnicalSites")
+  dealers                 Dealer[]                @relation("DealerTechnicalSites")
+  masons                  Mason_PC_Side[]         @relation("MasonTechnicalSites")
+  masonOnSchemes          MasonOnScheme[]
+  geoTrackingRecords      GeoTracking[]
+  dailyTasks              DailyTask[]
+  permanentJourneyPlans   PermanentJourneyPlan[]
+  
+  createdAt               DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  @@index([relatedDealerID], map: "idx_technical_sites_dealer_id")
+  @@index([relatedMasonpcID], map: "idx_technical_sites_mason_id") // ADDED INDEX
+  @@map("technical_sites")
+}
+
 // Mason and Petty Contractor side
 model Mason_PC_Side {
   id                 String     @id @default(uuid()) @db.Uuid
@@ -702,8 +784,14 @@ model Mason_PC_Side {
   rewardRedemptions  RewardRedemption[]
   authSessions       AuthSession[]
 
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation("MasonTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
+
+  primaryTechnicalSites TechnicalSite[] @relation("SitePrimaryMason")
+
   @@index([dealerId], map: "idx_mason_pc_side_dealer_id")
   @@index([userId], map: "idx_mason_pc_side_user_id")
+  @@index([siteId], map: "idx_mason_pc_side_site_id")
   @@map("mason_pc_side")
 }
 
@@ -822,8 +910,12 @@ model MasonOnScheme {
   enrolledAt DateTime? @default(now()) @map("enrolled_at")
   status     String?   @map("status") // e.g., 'active', 'completed', 'cancelled', 'pending', 'inactive'
 
+  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
+  site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
   // A composite primary key ensures a mason can only be in a scheme ONCE.
   @@id([masonId, schemeId])
+  @@index([siteId], map: "idx_mos_site_id")
   @@map("mason_on_scheme")
 }
 

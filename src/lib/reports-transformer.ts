@@ -1340,7 +1340,12 @@ export type FlattenedMasonPCSide = {
 export async function getFlattenedMasonPCSide(companyId: number): Promise<FlattenedMasonPCSide[]> {
   const raw = await prisma.mason_PC_Side.findMany({
     // Finds Masons associated with a User (salesman) from the company
-    where: { user: { companyId } },
+    where: {
+      OR: [
+        { user: { companyId } }, // Case 1: Assigned to a salesman in this company
+        { userId: null }         // Case 2: Not assigned to anyone (Unassigned)
+      ]
+    },
     select: {
       id: true,
       name: true,

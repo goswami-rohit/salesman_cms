@@ -197,30 +197,30 @@ export const tablesMetadata: TableMeta[] = [
       'referredByUser', 'referredToUser', 'dealerName', 'associatedSalesman'
     ],
   },
-  {
-    id: 'schemesOffers',
-    title: 'Schemes & Offers',
-    icon: ScrollText,
-    columns: [
-      'id', 'name', 'description', 'startDate', 'endDate'
-    ],
-  },
-  {
-    id: 'masonsOnSchemes',
-    title: 'Masons on Schemes',
-    icon: UserCheck,
-    columns: [
-      'masonId', 'masonName', 'schemeId', 'schemeName', 'enrolledAt', 'status'
-    ],
-  },
-  {
-    id: 'masonsOnMeetings',
-    title: 'Masons on Meetings',
-    icon: Users,
-    columns: [
-      'masonId', 'masonName', 'meetingId', 'meetingType', 'meetingDate', 'attendedAt'
-    ],
-  },
+  // {
+  //   id: 'schemesOffers',
+  //   title: 'Schemes & Offers',
+  //   icon: ScrollText,
+  //   columns: [
+  //     'id', 'name', 'description', 'startDate', 'endDate'
+  //   ],
+  // },
+  // {
+  //   id: 'masonsOnSchemes',
+  //   title: 'Masons on Schemes',
+  //   icon: UserCheck,
+  //   columns: [
+  //     'masonId', 'masonName', 'schemeId', 'schemeName', 'enrolledAt', 'status'
+  //   ],
+  // },
+  // {
+  //   id: 'masonsOnMeetings',
+  //   title: 'Masons on Meetings',
+  //   icon: Users,
+  //   columns: [
+  //     'masonId', 'masonName', 'meetingId', 'meetingType', 'meetingDate', 'attendedAt'
+  //   ],
+  // },
 
 ];
 export type ReportFormat = 'csv' | 'xlsx';

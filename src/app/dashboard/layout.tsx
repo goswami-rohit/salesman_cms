@@ -21,12 +21,13 @@ const allowedAdminRoles = [
   //'junior-executive',
 ];
 const allowedNonAdminRoles = [
-  'senior-executive', 
+  'senior-executive',
   'executive',
   'junior-executive',
 ];
 // Pages that non-admin roles are allowed to access
-const nonAdminAllowedPages = [ 
+const nonAdminAllowedPages = [
+  '/dashboard',
   '/dashboard/reports',
   '/dashboard/dealerManagement',
   '/dashboard/permanentJourneyPlan',
@@ -44,8 +45,8 @@ async function refreshUserJWTIfNeeded(user: any, claims: any) {
     });
 
     // We now check if the user's role is in the list of allowed admin roles
-    if (dbUser && allowedAdminRoles.includes(dbUser.role)) {
-      console.log('🔄 Admin user detected without org_id - JWT needs refresh');
+    if (dbUser) {
+      console.log(`🔄 User ${dbUser.email || user.id} detected with incomplete JWT - forcing refresh.`);
       return { needsRefresh: true };
     }
   }

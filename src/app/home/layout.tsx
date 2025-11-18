@@ -21,7 +21,7 @@ async function refreshUserJWTIfNeeded(user: any, claims: any) {
     });
 
     if (dbUser) {
-      console.log('🔄 User known in DB but JWT is incomplete - initiating refresh.');
+      console.log(`🔄 User ${dbUser.email || user.id} detected with incomplete JWT - forcing refresh.`);
       return { needsRefresh: true };
     }
   }

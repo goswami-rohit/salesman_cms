@@ -109,6 +109,16 @@ const renderSelectFilter = (
   </div>
 );
 
+// Helper function to format JSON keys into readable labels
+const formatDocKey = (key: string): string => {
+  if (key === 'aadhaarFrontUrl') return 'Aadhaar Front';
+  if (key === 'aadhaarBackUrl') return 'Aadhaar Back';
+  if (key === 'panUrl') return 'PAN Card';
+  if (key === 'voterUrl') return 'Voter ID';
+  // Fallback for any other keys
+  return key.replace('Url', '').replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+};
+
 // --- MAIN COMPONENT ---
 
 export default function MasonPcPage() {
@@ -121,7 +131,6 @@ export default function MasonPcPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   // Set default filter value to 'all' to fetch all records initially
   const [kycStatusFilter, setKycStatusFilter] = useState<KycVerificationStatus | 'all'>('all');
-  const [currentPage, setCurrentPage] = useState(1);
 
   // --- Filter Options States (omitted for brevity) ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
@@ -250,7 +259,6 @@ export default function MasonPcPage() {
 
   // --- Filtering and Pagination Logic (omitted for brevity) ---
   const filteredRecords = useMemo<MasonPcFullDetails[]>(() => {
-    setCurrentPage(1);
 
     return allMasonPcRecords.filter((record) => {
       const nameMatch =
@@ -264,14 +272,6 @@ export default function MasonPcPage() {
       return nameMatch && roleMatch;
     });
   }, [allMasonPcRecords, searchQuery, roleFilter]);
-
-
-  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
-  const currentRecords = filteredRecords.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
 
 
   // --- 3. Define Columns for Mason/PC DataTable ---
@@ -428,46 +428,17 @@ export default function MasonPcPage() {
             <>
               <DataTableReusable<MasonPcFullDetails, unknown>
                 columns={masonPcColumns}
-                data={currentRecords}
+                data={filteredRecords}
                 enableRowDragging={false}
                 onRowOrderChange={handleMasonPcOrderChange}
               />
 
-              {/* --- Pagination --- */}
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      aria-disabled={currentPage === 1}
-                      tabIndex={currentPage === 1 ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <PaginationItem key={index} aria-current={currentPage === index + 1 ? "page" : undefined}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(index + 1)}
-                        isActive={currentPage === index + 1}
-                      >
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      aria-disabled={currentPage === totalPages}
-                      tabIndex={currentPage === totalPages ? -1 : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-              {/* --- End Pagination --- */}
             </>
           )}
         </div>
       </div>
 
+      {/* --- View KYC Modal (CORRECTED) --- */}
       {selectedRecord && (
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -478,6 +449,7 @@ export default function MasonPcPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              {/* ... (Mason & Submission Info section is unchanged) ... */}
               <div className="md:col-span-2 text-lg font-semibold border-b pb-2">Mason & Submission Info</div>
               <div>
                 <Label htmlFor="name">Mason Name</Label>
@@ -493,9 +465,19 @@ export default function MasonPcPage() {
               </div>
               <div>
                 <Label htmlFor="submittedAt">Latest Submission Date</Label>
-                <Input id="submittedAt" value={selectedRecord.kycSubmittedAt ? format(new Date(selectedRecord.kycSubmittedAt), 'dd/MM/yyyy HH:mm') : 'N/A'} readOnly />
+                {/* This is the nice date format you wanted */}
+                <Input
+                  id="submittedAt"
+                  value={
+                    selectedRecord.kycSubmittedAt
+                      ? format(new Date(selectedRecord.kycSubmittedAt), 'LLL dd, yyyy \'at\' hh:mm a')
+                      : 'N/A'
+                  }
+                  readOnly
+                />
               </div>
 
+              {/* ... (KYC Document Details section is unchanged) ... */}
               <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">KYC Document Details (from `Mason_PC_Side`)</div>
               <div>
                 <Label htmlFor="docName">Document Name</Label>
@@ -506,6 +488,7 @@ export default function MasonPcPage() {
                 <Input id="docId" value={selectedRecord.kycDocumentIdNum || 'N/A'} readOnly />
               </div>
 
+              {/* ... (Full KYC Details section is unchanged, EXCEPT for documents) ... */}
               <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">Full KYC Details (from `KYCSubmission` table)</div>
               <div>
                 <Label htmlFor="aadhaar">Aadhaar Number</Label>
@@ -519,27 +502,47 @@ export default function MasonPcPage() {
                 <Label htmlFor="voter">Voter ID Number</Label>
                 <Input id="voter" value={selectedRecord.kycVoterIdNumber || 'N/A'} readOnly />
               </div>
-              <div>
+
+              <div className="md:col-span-2">
                 <Label htmlFor="documents">Supporting Documents</Label>
-                {/* Assuming kycDocuments is an array of objects with a 'url' key, if documents were uploaded */}
-                <div id="documents" className="flex flex-col space-y-1 mt-1">
-                  {Array.isArray(selectedRecord.kycDocuments) && selectedRecord.kycDocuments.length > 0 ? (
-                    selectedRecord.kycDocuments.map((doc: any, index: number) => (
-                      <a
-                        key={index}
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline flex items-center"
-                      >
-                        {doc.name || `Document ${index + 1}`} <ExternalLink className="h-4 w-4 ml-1" />
-                      </a>
-                    ))
-                  ) : (
-                    <span className="text-muted-foreground text-sm">No supporting documents found.</span>
-                  )}
-                </div>
+                {(() => {
+                  const docs = (selectedRecord.kycDocuments || {}) as Record<string, string>;
+                  const validDocKeys = Object.keys(docs).filter((key) => !!docs[key]);
+
+                  if (validDocKeys.length === 0) {
+                    return (
+                      <span className="text-muted-foreground text-sm block mt-1">
+                        No supporting documents found.
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <div id="documents" className="flex flex-col space-y-2 mt-1">
+                      {validDocKeys.map((key) => (
+                        <div key={key} className="border p-2 rounded-md bg-muted/50">
+                          <a
+                            href={docs[key]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline flex items-center break-all text-sm font-medium"
+                          >
+                            {formatDocKey(key)}
+                            <ExternalLink className="h-4 w-4 ml-1 shrink-0" />
+                          </a>
+                          <img
+                            src={docs[key]}
+                            alt={formatDocKey(key)}
+                            className="mt-2 max-w-full h-auto rounded-md border"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
+              {/* --- END OF REBUILT SECTION --- */}
+
               <div className="md:col-span-2">
                 <Label htmlFor="remark">Mason Submission Remark</Label>
                 <Textarea id="remark" value={selectedRecord.kycSubmissionRemark || 'N/A'} readOnly />
