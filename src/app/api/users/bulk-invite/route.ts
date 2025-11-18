@@ -176,14 +176,14 @@ async function processSingleInvitation(
             lastName, 
             companyName, 
             adminName,
-            inviteUrl: workosInvitation.acceptInvitationUrl,
-            //inviteUrl: customInviteUrl,
+            inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
+            //inviteUrl: customInviteUrl, // magicAuth setup
             role: workosRole,
             fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
             salesmanLoginId: salesmanLoginId,
             tempPassword: tempPasswordPlaintext,
-            techLoginId: techLoginId, // <-- ADDED
-            techTempPassword: techTempPasswordPlaintext // <-- ADDED
+            techLoginId: techLoginId, 
+            techTempPassword: techTempPasswordPlaintext 
         });
         // --- END UPDATE ---
     } catch (emailError) {

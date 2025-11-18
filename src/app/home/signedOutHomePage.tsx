@@ -9,6 +9,7 @@ export default function SignedOutHomePage() {
   const handleLogin = () => {
     // This is the correct way to handle a client-side login redirect
     window.location.href = `/login`;
+    //window.location.href = `/login/magicAuth`;
   };
 
   return (
