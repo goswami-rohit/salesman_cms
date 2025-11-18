@@ -257,7 +257,7 @@ export function BulkInviteDialog({ onSuccess, onError, onRefreshUsers }: BulkInv
                         <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">lastName</code>,
                         <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">phoneNumber</code>, 
                         <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">role</code> 
-                        <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">region</code>, 
+                        <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">region(zone)</code>, 
                         <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">area</code>
                     </p>
                     <p className="mt-1 pl-4">Note: <code className="bg-gray-200 p-1 rounded font-mono text-gray-800">isTechnical</code> should be TRUE (or 'yes', '1') or FALSE (or 'no', '0', empty).</p>
@@ -310,10 +310,4 @@ export function BulkInviteDialog({ onSuccess, onError, onRefreshUsers }: BulkInv
       </DialogContent>
     </Dialog>
   );
-}
-
-// Helper component for loading data from file
-const FileLoader = ({ file, onContentLoaded }: { file: File, onContentLoaded: (content: string) => void }) => {
-    // This logic is handled directly in handleBulkSubmit, so this component is unused but kept for file structure integrity.
-    return null; 
 }

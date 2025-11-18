@@ -132,7 +132,7 @@ export default function SetupCompanyForm() {
           </div>
           {/* New shadcn/ui Select components for Region and Area */}
           <div className="space-y-2">
-            <Label htmlFor="region">Region</Label>
+            <Label htmlFor="region">Region(Zone)</Label>
             <Input
               id="region"
               type="text"
