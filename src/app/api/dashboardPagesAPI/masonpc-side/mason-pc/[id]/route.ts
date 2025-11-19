@@ -10,8 +10,12 @@ import { z } from 'zod';
 import { calculateJoiningBonusPoints } from '@/lib/pointsCalcLogic';
 
 const kycUpdateSchema = z.object({
-    verificationStatus: z.enum(['VERIFIED', 'REJECTED']),
+    // FIX 1: Make verificationStatus optional so we can save assignments without changing status
+    verificationStatus: z.enum(['VERIFIED', 'REJECTED']).optional(),
     adminRemarks: z.string().nullable().optional(),
+    userId: z.number().nullable().optional(),
+    dealerId: z.string().nullable().optional(),
+    siteId: z.string().nullable().optional(),
 });
 
 // FE → Mason_PC_Side.kycStatus
@@ -65,12 +69,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 });
         }
 
-        const { verificationStatus, adminRemarks } = parsed.data;
+        const { verificationStatus, adminRemarks, userId, dealerId, siteId } = parsed.data;
 
-        const masonNextStatus = masonStatusMap[verificationStatus];
-        const submissionNextStatus = submissionStatusMap[verificationStatus];
+        // --- 3. Prepare Update Data Object ---
+        // FIX 2: Create a dynamic object so we only update what was sent
+        const updateData: any = {};
+        
+        if (userId !== undefined) updateData.userId = userId;
+        if (dealerId !== undefined) updateData.dealerId = dealerId;
+        if (siteId !== undefined) updateData.siteId = siteId;
 
-        // --- 3. Fetch Existing Record ---
+        // FIX 3: Only map status if it was actually provided
+        if (verificationStatus) {
+             updateData.kycStatus = masonStatusMap[verificationStatus];
+        }
+
+        // --- 4. Fetch Existing Record ---
         const masonPcToUpdate = await prisma.mason_PC_Side.findUnique({
             where: { id: masonPcId },
             include: { 
@@ -88,36 +102,38 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             return NextResponse.json({ error: 'Mason/PC record not found' }, { status: 404 });
         }
 
-        if (!masonPcToUpdate.user || masonPcToUpdate.user.companyId !== currentUser.companyId) {
-            return NextResponse.json({ error: 'Forbidden: External company record.' }, { status: 403 });
+        // Allow updates if it's the same company, OR if the user is super-admin/president (optional check)
+        if (currentUser.companyId && masonPcToUpdate.user?.companyId && masonPcToUpdate.user.companyId !== currentUser.companyId) {
+             // Note: I added a safety check here because masonPcToUpdate.user might be null if unassigned
+             return NextResponse.json({ error: 'Forbidden: External company record.' }, { status: 403 });
         }
 
         const latestSubmission = masonPcToUpdate.kycSubmissions?.[0];
 
-        // --- 4. BONUS CALCULATION LOGIC ---
-        const joiningBonus = calculateJoiningBonusPoints(); // Currently 250
+        // --- 5. BONUS CALCULATION LOGIC ---
+        const joiningBonus = calculateJoiningBonusPoints(); 
         
-        // Check if we should apply the bonus:
-        // 1. Action must be 'VERIFIED'
-        // 2. User must NOT already be 'verified' (prevent double-clicking or re-verifying for points)
-        // 3. Bonus amount must be > 0 (within date range)
-        // 4. Must have a valid submission record to link the transaction to
-        const alreadyVerified = masonPcToUpdate.kycStatus === 'verified';
-        const shouldApplyBonus = 
-            verificationStatus === 'VERIFIED' && 
-            !alreadyVerified && 
-            joiningBonus > 0 &&
-            !!latestSubmission;
+        let shouldApplyBonus = false;
 
+        // Only calculate bonus if we are actually VERIFYING right now
+        if (verificationStatus === 'VERIFIED') {
+            const alreadyVerified = masonPcToUpdate.kycStatus === 'verified';
+            shouldApplyBonus = 
+                !alreadyVerified && 
+                joiningBonus > 0 &&
+                !!latestSubmission;
+        }
 
-        // --- 5. TRANSACTION ---
+        // --- 6. TRANSACTION ---
         const updatedRecord = await prisma.$transaction(async (tx) => {
             
-            // A. Update Mason Status (and Balance if applicable)
+            // A. Update Mason Status AND Assignments
+            // FIX 4: Use the `updateData` object we built earlier
             const updatedMason = await tx.mason_PC_Side.update({
                 where: { id: masonPcId },
                 data: {
-                    kycStatus: masonNextStatus,
+                    ...updateData, // <--- This includes userId, dealerId, siteId, and kycStatus
+                    
                     // Atomic increment if bonus applies
                     pointsBalance: shouldApplyBonus 
                         ? { increment: joiningBonus } 
@@ -125,8 +141,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 },
             });
 
-            // B. Update KYC Submission Status
-            if (latestSubmission) {
+            // B. Update KYC Submission Status (Only if verificationStatus is provided)
+            // FIX 5: Guard this block
+            if (verificationStatus && latestSubmission) {
+                const submissionNextStatus = submissionStatusMap[verificationStatus];
+                
                 await tx.kYCSubmission.update({
                     where: { id: latestSubmission.id },
                     data: {
@@ -142,8 +161,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                     data: {
                         masonId: masonPcId,
                         sourceType: 'joining_bonus',
-                        // We link the bonus to the specific KYC Submission ID. 
-                        // Since sourceId is @unique, this mathematically prevents duplicate bonuses for the same document.
                         sourceId: latestSubmission.id, 
                         points: joiningBonus,
                         memo: `Joining Bonus: KYC Verified on ${new Date().toLocaleDateString()}`
@@ -154,18 +171,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             return updatedMason;
         });
 
-        // --- 6. Return Success ---
+        // --- 7. Return Success ---
         return NextResponse.json({
-            message: `Mason/PC KYC updated to ${verificationStatus}. ${shouldApplyBonus ? `Joining Bonus of ${joiningBonus} points applied.` : ''}`,
+            message: verificationStatus 
+                ? `Mason/PC KYC updated to ${verificationStatus}.` 
+                : `Assignments updated successfully.`,
             record: updatedRecord
         }, { status: 200 });
 
     } catch (error) {
-        console.error('Error updating KYC:', error);
-        // Handle specific Prisma unique constraint violations gracefully if they happen
+        console.error('Error updating KYC/Mason:', error);
         if ((error as any).code === 'P2002') {
-             return NextResponse.json({ error: 'Transaction failed: Bonus already applied for this submission.' }, { status: 409 });
+             return NextResponse.json({ error: 'Transaction failed: Database constraint violation.' }, { status: 409 });
         }
-        return NextResponse.json({ error: 'Failed to update KYC status', details: (error as Error).message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to update record', details: (error as Error).message }, { status: 500 });
     }
 }

@@ -49,6 +49,9 @@ const masonPcFullSchema = masonPCSideSchema.extend({
   role: z.string().optional(),
   area: z.string().optional(),
   region: z.string().optional(),
+
+  dealerName: z.string().optional().nullable(),
+  siteName: z.string().optional().nullable(),
 });
 
 export type MasonPcFullDetails = z.infer<typeof masonPcFullSchema>;
@@ -96,12 +99,19 @@ export async function GET(request: NextRequest) {
       include: {
         user: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
             role: true,
             area: true,
             region: true,
           },
+        },
+        dealer: {
+          select: { id: true, name: true }
+        },
+        site: {
+          select: { id: true, siteName: true }
         },
         kycSubmissions: {
           orderBy: { createdAt: 'desc' },
@@ -186,6 +196,13 @@ export async function GET(request: NextRequest) {
         role: record.user?.role ?? 'N/A',
         area: record.user?.area ?? 'N/A',
         region: record.user?.region ?? 'N/A',
+
+        userId: record.userId, 
+        dealerId: record.dealerId,
+        siteId: record.siteId,
+        
+        dealerName: record.dealer?.name ?? null,
+        siteName: record.site?.siteName ?? null,
 
         kycVerificationStatus: displayStatus,
         kycAadhaarNumber: latestKycSubmission?.aadhaarNumber ?? null,

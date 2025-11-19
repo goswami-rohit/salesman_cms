@@ -261,21 +261,18 @@ export default function BagsLiftPage() {
       const nameMatch = !searchQuery || record.masonName.toLowerCase().includes(searchQuery.toLowerCase());
       const statusMatch = statusFilter === 'all' || record.status.toLowerCase() === statusFilter.toLowerCase();
       const roleMatch = roleFilter === 'all' || record.role?.toLowerCase() === roleFilter.toLowerCase();
-      // const areaMatch = areaFilter === 'all' || record.area?.toLowerCase() === areaFilter.toLowerCase();
-      // const regionMatch = regionFilter === 'all' || record.region?.toLowerCase() === regionFilter.toLowerCase();
+      const areaMatch = areaFilter === 'all' || record.area?.toLowerCase() === areaFilter.toLowerCase();
+      const regionMatch = regionFilter === 'all' || record.region?.toLowerCase() === regionFilter.toLowerCase();
 
-      return nameMatch && statusMatch && roleMatch; // && areaMatch && regionMatch;
+      return nameMatch && statusMatch && roleMatch && areaMatch && regionMatch;
     });
   }, [bagLiftRecords, searchQuery, statusFilter, roleFilter]);
-  // Removed areaFilter/regionFilter from deps as they are commented out above
-
-
 
   // --- 3. Define Columns for Bag Lift DataTable ---
   const bagLiftColumns: ColumnDef<BagLiftRecord>[] = [
     { accessorKey: "id", header: "Record ID", cell: ({ row }) => <span className="text-xs font-mono">{row.original.id.substring(0, 8)}...</span> },
     { accessorKey: "masonName", header: "Mason Name" },
-    { accessorKey: "dealerName", header: "Dealer Name" },
+    { accessorKey: "dealerName", header: "Associated Dealer" },
     {
       accessorKey: "purchaseDate",
       header: "Purchase Date",
@@ -414,7 +411,7 @@ export default function BagsLiftPage() {
             (v) => { setRoleFilter(v); },
             availableRoles,
             isLoadingRoles
-          )} */}
+          )} */} 
 
           {/* 4. Area Filter (Following the sample style) */}
           {renderSelectFilter(
@@ -477,7 +474,7 @@ export default function BagsLiftPage() {
                 <Input value={selectedRecord.masonName} readOnly />
               </div>
               <div>
-                <Label>Dealer Name</Label>
+                <Label>Associated Dealer</Label>
                 <Input value={selectedRecord.dealerName || 'N/A'} readOnly />
               </div>
 

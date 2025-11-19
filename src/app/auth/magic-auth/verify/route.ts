@@ -13,23 +13,19 @@ function getIpAddress(request: NextRequest): string | undefined {
 }
 // --- END: IP UTILITY ---
 
-// --- Define the required constant locally ---
-const WORKOS_SESSION_COOKIE_NAME = 'wos-session';
-
-// Initialize the WorkOS client.
-if (!process.env.WORKOS_API_KEY || !process.env.WORKOS_CLIENT_ID || !process.env.WORKOS_COOKIE_PASSWORD) { // <-- ADDED COOKIE PASSWORD CHECK
-    throw new Error('WorkOS environment variables are not set');
-}
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
-const CLIENT_ID = process.env.WORKOS_CLIENT_ID;
-const COOKIE_PASSWORD = process.env.WORKOS_COOKIE_PASSWORD; // <-- ADDED THIS
-
-/**
- * Handles the POST request for Magic Auth Code Verification.
- * This is the route: /api/auth/magic-auth/verify
- */
 export const POST = async (request: NextRequest) => {
     try {
+        // --- Define the required constant locally ---
+        const WORKOS_SESSION_COOKIE_NAME = 'wos-session';
+
+        // Initialize the WorkOS client.
+        if (!process.env.WORKOS_API_KEY || !process.env.WORKOS_CLIENT_ID || !process.env.WORKOS_COOKIE_PASSWORD) { // <-- ADDED COOKIE PASSWORD CHECK
+            throw new Error('WorkOS environment variables are not set');
+        }
+        const workos = new WorkOS(process.env.WORKOS_API_KEY);
+        const CLIENT_ID = process.env.WORKOS_CLIENT_ID;
+        const COOKIE_PASSWORD = process.env.WORKOS_COOKIE_PASSWORD;
+        
         const body = await request.json();
         const { email, code, invitationToken } = body;
 
