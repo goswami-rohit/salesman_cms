@@ -235,7 +235,7 @@ export default function BagsLiftPage() {
 
     try {
       const response = await fetch(`${BAG_LIFT_ACTION_API_BASE}/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -285,7 +285,7 @@ export default function BagsLiftPage() {
     {
       accessorKey: "pointsCredited",
       header: "Points",
-      cell: ({ row }) => <div className='font-medium text-primary flex items-center'>{row.original.pointsCredited} <IndianRupee className='w-3 h-3 ml-1' /></div>
+      cell: ({ row }) => <span className="font-medium">{row.original.pointsCredited}</span>
     },
     {
       accessorKey: "status",
@@ -408,31 +408,31 @@ export default function BagsLiftPage() {
           )}
 
           {/* 3. Role Filter */}
-          {renderSelectFilter(
+          {/* {renderSelectFilter(
             'Role',
             roleFilter,
             (v) => { setRoleFilter(v); },
             availableRoles,
             isLoadingRoles
-          )}
+          )} */}
 
           {/* 4. Area Filter (Following the sample style) */}
-          {/* {renderSelectFilter(
+          {renderSelectFilter(
             'Area', 
             areaFilter, 
             (v) => { setAreaFilter(v); }, 
             availableAreas, 
             isLoadingLocations
-          )} */}
+          )}
 
           {/* 5. Region Filter (Following the sample style) */}
-          {/* {renderSelectFilter(
-            'Region', 
+          {renderSelectFilter(
+            'Region(Zone)', 
             regionFilter, 
             (v) => { setRegionFilter(v); }, 
             availableRegions, 
             isLoadingLocations
-          )} */}
+          )}
 
           {/* Display filter option errors if any */}
           {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}

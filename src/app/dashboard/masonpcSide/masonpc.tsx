@@ -16,14 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from '@/components/ui/pagination';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -31,13 +23,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { BASE_URL } from '@/lib/Reusable-constants';
 
 // --- CONSTANTS AND TYPES ---
-const ITEMS_PER_PAGE = 10;
 const MASON_PC_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/mason-pc`;
 const MASON_PC_ACTION_API_BASE = `/api/dashboardPagesAPI/masonpc-side/mason-pc`;
 const ROLES_API_ENDPOINT = `/api/users/user-roles`;
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`; // Added
 
 export type KycStatus = 'none' | 'pending' | 'verified' | 'rejected';
 export type KycVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'NONE';
@@ -71,7 +62,7 @@ export interface MasonPcFullDetails {
 }
 
 interface RolesResponse { roles: string[]; }
-
+interface LocationsResponse { areas: string[]; regions: string[]; } // Added
 
 /**
  * Helper function to render the Select filter component 
@@ -129,13 +120,20 @@ export default function MasonPcPage() {
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  // Set default filter value to 'all' to fetch all records initially
+  const [areaFilter, setAreaFilter] = useState('all'); // Added
+  const [regionFilter, setRegionFilter] = useState('all'); // Added
   const [kycStatusFilter, setKycStatusFilter] = useState<KycVerificationStatus | 'all'>('all');
 
-  // --- Filter Options States (omitted for brevity) ---
+  // --- Filter Options States ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [availableAreas, setAvailableAreas] = useState<string[]>([]); // Added
+  const [availableRegions, setAvailableRegions] = useState<string[]>([]); // Added
+  
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true); // Added
+  
   const [roleError, setRoleError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null); // Added
 
   // --- Action/Modal States ---
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -154,10 +152,8 @@ export default function MasonPcPage() {
       // Fetch data based on the selected status filter
       const url = new URL(MASON_PC_API_ENDPOINT, window.location.origin);
       if (kycStatusFilter && kycStatusFilter !== 'all') {
-        // Only set the search param if a specific filter is selected (PENDING, VERIFIED, REJECTED, NONE)
         url.searchParams.set('kycStatus', kycStatusFilter);
       } else {
-        // If 'all' is selected, delete the search param to fetch all records
         url.searchParams.delete('kycStatus');
       }
 
@@ -187,7 +183,6 @@ export default function MasonPcPage() {
     }
   }, [kycStatusFilter]);
 
-  // --- Filter Options Fetching (omitted for brevity) ---
   const fetchRoles = useCallback(async () => {
     setIsLoadingRoles(true);
     setRoleError(null);
@@ -204,14 +199,35 @@ export default function MasonPcPage() {
     }
   }, []);
 
+  // ADDED: Fetch Locations (Areas & Regions)
+  const fetchLocations = useCallback(async () => {
+    setIsLoadingLocations(true);
+    setLocationError(null);
+    try {
+      const response = await fetch(LOCATION_API_ENDPOINT);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data: LocationsResponse = await response.json();
+      setAvailableAreas(Array.isArray(data.areas) ? data.areas.filter(Boolean) : []);
+      setAvailableRegions(Array.isArray(data.regions) ? data.regions.filter(Boolean) : []);
+    } catch (err: any) {
+      console.error('Failed to fetch filter locations:', err);
+      setLocationError('Failed to load Area/Region filters.');
+    } finally {
+      setIsLoadingLocations(false);
+    }
+  }, []);
+
   // Initial data loads
   React.useEffect(() => {
     fetchMasonPcRecords();
     fetchRoles();
-  }, [fetchMasonPcRecords, fetchRoles]);
+    fetchLocations(); // Added
+  }, [fetchMasonPcRecords, fetchRoles, fetchLocations]);
 
 
-  // --- Action Handlers (omitted for brevity) ---
+  // --- Action Handlers ---
   const handleVerificationAction = async (id: string, action: 'VERIFIED' | 'REJECTED', remarks: string = '') => {
     setIsUpdatingId(id);
     const toastId = `kyc-update-${id}`;
@@ -219,7 +235,7 @@ export default function MasonPcPage() {
 
     try {
       const response = await fetch(`${MASON_PC_ACTION_API_BASE}/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           verificationStatus: action,
@@ -257,9 +273,8 @@ export default function MasonPcPage() {
   };
 
 
-  // --- Filtering and Pagination Logic (omitted for brevity) ---
+  // --- Filtering Logic ---
   const filteredRecords = useMemo<MasonPcFullDetails[]>(() => {
-
     return allMasonPcRecords.filter((record) => {
       const nameMatch =
         !searchQuery ||
@@ -269,9 +284,19 @@ export default function MasonPcPage() {
         roleFilter === 'all' ||
         (record.role ?? '').toLowerCase() === roleFilter.toLowerCase();
 
-      return nameMatch && roleMatch;
+      // ADDED: Area filter logic
+      const areaMatch = 
+        areaFilter === 'all' || 
+        (record.area ?? '').toLowerCase() === areaFilter.toLowerCase();
+
+      // ADDED: Region filter logic
+      const regionMatch = 
+        regionFilter === 'all' || 
+        (record.region ?? '').toLowerCase() === regionFilter.toLowerCase();
+
+      return nameMatch && roleMatch && areaMatch && regionMatch;
     });
-  }, [allMasonPcRecords, searchQuery, roleFilter]);
+  }, [allMasonPcRecords, searchQuery, roleFilter, areaFilter, regionFilter]);
 
 
   // --- 3. Define Columns for Mason/PC DataTable ---
@@ -279,7 +304,6 @@ export default function MasonPcPage() {
     { accessorKey: "name", header: "Mason Name" },
     { accessorKey: "phoneNumber", header: "Phone No." },
     {
-      // FIX: Used kycVerificationStatus which is the FE display string
       accessorKey: "kycVerificationStatus",
       header: "KYC Status",
       cell: ({ row }) => {
@@ -288,16 +312,11 @@ export default function MasonPcPage() {
         if (status === 'VERIFIED') color = 'text-green-500';
         if (status === 'PENDING') color = 'text-yellow-500';
         if (status === 'REJECTED') color = 'text-red-500';
-        // 'NONE' uses the default gray color
-
         return <span className={`font-medium ${color}`}>{status}</span>;
       }
     },
     { accessorKey: "bagsLifted", header: "Bags Lifted" },
-    {
-      accessorKey: "pointsBalance",
-      header: "Points Balance"
-    },
+    { accessorKey: "pointsBalance", header: "Points Balance" },
     {
       accessorKey: "kycDocumentName",
       header: "KYC Doc",
@@ -317,7 +336,6 @@ export default function MasonPcPage() {
 
         return (
           <div className="flex gap-2">
-            {/* View Button */}
             <Button
               variant="outline"
               size="sm"
@@ -328,7 +346,6 @@ export default function MasonPcPage() {
               <Eye className="h-4 w-4 mr-1" /> View
             </Button>
 
-            {/* Accept/Reject Buttons (only visible if status is PENDING) */}
             {isPending && (
               <>
                 <Button
@@ -408,15 +425,34 @@ export default function MasonPcPage() {
           </div>
 
           {/* 3. Role Filter */}
-          {renderSelectFilter(
+          {/* {renderSelectFilter(
             'Salesman Role',
             roleFilter,
             (v) => { setRoleFilter(v); },
             availableRoles,
             isLoadingRoles
+          )} */}
+
+          {/* 4. Area Filter (Added) */}
+          {renderSelectFilter(
+            'Area',
+            areaFilter,
+            (v) => { setAreaFilter(v); },
+            availableAreas,
+            isLoadingLocations
+          )}
+
+          {/* 5. Region Filter (Added) */}
+          {renderSelectFilter(
+            'Region(Zone)',
+            regionFilter,
+            (v) => { setRegionFilter(v); },
+            availableRegions,
+            isLoadingLocations
           )}
 
           {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
+          {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
         </div>
         {/* --- End Filter Components --- */}
 
@@ -432,13 +468,12 @@ export default function MasonPcPage() {
                 enableRowDragging={false}
                 onRowOrderChange={handleMasonPcOrderChange}
               />
-
             </>
           )}
         </div>
       </div>
 
-      {/* --- View KYC Modal (CORRECTED) --- */}
+      {/* --- View KYC Modal --- */}
       {selectedRecord && (
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -449,7 +484,6 @@ export default function MasonPcPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-              {/* ... (Mason & Submission Info section is unchanged) ... */}
               <div className="md:col-span-2 text-lg font-semibold border-b pb-2">Mason & Submission Info</div>
               <div>
                 <Label htmlFor="name">Mason Name</Label>
@@ -465,7 +499,6 @@ export default function MasonPcPage() {
               </div>
               <div>
                 <Label htmlFor="submittedAt">Latest Submission Date</Label>
-                {/* This is the nice date format you wanted */}
                 <Input
                   id="submittedAt"
                   value={
@@ -477,7 +510,6 @@ export default function MasonPcPage() {
                 />
               </div>
 
-              {/* ... (KYC Document Details section is unchanged) ... */}
               <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">KYC Document Details (from `Mason_PC_Side`)</div>
               <div>
                 <Label htmlFor="docName">Document Name</Label>
@@ -488,7 +520,6 @@ export default function MasonPcPage() {
                 <Input id="docId" value={selectedRecord.kycDocumentIdNum || 'N/A'} readOnly />
               </div>
 
-              {/* ... (Full KYC Details section is unchanged, EXCEPT for documents) ... */}
               <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">Full KYC Details (from `KYCSubmission` table)</div>
               <div>
                 <Label htmlFor="aadhaar">Aadhaar Number</Label>
@@ -541,7 +572,6 @@ export default function MasonPcPage() {
                   );
                 })()}
               </div>
-              {/* --- END OF REBUILT SECTION --- */}
 
               <div className="md:col-span-2">
                 <Label htmlFor="remark">Mason Submission Remark</Label>

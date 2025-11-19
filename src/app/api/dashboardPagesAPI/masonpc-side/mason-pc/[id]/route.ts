@@ -6,10 +6,12 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
-// FIX: Replaced z.enum with z.string()
+// --- IMPORT BONUS LOGIC ---
+import { calculateJoiningBonusPoints } from '@/lib/pointsCalcLogic';
+
 const kycUpdateSchema = z.object({
-    verificationStatus: z.string(), // Expects "VERIFIED" or "REJECTED"
-    adminRemarks: z.string().nullable().optional(), // String? in Prisma is nullable().optional()
+    verificationStatus: z.enum(['VERIFIED', 'REJECTED']),
+    adminRemarks: z.string().nullable().optional(),
 });
 
 // FE → Mason_PC_Side.kycStatus
@@ -24,17 +26,14 @@ const submissionStatusMap: Record<'VERIFIED' | 'REJECTED', string> = {
   REJECTED: 'rejected',
 };
 
-
-
-const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
+const allowedRoles = [
+    'president', 'senior-general-manager', 'general-manager',
     'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
     'senior-manager', 'manager', 'assistant-manager',
-    'senior-executive',];
+    'senior-executive',
+];
 
-/**
- * PUT: Update the kycStatus on Mason_PC_Side and the latest status/remark on KYCSubmission.
- */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } | Promise<{ id: string }> }) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
         const resolvedParams = await Promise.resolve(params);
         const masonPcId = resolvedParams.id;
@@ -43,11 +42,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             return NextResponse.json({ error: 'Missing Mason/PC ID in request URL' }, { status: 400 });
         }
 
+        // --- 1. Auth & Role Check ---
         const claims = await getTokenClaims();
-
-        // 1. Authentication & Authorization Check (unchanged)
         if (!claims || !claims.sub) {
-            return NextResponse.json({ error: 'Unauthorized: No claims found' }, { status: 401 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const currentUser = await prisma.user.findUnique({
@@ -56,73 +54,118 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         });
 
         if (!currentUser || !allowedRoles.includes(currentUser.role)) {
-            return NextResponse.json({ error: `Forbidden: Your role (${currentUser?.role || 'None'}) is not authorized for KYC verification.` }, { status: 403 });
+            return NextResponse.json({ error: `Forbidden: Role (${currentUser?.role}) not authorized.` }, { status: 403 });
         }
 
-        // 2. Validate request body
+        // --- 2. Validate Body ---
         const body = await request.json();
-        const validatedBody = kycUpdateSchema.safeParse(body);
+        const parsed = kycUpdateSchema.safeParse(body);
 
-        if (!validatedBody.success) {
-            console.error("KYC PUT Request Body Validation Error:", validatedBody.error);
-            return NextResponse.json({ error: 'Invalid verification status format or value.', details: validatedBody.error.issues }, { status: 400 });
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 });
         }
 
-        const { verificationStatus, adminRemarks } = validatedBody.data;
-
-        // Validation against accepted status values (now string-based)
-        if (verificationStatus !== 'VERIFIED' && verificationStatus !== 'REJECTED') {
-            return NextResponse.json({ error: 'Invalid verificationStatus value provided.' }, { status: 400 });
-        }
+        const { verificationStatus, adminRemarks } = parsed.data;
 
         const masonNextStatus = masonStatusMap[verificationStatus];
         const submissionNextStatus = submissionStatusMap[verificationStatus];
 
-        // 3. Verify Mason/PC ownership and existence
+        // --- 3. Fetch Existing Record ---
         const masonPcToUpdate = await prisma.mason_PC_Side.findUnique({
             where: { id: masonPcId },
-            include: { user: true, kycSubmissions: { where: { status: 'pending' }, orderBy: { createdAt: 'desc' }, take: 1 } }
+            include: { 
+                user: true, 
+                // Fetch the specific pending submission we are acting on
+                kycSubmissions: { 
+                    where: { status: 'pending' }, 
+                    orderBy: { createdAt: 'desc' }, 
+                    take: 1 
+                } 
+            }
         });
 
         if (!masonPcToUpdate) {
             return NextResponse.json({ error: 'Mason/PC record not found' }, { status: 404 });
         }
 
-        // Ensure the record belongs to the current user's company (unchanged)
         if (!masonPcToUpdate.user || masonPcToUpdate.user.companyId !== currentUser.companyId) {
-            return NextResponse.json({ error: 'Forbidden: Cannot update a record from another company' }, { status: 403 });
+            return NextResponse.json({ error: 'Forbidden: External company record.' }, { status: 403 });
         }
 
-        const latestPendingSubmission = masonPcToUpdate.kycSubmissions?.[0];
+        const latestSubmission = masonPcToUpdate.kycSubmissions?.[0];
 
-        // Use a transaction to update both Mason_PC_Side and the latest KYCSubmission
-        const [updatedMasonPc] = await prisma.$transaction([
-            prisma.mason_PC_Side.update({
+        // --- 4. BONUS CALCULATION LOGIC ---
+        const joiningBonus = calculateJoiningBonusPoints(); // Currently 250
+        
+        // Check if we should apply the bonus:
+        // 1. Action must be 'VERIFIED'
+        // 2. User must NOT already be 'verified' (prevent double-clicking or re-verifying for points)
+        // 3. Bonus amount must be > 0 (within date range)
+        // 4. Must have a valid submission record to link the transaction to
+        const alreadyVerified = masonPcToUpdate.kycStatus === 'verified';
+        const shouldApplyBonus = 
+            verificationStatus === 'VERIFIED' && 
+            !alreadyVerified && 
+            joiningBonus > 0 &&
+            !!latestSubmission;
+
+
+        // --- 5. TRANSACTION ---
+        const updatedRecord = await prisma.$transaction(async (tx) => {
+            
+            // A. Update Mason Status (and Balance if applicable)
+            const updatedMason = await tx.mason_PC_Side.update({
                 where: { id: masonPcId },
                 data: {
-                    kycStatus: masonNextStatus, // "approved" or "none"
+                    kycStatus: masonNextStatus,
+                    // Atomic increment if bonus applies
+                    pointsBalance: shouldApplyBonus 
+                        ? { increment: joiningBonus } 
+                        : undefined 
                 },
-            }),
+            });
 
-            latestPendingSubmission
-                ? prisma.kYCSubmission.update({
-                    where: { id: latestPendingSubmission.id },
+            // B. Update KYC Submission Status
+            if (latestSubmission) {
+                await tx.kYCSubmission.update({
+                    where: { id: latestSubmission.id },
                     data: {
-                        status: submissionNextStatus, // "verified" or "rejected"
+                        status: submissionNextStatus,
                         remark: adminRemarks ?? null,
                     },
-                })
-                : prisma.$queryRaw`SELECT 1;`,
-        ]);
+                });
+            }
 
-        // 5. Success Response
+            // C. Insert Ledger Entry (Only if Bonus Applies)
+            if (shouldApplyBonus && latestSubmission) {
+                await tx.pointsLedger.create({
+                    data: {
+                        masonId: masonPcId,
+                        sourceType: 'joining_bonus',
+                        // We link the bonus to the specific KYC Submission ID. 
+                        // Since sourceId is @unique, this mathematically prevents duplicate bonuses for the same document.
+                        sourceId: latestSubmission.id, 
+                        points: joiningBonus,
+                        memo: `Joining Bonus: KYC Verified on ${new Date().toLocaleDateString()}`
+                    }
+                });
+            }
+
+            return updatedMason;
+        });
+
+        // --- 6. Return Success ---
         return NextResponse.json({
-            message: `Mason/PC KYC status updated to ${verificationStatus} and submission record processed.`,
-            record: updatedMasonPc
+            message: `Mason/PC KYC updated to ${verificationStatus}. ${shouldApplyBonus ? `Joining Bonus of ${joiningBonus} points applied.` : ''}`,
+            record: updatedRecord
         }, { status: 200 });
 
     } catch (error) {
-        console.error('Error updating Mason/PC KYC status (PUT):', error);
+        console.error('Error updating KYC:', error);
+        // Handle specific Prisma unique constraint violations gracefully if they happen
+        if ((error as any).code === 'P2002') {
+             return NextResponse.json({ error: 'Transaction failed: Bonus already applied for this submission.' }, { status: 409 });
+        }
         return NextResponse.json({ error: 'Failed to update KYC status', details: (error as Error).message }, { status: 500 });
     }
 }
