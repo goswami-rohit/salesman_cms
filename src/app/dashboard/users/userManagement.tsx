@@ -474,11 +474,11 @@ export default function UsersManagement({ adminUser }: Props) {
             </p>
           </div>
           <div className="flex space-x-3">
-            <BulkInviteDialog
+            {/* <BulkInviteDialog
               onSuccess={handleSuccess}
               onError={handleError}
               onRefreshUsers={fetchUsers}
-            />
+            /> */}
 
             <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
               <DialogTrigger asChild>
