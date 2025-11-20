@@ -3,7 +3,6 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-// Assume your components/ui are available for Input, Button, Card, Separator, etc.
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -11,15 +10,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { BASE_URL } from '@/lib/Reusable-constants';
 
 function MagicAuthForm() {
-    //const router = useRouter();
     const searchParams = useSearchParams();
 
     // Read email and invitation token from the URL query params
+    // If token exists -> Invitation Flow. If null -> Regular Login Flow.
     const token = searchParams.get('inviteKey');
     const emailFromUrl = searchParams.get('email') || '';
+
+    // Determine Mode
+    const isInviteFlow = !!token;
 
     const [email, setEmail] = useState(emailFromUrl);
     const [code, setCode] = useState('');
@@ -30,7 +31,7 @@ function MagicAuthForm() {
 
     const isEmailStep = step === 'email';
 
-    // 1. Initiate Magic Auth (POST to /api/auth/magic-auth/create)
+    // 1. Initiate Magic Auth
     const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -44,7 +45,6 @@ function MagicAuthForm() {
         }
 
         try {
-            // *** UPDATED ENDPOINT: Use the dedicated CREATE route ***
             const response = await fetch(`/auth/magic-auth`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -67,7 +67,7 @@ function MagicAuthForm() {
         }
     };
 
-    // 2. Verify Code and Log In (POST to /api/auth/magic-auth/verify)
+    // 2. Verify Code
     const handleCodeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -81,37 +81,28 @@ function MagicAuthForm() {
         }
 
         try {
-            // *** UPDATED ENDPOINT: Use the dedicated VERIFY route ***
             const response = await fetch(`/auth/magic-auth/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email,
                     code,
-                    invitationToken: token // Pass the token here for invitation acceptance (local linking)
+                    invitationToken: token // This will be null for regular logins, which is correct
                 }),
             });
-
-            // NOTE: On successful login, the browser will usually follow the 307/302 redirect 
-            // from the backend automatically, skipping this block.
 
             const data = await response.json();
 
             if (response.ok && data.redirectUrl) {
-                // Instead of client-side router.push, use window.location.href 
-                // to force a full browser navigation. This allows the middleware 
-                // to correctly handle the AuthKit redirect without conflict.
-                setMessage('Account successfully activated. Redirecting for final login...');
+                setMessage('Authentication successful. Redirecting...');
+                // Force full page navigation to refresh middleware state
                 window.location.href = data.redirectUrl;
                 return;
             }
 
             if (!response.ok) {
-                setError(data.error || 'Invalid code or authentication failed. Please try again.');
+                setError(data.error || 'Invalid code or authentication failed.');
             }
-
-            // The browser will typically redirect before reaching the 'else' if sealedSession worked.
-            // If the code reaches here and response.ok is true, something unexpected happened.
 
         } catch (err) {
             console.error(err);
@@ -121,11 +112,21 @@ function MagicAuthForm() {
         }
     };
 
-    // Construct the Google SSO redirect URL with the invitation token
-    // This assumes your standard WorkOS login route (/login) can accept an 'invitation_token' 
-    // to ensure the user is accepted into the organization after successful SSO.
-    const googleSsoUrl = `/login?invitation_token=${token}`;
+    // Construct Google SSO URL correctly based on context
+    const googleSsoUrl = token ? `/login?invitation_token=${token}` : `/login`;
 
+    // Helper text variables based on flow
+    const pageTitle = isEmailStep 
+        ? (isInviteFlow ? 'Accept Invitation' : 'Sign In') 
+        : 'Enter Login Code';
+    
+    const pageDescription = isEmailStep 
+        ? (isInviteFlow ? 'Enter your invited email address to receive your code.' : 'Enter your email to sign in with a secure code.')
+        : (message || 'Check your inbox for the 6-digit code.');
+
+    const googleSectionTitle = isInviteFlow 
+        ? "IF YOU ARE INVITED ON A GOOGLE MAIL ACCOUNT:" 
+        : "OR CONTINUE WITH:";
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
@@ -133,10 +134,10 @@ function MagicAuthForm() {
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl flex items-center justify-center gap-2">
                         <Mail className="h-6 w-6 text-primary" />
-                        {isEmailStep ? 'Accept Invitation' : 'Enter Login Code'}
+                        {pageTitle}
                     </CardTitle>
                     <CardDescription>
-                        {isEmailStep ? 'Enter your invited email address to receive your one-time login code.' : message || 'Check your inbox for the 6-digit code.'}
+                        {pageDescription}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -187,11 +188,11 @@ function MagicAuthForm() {
                     <Separator className="my-6" />
 
                     <div className="space-y-3">
-                        <p className="text-center text-sm font-semibold text-gray-700 dark:text-red-400">
-                            IF YOU ARE INVITED ON A GOOGLE MAIL ACCOUNT:
+                        <p className="text-center text-xs font-bold text-gray-500 tracking-wide uppercase">
+                            {googleSectionTitle}
                         </p>
 
-                        {/* Google SSO Button with token passed */}
+                        {/* Google SSO Button */}
                         <Link href={googleSsoUrl} passHref>
                             <Button
                                 type="button"
@@ -199,13 +200,15 @@ function MagicAuthForm() {
                                 className="w-full"
                                 disabled={loading}
                             >
-                                Sign In using Google
+                                {isInviteFlow ? 'Accept with Google' : 'Sign In with Google'}
                             </Button>
                         </Link>
 
-                        <div className="text-center text-sm text-gray-500 pt-2">
-                            Using the Google option will automatically accept your invitation.
-                        </div>
+                        {isInviteFlow && (
+                            <div className="text-center text-xs text-gray-500 pt-1">
+                                Using the Google option will automatically accept your invitation.
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -213,7 +216,6 @@ function MagicAuthForm() {
     );
 }
 
-// This prevents the server from attempting to render useSearchParams() during the static build.
 export default function MagicAuthPage() {
     const fallbackUI = (
         <div className="flex items-center justify-center min-h-screen">

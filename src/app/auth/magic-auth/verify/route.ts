@@ -25,7 +25,7 @@ export const POST = async (request: NextRequest) => {
         const workos = new WorkOS(process.env.WORKOS_API_KEY);
         const CLIENT_ID = process.env.WORKOS_CLIENT_ID;
         const COOKIE_PASSWORD = process.env.WORKOS_COOKIE_PASSWORD;
-        
+
         const body = await request.json();
         const { email, code, invitationToken } = body;
 
@@ -57,11 +57,10 @@ export const POST = async (request: NextRequest) => {
             userAgent: userAgent,
         });
 
-        // --- SESSION CHECK (This should now work!) ---
         if (sealedSession) {
             console.log(`User authenticated via Magic Auth: ${user!.email}. Session cookie set.`);
 
-            // --- Now, run the invitation logic separately ---
+            // 2. Handle Invitation Acceptance (if token exists)
             if (user && invitationToken) {
                 console.log('Invitation token detected. Attempting to accept invitation on WorkOS...');
                 try {
@@ -75,7 +74,7 @@ export const POST = async (request: NextRequest) => {
                     }
                 }
 
-                // 3. MANUAL LOCAL DB LINKING
+                // 3. Update Local Database
                 const pendingUser = await prisma.user.findFirst({
                     where: {
                         email: user.email,
@@ -96,64 +95,27 @@ export const POST = async (request: NextRequest) => {
                     console.log(`Successfully accepted invitation for local user ID ${pendingUser.id} and linked WorkOS ID ${user.id}`);
                 }
             }
-            // --- END: INVITATION LOGIC ---
 
-            // --- THIS IS THE FIX ---
-            // 1. Create the JSON response that the client is expecting.
+            // 4. Return Response with Cookie
             const response = NextResponse.json({ success: true, redirectUrl: '/dashboard' });
 
-            // 2. Set the cookie *on the response object*.
+            // FIX: Dynamic Secure Flag
+            // If we are on HTTPS (Render), this is 'https'. If on HTTP (IP), it's 'http'.
+            const protocol = request.headers.get('x-forwarded-proto') || 'http';
+            const isSecure = protocol === 'https';
+
             response.cookies.set(WORKOS_SESSION_COOKIE_NAME, sealedSession, {
                 path: '/',
                 maxAge: 7 * 24 * 60 * 60,
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
+                // Only set Secure if we are actually on HTTPS
+                secure: isSecure,
                 sameSite: 'lax',
             });
 
-            // 3. Return the response with both JSON and cookie.
             return response;
-            // --- END OF FIX ---
-        }
-
-        // --- FAILURE/RECOVERY PATH ---
-        // This is your original, correct "two-login" flow.
-        else {
-            console.error('Authentication Failed: No sealedSession returned from WorkOS. Forcing clean redirect.');
-
-            // We can still try to link the user even if we didn't get a session
-            let userLinked = false;
-            if (user && invitationToken) {
-                // (We'll just re-run the logic here for simplicity)
-                console.log('🔄 (Fallback) Invitation token detected. Attempting to accept invitation on WorkOS...');
-                try {
-                    await workos.userManagement.acceptInvitation(invitationToken);
-                    console.log(`(Fallback) WorkOS Invitation accepted.`);
-                } catch (acceptError: any) {
-                    console.warn('(Fallback) Invitation already accepted or expired.');
-                }
-
-                const pendingUser = await prisma.user.findFirst({
-                    where: { email: user.email, status: 'pending', inviteToken: invitationToken }
-                });
-                if (pendingUser) {
-                    await prisma.user.update({
-                        where: { id: pendingUser.id },
-                        data: { workosUserId: user.id, status: 'active', inviteToken: null }
-                    });
-                    console.log(`(Fallback) Successfully linked local user ID ${pendingUser.id}`);
-                    userLinked = true;
-                }
-            }
-
-            if (userLinked) {
-                // Account is now active and provisioned, force standard login attempt.
-                return NextResponse.json({
-                    success: true,
-                    redirectUrl: '/login?account_activated=true'
-                }, { status: 200 });
-            }
-
+        } else {
+            console.error('Authentication Failed: No sealedSession returned from WorkOS.');
             return NextResponse.json({
                 error: 'Authentication failed. Please try again.'
             }, { status: 401 });
