@@ -262,14 +262,6 @@ export async function POST(request: NextRequest) {
             }, { status: 500 });
         }
 
-        // --- FIX: Extract SECRET TOKEN ---
-        const inviteUrlObj = new URL(workosInvitation.acceptInvitationUrl);
-        const secretToken = inviteUrlObj.searchParams.get('invitation_token');
-
-        if (!secretToken) {
-            throw new Error('Failed to extract invitation token from WorkOS URL');
-        }
-
         // --- START: MODIFIED INVITATION URL LOGIC ---
         // Construct a custom invitation URL pointing to the new Magic Auth page
         // We use the workosInvitation.id (which acts as the invitation token)
@@ -291,7 +283,7 @@ export async function POST(request: NextRequest) {
                     region,
                     area,
                     status: 'pending',
-                    inviteToken: secretToken, // Use inviteToken for the workosInvitation ID
+                    inviteToken: workosInvitation.id, // Use inviteToken for the workosInvitation ID
                     // Salesman fields
                     salesmanLoginId,
                     hashedPassword,
@@ -313,7 +305,7 @@ export async function POST(request: NextRequest) {
                     region,
                     area,
                     workosUserId: null, // The user ID is not yet available
-                    inviteToken: secretToken, // Store the invitation ID
+                    inviteToken: workosInvitation.id, // Store the invitation ID
                     companyId: adminUser.companyId,
                     status: 'pending',
                     // Salesman fields
@@ -337,8 +329,8 @@ export async function POST(request: NextRequest) {
                 lastName,
                 companyName: adminUser.company.companyName,
                 adminName: `${adminUser.firstName} ${adminUser.lastName}`,
-                //inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
-                inviteUrl: customInviteUrl, // magicAuth setup
+                inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
+                //inviteUrl: customInviteUrl, // magicAuth setup
                 role: workosRole,
                 salesmanLoginId: salesmanLoginId,
                 tempPassword: tempPasswordPlaintext,

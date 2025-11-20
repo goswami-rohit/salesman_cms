@@ -131,12 +131,6 @@ async function processSingleInvitation(
         throw new Error(`WorkOS invitation failed for ${email}: ${workosError.message}`);
     }
 
-    const inviteUrlObj = new URL(workosInvitation.acceptInvitationUrl);
-    const secretToken = inviteUrlObj.searchParams.get('invitation_token');
-
-    if (!secretToken) {
-        throw new Error(`Failed to extract invitation token for ${email}`);
-    }
     // --- START: MODIFIED INVITATION URL LOGIC ---
     // Construct a custom invitation URL pointing to the new Magic Auth page
     const customInviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login/magicAuth?email=${encodeURIComponent(email)}&token=${workosInvitation.id}`;
@@ -151,7 +145,7 @@ async function processSingleInvitation(
         region, 
         area,
         status: 'pending',
-        inviteToken: secretToken,
+        inviteToken: workosInvitation.id,
         salesmanLoginId,
         hashedPassword,
         isTechnicalRole, 
@@ -181,8 +175,8 @@ async function processSingleInvitation(
             lastName, 
             companyName, 
             adminName,
-            //inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
-            inviteUrl: customInviteUrl, // magicAuth setup
+            inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
+            //inviteUrl: customInviteUrl, // magicAuth setup
             role: workosRole,
             salesmanLoginId: salesmanLoginId,
             tempPassword: tempPasswordPlaintext,
