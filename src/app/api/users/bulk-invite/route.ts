@@ -6,7 +6,7 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { WorkOS } from '@workos-inc/node';
 import { 
-    sendInvitationEmailGmail, 
+    sendInvitationEmailResend, 
     generateRandomPassword, 
 } from '@/app/api/users/route';
 
@@ -62,7 +62,7 @@ async function processSingleInvitation(
     }
 
     const workosRole = role.toLowerCase();
-    const isTechnicalRole = !!isTechnical; // <-- ADDED: Ensure boolean
+    const isTechnicalRole = !!isTechnical;
     const companyId = adminUser!.companyId;
     const companyName = adminUser!.company!?.companyName;
     const adminName = `${adminUser!.firstName} ${adminUser!.lastName}`;
@@ -114,7 +114,7 @@ async function processSingleInvitation(
             }
         }
         techTempPasswordPlaintext = generateRandomPassword();
-        techHashedPassword = techTempPasswordPlaintext; // Storing plaintext as per existing pattern
+        techHashedPassword = techTempPasswordPlaintext;
     }
     // --- END: ADDED TECHNICAL CREDENTIAL LOGIC ---
 
@@ -137,7 +137,6 @@ async function processSingleInvitation(
     // --- END: MODIFIED INVITATION URL LOGIC ---
 
     // 4. Create/Update user in your database
-    // --- UPDATED: Added new technical fields ---
     const userData = {
         firstName, 
         lastName, 
@@ -149,9 +148,9 @@ async function processSingleInvitation(
         inviteToken: workosInvitation.id,
         salesmanLoginId,
         hashedPassword,
-        isTechnicalRole, // <-- ADDED
-        techLoginId, // <-- ADDED
-        techHashedPassword, // <-- ADDED
+        isTechnicalRole, 
+        techLoginId, 
+        techHashedPassword,
     };
     // --- END UPDATE ---
 
@@ -170,7 +169,7 @@ async function processSingleInvitation(
     // 5. Send custom invitation email
     try {
         // --- UPDATED: Pass new tech credentials to email function ---
-        await sendInvitationEmailGmail({
+        await sendInvitationEmailResend({
             to: email,
             firstName, 
             lastName, 
@@ -179,7 +178,6 @@ async function processSingleInvitation(
             //inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
             inviteUrl: customInviteUrl, // magicAuth setup
             role: workosRole,
-            fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
             salesmanLoginId: salesmanLoginId,
             tempPassword: tempPasswordPlaintext,
             techLoginId: techLoginId, 
@@ -188,7 +186,6 @@ async function processSingleInvitation(
         // --- END UPDATE ---
     } catch (emailError) {
         console.error(`❌ Failed to send invitation email to ${email}:`, emailError);
-        // Do not throw; log the failure and allow the bulk operation to continue
     }
 
     return {
@@ -196,7 +193,7 @@ async function processSingleInvitation(
         email,
         message: 'Invitation sent and email delivered successfully',
         salesmanLoginId,
-        techLoginId, // <-- ADDED
+        techLoginId,
     };
 }
 
