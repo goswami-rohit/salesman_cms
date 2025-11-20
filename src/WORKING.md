@@ -57,25 +57,28 @@ Every single API route in this folder follows a critical, multi-tenant security 
 
 #### `src/app/api/users/`
 
-* **Purpose:** Provides the full CRUD (Create, Read, Update, Delete) API for the User Management page.
+* **Purpose:** Provides the full CRUD (Create, Read, Update, Delete) API for the User Management page, handling both local database records (Prisma) and WorkOS identity management.
 * **`route.ts` (`/api/users`):**
-    * **`GET`:** Fetches all users for the admin's company. It gets the admin's `companyId` via the Core Security Principle and runs `prisma.user.findMany({ where: { companyId } })`.
-    * **`POST`:** Creates a new user. This is a complex workflow:
-        1.  Validates the incoming `email`, `firstName`, `role` using Zod.
-        2.  Performs an **RBAC Check**: It calls `canAssignRole` from `lib/roleHierarchy.ts` to ensure the admin has the authority to assign the requested `role`.
-        3.  Generates a random default password and a unique `salesmanLoginId`.
-        4.  Hashes the password using `bcryptjs`.
-        5.  Calls the WorkOS API (`workos.userManagement.createInvitation()`) to invite the user to the WorkOS organization.
-        6.  Saves the new user to the Prisma database, linking them to the `companyId` and storing the `workosUserId` from the invitation.
-* **`[userId]/route.ts` (`/api/users/:id`):**
-    * **`PUT`:** Updates a user. It gets the `userId` from the URL, validates the request body, and runs `prisma.user.update({ where: { id: userId }, data: { ... } })`/route.ts`].
-    * **`DELETE`:** Deletes a user. It finds the user's `workosUserId` and then calls the *internal* `/api/delete-user` route to handle the WorkOS deletion, ensuring the user is removed from both systems/route.ts`, `api/delete-user/route.ts`].
+    * **`GET`:** Fetches all users for the admin's company. It validates the admin's session and role (checking `allowedAdminRoles`), then retrieves the `companyId` to fetch relevant users from Prisma.
+    * **`POST`:** Creates a new user and sends an invitation.
+        1.  **Validation:** Manually validates required fields (`email`, `firstName`, `lastName`, `role`) and checks for existing users or pending invites.
+        2.  **Credential Generation:**
+            * **Salesman:** Generates a unique `salesmanLoginId` and temporary password for executive roles.
+            * **Technical:** If `isTechnical` is true, generates a unique `techLoginId` and temporary password.
+        3.  **WorkOS Invitation:** Calls `workos.userManagement.sendInvitation()` to create the user in WorkOS.
+        4.  **Email:** Sends a custom HTML invitation email via **Resend** containing the Invite URL and any generated credentials.
+        5.  **Database:** Creates or updates the user in Prisma with `status: 'pending'`, storing the `workosUserId` (if available) and the generated login IDs.
+* **`[userId]/route.ts` (`/api/users/:userId`):**
+    * **`GET`:** Fetches a single user by ID, ensuring they belong to the admin's company.
+    * **`PUT`:** Updates an existing user.
+        1.  **Validation:** Uses **Zod** (`updateUserSchema`) to validate fields like `firstName`, `role`, `isTechnical`, etc.
+        2.  **Technical Credential Logic:** If `isTechnical` is toggled to `true` (and credentials don't exist), it generates a new `techLoginId` and password, then immediately sends a specific "Technical App Credentials" email to the user.
+        3.  **Dual Update:** Updates the local Prisma database and concurrently updates the WorkOS user profile (syncing attributes like `role`, `region`, `area`).
+    * **`DELETE`:** Deletes a user. It verifies admin permissions, prevents self-deletion, and removes the user record from the local Prisma database.
 * **`bulk-invite/route.ts`:**
-    * **`POST`:** Expects an array of users. It uses the `bulkInviteSchema` from Zod for validation. It then loops over the array, performing the same logic as the single `POST` (inviting to WorkOS, creating in Prisma) for each user.
+    * **`POST`:** Accepts an array of user objects. It iterates through them, applying the same logic as the single `POST` route (generating Salesman/Technical credentials, sending WorkOS invites, and sending emails via Resend) but handles errors individually to allow partial success (returning a 207 Multi-Status if needed).
 * **`user-locations/route.ts` & `user-roles/route.ts`:**
-    * **`GET`:** These are helper routes for UI filters. They fetch all users for the company, then use `Set` to de-duplicate all `region`/`area` or `role` values, returning unique arrays.
-
----
+    * **`GET`:** Helper routes for UI filters. They fetch user data for the current company and use Prisma's `distinct` feature to efficiently return unique lists of `region`/`area` or `role`.
 
 #### `src/app/api/dashboardPagesAPI/`
 
@@ -113,17 +116,31 @@ This folder is a key architectural pattern. It doesn't contain generic CRUD logi
     * **`dealer-brand-mapping/route.ts`:** `GET` handler that fetches all `DealerBrandMapping` records and aggregates them by dealer, creating dynamic keys for each brand name (e.g., `"BrandA": 100`).
     * **`dealer-locations/route.ts` & `dealer-types/route.ts`:** `GET` helpers that query the `Dealer` table for `distinct` region, area, and type values to populate UI filter dropdowns.
 
-* **`.../masonpc-side/` (Folder):**
-    * **`mason-pc/route.ts`:** `GET` handler that lists all `Mason_PC_Side` records where the associated `user` belongs to the `currentUser.companyId`.
-    * **`tso-meetings/route.ts`:** `GET` handler that lists all `TSOMeeting` records where the `createdBy` user belongs to the `currentUser.companyId`.
-    * **`schemes-offers/route.ts`:** `GET` handler that lists all `SchemesOffers` records. This route is *not* company-filtered and returns global schemes.
-    * **`masonOnMeetings/route.ts`:** `GET` handler that lists all `MasonsOnMeetings` (join table) records where the `mason`'s associated `user` belongs to the `currentUser.companyId`.
-    * **`masonOnSchemes/route.ts`:** `GET` handler that lists all `MasonOnScheme` (join table) records where the `mason`'s associated `user` belongs to the `currentUser.companyId`.
-    * **`bags-lift/route.ts`:** `GET` handler that lists all `BagLift` records for the `currentUser.companyId` by filtering via the associated `mason`. It joins and flattens data to include `masonName`, `dealerName`, and `approverName`.
-    * **`points-ledger/route.ts`:** `GET` handler that lists all `PointsLedger` records for the `currentUser.companyId` by filtering via the associated `mason`. It joins and flattens data to include `masonName`.
-    * **`rewards/route.ts`:** `GET` handler that lists all `Rewards` records from the master list (not company-filtered). It joins and flattens data to include `categoryName`.
-    * **`reward-categories/route.ts`:** `GET` handler that lists all `RewardCategory` records from the master list (not company-filtered) to populate filters.
-    * **`rewards-redemption/route.ts`:** `GET` handler that lists all `RewardRedemption` records for the `currentUser.companyId` by filtering via the associated `mason`. It joins and flattens data to include `masonName` and `rewardName`.
+#### `.../masonpc-side/`
+
+* **Purpose:** Provides data for the "Mason/PC Side" of the dashboard, handling data related to Masons, their activities (meetings, schemes), and rewards.
+* **`mason-pc/`:**
+    * **`route.ts` (`GET`):** Fetches all `Mason_PC_Side` records where the associated user belongs to the `currentUser.companyId`.
+        * **Features:** filters by `kycStatus` (e.g., pending, verified), joins the latest `KYCSubmission`, and normalizes JSONB documents into a usable format for the frontend.
+    * **`[id]/route.ts` (`PATCH`):** Updates a specific Mason/PC record.
+        * **Logic:** Handles updating assignments (Salesman/Dealer/Site) and KYC Status.
+        * **Bonus:** If status changes to `VERIFIED`, it triggers `calculateJoiningBonusPoints()` and atomically updates the Mason's point balance and the Points Ledger.
+    * **`form-options/route.ts` (`GET`):** A helper route that fetches lists of Technical Users, Dealers, and Technical Sites to populate dropdown menus in the Mason edit forms.
+* **`bags-lift/`:**
+    * **`route.ts` (`GET`):** Fetches `BagLift` records.
+        * **Filter:** Uses a specific `OR` condition to return lifts assigned to the current company **OR** unassigned lifts (where `mason.userId` is null), ensuring no data is lost.
+        * **Data:** Joins and flattens `masonName`, `dealerName`, and `approverName`.
+    * **`[id]/route.ts` (`PATCH`):** Handles the Approval or Rejection of a Bag Lift.
+        * **Transaction:** Uses a database transaction to update the status, credit/debit the Mason's balance, and create a `PointsLedger` entry.
+        * **Calculations:** Triggers `calculateExtraBonusPoints` (for slab milestones) and `checkReferralBonusTrigger` (for referrer rewards) upon approval.
+* **`tso-meetings/route.ts` (`GET`):** Lists all `TSOMeeting` records where the `createdBy` user belongs to the `currentUser.companyId`.
+* **`schemes-offers/route.ts` (`GET`):** Lists all `SchemesOffers` records. This returns global schemes and is *not* company-filtered.
+* **`masonOnMeetings/route.ts` (`GET`):** Lists all `MasonsOnMeetings` (attendance) records where the `mason`'s associated user belongs to the `currentUser.companyId`.
+* **`masonOnSchemes/route.ts` (`GET`):** Lists all `MasonOnScheme` (enrollment) records where the `mason`'s associated user belongs to the `currentUser.companyId`.
+* **`points-ledger/route.ts` (`GET`):** Lists all `PointsLedger` records filtered by the Mason's company. It flattens the data to include `masonName` for display.
+* **`rewards/route.ts` (`GET`):** Lists all `Rewards` records from the master list (not company-filtered) to allow global catalog viewing. Flattens `categoryName`.
+* **`reward-categories/route.ts` (`GET`):** Lists all `RewardCategory` records (master list) to populate UI filters.
+* **`rewards-redemption/route.ts` (`GET`):** Lists all `RewardRedemption` records for the `currentUser.companyId` by filtering via the associated mason. Joins and flattens `masonName` and `rewardName`.
 
 * **`.../permanent-journey-plan/` (Folder):**
     * **`route.ts`:**
@@ -197,25 +214,29 @@ This folder is a key architectural pattern. It doesn't contain generic CRUD logi
 
 This folder contains all the frontend UI pages and components that are only accessible after logging in. It leverages the "Server Page, Client Component" pattern, where the `page.tsx` file is a Server Component that handles initial auth and data loading, and it renders an interactive Client Component (e.g., `userManagement.tsx`) which contains all the state, event handlers, and client-side data fetching.
 
-* **`layout.tsx`**:
-    * **Purpose**: The root layout for the entire protected dashboard. This is the main security gate.
-    * **Logic**: This is a Server Component.
-    * It calls `withAuth()` and `getTokenClaims()` on the server to get the authenticated user and their claims.
-    * It fetches the user's details (`dbUser`) and role from the local `prisma` database. If the user exists in WorkOS but not in the DB, it attempts to link them by email.
-    * **Security**: If no user is found (`!user`), it redirects to `/login`. If the user is not in the DB (`!dbUser`) and cannot be linked, it redirects to `/setup-company`.
-    * **RBAC**: It checks the user's `finalRole` against `allowedNonAdminRoles`. If the user is a non-admin, it checks if they are trying to access a page *not* in the `nonAdminAllowedPages` list. If they are, it redirects them to `/dashboard/welcome?name=...&error=unauthorized`.
-    * If authenticated and authorized, it renders the `DashboardShell` client component and passes the `workosRole={finalRole}` as a prop.
+### `src/app/dashboard/`
 
-* **`dashboardShell.tsx`**:
-    * **Purpose**: The interactive client-side wrapper for the entire dashboard. This provides the persistent sidebar and header.
-    * **Logic**: This is a Client Component (`'use client'`).
-    * **Props**: It receives the user's `workosRole` as a prop from `layout.tsx`.
-    * **State**: It manages the sidebar state via `SidebarProvider`.
-    * **Rendering**: It renders the `AppSidebar` (passing it the `userRole={workosRole}` for its RBAC checks) and `SiteHeader` components. It renders the `children` prop (the actual page content, e.g., `dashboard/page.tsx` or `dashboard/users/page.tsx`).
-
-* **`page.tsx` (/dashboard)**:
-    * **Purpose**: The main dashboard landing page with graphs and stats.
-    * **Logic**: This is a Server Component. It simply renders the `<DashboardGraphs />` client component within a `<Suspense>` boundary. All data fetching is deferred to the client component.
+* **`layout.tsx`:**
+    * **Purpose:** The root Server Component layout that acts as the primary security and data integrity gate for the dashboard.
+    * **Authentication & Sync:**
+        * It verifies the WorkOS session via `withAuth`.
+        * **Identity Linking:** It ensures the user exists in the local Prisma database. If a user logs in via WorkOS but has no local record, it attempts to link them via email. If that fails, it redirects to `/setup-company`.
+        * **Role Sync:** It compares the role in the WorkOS JWT (`claims.role`) with the local database role. If they differ, it updates the local database to match WorkOS.
+    * **Security:**
+        * **JWT Check:** It checks if the JWT is missing critical data (like `org_id`) and forces a refresh flow if needed.
+        * **Access Control:** It validates the user's role against `allowedAdminRoles` and `allowedNonAdminRoles`. If the role is not recognized, it renders a blocking "Access Denied" screen with a logout button.
+    * **Rendering:** If authorized, it wraps the children in the `DashboardShell`, passing the synchronized `workosRole`.
+* **`dashboardShell.tsx`:**
+    * **Purpose:** The interactive Client Component wrapper that provides the persistent UI structure.
+    * **Logic:**
+        * It initializes the `SidebarProvider` context.
+        * It renders the `AppSidebar`, passing the `userRole` so the sidebar can filter menu items based on permissions.
+        * It renders the `SiteHeader` and places the page content (`children`) inside the `SidebarInset`.
+* **`page.tsx`:**
+    * **Purpose:** The main landing view for `/dashboard`.
+    * **Logic:** A Server Component that performs specific conditional rendering based on the user's role.
+        * **For Executives (Non-Admins):** It detects roles like 'senior-executive' or 'junior-executive' and renders the `<SimpleWelcomePage />`. This prevents them from seeing unauthorized or irrelevant analytics graphs.
+        * **For Admins:** It renders the full `<DashboardGraphs />` component, wrapped in a `Suspense` boundary to handle loading states while data is fetched.
 
 * **`dashboardGraphs.tsx`**:
     * **Purpose**: The interactive client component that displays the graphs and stats on the main dashboard page.
@@ -420,30 +441,34 @@ This folder contains all the frontend UI pages and components that are only acce
         * **Dynamic Import**: It uses `dynamic(() => import('react-leaflet'), { ssr: false })` to load the Leaflet map.
         * **Rendering**: It renders the `<MapContainer>` and then maps over the filtered locations to render a `<Marker>` for each user's last known location.
 
-* **`src/app/dashboard/users/`**
-    * **`page.tsx`**:
-        * **Purpose**: The Server Component wrapper for the User Management page.
-        * **Logic**: A Server Component.
-        * **RBAC**: It fetches the user's claims and checks if their `userRole` is in the `allowedAdminRoles` list. If not, it redirects to `/dashboard` *before* rendering the client component.
-        * It fetches the `adminUser`'s data (needed for prop passing) on the server.
-        * It renders the main client component: `<UsersManagement adminUser={adminUser} />`.
-    * **`userManagement.tsx`**:
-        * **Purpose**: The main interactive client component for managing users.
-        * **Logic**: A Client Component (`'use client'`).
-        * **State**: Manages `users: User[]`, `loading`, `error`, `formData` (for the create/edit modal), and `editingUser: User | null`. Uses `useUserLocations` for location dropdowns in the form.
-        * **Data Fetching**: `useEffect` on mount calls `fetchUsers()`. `fetchUsers` is an async function that does `fetch('/api/users')`, gets the JSON, and calls `setUsers(data.users)`.
-        * **Mutations**:
-            * `handleCreateUser`: `POST`s the `formData` to `/api/users`.
-            * `handleUpdateUser`: `PUT`s the `formData` to `/api/users/${editingUser.id}`.
-            * `handleDeleteUser`: `DELETE`s from `/api/users/${userId}` and also `POST`s to `/api/delete-user` to remove from WorkOS.
-            * All mutation handlers call `fetchUsers()` on success to refresh the table.
-        * **Rendering**: It renders the `DataTableReusable` component, passing it the `users` state and a `columns` definition that includes the "Edit" and "Delete" buttons.
-    * **`bulkInvite.tsx`**:
-        * **Purpose**: A client component (rendered as a `<Dialog>`) for bulk-inviting users via file upload or text paste.
-        * **Logic**: A Client Component (`'use client'`).
-        * **State**: Manages the pasted text (`bulkData`) or the selected file (`currentFile`).
-        * **File Parsing**: It uses a `parseBulkData` function to read the CSV/TSV data from the string, validate headers (email, firstName, lastName, phoneNumber, role, region, area, isTechnical), and validate role values.
-        * **Mutation**: The `handleBulkSubmit` function makes a `POST` request, sending the parsed user array to the `/api/users/bulk-invite` endpoint.
+#### `src/app/dashboard/users/`
+
+* **`page.tsx`:**
+    * **Purpose:** The Server Component wrapper that acts as the secure entry point for the User Management page.
+    * **Logic:**
+        * **Authentication:** Uses `withAuth` to ensure the user is signed in and `getTokenClaims` to retrieve roles.
+        * **Data Fetching:** Fetches the full `adminUser` profile (including `company` details) from Prisma using the WorkOS User ID.
+        * **RBAC (Security):** strict check against `allowedAdminRoles`. If the user's role is not authorized, they are immediately redirected to `/dashboard`.
+        * **Rendering:** Passes the fetched `adminUser` object as a prop to the `<UsersManagement />` client component.
+* **`userManagement.tsx`:**
+    * **Purpose:** The main interactive Client Component for viewing and managing users.
+    * **State & Hooks:**
+        * Manages local state for `users` list, loading status, and form visibility.
+        * **`useUserLocations` Hook:** Dynamically fetches available "Regions" and "Areas" to populate the dropdowns in the Create/Edit forms, ensuring data consistency.
+    * **CRUD Operations:**
+        * **Read:** Fetches users via `GET /api/users`.
+        * **Create (`handleCreateUser`):** Sends a `POST` request. On success, it displays a tailored success message that includes the generated **Salesman ID** or **Technical ID** if applicable.
+        * **Update (`handleUpdateUser`):** Sends a `PUT` request to update user details, including the `isTechnical` toggle.
+        * **Delete (`handleDeleteUser`):** Implements a **Dual-Deletion** strategy:
+            1.  Calls `DELETE /api/users/[id]` to remove the record from the local database.
+            2.  If successful, calls `POST /api/delete-user` to remove the user from WorkOS, ensuring the two systems remain in sync.
+    * **UI:** Renders the `DataTableReusable` with custom columns (including a status badge for `isTechnicalRole`) and manages the Dialog modals for adding or editing users.
+* **`bulkInvite.tsx`:**
+    * **Purpose:** A Client Component (Dialog) that facilitates bulk user creation via file upload (CSV/TXT) or direct text paste.
+    * **Validation Logic:**
+        * **Header Check:** The parser mandates the presence of specific headers: `email`, `firstName`, `lastName`, `phoneNumber`, `role`, `region`, `area`, and `isTechnical`.
+        * **Role Validation:** Validates every row's role against a hardcoded list of allowed `ROLES`.
+    * **Execution:** Parses the input on the client side to catch errors early, then sends the array of user objects to the `POST /api/users/bulk-invite` endpoint. It provides detailed feedback on how many invitations succeeded or failed.
 
 * **`src/app/dashboard/welcome/`**
     * **`page.tsx`**:
@@ -457,26 +482,50 @@ This folder contains all the frontend UI pages and components that are only acce
 
 ### `src/app/home/`
 
-* **Purpose:** A secondary "home" area for logged-in users, for tools *outside* the main admin dashboard.
-* **`layout.tsx` & `homeShell.tsx`:**
-    * **Logic:** This defines a *different* layout. Instead of the main `app-sidebar`, it renders the `conditionalSidebar.tsx`, which has static links to "Cemtem Chat" and "Report Generator".
+* **Purpose:** A secondary authenticated area for users, providing access to specialized tools (AI Chat, Report Generator) outside the main administrative dashboard context.
+* **`layout.tsx`:**
+    * **Logic:** A **Server Component** that acts as a security gatekeeper.
+        1.  **Auth & Sync:** Verifies WorkOS session, ensures the user exists in the local Prisma database (linking by email if necessary), and synchronizes roles/permissions.
+        2.  **JWT Refresh:** Checks if the user's token needs a refresh (e.g., missing `org_id`) and redirects if so.
+        3.  **Shell:** Wraps the content in `<HomeShell>`, which renders the standard `AppSidebar` and `SiteHeader` to maintain UI consistency with the dashboard.
 * **`page.tsx`:**
-    * **Purpose:** The `/home` landing page.
-    * **Logic:** A Server Component that fetches the `user` and passes it to the `section-cards.tsx` component. `section-cards` then uses `hasPermission` to conditionally render the large clickable cards (e.g., showing the "Custom Report Generator" card only if the user has the permission).
+    * **Purpose:** The landing page for logged-in users.
+    * **Logic:** A **Server Component** that verifies token claims. It renders a "Welcome" interface with navigation cards linking to **CemTem AI Chat**, **Dashboard**, and **Account**, utilizing standard Next.js `Link` components rather than dynamic permission-based rendering.
 * **`home/cemtemChat/page.tsx`:**
-    * **Purpose:** The frontend UI for the chatbot.
+    * **Purpose:** The frontend UI for the real-time AI assistant.
     * **Logic:** A **Client Component** (`'use client'`).
-    * It uses the `useChat` hook from the `ai` package (Vercel AI SDK).
-    * It renders an `<Input>` and a "Send" button, with `onSubmit` handled by the `handleSubmit` function from `useChat`.
-    * It maps over the `messages` array from the `useChat` hook to display the conversation history.
-* **`home/customReportGenerator/page.tsx`:**
-    * **Purpose:** The UI for building custom reports.
-    * **Logic:** A highly interactive **Client Component**.
-    1.  It uses `useState` to manage all user selections: `selectedTable`, `selectedHeaders`, `dateRange`, `filters`.
-    2.  It uses the `CUSTOM_TABLE_HEADERS` constant to populate the header `MultiSelect` component dynamically when `selectedTable` changes.
-    3.  `handleGenerateReport`: This function constructs a `URLSearchParams` object from all the state variables.
-    4.  It makes a `fetch` call to the generic API endpoint: `/api/custom-report-generator?${queryParams.toString()}`.
-    5.  The `reportData` state is updated with the JSON response, which causes the `DataTableReusable` component to re-render, displaying the custom report.
+        * **Connection:** Uses `socket.io-client` to establish a WebSocket connection to an external AI service (defined by `NEXT_PUBLIC_SOCKET_SERVER_URL`).
+        * **State Management:** Handles connection status (`isConnected`), typing indicators (`isLoading`), and message history.
+        * **Interaction:** Sends messages via `socket.emit('send_message')`. It also handles a specific "Confirmation" flow (waiting for a 'Y' input) via `socket.emit('confirm_post')`.
+        * **UI:** Renders a chat interface with auto-scrolling, custom styling for user/bot messages, and a "SafeTimeDisplay" for client-side timestamp rendering.
+* **`home/customReportGenerator/`:**
+    * **`page.tsx`:**
+        * **Purpose:** A powerful, interactive UI for building and downloading custom datasets.
+        * **Logic:** A **Client Component**.
+            1.  **Selection:** Users select a "Data Table" (from `tablesMetadata`) and then toggle specific columns via checkboxes.
+            2.  **State:** Tracks selected columns per table (`checkedColumns`) and builds a composite `reportColumns` state.
+            3.  **Preview:** Calls `fetchPreview` which sends a **POST** request to `/api/custom-report-generator` (with `{ format: 'json', limit: 100 }`) to populate a `DataTableReusable` preview pane.
+            4.  **Download:** `handleDownload` sends a **POST** request to the same API with the selected columns and format ('csv' or 'xlsx'), handling the response as a Blob to trigger a file download.
+    * **`customTableHeaders.ts`:**
+        * **Config:** A static configuration file exporting `tablesMetadata`. It defines the available tables (e.g., Users, Dealers, Technical Visit Reports) and their corresponding column fields, icons, and titles used by the generator UI.
+
+---
+
+### `src/app/login/`
+
+* **`magicAuth/page.tsx`:**
+    * **Purpose:** The client-side User Interface for the passwordless "Magic Code" (Email + OTP) login flow. It serves as both a standard login page and an invitation acceptance landing page.
+    * **Logic:** A **Client Component** (`'use client'`).
+        1.  **Context Detection:** It uses `useSearchParams` to check for an `inviteKey`. If present, the UI adapts to show "Accept Invitation"; otherwise, it shows "Sign In".
+        2.  **Step 1 (Email):** The user enters their email. The component sends a `POST` request to `/auth/magic-auth` to trigger the OTP email.
+        3.  **Step 2 (Verification):** The user enters the 6-digit code. The component sends a `POST` request to `/auth/magic-auth/verify`. If the verify response includes a `redirectUrl`, the browser performs a full navigation to that URL (refreshing the session state).
+        4.  **Google Fallback:** It renders a "Continue with Google" button. This button constructs a URL to the standard login route (`/login`), appending the `invitation_token` if one exists, allowing users to switch auth methods without losing their invite context.
+* **`route.ts` (GET):**
+    * **Purpose:** Initiates the standard WorkOS Hosted AuthKit flow (e.g., for Google/Microsoft SSO).
+    * **Logic:**
+        1.  **Token Persistence:** It checks the URL for an `inviteToken`. If found, it stores this token in a secure, HTTP-only **Cookie**. This ensures the invitation context survives the redirect to the external WorkOS login page and is available upon return (in the callback).
+        2.  **Redirect:** It generates the AuthKit sign-in URL using `getSignInUrl()` and redirects the user there.
+        3.  **Magic Auth Check:** It includes a check for an `account_activated` flag to potentially shortcut users directly to the dashboard if they have just completed a specific activation flow.
 
 ---
 
@@ -495,262 +544,150 @@ This folder contains all the frontend UI pages and components that are only acce
 
 ---
 
-## `src/components/`
+Here is the updated and corrected markdown documentation for `src/components/` and `src/lib/`, accurately reflecting the logic and features found in your provided files.
 
-This folder contains your custom, reusable React components, which are built using the primitives from `src/components/ui/`. These are the "smart" components that contain most of the application's frontend logic.
+### `src/components/`
+
+This folder contains your custom, reusable React components, built using the primitives from `src/components/ui/`. These "smart" components contain the majority of the application's frontend logic and UI patterns.
 
 ### `src/components/app-sidebar.tsx`
 
 * **File:** `src/components/app-sidebar.tsx`
-* **Purpose:** Renders the main navigation sidebar for the entire `/dashboard` layout. This component is the **core of the client-side RBAC (Role-Based Access Control)**.
+* **Purpose:** Renders the main navigation sidebar for the dashboard, implementing **Role-Based Access Control (RBAC)**.
 * **Logic:**
-    1.  **Props:** It receives the `user` object (which contains their `role`) and the `company` object.
-    2.  **Hooks:** It uses `usePathname()` to get the current URL path, which is used to apply "active" styling to the correct link. It also uses the custom `useMobile()` hook to determine if it should render in mobile (`<Sheet>`) or desktop (`<div class="hidden...">`) mode.
-    3.  **Core RBAC Logic:** The component defines a `sidebarSections` array. This array's `items` are *dynamically generated*. Each link is wrapped in a conditional check using `hasPermission` from `lib/permissions.ts`.
-        * **Example:** `hasPermission(user.role, 'users') && { title: 'User Management', href: '/dashboard/users', icon: Users }`
-        * This line means the "User Management" link will *not even exist in the array* if the user's role does not have the `'users'` permission.
-    4.  **Rendering:** The component maps over this filtered `sidebarSections` array to render the links. This ensures that a user **never even sees a link** to a page they are not authorized to access.
+    * **Dynamic Permissions:** It imports `WORKOS_ROLE_PERMISSIONS` and defines a local `ITEM_PERMISSIONS` map to associate menu items with specific permission paths (e.g., "Dealer Management" -> `'dealerManagement.listDealers'`).
+    * **Recursive Filtering:** Uses a `filterMenuItems` function to recursively check `hasPermission(userRole, item.permission)`. If a user lacks permission for a parent item or all its children, that section is completely hidden from the UI.
+    * **Company Info:** Fetches company details (Name, Admin Name) from `/api/company` to display in the sidebar header.
+    * **Logout:** Includes a specialized "Logout" item that renders a form submitting to `/account/logout`.
 
 ### `src/components/site-header.tsx`
 
 * **File:** `src/components/site-header.tsx`
-* **Purpose:** Renders the persistent top navigation bar (header) for the `/dashboard` layout.
+* **Purpose:** Renders the persistent top navigation bar.
 * **Logic:**
-    1.  **Props:** It receives the `user`, `company`, and `onSidebarToggle` (a function from the `dashboardShell.tsx` to open the mobile sidebar).
-    2.  **Mobile Toggle:** It renders a `<Button>` that is only visible on mobile. Its `onClick` handler calls the `onSidebarToggle` prop, which sets the state in the parent `dashboardShell` to open the mobile `<Sheet>`.
-    3.  **User Menu:** It renders the user's name and an `Avatar`. This is wrapped in a `DropdownMenu`.
-    4.  **Logout Action:** The dropdown menu contains a "Log out" item. This is a simple `<a>` tag: `<a href="/account/logout/route">Log out</a>`. Clicking this link navigates the user to the `/account/logout` API route, which destroys their session cookie and redirects them to the public home page.
+    * Contains the `SidebarTrigger` to toggle the sidebar on mobile/desktop.
+    * Displays the "Business Dashboard" title.
+    * Acts as a placeholder for future global actions (like notifications or profile dropdowns).
 
 ### `src/components/data-table-reusable.tsx`
 
 * **File:** `src/components/data-table-reusable.tsx`
-* **Purpose:** A single, generic component to render all data tables in the app (e.g., Users, Dealers, Reports). It uses TanStack Table (`@tanstack/react-table`).
+* **Purpose:** A highly advanced, generic table component built on **TanStack Table**.
+* **Features:**
+    * **Generics:** Accepts generic types `<TData, TValue>` to work with any data model (Users, Reports, etc.).
+    * **Functionality:** Built-in support for Sorting, Column Visibility toggling, Pagination, and Row Selection.
+    * **Drag-and-Drop:** Integrates `@dnd-kit` to allow row reordering via drag handles (`enableRowDragging` prop).
+    * **Styling:** Uses a glassmorphism effect (`backdrop-blur-lg`) and integrates seamlessly with shadcn UI components.
+
+### `src/components/reusable-user-locations.tsx` & `src/components/reusable-dealer-locations.tsx`
+
+* **Files:** `src/components/reusable-user-locations.tsx`, `src/components/reusable-dealer-locations.tsx`
+* **Purpose:** Custom React hooks (`useUserLocations`, `useDealerLocations`) for fetching filter data.
 * **Logic:**
-    1.  **Generics:** It uses TypeScript generics (`<TData, TValue>`) so it can accept any data shape (`TData`) and any column value type (`TValue`), making it completely reusable.
-    2.  **Props:** It takes `columns` (the table definition) and `data` (the array of records). It also optionally takes a `filterColumn` string (e.g., "email") and `filterColumnName` (e.g., "Email") to enable a search box.
-    3.  **State Management:** It uses `useState` to manage all of TanStack Table's internal states: `sorting`, `columnFilters`, `pagination`, and `rowSelection`.
-    4.  **`useReactTable` Hook:** This is the core of the component. It initializes the table by passing the `data`, `columns`, and all the state handlers (e.g., `onSortingChange: setSorting`).
-    5.  **Client-Side Filtering:** If the `filterColumn` prop is provided, it renders an `<Input>` component. Its `onChange` handler calls `table.getColumn(filterColumn)?.setFilterValue(event.target.value)`, which triggers the table to filter its data *in the browser*.
-    6.  **Rendering:** It programmatically renders the table using the `table` instance:
-        * `table.getHeaderGroups().map(...)` renders the `<thead>` and `<th>`.
-        * `table.getRowModel().rows.map(...)` renders the `<tbody>`, `<tr>`, and `<td>` for the current page.
-    7.  **Pagination:** It renders "Previous" and "Next" buttons, using `table.getCanPreviousPage()` and `table.getCanNextPage()` to disable them appropriately, and `table.previousPage()` / `table.nextPage()` for their `onClick` handlers.
-
-### `src/components/reusable-user-locations.tsx`
-
-* **File:** `src/components/reusable-user-locations.tsx`
-* **Purpose:** This is a custom React hook (`useUserLocations`) to fetch and cache the list of unique regions and areas associated with users.
-* **Logic:**
-    1.  **State:** It uses `useState` to store `locations` (an object with `regions: string[]` and `areas: string[]`), `loading`, and `error`.
-    2.  **`useEffect`:** On component mount, it fires a `fetch` request to the `/api/users/user-locations` endpoint.
-    3.  **Data Fetching:** When the API returns the data (e.g., `{ regions: ['North', 'South'], areas: ['Area1', 'Area2'] }`), it updates the `locations` state.
-    4.  **Return Value:** The hook returns `{ locations, loading, error }`.
-    5.  **Usage:** This allows any component (like a report filter) to call `const { locations } = useUserLocations()` to easily get the data needed to populate region and area filter dropdowns, without duplicating fetch logic.
-
-### `src/components/reusable-dealer-locations.tsx`
-
-* **File:** `src/components/reusable-dealer-locations.tsx`
-* **Purpose:** Identical in pattern to `useUserLocations`, but for dealer-specific locations.
-* **Logic:**
-    1.  It's a custom hook named `useDealerLocations`.
-    2.  It fetches data from a different API endpoint: `/api/dashboardPagesAPI/dealerManagement/dealer-locations`.
-    3.  It returns a richer `locations` object, including `regions`, `areas`, `pinCodes`, and `dealerNames`, as this data is specific to the `Dealer` model.
+    * They abstract the `fetch` logic to specific API endpoints (`/api/users/user-locations`, etc.).
+    * They return standardized objects (e.g., `{ regions: [], areas: [] }`) used to populate dropdown filters across the application, ensuring consistent data without code duplication.
 
 ### `src/components/multi-select.tsx`
 
 * **File:** `src/components/multi-select.tsx`
-* **Purpose:** A reusable component to create a multi-select dropdown with search, built from shadcn's primitive components.
+* **Purpose:** A complex form component allowing selection of multiple items from a list.
 * **Logic:**
-    1.  **Props:** `options` (the full list of strings), `selected` (the array of currently selected strings), `onChange` (a callback function to update the parent's `selected` state), and `placeholder`.
-    2.  **State:** Uses `useState` to manage `inputValue` (the search text) and `open` (whether the popover is visible).
-    3.  **Rendering Badges:** It maps over the `selected` prop to render a list of `<Badge>` components, each with an "x" button to remove it. Clicking the "x" calls `onChange` with that item filtered out.
-    4.  **Dropdown Logic:**
-        * It uses a `<Popover>` that contains a `<Command>` component.
-        * The `<CommandInput>` updates the `inputValue` state on every keystroke.
-        * It filters the `options` prop based on the `inputValue` *before* mapping them to `<CommandItem>`s, creating the search functionality.
-        * **`onSelect`**: When a `CommandItem` is clicked, its `onSelect` handler calls an internal `handleSelect` function.
-        * **`handleSelect`**: This function checks if the item is already in the `selected` prop. If it is, it calls `onChange` to *remove* it. If it isn't, it calls `onChange` to *add* it.
+    * Built using `Popover` and `Command` primitives.
+    * **Searchable:** Users can type to filter options.
+    * **Badges:** Selected items are displayed as removable badges.
+    * **Clear All:** Includes a helper to clear the entire selection at once.
 
 ### `src/components/chart-area-reusable.tsx`
 
 * **File:** `src/components/chart-area-reusable.tsx`
-* **Purpose:** A simple, reusable wrapper for `recharts` to render a standardized Area Chart.
-* **Logic:**
-    1.  **Props:** It's a "dumb" component. It accepts `data` (the array of objects to plot), `xAxisDataKey` (the object key for the x-axis), and `areaDataKey` (the object key for the y-axis).
-    2.  **`recharts` Implementation:** It uses `ResponsiveContainer` to make the chart fluid.
-    3.  It maps the props directly to the `recharts` components:
-        * `<XAxis dataKey={xAxisDataKey} />`
-        * `<YAxis />`
-        * `<Area dataKey={areaDataKey} />`
-    4.  This allows you to quickly create a consistent-looking area chart anywhere in the app by just providing the data and keys.
+* **Purpose:** Provides standardized chart wrappers using `recharts`.
+* **Components:**
+    * **`ChartAreaInteractive`:** Renders an Area chart with a gradient fill, custom tooltips, and a scrollable X-axis. It adapts colors dynamically from the Shadcn `ChartConfig`.
+    * **`ChartPieReusable`:** Renders a Pie chart with an interactive "active shape" that expands on hover. It automatically generates a legend and assigns colors from a predefined palette.
 
 ### `src/components/conditionalSidebar.tsx`
 
 * **File:** `src/components/conditionalSidebar.tsx`
-* **Purpose:** An alternative, context-specific sidebar used for the `/home` section of the app (Cemtem Chat, Report Generator).
+* **Purpose:** A context-aware wrapper that decides *which* sidebar configuration to show based on the user's location.
 * **Logic:**
-    1.  Unlike `app-sidebar.tsx`, this component's links are **static and not based on RBAC**.
-    2.  It defines a fixed list of links: "Cemtem Chat", "Custom Report Generator", and "Back to Dashboard".
-    3.  It's a simple, non-permissioned navigation for a specific sub-section of the application, separate from the main dashboard.
+    * **Context Switching:** It checks `usePathname()`. If the user is in `/home` or `/auth`, it might hide the sidebar entirely.
+    * **Role Fetching:** For the main dashboard context, it fetches the *current user's* specific role from `/api/users?current=true` to ensure the `AppSidebar` renders the correct permission-gated links.
 
 ### `src/components/section-cards.tsx`
 
 * **File:** `src/components/section-cards.tsx`
-* **Purpose:** Renders the large, clickable navigation cards on the `/home` page.
-* **Logic:**
-    1.  **Props:** Takes the `user` object to perform RBAC checks.
-    2.  **Core RBAC Logic:** Similar to `app-sidebar.tsx`, it defines a `sections` array. Each object in this array is conditionally added based on a `hasPermission` check.
-        * **Example:** `hasPermission(user.role, 'customReportGenerator') && { ... }`.
-    3.  **Rendering:** It maps over this *filtered* `sections` array and renders a `<Card>` component for each. The entire card is wrapped in a Next.js `<Link>` component, making the whole card a single navigation target.
-    4.  This ensures that a user only sees a card for a feature (like "Custom Report Generator") if their role permits it.
+* **Purpose:** Displays high-level KPI cards on the main dashboard (e.g., "Scheduled Visits", "Registered Dealers").
+* **Logic:** Currently renders static placeholder data, designed to be replaced with real metrics. Uses responsive grid classes (`@container`) to adapt card sizes.
 
 ### `src/components/data-comparison-calculation.tsx`
 
 * **File:** `src/components/data-comparison-calculation.tsx`
-* **Purpose:** A small, reusable component for displaying a key statistic along with its percentage change from a previous period (e.g., "1,250 | +15.2% from last month").
+* **Purpose:** Contains the **Business Logic** and **Hooks** for dashboard analytics, specifically relating to DVR (Daily Visit Reports) vs PJP (Journey Plans) and Sales.
 * **Logic:**
-    1.  **Props:** `title` (e.g., "Total Visits"), `currentValue` (e.g., 1250), `previousValue` (e.g., 1000).
-    2.  **Calculation:** The core logic is the percentage change calculation:
-        * `const percentageChange = ((currentValue - previousValue) / previousValue) * 100`.
-        * It includes a crucial check: `if (previousValue === 0) { ... }` to handle divide-by-zero errors, showing `0%` change in that case.
-    3.  **Conditional Styling:** It uses the `cn` utility to conditionally apply text colors based on the result:
-        * `'text-green-600'` if `percentageChange > 0`.
-        * `'text-red-600'` if `percentageChange < 0`.
-        * `'text-gray-500'` if `percentageChange === 0`.
-    4.  It renders the `title`, the formatted `currentValue`, and the formatted `percentageChange` string with its conditional coloring.
+    * **`useDvrPjpData` Hook:** Fetches PJP, DVR, and Sales data in parallel. It performs client-side validation using Zod schemas to ensure data integrity before processing.
+    * **Calculation Functions:** Pure functions like `calculateDVRvPJPAnalytics` and `calculateSalesvDVRAnalytics` that perform Month-over-Month (MoM) comparisons and target achievement percentages.
+
+### `src/components/InvitationEmail.tsx`
+
+* **File:** `src/components/InvitationEmail.tsx`
+* **Purpose:** Defines the HTML email templates using `@react-email/components`.
+* **Templates:**
+    * **`InvitationEmail`:** A rich HTML email including the user's role, specific login credentials (for Salesman/Technical apps), and a call-to-action button.
+    * **`MagicAuthEmail`:** A simple template for sending One-Time Passwords (OTP).
 
 ---
 
-## `src/lib/`
+### `src/lib/`
 
-This is the "brain" of the application, containing shared business logic, database instances, and utility functions.
+This folder contains the core "business logic," database connections, type definitions, and utility functions that power the backend and shared logic.
 
 ### `src/lib/prisma.ts`
-
-* **File:** `src/lib/prisma.ts`
-* **Purpose:** To instantiate and export a single, shared instance of the Prisma Client for database access.
-* **Logic:**
-    1.  **Singleton Pattern:** It implements a "singleton" pattern specifically to handle the Next.js development environment's "hot reload" feature.
-    2.  **The Code:** `const prisma = globalThis.prisma ?? new PrismaClient()`.
-    3.  **How it works:**
-        * It checks a global variable `globalThis.prisma`.
-        * **On first run:** `globalThis.prisma` is undefined, so `new PrismaClient()` is called, creating a new database connection pool.
-        * **In Development:** The line `if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma` then saves this new instance to the `globalThis` object.
-        * **On Hot Reload:** When the code re-runs, `globalThis.prisma` is *no longer* undefined. The `??` operator returns the *existing* instance instead of creating a new one.
-    4.  **Result:** This prevents the application from creating a new `PrismaClient` (and a new connection pool) on every single file save, which would quickly exhaust the database's connection limit.
+* **Purpose:** Instantiates the **Prisma Client**. It implements a singleton pattern to prevent exhausting database connections during Next.js hot-reloading in development.
 
 ### `src/lib/permissions.ts`
-
-* **File:** `src/lib/permissions.ts`
-* **Purpose:** This file defines the **Feature-Based Access Control** (RBAC) system. It answers the question, "What can a user *do*?".
+* **Purpose:** The source of truth for **Feature-Based Access Control**.
 * **Logic:**
-    1.  **`WorkOSRole` Type:** Defines all possible roles in the system as a TypeScript type (e.g., `'president'`, `'manager'`, `'junior-executive'`).
-    2.  **`DashboardPermissions` Interface:** A deeply nested *interface* that acts as a blueprint for every single permission-gated feature in the app. For example: `teamOverview: { teamTabContent: boolean, salesmanLiveLocation: boolean }`.
-    3.  **`WORKOS_ROLE_PERMISSIONS` Object:** This is the "permission matrix." It's a massive `Record` that maps each `WorkOSRole` to a fully implemented `DashboardPermissions` object, setting `true` or `false` for every feature. For example, a `'junior-executive'` has `teamOverview.salesmanLiveLocation: false`, while a `'manager'` has it set to `true`.
-    4.  **`PermPath` Type:** A clever utility type that "flattens" the nested `DashboardPermissions` interface into a union of dot-notation strings (e.g., `"teamOverview.salesmanLiveLocation"`, `"reports.dailyVisitReports"`). This provides strong type-checking when calling the `hasPermission` function.
-    5.  **`hasPermission` Function:** This is the key utility used by frontend components (like the sidebar).
-        * It takes the user's `role` and a `feature` path (like `'reports.dailyVisitReports'`).
-        * It looks up the permissions object for that `role` from the `WORKOS_ROLE_PERMISSIONS` matrix.
-        * It uses a helper function `getByPath` which splits the feature path by `.` (e.g., `['reports', 'dailyVisitReports']`) and uses `.reduce()` to safely "walk" down the nested permission object to find the final `boolean` value.
-        * This function is what allows the UI to hide or show links/buttons based on the user's role.
+    * Defines the `DashboardPermissions` interface (a massive object mapping every feature to a boolean).
+    * Exports `WORKOS_ROLE_PERMISSIONS`: A matrix defining exactly which features are enabled (`true`) or disabled (`false`) for every role (e.g., `president`, `senior-executive`).
+    * Exports `hasPermission()`: A utility used by UI components to check if a feature should be visible.
 
 ### `src/lib/roleHierarchy.ts`
-
-* **File:** `src/lib/roleHierarchy.ts`
-* **Purpose:** This file defines the **Hierarchical Access Control** system. It answers the question, "Who can a user *manage*?". This is separate from *feature* permissions.
+* **Purpose:** Defines **Hierarchical Access Control** (who can manage whom).
 * **Logic:**
-    1.  **`ROLE_HIERARCHY` Array:** A simple string array, which is the *single source of truth* for authority. It's ordered from most powerful (`'president'`) to least powerful (`'junior-executive'`).
-    2.  **`getVisibleRoles` Function:** This is a UI helper function.
-        * It finds the index of the `currentUserRole` in the `ROLE_HIERARCHY` array.
-        * It returns `ROLE_HIERARCHY.slice(userRoleIndex + 1)`. This provides the frontend (e.g., the User Management modal) with a list of *only* the roles that are junior to the current user.
-    3.  **`canAssignRole` Function:** This is the critical *server-side security function* used in API routes.
-        * It gets the `currentUserIndex` and the `targetRoleIndex` from the `ROLE_HIERARCHY` array.
-        * **The Logic:** It returns `true` *only if* `currentUserIndex !== -1 && targetRoleIndex !== -1 && currentUserIndex < targetRoleIndex`.
-        * This simple, robust check prevents any user from assigning a role that is equal to or higher than their own.
+    * `ROLE_HIERARCHY`: An ordered array from `president` (top) to `junior-executive` (bottom).
+    * `canAssignRole(currentUser, targetRole)`: Prevents users from creating or updating users with a role equal to or higher than their own.
 
 ### `src/lib/utils.ts`
-
-* **File:** `src/lib/utils.ts`
-* **Purpose:** A collection of general utility functions, primarily for styling.
-* **Logic:**
-    1.  **`cn` Function:** This is the most important function in the file, essential for using `shadcn-ui`.
-    2.  **The Code:** `export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }`.
-    3.  **How it works:**
-        * **`clsx`:** This utility (from `clsx`) intelligently combines class names. It's great for conditional classes, e.g., `clsx('p-4', { 'font-bold': isBold })`.
-        * **`twMerge`:** This utility (from `tailwind-merge`) solves a common Tailwind problem. If you have classes `p-4` and `p-6` on the same element, `twMerge` intelligently removes the `p-4` and keeps only the last, overriding class (`p-6`).
-        * **Together:** `cn` allows developers to pass conditional classes *and* overriding classes to components without worrying about style conflicts.
+* **Purpose:** Exports the `cn` utility, which combines `clsx` (conditional classes) and `tailwind-merge` (resolving class conflicts), essential for styling components.
 
 ### `src/lib/download-utils.ts`
-
-* **File:** `src/lib/download-utils.ts`
-* **Purpose:** Provides client-side functions for exporting data from UI tables into downloadable files (CSV, Excel).
+* **Purpose:** Server-side utilities for generating downloadable files.
 * **Logic:**
-    1.  **`exportToCsv`:**
-        * **Input:** `data` (an array of JSON objects) and a `filename`.
-        * **Conversion:** It uses the `csv-stringify` library. The `stringify(data, { header: true }, ...)` call converts the array of objects into a single, large CSV-formatted string, including the object keys as the header row.
-        * **Blob Creation:** It creates a `new Blob([csv], { type: 'text/csv;charset=utf-8;' })`. A Blob is a file-like object that exists in the browser's memory.
-        * **DOM Hack:** This is the standard "file download" trick in browsers.
-            * It creates a temporary `<a>` (link) element in memory: `document.createElement('a')`.
-            * It creates a temporary URL for the Blob: `url = URL.createObjectURL(blob)`.
-            * It sets the link's `href` to this `url` and `download` attribute to the `filename`.
-            * It programmatically "clicks" the hidden link: `link.click()`. This triggers the browser's download prompt.
-            * **Cleanup:** It removes the temporary URL: `URL.revokeObjectURL(url)`.
-    2.  **`exportToExcel`:** The logic is almost identical, but it uses the `exceljs` library.
-        * It creates a `new ExcelJS.Workbook()`.
-        * It adds a worksheet: `workbook.addWorksheet('Sheet1')`.
-        * It adds headers and then iterates `data` using `worksheet.addRow()` for each object.
-        * It generates an `ArrayBuffer` from the workbook: `workbook.xlsx.writeBuffer()`.
-        * It creates a Blob with the Excel-specific MIME type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`.
-        * It performs the same DOM "download" trick with the `<a>` tag.
+    * **`generateAndStreamCsv`:** Converts data arrays to CSV format strings and returns a `NextResponse` with the correct headers for file download.
+    * **`generateAndStreamXlsx`:** Uses `ExcelJS` to create professional Excel sheets (with auto-sized columns and bold headers) and streams them to the client.
+    * **`exportTablesToCSVZip`:** Uses `JSZip` to bundle multiple CSVs into a single ZIP file.
 
 ### `src/lib/company-service.ts`
-
-* **File:** `src/lib/company-service.ts`
-* **Purpose:** A server-side-only service class that encapsulates all business logic related to the initial company setup and onboarding.
-* **Logic:**
-    1.  **`'server-only'`:** This import ensures that this file can *never* be accidentally imported into a client component, which would leak server secrets (like the WorkOS API key).
-    2.  **`createCompanyAndAdmin` Method:** This is the core logic for the onboarding flow.
-        * **Input:** Takes `companyName`, `userEmail`, `userFirstName`, etc.
-        * **External API Call:** It first calls the WorkOS API to create a new organization: `workos.organizations.createOrganization({ name: companyName })`.
-        * **External API Call 2:** It then immediately invites the new admin to this organization: `workos.userManagement.createInvitation({ email: userEmail, ... })`.
-        * **Database Transaction:** It wraps the database logic in `prisma.$transaction`. This ensures that if *any* database step fails, *all* steps are rolled back, preventing partial data.
-        * **Create Company:** `prisma.company.create({ ... })`. It saves the `companyName` and, crucially, the `workosOrganizationId` returned from the API call.
-        * **Create Admin User:** `prisma.user.create({ ... })`. It creates the user, gives them the `'senior-manager'` role (the default admin role), and links them to the new `companyId`. It also saves the `workosUserId` from the invitation response.
-        * **Return:** It returns the newly created company and user.
+* **Purpose:** A service to fetch aggregated company statistics.
+* **Logic:** `getCompanyInfo` fetches the current user's company details and runs counts on the User table to return metrics like "Total Users," "Active Users," and "Pending Users."
 
 ### `src/lib/shared-zod-schema.ts`
-
-* **File:** `src/lib/shared-zod-schema.ts`
-* **Purpose:** To define reusable Zod schemas for validating data. This ensures that data is valid *both* on the client-side (before sending) and on the server-side (before processing).
-* **Logic:**
-    1.  **`emailSchema`:** Defines a reusable schema for emails: `z.string().email({ message: "Invalid email address." })`. This checks that a string is not empty and is formatted like an email.
-    2.  **`bulkInviteSchema`:** This is a more complex schema used by the "Bulk Invite" feature.
-        * `z.array(z.object({ email: emailSchema, ... }))`: It defines that the expected input is an *array* of objects.
-        * Each object in the array *must* have an `email` field that *must* validate against the `emailSchema` defined above.
-    3.  **How it's used:** These schemas are used in API routes (e.g., `/api/users/bulk-invite`) to validate incoming data. `bulkInviteSchema.safeParse(body)` is called, and if it fails, the API returns a 400 Bad Request error *before* even attempting to call WorkOS or the database, making the backend more secure and robust.
+* **Purpose:** A centralized repository of **Zod** schemas.
+* **Usage:** Defines strict validation rules for API inputs (`assignTaskSchema`, `postDealersSchema`) and outputs (`dailyVisitReportSchema`, `masonPCSideSchema`). These are used throughout the app to ensure data consistency and type safety.
 
 ### `src/lib/reports-transformer.ts`
-
-* **File:** `src/lib/reports-transformer.ts`
-* **Purpose:** A server-side utility to transform raw, nested data from Prisma into a "flattened" format that is ready for the frontend's charts and tables.
-* **Logic:**
-    1.  **`transformDvrVpjpData`:** This function takes the raw data for the "DVR vs PJP" report. The raw data is likely a list of PJP records, each with a *list* of associated DVRs (`_count: { dailyVisitReports: number }`).
-    2.  **Data Aggregation & Flattening:** The function iterates over this raw data using `.map()`. For each PJP record, it creates a new, simple object.
-    3.  **Example Transformation:**
-        * **Raw:** `{ id: 'pjp1', planDate: '...', user: { firstName: 'John' }, _count: { dailyVisitReports: 5 } }`
-        * **Transformed:** `{ pjpDate: '...', salesmanName: 'John', pjpId: 'pjp1', totalVisits: 5, status: '...' }`
-    4.  **Why?** This keeps the frontend component (`dvrVpjp.tsx`) "dumb" and clean. All complex data aggregation and shaping are handled on the server, and the frontend component just receives the simple, flat array it needs to render.
+* **Purpose:** Data transformation layer for Reports.
+* **Logic:** Contains functions (e.g., `getFlattenedDealers`, `getFlattenedDailyVisitReports`) that fetch raw nested data from Prisma and "flatten" it into simple, single-level objects. This makes the data easy to render in tables and export to CSV/Excel without complex frontend processing.
 
 ### `src/lib/Reusable-constants.ts`
+* **Purpose:** Stores static app-wide constants like `brands` list, `dealerTypes`, and `Zone` definitions, ensuring dropdowns across the app use the same data.
 
-* **File:** `src/lib/Reusable-constants.ts`
-* **Purpose:** To store application-wide constant values, primarily for populating UI dropdowns and filters.
+### `src/lib/pointsCalcLogic.ts`
+* **Purpose:** Encapsulates the business rules for the Loyalty Program.
 * **Logic:**
-    1.  It exports simple, hardcoded string arrays.
-    2.  **`regionsList`**: `['North', 'South', 'East', 'West', 'Central']`.
-    3.  **`areaList`**: `['Area1', 'Area2', 'Area3', ...]`.
-    4.  **`visitTypes`**: `['Dealer', 'Sub-Dealer', 'Project', ...]`.
-    5.  **How they are used:** These constants are imported by frontend components (e.g., `listDealers.tsx`, `dailyVisitReports.tsx`) to populate filter dropdowns (`<Select>`) and multi-select components (`<MultiSelect>`). This ensures consistency, avoids typos, and centralizes UI-facing data.
+    * **`calculateJoiningBonusPoints`**: Checks date ranges to apply joining bonuses.
+    * **`calculateBaseAndBonanzaPoints`**: Calculates points based on bag count, adding multipliers during specific "Bonanza" date ranges.
+    * **`calculateExtraBonusPoints`**: Handles logic for slab-based milestones (e.g., extra points for every 250 bags).
 
 ---
 
