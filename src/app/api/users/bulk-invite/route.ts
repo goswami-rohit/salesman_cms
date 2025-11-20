@@ -176,8 +176,8 @@ async function processSingleInvitation(
             lastName, 
             companyName, 
             adminName,
-            inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
-            //inviteUrl: customInviteUrl, // magicAuth setup
+            //inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
+            inviteUrl: customInviteUrl, // magicAuth setup
             role: workosRole,
             fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
             salesmanLoginId: salesmanLoginId,

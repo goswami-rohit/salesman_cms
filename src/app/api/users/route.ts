@@ -452,8 +452,8 @@ export async function POST(request: NextRequest) {
                 lastName,
                 companyName: adminUser.company.companyName,
                 adminName: `${adminUser.firstName} ${adminUser.lastName}`,
-                inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
-                //inviteUrl: customInviteUrl, // magicAuth setup
+                //inviteUrl: workosInvitation.acceptInvitationUrl, // google auth setup
+                inviteUrl: customInviteUrl, // magicAuth setup
                 role: workosRole,
                 fromEmail: process.env.GMAIL_USER || 'noreply@yourcompany.com',
                 // Pass salesman details
