@@ -15,7 +15,7 @@ const allowedRoles = [
   'president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive',
+  'senior-executive', 'executive',
 ];
 
 const bagLiftUpdateSchema = z.object({

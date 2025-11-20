@@ -9,7 +9,8 @@ import { z } from 'zod';
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
   'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive',];
+  'senior-executive', 'executive',
+];
 
 const formatUserName = (user: { firstName: string | null, lastName: string | null, email: string } | null) => {
   if (!user) return null;

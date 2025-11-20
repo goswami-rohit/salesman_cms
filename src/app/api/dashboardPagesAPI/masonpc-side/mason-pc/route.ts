@@ -20,6 +20,7 @@ const allowedRoles = [
   'manager',
   'assistant-manager',
   'senior-executive',
+  'executive',
 ];
 
 // Define acceptable status values for type safety in the FE

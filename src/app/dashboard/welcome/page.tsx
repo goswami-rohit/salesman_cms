@@ -8,7 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import Link from 'next/link';
 
-export default function WelcomePage() {
+interface WelcomeViewProps {
+  firstName: string;
+}
+
+export default function SimpleWelcomePage({firstName}:WelcomeViewProps) {
   const searchParams = useSearchParams();
   const name = searchParams.get('name') || 'user';
   const error = searchParams.get('error');
@@ -25,7 +29,7 @@ export default function WelcomePage() {
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold">🎉 Welcome to the Team!</CardTitle>
           <CardDescription>
-            Hello, {name}!
+            Hello, {firstName}!
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-center">

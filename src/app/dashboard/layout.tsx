@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import type { Metadata } from "next";
 import prisma from '@/lib/prisma';
-import DashboardShell from './dashboardShell';
+import DashboardShell from '@/app/dashboard/dashboardShell';
+import SimpleWelcomePage from '@/app/dashboard/welcome/page'
 
 const allowedAdminRoles = [
   'president',
@@ -128,24 +129,58 @@ export default async function DashboardLayout({
     redirect('/setup-company');
   }
 
-  const finalRole = dbUser.role || 'senior-manager';
+  const finalRole = dbUser.role;
   console.log('🎯 Final role being used:', finalRole);
 
   // --- CORRECTED REDIRECT LOGIC ---
-  const urlPath = process.env.NEXT_PUBLIC_APP_URL
-  const headersList = await headers();
-  const currentUrl = headersList.get('x-url') || '/';
-  const url = new URL(currentUrl, urlPath);
-  const isWelcomePage = url.pathname === '/dashboard/welcome';
-  const hasNameParam = url.searchParams.has('name');
+  // const urlPath = process.env.NEXT_PUBLIC_APP_URL
+  // const headersList = await headers();
+  // const currentUrl = headersList.get('x-url') || '/';
+  // const url = new URL(currentUrl, urlPath);
+  // const isWelcomePage = url.pathname === '/dashboard/welcome';
+  // const hasNameParam = url.searchParams.has('name');
 
-  if (allowedNonAdminRoles.includes(finalRole)) {
-    const isAllowedPage = nonAdminAllowedPages.includes(url.pathname);
+  // if (allowedNonAdminRoles.includes(finalRole)) {
+  //   const isAllowedPage = nonAdminAllowedPages.includes(url.pathname);
 
-    if (!isAllowedPage && !(isWelcomePage && hasNameParam)) {
-      const name = dbUser.firstName || dbUser.email;
-      redirect(`/dashboard/welcome?name=${name}&error=unauthorized`);
-    }
+  //   if (!isAllowedPage && !(isWelcomePage && hasNameParam)) {
+  //     const name = dbUser.firstName || dbUser.email;
+  //     redirect(`/dashboard/welcome?name=${name}&error=unauthorized`);
+  //   }
+  // }
+
+  // NEW: Check if user is an Executive (Non-Admin)
+  // We show them the Welcome View to prevent 403 errors from dashboard widgets
+  // if (allowedNonAdminRoles.includes(finalRole)) {
+  //   return (
+  //     <DashboardShell
+  //       user={dbUser}
+  //       company={company}
+  //       workosRole={finalRole}
+  //       permissions={permissions}
+  //     >
+  //       {/* We ignore the passed 'children' and render WelcomeView instead */}
+  //       <SimpleWelcomePage firstName={dbUser.firstName || 'Team Member'} />
+  //     </DashboardShell>
+  //   );
+  // }
+
+  // SAFETY CHECK: If they have NO valid role at all, block them.
+  // (But if they are an Executive, we let them pass so they can see specific pages)
+  if (!allowedAdminRoles.includes(finalRole) && !allowedNonAdminRoles.includes(finalRole)) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-4">Your role ({finalRole}) does not have dashboard access.</p>
+          <form action="/account/logout" method="POST">
+            <button type="submit" className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-800 font-medium transition-colors">
+              Sign Out
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (
