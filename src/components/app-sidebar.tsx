@@ -67,11 +67,11 @@ const menuItems: MenuItem[] = [
     url: "/home",
     permission: ITEM_PERMISSIONS["Home"],
     items: [
-      {
-        title: "CemTem ChatBot",
-        url: "/home/cemtemChat",
-        permission: ITEM_PERMISSIONS["CemTem ChatBot"]
-      },
+      // {
+      //   title: "CemTem ChatBot",
+      //   url: "/home/cemtemChat",
+      //   permission: ITEM_PERMISSIONS["CemTem ChatBot"]
+      // },
       {
         title: "Custom Report Generator",
         url: "/home/customReportGenerator",
@@ -94,46 +94,46 @@ const menuItems: MenuItem[] = [
         url: "/dashboard/users",
         permission: ITEM_PERMISSIONS["Users"]
       },
-      {
-        title: "Assign Tasks",
-        url: "/dashboard/assignTasks",
-        permission: ITEM_PERMISSIONS["Assign Tasks"]
-      },
+      // {
+      //   title: "Assign Tasks",
+      //   url: "/dashboard/assignTasks",
+      //   permission: ITEM_PERMISSIONS["Assign Tasks"]
+      // },
       {
         title: "Dealer Management",
         url: "/dashboard/dealerManagement",
         permission: ITEM_PERMISSIONS["Dealer Management"]
       },
-      {
-        title: "Permanent Journey Plan",
-        url: "/dashboard/permanentJourneyPlan",
-        permission: ITEM_PERMISSIONS["Permanent Journey Plan"]
-      },
-      {
-        title: "Reports",
-        url: "/dashboard/reports",
-        permission: ITEM_PERMISSIONS["Reports"]
-      },
-      {
-        title: "Salesman Leaves",
-        url: "/dashboard/slmLeaves",
-        permission: ITEM_PERMISSIONS["Salesman Leaves"]
-      },
-      {
-        title: "Salesman Attendance",
-        url: "/dashboard/slmAttendance",
-        permission: ITEM_PERMISSIONS["Salesman Attendance"]
-      },
-      {
-        title: "Salesman Geotracking",
-        url: "/dashboard/slmGeotracking",
-        permission: ITEM_PERMISSIONS["Salesman Geotracking"]
-      },
-      {
-        title: "Scores & Ratings",
-        url: "/dashboard/scoresAndRatings",
-        permission: ITEM_PERMISSIONS["Scores And Ratings"]
-      },
+      // {
+      //   title: "Permanent Journey Plan",
+      //   url: "/dashboard/permanentJourneyPlan",
+      //   permission: ITEM_PERMISSIONS["Permanent Journey Plan"]
+      // },
+      // {
+      //   title: "Reports",
+      //   url: "/dashboard/reports",
+      //   permission: ITEM_PERMISSIONS["Reports"]
+      // },
+      // {
+      //   title: "Salesman Leaves",
+      //   url: "/dashboard/slmLeaves",
+      //   permission: ITEM_PERMISSIONS["Salesman Leaves"]
+      // },
+      // {
+      //   title: "Salesman Attendance",
+      //   url: "/dashboard/slmAttendance",
+      //   permission: ITEM_PERMISSIONS["Salesman Attendance"]
+      // },
+      // {
+      //   title: "Salesman Geotracking",
+      //   url: "/dashboard/slmGeotracking",
+      //   permission: ITEM_PERMISSIONS["Salesman Geotracking"]
+      // },
+      // {
+      //   title: "Scores & Ratings",
+      //   url: "/dashboard/scoresAndRatings",
+      //   permission: ITEM_PERMISSIONS["Scores And Ratings"]
+      // },
       {
         title: "Mason - PC Side",
         url: "/dashboard/masonpcSide",

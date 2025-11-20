@@ -476,14 +476,14 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   // Executive Staff Roles
   'senior-executive': {
     home: true,
-    cemtemChat: true,
+    cemtemChat: false,
     customReportGenerator: true,
     dashboard: true,
     teamOverview: {
-      teamTabContent: false,
+      teamTabContent: true,
       salesmanLiveLocation: false,
     },
-    users: false,
+    users: true,
     assignTasks: false,
     dealerManagement: {
       addAndListDealers: false,
@@ -526,11 +526,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   },
   executive: {
     home: true,
-    cemtemChat: true,
+    cemtemChat: false,
     customReportGenerator: true,
     dashboard: true,
     teamOverview: {
-      teamTabContent: false,
+      teamTabContent: true,
       salesmanLiveLocation: false,
     },
     users: false,
@@ -576,11 +576,11 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
   },
   'junior-executive': {
     home: true,
-    cemtemChat: true,
+    cemtemChat: false,
     customReportGenerator: false,
     dashboard: true,
     teamOverview: {
-      teamTabContent: false,
+      teamTabContent: true,
       salesmanLiveLocation: false,
     },
     users: false,
@@ -607,12 +607,12 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
     salesmanLeaves: false,
     salesmanGeotracking: false,
     masonpcSide: {
-      masonpc: false,
+      masonpc: true,
       tsoMeetings: false,
       schemesOffers: false,
-      masonOnSchemes: false,
+      masonOnSchemes: true,
       masonOnMeetings: false,
-      bagsLift: false,
+      bagsLift: true,
       pointsLedger: false,
       rewards: false,
       rewardsRedemption: false,
