@@ -22,7 +22,7 @@ const allowedAdminRoles = [
     'area-sales-manager',
     'senior-manager',
     'manager',
-    'assistant-manager' 
+    'assistant-manager'
 ];
 
 // ---------- Email setup ----------
@@ -58,6 +58,7 @@ const resend = new Resend(RESEND_API_KEY);
 export async function sendInvitationEmailResend({
     to,
     firstName,
+    lastName,
     companyName,
     adminName,
     inviteUrl,
@@ -67,14 +68,19 @@ export async function sendInvitationEmailResend({
     techLoginId,
     techTempPassword,
 }: any) {
-    
+
     try {
+        const fromAddress = companyName
+            ? `"${companyName}" <noreply@bestcement.co.in>`
+            : `noreply@bestcement.co.in`;
+
         const data = await resend.emails.send({
-            from: `${companyName} <bestcement.co.in>`,
+            from: fromAddress,
             to: [to],
             subject: `You've been invited to join ${companyName}`,
             react: InvitationEmail({
                 firstName,
+                lastName,
                 adminName,
                 companyName,
                 role,
@@ -261,7 +267,7 @@ export async function POST(request: NextRequest) {
         // We use the workosInvitation.id (which acts as the invitation token)
         const customInviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login/magicAuth?email=${encodeURIComponent(email)}&inviteKey=${workosInvitation.id}`;
         // --- END: MODIFIED INVITATION URL LOGIC ---
-        
+
         // Use the existing user record if it's a new invitation
         let newUser;
         if (existingUser) {
@@ -331,7 +337,7 @@ export async function POST(request: NextRequest) {
                 techLoginId: techLoginId,
                 techTempPassword: techTempPasswordPlaintext
             });
-            console.log(`✅ Invitation email sent to ${email} via Gmail`);
+            console.log(`✅ Invitation email sent to ${email} via Resend`);
         } catch (emailError) {
             console.error('❌ Failed to send invitation email:', emailError);
         }
