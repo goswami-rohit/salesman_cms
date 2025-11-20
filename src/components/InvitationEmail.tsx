@@ -28,6 +28,11 @@ interface InvitationEmailProps {
   techTempPassword?: string | null;
 }
 
+interface MagicAuthEmailProps {
+  code: string;
+  companyName: string;
+}
+
 export const InvitationEmail = ({
   firstName,
   lastName,
@@ -129,4 +134,40 @@ export const InvitationEmail = ({
   );
 };
 
-export default InvitationEmail;
+export const MagicAuthEmail = ({ code, companyName }: MagicAuthEmailProps) => {
+  return (
+    <Html>
+      <Head />
+      <Preview>Your login code for {companyName}</Preview>
+      <Tailwind>
+        <Body className="bg-white my-auto mx-auto font-sans">
+          <Container className="border border-solid border-[#eaeaea] rounded my-10 mx-auto p-5 w-[465px]">
+            
+            <Heading className="text-black text-2xl font-normal text-center p-0 my-8 mx-0">
+              Sign in to <strong>{companyName}</strong>
+            </Heading>
+
+            <Text className="text-black text-sm leading-6">
+              Hello,
+            </Text>
+            <Text className="text-black text-sm leading-6">
+              Here is your one-time login code. It will expire in 10 minutes.
+            </Text>
+
+            <Section className="bg-gray-100 rounded-lg p-6 text-center my-6 border border-gray-200">
+              <Text className="m-0 text-3xl font-mono font-bold tracking-widest text-black">
+                {code}
+              </Text>
+            </Section>
+
+            <Hr className="border border-solid border-[#eaeaea] my-6 mx-0 w-full" />
+
+            <Text className="text-[#666666] text-xs leading-6">
+              If you didn't request this code, you can safely ignore this email.
+            </Text>
+          </Container>
+        </Body>
+      </Tailwind>
+    </Html>
+  );
+};

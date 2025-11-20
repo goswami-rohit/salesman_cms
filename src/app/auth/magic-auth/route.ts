@@ -2,112 +2,68 @@
 import { WorkOS } from '@workos-inc/node';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import * as nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+// import * as nodemailer from 'nodemailer';
+// import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { Resend } from 'resend';
+import { MagicAuthEmail } from '@/components/InvitationEmail'; 
+import { RESEND_API_KEY } from '@/lib/Reusable-constants';
 
 // --- START: EMAIL UTILITY DEPENDENCIES (COMPLETE DEFINITION INCLUDED) ---
-const EMAIL_TIMEOUT_MS = 12000;
+// const EMAIL_TIMEOUT_MS = 12000;
 
-const transportOptions: SMTPTransport.Options = {
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: { user: process.env.GMAIL_USER!, pass: process.env.GMAIL_APP_PASSWORD! },
-    connectionTimeout: 10000,
-    greetingTimeout: 7000,
-    socketTimeout: 15000,
-    // @ts-ignore
-    family: 4,
-};
+// const transportOptions: SMTPTransport.Options = {
+//     host: 'smtp.gmail.com',
+//     port: 587,
+//     secure: false,
+//     auth: { user: process.env.GMAIL_USER!, pass: process.env.GMAIL_APP_PASSWORD! },
+//     connectionTimeout: 10000,
+//     greetingTimeout: 7000,
+//     socketTimeout: 15000,
+//     // @ts-ignore
+//     family: 4,
+// };
 
-const transporter = nodemailer.createTransport(transportOptions);
+// const transporter = nodemailer.createTransport(transportOptions);
 
-async function withTimeout<T>(p: Promise<T>, ms = EMAIL_TIMEOUT_MS): Promise<T> {
-    return await Promise.race([
-        p,
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('EMAIL_TIMEOUT')), ms)),
-    ]);
-}
+// async function withTimeout<T>(p: Promise<T>, ms = EMAIL_TIMEOUT_MS): Promise<T> {
+//     return await Promise.race([
+//         p,
+//         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('EMAIL_TIMEOUT')), ms)),
+//     ]);
+// }
 
-/**
- * Sends a custom email with the 6-digit Magic Auth code.
- */
-async function sendMagicAuthCodeEmailGmail({
+const resend = new Resend(RESEND_API_KEY);
+
+async function sendMagicAuthCodeEmailResend({
     to,
     code,
-    companyName = 'Team Dashboard',
+    companyName = 'Best Cement',
 }: {
     to: string;
     code: string;
     companyName?: string;
 }) {
-    const mailbox = process.env.GMAIL_USER!;
+    try {
+        // Sanitize From Address
+        const fromAddress = `"${companyName}" <noreply@bestcement.co.in>`;
 
-    // --- FULL HTML CONTENT (Crucial Fix) ---
-    const htmlContent = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Your One-Time Login Code</title>
-      <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-          .code-box { background-color: #e5e7eb; color: #1f2937; font-size: 28px; font-weight: bold; padding: 20px; text-align: center; border-radius: 8px; margin: 30px 0; letter-spacing: 5px; font-family: monospace; }
-          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-      </style>
-  </head>
-  <body>
-      <div class="header">
-          <h2>One-Time Login Code</h2>
-      </div>
+        const data = await resend.emails.send({
+            from: fromAddress,
+            to: [to],
+            subject: `Your login code for ${companyName}`,
+            react: MagicAuthEmail({
+                code,
+                companyName
+            }),
+        });
 
-      <div class="content">
-          <p>Hi there,</p>
-          <p>Use the 6-digit code below to sign in to the <strong>${companyName}</strong> dashboard:</p>
-
-          <div class="code-box">${code}</div>
-
-          <p>This code will expire in 10 minutes. If you did not request this code, please ignore this email.</p>
-          
-          <p>Thanks,</p>
-          <p>The <strong>${companyName}</strong> Team</p>
-      </div>
-
-      <div class="footer">
-          <p>This email was sent from <strong>${companyName}</strong> Team Management System.</p>
-      </div>
-  </body>
-  </html>
-  `;
-    // --- FULL TEXT CONTENT ---
-    const textContent = `
-Your One-Time Login Code for ${companyName}:
-
-Use the 6-digit code below to sign in:
-${code}
-
-This code will expire in 10 minutes. If you did not request this code, please ignore this email.
-  `;
-
-    const mailOptions: nodemailer.SendMailOptions = {
-        from: `"Auth Service (${companyName})" <${mailbox}>`,
-        to,
-        subject: `Your One-Time Login Code for ${companyName}`,
-        text: textContent,
-        html: htmlContent,
-        envelope: { from: mailbox, to },
-    };
-
-    await withTimeout(transporter.verify(), 6000);
-    const info = await withTimeout(transporter.sendMail(mailOptions), EMAIL_TIMEOUT_MS);
-
-    return info;
+        console.log("✅ Magic Auth email sent via Resend:", data);
+        return data;
+    } catch (error) {
+        console.error("❌ Resend Error:", error);
+        throw error;
+    }
 }
-// --- END: EMAIL UTILITY DEPENDENCIES ---
-
 
 // Initialize the WorkOS client.
 if (!process.env.WORKOS_API_KEY) {
@@ -115,10 +71,6 @@ if (!process.env.WORKOS_API_KEY) {
 }
 const workos = new WorkOS(process.env.WORKOS_API_KEY);
 
-/**
- * Handles the POST request for Magic Auth Code Creation (Email Submission).
- * This is the route: /api/auth/magic-auth
- */
 export const POST = async (request: NextRequest) => {
     try {
         const body = await request.json();
@@ -143,16 +95,16 @@ export const POST = async (request: NextRequest) => {
             select: { company: { select: { companyName: true } } }
         });
         // Use the actual company name in the sender
-        const companyName = user?.company?.companyName || 'Team Dashboard'; 
+        const companyName = user?.company?.companyName || 'Best Cement'; 
 
         // Send email using your custom Nodemailer function
         if (magicAuth.code) {
-            await sendMagicAuthCodeEmailGmail({
+            await sendMagicAuthCodeEmailResend({
                 to: email,
                 code: magicAuth.code,
                 companyName: companyName,
             });
-            console.log(`✅ Custom Magic Auth email sent to ${email} via Gmail. Code: ${magicAuth.code}`);
+            console.log(`✅ Custom Magic Auth email sent to ${email} via Resend. Code: ${magicAuth.code}`);
         } else {
             console.error('WorkOS did not return a code for custom email delivery.');
             throw new Error('Could not retrieve login code from authentication service.');
