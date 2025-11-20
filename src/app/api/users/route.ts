@@ -1,6 +1,10 @@
 // src/app/api/users/route.ts
 import 'server-only';
 export const runtime = 'nodejs';
+import dns from 'dns';
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
@@ -23,18 +27,21 @@ const allowedAdminRoles = [
 ];
 
 // ---------- Email setup ----------
-const EMAIL_TIMEOUT_MS = 30000;
+const EMAIL_TIMEOUT_MS = 45000; 
 
 const transportOptions: SMTPTransport.Options = {
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: { user: process.env.GMAIL_USER!, pass: process.env.GMAIL_APP_PASSWORD! },
-    connectionTimeout: 20000,
-    greetingTimeout: 15000,
-    socketTimeout: 30000,
-    // @ts-ignore
-    family: 4,
+    // --- FIX 3: ENABLE DEBUG LOGS ---
+    // This will print the SMTP chatter to your Render logs so we can see WHERE it hangs.
+    logger: true,
+    debug: true, 
+    // Increase socket timeouts
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 45000,
 };
 
 const transporter = nodemailer.createTransport(transportOptions);
