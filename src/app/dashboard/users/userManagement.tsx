@@ -46,6 +46,7 @@ import { useUserLocations } from '@/components/reusable-user-locations';
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { ColumnDef } from '@tanstack/react-table';
 import { BulkInviteDialog } from './bulkInvite';
+import { Zone } from '@/lib/Reusable-constants';
 
 interface User {
   id: number;
@@ -571,12 +572,21 @@ export default function UsersManagement({ adminUser }: Props) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="region">Region(Zone)</Label>
-                      <Input
-                        id="region"
-                        placeholder="Enter Region"
+                      <Select
                         value={formData.region}
-                        onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                      />
+                        onValueChange={(value) => setFormData({ ...formData, region: value })}
+                      >
+                        <SelectTrigger id="region">
+                          <SelectValue placeholder="Select Region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Zone.map((zone) => (
+                            <SelectItem key={zone} value={zone}>
+                              {zone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="area">Area</Label>
@@ -672,12 +682,21 @@ export default function UsersManagement({ adminUser }: Props) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="edit-region">Region(Zone)</Label>
-                      <Input
-                        id="edit-region"
+                      <Select
                         value={formData.region}
-                        onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                        placeholder="North"
-                      />
+                        onValueChange={(value) => setFormData({ ...formData, region: value })}
+                      >
+                        <SelectTrigger id="edit-region">
+                          <SelectValue placeholder="Select Region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Zone.map((zone) => (
+                            <SelectItem key={zone} value={zone}>
+                              {zone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-area">Area</Label>

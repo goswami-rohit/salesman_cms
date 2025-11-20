@@ -13,3 +13,7 @@ export const brands = [
 export const dealerTypes = ["Dealer-Best", "Sub Dealer-Best", "Dealer-Non Best", "Sub Dealer-Non Best"];
 
 export const units = ["MT", "KG", "Bags"];
+
+export const Zone = ["All Zone", "Kamrup", "Upper Assam", "Lower Assam", "Central Assam", 
+  "Barak Valley", "North Bank", "Meghalaya", "Mizoram", "Nagaland", "Tripura", 
+];
