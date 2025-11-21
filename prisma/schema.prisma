@@ -766,7 +766,7 @@ model Mason_PC_Side {
   referredByUser     String? @map("referred_by_user")
   referredToUser     String? @map("referred_to_user")
 
-  // Relations (unchanged)
+  // Relations
   dealerId           String? @map("dealer_id") @db.VarChar(255)
   dealer             Dealer? @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   userId             Int? @map("user_id")
@@ -775,14 +775,13 @@ model Mason_PC_Side {
   technicalVisitReports TechnicalVisitReport[]
   meetings           MasonsOnMeetings[]
   otps               OtpVerification[]
-
-  // NEW RELATIONS
   kycSubmissions     KYCSubmission[]
   tsoAssignments     TSOAssignment[] @relation("MasonAssignments")
   bagLifts           BagLift[]
   pointsLedger       PointsLedger[]
   rewardRedemptions  RewardRedemption[]
   authSessions       AuthSession[]
+  slabAchievements  MasonSlabAchievements[]
 
   siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
   site TechnicalSite? @relation("MasonTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
@@ -812,6 +811,7 @@ model Rewards {
   category                RewardCategory? @relation(fields: [categoryId], references: [id], onDelete: NoAction)
   logs                    GiftAllocationLog[]
   redemptions             RewardRedemption[]
+  usedInSlabs             SchemeSlabs[]
 
   createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -892,6 +892,7 @@ model SchemesOffers{
 
   // Relation to Mason_PC_Side
   masons      MasonOnScheme[]
+  slabs       SchemeSlabs[]
 
   @@map("schemes_offers")
 }
@@ -1050,4 +1051,50 @@ model PointsLedger {
   @@index([masonId])
   @@index([sourceId])
   @@map("points_ledger")
+}
+
+// SCHEME SLABS (The Rows from your Screenshot)
+model SchemeSlabs {
+  id              String   @id @default(uuid()) @db.Uuid
+  schemeId        String   @map("scheme_id") @db.Uuid
+  
+  // The Criteria
+  minBagsBest     Int?     @map("min_bags_best")
+  minBagsOthers   Int?     @map("min_bags_others")
+  
+  // The Output
+  pointsEarned    Int      @map("points_earned")
+  slabDescription String?  @map("slab_description") @db.VarChar(255)
+  rewardId        Int?     @map("reward_id") // Optional link to a specific item
+
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  scheme       SchemesOffers           @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  reward       Rewards?                @relation(fields: [rewardId], references: [id], onDelete: SetNull)
+  achievements MasonSlabAchievements[]
+
+  @@index([schemeId])
+  @@index([rewardId])
+  @@map("scheme_slabs")
+}
+
+// MASON SLAB ACHIEVEMENTS (Tracking who finished what)
+model MasonSlabAchievements {
+  id            String   @id @default(uuid()) @db.Uuid
+  masonId       String   @map("mason_id") @db.Uuid
+  schemeSlabId  String   @map("scheme_slab_id") @db.Uuid
+  achievedAt    DateTime @default(now()) @map("achieved_at") @db.Timestamptz(6)
+  pointsAwarded Int      @map("points_awarded")
+
+  // Relations
+  mason Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
+  slab  SchemeSlabs @relation(fields: [schemeSlabId], references: [id], onDelete: Cascade)
+
+  // Ensure a Mason cannot claim the same Slab twice
+  @@unique([masonId, schemeSlabId], map: "unique_mason_slab_claim")
+  @@index([masonId])
+  @@index([schemeSlabId])
+  @@map("mason_slab_achievements")
 }

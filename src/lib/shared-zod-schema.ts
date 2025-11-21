@@ -784,6 +784,26 @@ export const authSessionSchema = z.object({
   expiresAt: z.string().nullable(), // ISO String
 });
 
+export const schemeSlabsSchema = z.object({
+  id: z.string(),
+  schemeId: z.string(),
+  minBagsBest: z.number().int().nullable(),
+  minBagsOthers: z.number().int().nullable(),
+  pointsEarned: z.number().int(),
+  slabDescription: z.string().nullable(),
+  rewardId: z.number().int().nullable(),
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string().nullable(), // ISO String
+});
+
+export const masonSlabAchievementSchema = z.object({
+  id: z.string(),
+  masonId: z.string(),
+  schemeSlabId: z.string(),
+  achievedAt: z.string(), // ISO String
+  pointsAwarded: z.number().int(),
+});
+
 export type AssignTaskSchema = z.infer<typeof assignTaskSchema>;
 export type DailyTaskSchema = z.infer<typeof dailyTaskSchema>;
 export type BaseDealerBrandMappingSchema = z.infer<typeof baseDealerBrandMappingSchema>;
@@ -820,3 +840,5 @@ export type BagLiftSchema = z.infer<typeof bagLiftSchema>;
 export type RewardRedemptionSchema = z.infer<typeof rewardRedemptionSchema>;
 export type PointsLedgerSchema = z.infer<typeof pointsLedgerSchema>;
 export type AuthSessionSchema = z.infer<typeof authSessionSchema>;
+export type SchemeSlabsSchema = z.infer<typeof schemeSlabsSchema>;
+export type MasonSlabAchievementSchema = z.infer<typeof masonSlabAchievementSchema>;
