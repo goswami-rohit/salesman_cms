@@ -140,34 +140,12 @@ This folder is a key architectural pattern. It doesn't contain generic CRUD logi
 * **`points-ledger/route.ts` (`GET`):** Lists all `PointsLedger` records filtered by the Mason's company. It flattens the data to include `masonName` for display.
 * **`rewards/route.ts` (`GET`):** Lists all `Rewards` records from the master list (not company-filtered) to allow global catalog viewing. Flattens `categoryName`.
 * **`reward-categories/route.ts` (`GET`):** Lists all `RewardCategory` records (master list) to populate UI filters.
-* **`rewards-redemption/route.ts` (`GET`):** Lists all `RewardRedemption` records for the `currentUser.companyId` by filtering via the associated mason. Joins and flattens `masonName` and `rewardName`.
-
-* **`.../permanent-journey-plan/` (Folder):**
-    * **`route.ts`:**
-        * **`GET`:** Lists PJPs for the `currentUser.companyId`, with an optional `verificationStatus` filter from the URL params.
-        * **`DELETE`:** Removes a `PermanentJourneyPlan` based on the `id` query parameter, after verifying company ownership.
-    * **`pjp-verification/route.ts`:** `GET` handler that lists *only* PJPs with `status: 'PENDING'` for the `currentUser.companyId`.
-    * **`pjp-verification/[id]/route.ts`:**
-        * **`PUT`:** Takes the PJP `id` from the URL and a `verificationStatus` ("VERIFIED" or "REJECTED") from the body to update its status/route.ts].
-        * **`PATCH`:** Takes the PJP `id` from the URL and modification data (like `planDate`, `dealerId`, etc.) from the body to edit and *simultaneously approve* a PJP/route.ts].
-
-* **`.../slm-geotracking/route.ts`:**
-    * **`GET`:** Powers the "GeoTracking History" *table*. It fetches all `GeoTracking` records for the `currentUser.companyId` (with a `take: 200` limit and `orderBy: 'desc'`) and returns the full array.
-
-* **`.../slm-leaves/route.ts`:**
-    * **`GET`:** Fetches all `SalesmanLeaveApplication` records for the `currentUser.companyId`.
-    * **`PATCH`:** Approves or rejects a leave. Takes `id`, `status`, and `adminRemarks` in the body and updates the `SalesmanLeaveApplication`.
-
-* **`.../assign-tasks/route.ts`:**
-    * **`GET`:** Fetches all data needed for the page: (1) `assignableSalesmen` (junior roles in the manager's company/area/region), (2) `dealers` for the company, and (3) existing `dailyTasks`.
-    * **`POST`:** Creates new `DailyTask` records, linking `userId` (the salesman) and `assignedByUserId` (the admin). It correctly creates multiple tasks if multiple salesmen or dealers are selected.
-
-* **`.../slm-attendance/route.ts`:**
-    * **`GET`:** Fetches all `SalesmanAttendance` records for the `currentUser.companyId`, formats the data (e.g., combining names), and returns the validated list.
-
-* **`.../scores-ratings/route.ts`:**
-    * **`GET`:** Fetches either salesman `Rating` records or `DealerReportsAndScores` records based on the `?type=` query parameter, filtered by the `currentUser.companyId`.
-
+* **`rewards-redemption/`:**
+    * **`route.ts` (`GET`):** Lists all `RewardRedemption` records for the `currentUser.companyId` by filtering via the associated mason. Joins and flattens `masonName` and `rewardName`.
+    * **`[id]/route.ts` (`PATCH`):** Handles the status update of a reward redemption request (e.g., approving, rejecting, shipping).
+        * **Stock Management:** Automatically deducts stock from `Rewards` when status changes to `approved`. Restores stock if an `approved` order is subsequently `rejected`.
+        * **Points Management:** Automatically refunds points to the Mason's ledger and balance if a request is `rejected` (whether it was previously approved or just placed).
+        * **Validation:** Prevents modifying already 'delivered' or 'rejected' orders and checks for insufficient stock before approval.
 
 #### `src/app/api/custom-report-generator/route.ts`
 
