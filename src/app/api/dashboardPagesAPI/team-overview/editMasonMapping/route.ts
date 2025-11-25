@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
         phoneNumber: true,
         // Include dealer info for potential client-side filtering (like area/region)
         dealer: { select: { area: true, region: true, name: true } },
-        userId: true,
+        userId: true, 
         dealerId: true,
       },
       orderBy: { name: "asc" },
