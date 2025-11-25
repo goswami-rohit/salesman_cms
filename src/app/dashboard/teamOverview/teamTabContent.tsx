@@ -282,7 +282,7 @@ function EditDealerMappingCell({
       setIsLoading(true);
       try {
         // Construct the URL with area and region query parameters
-        const url = new URL(`/api/dashboardPagesAPI/team-overview/editDealerMapping`);
+        const url = new URL(`/api/dashboardPagesAPI/team-overview/editDealerMapping`, window.location.origin);
         url.searchParams.append('userId', String(member.id));
         // Use selected filters instead of member's area/region
         if (selectedArea) {
@@ -464,7 +464,7 @@ function EditMasonMappingCell({
     (async () => {
       setIsLoading(true);
       try {
-        const url = new URL(`/api/dashboardPagesAPI/team-overview/editMasonMapping`);
+        const url = new URL(`/api/dashboardPagesAPI/team-overview/editMasonMapping`, window.location.origin);
         url.searchParams.append('userId', String(member.id));
 
         // 💡 ADD FILTERS TO URL
@@ -597,12 +597,6 @@ function EditMasonMappingCell({
           <div className="py-4 text-center text-gray-500">Loading masons/locations...</div>
         ) : (
           <>
-            <Input
-              placeholder="Search masons..."
-              value={masonSearchQuery}
-              onChange={(e) => setMasonSearchQuery(e.target.value)}
-              className="mb-4"
-            />
             <MultiSelect
               options={filteredMasonOptions}
               selectedValues={selectedMasonIds}
@@ -710,7 +704,7 @@ export function TeamTabContent() {
   const dataFetchURI = `/api/dashboardPagesAPI/team-overview/dataFetch`;
   const editRoleURI = `/api/dashboardPagesAPI/team-overview/editRole`;
   const editMappingURI = `/api/dashboardPagesAPI/team-overview/editMapping`;
-  const editDealerMappingURI = `api/dashboardPagesAPI/team-overview/editDealerMapping`;
+  const editDealerMappingURI = `/api/dashboardPagesAPI/team-overview/editDealerMapping`;
   const editMasonMappingURI = `/api/dashboardPagesAPI/team-overview/editMasonMapping`;
   const currentUserURI = `/api/me`;
 

@@ -65,18 +65,12 @@ export async function GET(request: NextRequest) {
 
     // 1) Fetch ALL masons for this company, optionally filtered by area/region (via their related dealer)
     const masonWhere: any = {
-      // Use OR condition to include:
       OR: [
-        // 1. Masons explicitly linked to a user in the current company
-        { user: { companyId: currentUser.companyId } },
-        // Condition 2: Mason is linked to a Dealer, and that Dealer's owner (User) is in the current company
-        // This captures masons who might be unassigned (userId: null) but are dealer-associated.
-        { dealer: { user: { companyId: currentUser.companyId } } }
-      ],
-      // 2. Dealer filtering object
-      dealer: {},
+        { user: { companyId: currentUser.companyId } }, // Assigned to company user
+        { dealer: { user: { companyId: currentUser.companyId } } }, // Linked to company dealer
+        { userId: null } // Include unassigned masons so they can be picked up
+      ]
     };
-
     // 3. Conditional Filtering on Dealer
     if (area) {
       masonWhere.dealer.area = area;
@@ -94,7 +88,7 @@ export async function GET(request: NextRequest) {
         phoneNumber: true,
         // Include dealer info for potential client-side filtering (like area/region)
         dealer: { select: { area: true, region: true, name: true } },
-        userId: true, 
+        userId: true,
         dealerId: true,
       },
       orderBy: { name: "asc" },

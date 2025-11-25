@@ -20,32 +20,50 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Fetch all unique regions for the current dealer's 
-    const uniqueRegions = await prisma.dealer.findMany({
-      where: {
-        user: { companyId: currentUser.companyId },
-      },
-      select: { region: true },
-      distinct: ['region'], // This is the key part of the query
-    });
+    // Use Promise.all to fetch regions and areas in parallel
+    // We use a broader filter: dealers in my company OR unassigned dealers
+    // (This matches the logic we added to the editDealerMapping route)
+    const [uniqueRegions, uniqueAreas] = await Promise.all([
+      prisma.dealer.findMany({
+        where: {
+          OR: [
+            { user: { companyId: currentUser.companyId } },
+            { userId: null } // Include orphans so their regions appear in filters
+          ]
+        },
+        select: { region: true },
+        distinct: ['region'],
+        orderBy: { region: 'asc' }
+      }),
+      prisma.dealer.findMany({
+        where: {
+          OR: [
+            { user: { companyId: currentUser.companyId } },
+            { userId: null }
+          ]
+        },
+        select: { area: true },
+        distinct: ['area'],
+        orderBy: { area: 'asc' }
+      })
+    ]);
 
-    // Fetch all unique areas for the current dealer's 
-    const uniqueAreas = await prisma.dealer.findMany({
-      where: {
-        user: { companyId: currentUser.companyId },
-      },
-      select: { area: true },
-      distinct: ['area'], // This is the key part of the query
-    });
-
-    // Extract the string values from the query results
-    const regions = uniqueRegions.map((r:any) => r.region);
-    const areas = uniqueAreas.map((a:any) => a.area);
+    // Clean up the data (remove nulls/empty strings)
+    const regions = uniqueRegions
+      .map((r) => r.region)
+      .filter((r) => r && r.trim() !== "");
+      
+    const areas = uniqueAreas
+      .map((a) => a.area)
+      .filter((a) => a && a.trim() !== "");
 
     return NextResponse.json({ regions, areas }, { status: 200 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching locations:', error);
-    return NextResponse.json({ error: 'Failed to fetch locations' }, { status: 500 });
+    return NextResponse.json(
+      { error: `Failed to fetch locations: ${error.message}` }, 
+      { status: 500 }
+    );
   }
 }

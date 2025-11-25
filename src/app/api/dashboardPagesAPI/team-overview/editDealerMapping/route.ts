@@ -59,7 +59,10 @@ export async function GET(request: NextRequest) {
     // 1) Fetch ALL dealers for this company, optionally filtered by area/region from the popup
     // Filter via the related user who created/owns the dealer record.
     const dealerWhere: any = {
-      user: { companyId: currentUser.companyId },
+      OR: [
+        { user: { companyId: currentUser.companyId } }, // Owned by my company
+        { userId: null } // Unassigned dealers (orphans)
+      ]
     };
     if (area) dealerWhere.area = area;
     if (region) dealerWhere.region = region;
