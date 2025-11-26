@@ -145,7 +145,7 @@ export async function GET() {
             orderBy: {
                 createdAt: 'desc', // Order by latest added dealers first
             },
-            take: 200, // Limit to recent dealers for dashboard view
+            // take: 200, // Limit to recent dealers for dashboard view
         });
 
         // 5. Format the data to match the getDealerResponseSchema for the frontend

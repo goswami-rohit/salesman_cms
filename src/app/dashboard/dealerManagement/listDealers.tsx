@@ -5,8 +5,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
-
+import { Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -22,6 +23,39 @@ type DealerRecord = z.infer<typeof getDealersSchema>;
 const DEALER_LOCATIONS_API = `/api/dashboardPagesAPI/dealerManagement`;
 const DEALER_TYPES_API = `/api/dashboardPagesAPI/dealerManagement/dealer-types`;
 
+const renderSelectFilter = (
+  label: string,
+  value: string,
+  onValueChange: (v: string) => void,
+  options: string[],
+  isLoading: boolean = false
+) => (
+  <div className="flex flex-col space-y-1 w-full sm:w-[150px] min-w-[120px]">
+    <label className="text-sm font-medium text-muted-foreground">{label}</label>
+    <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
+      <SelectTrigger className="h-9">
+        {isLoading ? (
+          <div className="flex flex-row items-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-muted-foreground">Loading...</span>
+          </div>
+        ) : (
+          <SelectValue placeholder={`Select ${label}`} />
+        )}
+      </SelectTrigger>
+      <SelectContent>
+        {/* 'all' item for showing all records */}
+        <SelectItem value="all">All {label}s</SelectItem>
+        {options.map(option => (
+          <SelectItem key={option} value={option}>
+            {option}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+);
+
 export default function ListDealersPage() {
   // --- State for Dealer Listing ---
   const [dealers, setDealers] = useState<DealerRecord[]>([]);
@@ -32,7 +66,8 @@ export default function ListDealersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [dealerToDeleteId, setDealerToDeleteId] = useState<string | null>(null);
 
-  // --- Filters: Region, Area, Type ---
+  // --- Filters: Search, Region, Area, Type ---
+  const [searchQuery, setSearchQuery] = useState(''); // Added Search State
   const [filterRegion, setFilterRegion] = useState<string>('all');
   const [filterArea, setFilterArea] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -114,11 +149,17 @@ export default function ListDealersPage() {
   };
 
   // --- Client-side filtering ---
-  const filteredDealers = dealers.filter(d =>
-    (filterRegion !== 'all' ? d.region === filterRegion : true) &&
-    (filterArea !== 'all' ? d.area === filterArea : true) &&
-    (filterType !== 'all' ? d.type === filterType : true)
-  );
+  const filteredDealers = dealers.filter(d => {
+    // 1. Search Query Match
+    const nameMatch = !searchQuery || (d.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    // 2. Dropdown Matches
+    const regionMatch = filterRegion === 'all' || d.region === filterRegion;
+    const areaMatch = filterArea === 'all' || d.area === filterArea;
+    const typeMatch = filterType === 'all' || d.type === filterType;
+
+    return nameMatch && regionMatch && areaMatch && typeMatch;
+  });
 
   // --- Loading / Error gates ---
   if (loadingDealers || locationsLoading || loadingTypes) {
@@ -186,47 +227,48 @@ export default function ListDealersPage() {
       </Dialog>
 
       {/* Filters */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-4">
-          {/* Region */}
-          <Select value={filterRegion} onValueChange={setFilterRegion}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Region" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Regions(Zones)</SelectItem>
-              {(locations.regions || []).filter(Boolean).sort().map(region => (
-                <SelectItem key={region} value={region}>{region}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-card border">
 
-          {/* Area */}
-          <Select value={filterArea} onValueChange={setFilterArea}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Area" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Areas</SelectItem>
-              {(locations.areas || []).filter(Boolean).sort().map(area => (
-                <SelectItem key={area} value={area}>{area}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Type */}
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {availableTypes.filter(Boolean).sort().map(t => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* 1. Name Search Input */}
+        <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
+          <label className="text-sm font-medium text-muted-foreground">Dealer Name</label>
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by dealer name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-9"
+            />
+          </div>
         </div>
+
+        {/* 2. Type Filter */}
+        {renderSelectFilter(
+          'Type',
+          filterType,
+          setFilterType,
+          availableTypes,
+          loadingTypes
+        )}
+
+        {/* 3. Region Filter */}
+        {renderSelectFilter(
+          'Region(Zone)',
+          filterRegion,
+          setFilterRegion,
+          (locations.regions || []).filter(Boolean).sort(),
+          locationsLoading
+        )}
+
+        {/* 4. Area Filter */}
+        {renderSelectFilter(
+          'Area',
+          filterArea,
+          setFilterArea,
+          (locations.areas || []).filter(Boolean).sort(),
+          locationsLoading
+        )}
       </div>
 
       {/* Table */}
@@ -239,7 +281,7 @@ export default function ListDealersPage() {
             columns={dealerColumns}
             data={filteredDealers}
             enableRowDragging={false}
-            onRowOrderChange={() => {}}
+            onRowOrderChange={() => { }}
           />
         </div>
       )}

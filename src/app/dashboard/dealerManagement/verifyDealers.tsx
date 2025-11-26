@@ -1,11 +1,12 @@
 // src/app/dashboard/dealerManagement/verifyDealers.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
-
+import { Input } from '@/components/ui/input';
+import { Loader2, Search } from 'lucide-react';
 // Shadcn UI Components
 import { Button } from '@/components/ui/button';
 import {
@@ -26,20 +27,50 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 import { dealerVerificationSchema } from '@/lib/shared-zod-schema';
 import { BASE_URL } from '@/lib/Reusable-constants';
 
-
 type DealerRecord = z.infer<typeof dealerVerificationSchema>;
+
+const renderSelectFilter = (
+    label: string,
+    value: string,
+    onValueChange: (v: string) => void,
+    options: string[],
+    isLoading: boolean = false
+) => (
+    <div className="flex flex-col space-y-1 w-full sm:w-[150px] min-w-[120px]">
+        <label className="text-sm font-medium text-muted-foreground">{label}</label>
+        <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
+            <SelectTrigger className="h-9">
+                {isLoading ? (
+                    <div className="flex flex-row items-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-muted-foreground">Loading...</span>
+                    </div>
+                ) : (
+                    <SelectValue placeholder={`Select ${label}`} />
+                )}
+            </SelectTrigger>
+            <SelectContent>
+                {/* 'all' item for showing all records */}
+                <SelectItem value="all">All {label}s</SelectItem>
+                {options.map(option => (
+                    <SelectItem key={option} value={option}>
+                        {option}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    </div>
+);
 
 export default function VerifyDealersPage() {
     const [pendingDealers, setPendingDealers] = useState<DealerRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // --- Filter State (3 filters) ---
-    const [selectedNameFilter, setSelectedNameFilter] = useState<string>('all');
-    const [selectedFirmNameFilter, setSelectedFirmNameFilter] =
-        useState<string>('all');
-    const [selectedRegionFilter, setSelectedRegionFilter] =
-        useState<string>('all');
+    // --- Filters: Search, Region, Area, Type ---
+    const [searchQuery, setSearchQuery] = useState(''); // Added Search State
+    const [selectedFirmNameFilter, setSelectedFirmNameFilter] = useState<string>('all');
+    const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>('all');
 
     // --- Delete loading state ---
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -159,26 +190,23 @@ export default function VerifyDealersPage() {
         return ['all', ...Array.from(regions).sort()];
     }, [pendingDealers]);
 
-    // --- NEW: Client-side Filtering ---
-    const filteredDealers = React.useMemo(() => {
+    // --- Client-side Filtering ---
+    const filteredDealers = useMemo(() => {
         return pendingDealers.filter((dealer) => {
-            const matchesName =
-                selectedNameFilter === 'all' ? true : dealer.name === selectedNameFilter;
+            // Search Query Filter
+            const matchesSearch = !searchQuery ||
+                (dealer.name || '').toLowerCase().includes(searchQuery.toLowerCase());
 
+            // Dropdown Filters
             const matchesFirmName =
                 selectedFirmNameFilter === 'all' ? true : dealer.nameOfFirm === selectedFirmNameFilter;
 
             const matchesRegion =
                 selectedRegionFilter === 'all' ? true : dealer.region === selectedRegionFilter;
 
-            return matchesName && matchesFirmName && matchesRegion;
+            return matchesSearch && matchesFirmName && matchesRegion;
         });
-    }, [
-        pendingDealers,
-        selectedNameFilter,
-        selectedFirmNameFilter,
-        selectedRegionFilter,
-    ]);
+    }, [pendingDealers, searchQuery, selectedFirmNameFilter, selectedRegionFilter]);
 
     // --- Columns for PENDING Dealers Table (Updated accessors) ---
     const pendingDealerColumns: ColumnDef<DealerRecord>[] = [
@@ -254,55 +282,39 @@ export default function VerifyDealersPage() {
             </CardHeader>
             <CardContent className='p-6'>
 
-                {/* --- NEW: Filter Controls --- */}
-                <div className="flex flex-col md:flex-row gap-4 mb-6">
-                    <Select
-                        value={selectedNameFilter}
-                        onValueChange={setSelectedNameFilter}
-                    >
-                        <SelectTrigger className="w-full md:w-[250px]">
-                            <SelectValue placeholder="Filter by Dealer Name" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {nameOptions.map((name) => (
-                                <SelectItem key={name} value={name}>
-                                    {name === 'all' ? 'All Dealer Names' : name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                {/* --- Filter Controls --- */}
+                <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-card border mb-6">
+                    {/* 1. Name Search Input */}
+                    <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
+                        <label className="text-sm font-medium text-muted-foreground">Dealer Name</label>
+                        <div className="relative">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search by name..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-8 h-9"
+                            />
+                        </div>
+                    </div>
 
-                    <Select
-                        value={selectedFirmNameFilter}
-                        onValueChange={setSelectedFirmNameFilter}
-                    >
-                        <SelectTrigger className="w-full md:w-[250px]">
-                            <SelectValue placeholder="Filter by Firm Name" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {firmNameOptions.map((name) => (
-                                <SelectItem key={name} value={name}>
-                                    {name === 'all' ? 'All Firm Names' : name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    {/* 2. Firm Name Filter */}
+                    {renderSelectFilter(
+                        'Firm Name',
+                        selectedFirmNameFilter,
+                        setSelectedFirmNameFilter,
+                        firmNameOptions,
+                        loading
+                    )}
 
-                    <Select
-                        value={selectedRegionFilter}
-                        onValueChange={setSelectedRegionFilter}
-                    >
-                        <SelectTrigger className="w-full md:w-[250px]">
-                            <SelectValue placeholder="Filter by Region" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {regionOptions.map((region) => (
-                                <SelectItem key={region} value={region}>
-                                    {region === 'all' ? 'All Regions' : region}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    {/* 3. Region Filter */}
+                    {renderSelectFilter(
+                        'Region(Zone)',
+                        selectedRegionFilter,
+                        setSelectedRegionFilter,
+                        regionOptions,
+                        loading
+                    )}
                 </div>
                 {/* --- END: Filter Controls --- */}
 

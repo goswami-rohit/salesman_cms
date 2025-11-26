@@ -6,8 +6,8 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 import { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Search, Loader2 } from 'lucide-react'; // Added Icons
 import {
   Select,
   SelectContent,
@@ -15,692 +15,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PencilIcon, EyeIcon, UsersIcon, Loader2, StoreIcon } from 'lucide-react';
-import { MultiSelect } from '@/components/multi-select';
-import { ROLE_HIERARCHY, canAssignRole } from '@/lib/roleHierarchy';
-import { useDealerLocations } from '@/components/reusable-dealer-locations';
-import { BASE_URL } from '@/lib/Reusable-constants';
+import { ROLE_HIERARCHY } from '@/lib/roleHierarchy';
+import TeamEditModal, { TeamMember } from '@/app/dashboard/teamOverview/teamEdit';
 
-interface TeamMember {
-  id: number;
-  name: string;
-  role: string;
-  managedBy: string | null;
-  manages: string;
-  managedById: number | null;
-  managesIds: number[];
-  managesReports: { name: string; role: string }[];
-  area?: string | null;
-  region?: string | null;
-  isTechnicalRole: boolean;
-}
-
-const allRoles = ROLE_HIERARCHY;
-
-/** Returns roles currentUser can assign */
-const getAssignableRoles = (currentRole?: string | null) => {
-  if (!currentRole) return [];
-  return allRoles.filter((r) => canAssignRole(currentRole, r));
-};
-
-function EditRoleCell({
-  row,
-  onSaveRole,
-  currentUserRole,
-}: {
-  row: any;
-  onSaveRole: (userId: number, newRole: string) => void;
-  currentUserRole: string | null;
-}) {
-  const member: TeamMember = row.original;
-  const [isOpen, setIsOpen] = useState(false);
-  const [newRole, setNewRole] = useState(member.role);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Roles current user can assign
-  const assignableRoles = useMemo(() => getAssignableRoles(currentUserRole), [currentUserRole]);
-
-  // Roles to show in select: always include current role for valid select value
-  const rolesToShow = useMemo(() => {
-    const set = new Set<string>();
-    // current role must appear so the select shows a valid value
-    if (member.role) set.add(member.role);
-    for (const r of assignableRoles) set.add(r);
-    return Array.from(set);
-  }, [assignableRoles, member.role]);
-
-  const canEdit = (currentUserRole !== null) && assignableRoles.length > 0;
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSaveRole(member.id, newRole);
-      setIsOpen(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-          size="icon"
-          disabled={!canEdit}>
-          <PencilIcon className="h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent className="w-80 border border-border/30 bg-popover/50 backdrop-blur-lg">
-        <h4 className="font-bold mb-2">Edit Role</h4>
-        <p className="text-sm text-gray-500">Member: {member.name}</p>
-        <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
-
-        <div className="space-y-2">
-          <Select value={newRole} onValueChange={(v) => setNewRole(v)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Assign new role" />
-            </SelectTrigger>
-            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
-              {rolesToShow.map((role) => (
-                <SelectItem key={role} value={role}>
-                  {role}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={newRole === member.role || isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function EditMappingCell({
-  row,
-  onSaveMapping,
-  teamData,
-  currentUserRole,
-}: {
-  row: any;
-  onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void;
-  teamData: TeamMember[];
-  currentUserRole: string | null;
-}) {
-  const member: TeamMember = row.original;
-  const [isOpen, setIsOpen] = useState(false);
-  const [newReportsToId, setNewReportsToId] = useState<number | null>(member.managedById);
-  const [newManagesIds, setNewManagesIds] = useState<number[]>(member.managesIds ?? []);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const memberIndex = allRoles.indexOf(member.role);
-
-  // manager options = people who are higher (index < memberIndex) AND current user may assign that manager role
-  const managerOptions = useMemo(() => {
-    if (!currentUserRole) return [];
-    if (memberIndex === -1) return [];
-    return teamData
-      .filter((m) => m.id !== member.id)
-      .filter((m) => {
-        const idx = allRoles.indexOf(m.role);
-        return idx !== -1 && idx < memberIndex && canAssignRole(currentUserRole, m.role);
-      })
-      .map((m) => ({ id: m.id, value: m.id.toString(), label: `${m.name} (${m.role})` }));
-  }, [teamData, memberIndex, member.id, member.role, currentUserRole]);
-
-  // junior options = people who are lower (index > memberIndex) AND current user may assign that junior role
-  const juniorOptions = useMemo(() => {
-    if (!currentUserRole) return [];
-    if (memberIndex === -1) return [];
-    return teamData
-      .filter((m) => m.id !== member.id)
-      .filter((m) => {
-        const idx = allRoles.indexOf(m.role);
-        return idx !== -1 && idx > memberIndex && canAssignRole(currentUserRole, m.role);
-      })
-      .map((m) => ({ id: m.id, value: m.id.toString(), label: `${m.name} (${m.role})` }));
-  }, [teamData, memberIndex, member.id, member.role, currentUserRole]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSaveMapping(member.id, newReportsToId, newManagesIds ?? []);
-      setIsOpen(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-          size="icon"
-          disabled={!currentUserRole}>
-          <UsersIcon className="h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent className="w-80 border border-border/30 bg-popover/50 backdrop-blur-lg">
-        <h4 className="font-bold mb-2">Edit Reporting Structure</h4>
-        <p className="text-sm text-gray-500">Member: {member.name}</p>
-        <p className="text-sm text-gray-500 mb-4">Current Role: {member.role}</p>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Is Managed By</label>
-            <Select
-              value={newReportsToId?.toString() ?? 'none'}
-              onValueChange={(value) => setNewReportsToId(value === 'none' ? null : Number(value))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Senior that manages this member" />
-              </SelectTrigger>
-              <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
-                <SelectItem value="none">None</SelectItem>
-                {managerOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Manages</label>
-            <MultiSelect
-              options={juniorOptions.map((o) => ({ value: o.value, label: o.label }))}
-              selectedValues={newManagesIds.map((id) => id.toString())}
-              onValueChange={(selectedValues) => setNewManagesIds(selectedValues.map(Number))}
-              placeholder="Juniors that report to this member.."
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function EditDealerMappingCell({
-  row,
-  onSaveDealerMapping,
-  currentUserRole,
-}: {
-  row: any;
-  onSaveDealerMapping: (userId: number, dealerIds: string[]) => void;
-  currentUserRole: string | null;
-}) {
-  const member: TeamMember = row.original;
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedDealerIds, setSelectedDealerIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dealerOptions, setDealerOptions] = useState<{ value: string; label: string }[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [dealerSearchQuery, setDealerSearchQuery] = useState('');
-
-  const { locations, loading: locationsLoading } = useDealerLocations();
-  // New state for area and region filters
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const ALL = "all";
-
-  // Fetch dealers for this user when popover opens
-  useEffect(() => {
-    if (!isOpen) {
-      // Reset filters when the popover closes
-      setSelectedArea(null);
-      setSelectedRegion(null);
-      setDealerSearchQuery(''); // Clear search on close
-      return;
-    }
-    // Only fetch if locations are not loading
-    if (locationsLoading) {
-      return;
-    }
-    (async () => {
-      setIsLoading(true);
-      try {
-        // Construct the URL with area and region query parameters
-        const url = new URL(`/api/dashboardPagesAPI/team-overview/editDealerMapping`, window.location.origin);
-        url.searchParams.append('userId', String(member.id));
-        // Use selected filters instead of member's area/region
-        if (selectedArea) {
-          url.searchParams.append('area', selectedArea);
-        }
-        if (selectedRegion) {
-          url.searchParams.append('region', selectedRegion);
-        }
-
-        const res = await fetch(url.toString());
-        if (res.ok) {
-          const data = await res.json();
-          setDealerOptions(data.dealers.map((d: any) => ({ value: d.id, label: d.name })));
-          setSelectedDealerIds(data.assignedDealerIds ?? []);
-        } else {
-          console.error("Failed to fetch dealers", res.status);
-          toast.error("Failed to load dealers. Please try again.");
-        }
-      } catch (e) {
-        console.error("Failed to fetch dealers", e);
-        toast.error("An error occurred while loading dealers.");
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [isOpen, member.id, selectedArea, selectedRegion, locationsLoading]);
-
-  // Filter dealer options based on search query
-  const filteredDealerOptions = useMemo(() => {
-    if (!dealerSearchQuery) {
-      return dealerOptions;
-    }
-    const query = dealerSearchQuery.toLowerCase();
-    return dealerOptions.filter((option) => option.label.toLowerCase().includes(query));
-  }, [dealerOptions, dealerSearchQuery]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSaveDealerMapping(member.id, selectedDealerIds);
-      setIsOpen(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setSelectedArea(null);
-    setSelectedRegion(null);
-  };
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-          size="icon"
-          disabled={!currentUserRole}>
-          <StoreIcon className="h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-96 border border-border/30 bg-popover/50 backdrop-blur-lg">
-        <h4 className="font-bold mb-2">Edit Dealer Mapping</h4>
-        <p className="text-sm text-gray-500 mb-4">Salesman: {member.name}</p>
-
-        {/* Dropdown selectors for Area and Region */}
-        <div className="flex gap-2 mb-4">
-          {/* Area */}
-          <Select
-            value={selectedArea ?? ALL}
-            onValueChange={(val) => setSelectedArea(val === ALL ? null : val)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by Area" />
-            </SelectTrigger>
-            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
-              <SelectItem value={ALL}>All Areas</SelectItem>
-              {locations.areas.sort().map((area) => (
-                <SelectItem key={area} value={area}>
-                  {area}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Region */}
-          <Select
-            value={selectedRegion ?? ALL}
-            onValueChange={(val) => setSelectedRegion(val === ALL ? null : val)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by Region" />
-            </SelectTrigger>
-            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
-              <SelectItem value={ALL}>All Regions</SelectItem>
-              {locations.regions.sort().map((region) => (
-                <SelectItem key={region} value={region}>
-                  {region}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Clear Filters Button */}
-        <div className="flex justify-end mb-4">
-          <Button variant="outline" onClick={handleClearFilters} disabled={!selectedArea && !selectedRegion}>
-            Clear Filters
-          </Button>
-        </div>
-
+const renderSelectFilter = (
+  label: string,
+  value: string,
+  onValueChange: (v: string) => void,
+  options: string[],
+  isLoading: boolean = false
+) => (
+  <div className="flex flex-col space-y-1 w-full sm:w-[200px] min-w-[150px]">
+    <label className="text-sm font-medium text-muted-foreground">{label}</label>
+    <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
+      <SelectTrigger className="h-9">
         {isLoading ? (
-          <div className="py-4 text-center text-gray-500">Loading dealers...</div>
+          <div className="flex flex-row items-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-muted-foreground">Loading...</span>
+          </div>
         ) : (
-          <MultiSelect
-            options={filteredDealerOptions}
-            selectedValues={selectedDealerIds}
-            onValueChange={setSelectedDealerIds}
-            placeholder="Assign dealers to salesmen.."
-          />
+          <SelectValue placeholder={`Select ${label}`} />
         )}
-
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function EditMasonMappingCell({
-  row,
-  onSaveMasonMapping,
-  currentUserRole,
-}: {
-  row: any;
-  onSaveMasonMapping: (userId: number, masonIds: string[]) => void;
-  currentUserRole: string | null;
-}) {
-  const member: TeamMember = row.original;
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedMasonIds, setSelectedMasonIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [masonOptions, setMasonOptions] = useState<{ value: string; label: string }[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [masonSearchQuery, setMasonSearchQuery] = useState('');
-
-  // STATE FOR FILTERS (Copied from EditDealerMappingCell)
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const ALL = "all";
-
-  // Use the hook to get available filter options
-  const { locations, loading: locationsLoading } = useDealerLocations(); 
-
-  const isTechnical = member.isTechnicalRole === true;
-  const isDisabled = !currentUserRole || !isTechnical;
-
-  // Fetch masons for this user when popover opens, OR when filters change
-  useEffect(() => {
-    if (!isOpen) {
-      // Reset filters when the popover closes
-      setSelectedArea(null);
-      setSelectedRegion(null);
-      setMasonSearchQuery('');
-      return;
-    }
-    
-    // Only fetch if locations are not loading
-    if (locationsLoading) {
-        return;
-    }
-
-    (async () => {
-      setIsLoading(true);
-      try {
-        const url = new URL(`/api/dashboardPagesAPI/team-overview/editMasonMapping`, window.location.origin);
-        url.searchParams.append('userId', String(member.id));
-
-        // 💡 ADD FILTERS TO URL
-        if (selectedArea) {
-          url.searchParams.append('area', selectedArea);
-        }
-        if (selectedRegion) {
-          url.searchParams.append('region', selectedRegion);
-        }
-        // END ADD FILTERS
-
-        const res = await fetch(url.toString());
-        if (res.ok) {
-          const data = await res.json();
-          // Map mason data to MultiSelect options
-          setMasonOptions(data.masons.map((m: any) => ({
-            value: m.id,
-            // Include dealer area/region in the label for clarity
-            label: `${m.name} (${m.dealer?.name || 'No Dealer'}) - ${m.dealer?.area || 'N/A'}/${m.dealer?.region || 'N/A'}`
-          })));
-          setSelectedMasonIds(data.assignedMasonIds ?? []);
-        } else {
-          console.error("Failed to fetch masons", res.status);
-          toast.error("Failed to load masons. Please try again.");
-        }
-      } catch (e) {
-        console.error("Failed to fetch masons", e);
-        toast.error("An error occurred while loading masons.");
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [
-    isOpen, 
-    member.id, 
-    locationsLoading, 
-    selectedArea, 
-    selectedRegion,
-  ]);
-
-  // Filter mason options based on search query
-  const filteredMasonOptions = useMemo(() => {
-    if (!masonSearchQuery) {
-      return masonOptions;
-    }
-    const query = masonSearchQuery.toLowerCase();
-    return masonOptions.filter((option) => option.label.toLowerCase().includes(query));
-  }, [masonOptions, masonSearchQuery]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSaveMasonMapping(member.id, selectedMasonIds);
-      setIsOpen(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // CLEAR FILTER FUNCTION
-  const handleClearFilters = () => {
-    setSelectedArea(null);
-    setSelectedRegion(null);
-  };
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-          size="icon"
-          disabled={isDisabled}
-          title={!isTechnical ? "Only assignable to Technical Roles" : "Edit Mason Mapping"}
-        >
-          <UsersIcon className="h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-96 border border-border/30 bg-popover/50 backdrop-blur-lg">
-        <h4 className="font-bold mb-2">Edit Mason/PC Mapping</h4>
-        <p className="text-sm text-gray-500 mb-4">Salesman: {member.name}</p>
-
-        {/* 💡 NEW FILTER UI BLOCK (Copied from EditDealerMappingCell) */}
-        <div className="flex gap-2 mb-4">
-          {/* Area */}
-          <Select
-            value={selectedArea ?? ALL}
-            onValueChange={(val) => setSelectedArea(val === ALL ? null : val)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by Area" />
-            </SelectTrigger>
-            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
-              <SelectItem value={ALL}>All Areas</SelectItem>
-              {locations.areas.sort().map((area) => (
-                <SelectItem key={area} value={area}>
-                  {area}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Region */}
-          <Select
-            value={selectedRegion ?? ALL}
-            onValueChange={(val) => setSelectedRegion(val === ALL ? null : val)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by Region" />
-            </SelectTrigger>
-            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
-              <SelectItem value={ALL}>All Regions</SelectItem>
-              {locations.regions.sort().map((region) => (
-                <SelectItem key={region} value={region}>
-                  {region}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Clear Filters Button */}
-        <div className="flex justify-end mb-4">
-          <Button variant="outline" onClick={handleClearFilters} disabled={!selectedArea && !selectedRegion}>
-            Clear Filters
-          </Button>
-        </div>
-        {/* 💡 END NEW FILTER UI BLOCK */}
-
-        {isLoading || locationsLoading ? (
-          <div className="py-4 text-center text-gray-500">Loading masons/locations...</div>
-        ) : (
-          <>
-            <MultiSelect
-              options={filteredMasonOptions}
-              selectedValues={selectedMasonIds}
-              onValueChange={setSelectedMasonIds}
-              placeholder="Assign masons to salesman.."
-            />
-          </>
-        )}
-
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-const getTeamColumns = (
-  teamData: TeamMember[],
-  onSaveRole: (userId: number, newRole: string) => void,
-  onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => void,
-  onSaveDealerMapping: (userId: number, dealerIds: string[]) => void,
-  onSaveMasonMapping: (userId: number, masonIds: string[]) => void,
-  currentUserRole: string | null
-): ColumnDef<TeamMember>[] => {
-  return [
-    { accessorKey: 'name', header: 'Member Name' },
-    { accessorKey: 'role', header: 'Role' },
-    { accessorKey: 'managedBy', header: 'Is Managed By' },
-    {
-      accessorKey: 'manages',
-      header: 'Manages',
-      cell: ({ row }) => {
-        const managesReports = row.original.managesReports as TeamMember['managesReports'];
-        return (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-                size="icon"
-                disabled={managesReports.length === 0}>
-                <EyeIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 border border-border/30 bg-popover/50 backdrop-blur-lg">
-              <h4 className="font-bold mb-2">Total members: {managesReports.length}</h4>
-              {managesReports.length > 0 ? (
-                <ul className="list-disc pl-5 space-y-1">
-                  {managesReports.map((report, idx) => (
-                    <li key={idx}>
-                      {report.name} ({report.role})
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No direct reports.</p>
-              )}
-            </PopoverContent>
-          </Popover>
-        );
-      },
-    },
-    {
-      id: 'editRole',
-      header: 'Edit Role',
-      cell: ({ row }) => <EditRoleCell row={row} currentUserRole={currentUserRole} onSaveRole={onSaveRole} />,
-    },
-    {
-      id: 'editMapping',
-      header: 'Edit Mapping',
-      cell: ({ row }) => (
-        <EditMappingCell row={row} currentUserRole={currentUserRole} onSaveMapping={onSaveMapping} teamData={teamData} />
-      ),
-    },
-    {
-      id: 'editDealerMapping',
-      header: 'Edit Dealer Mapping',
-      cell: ({ row }) => (
-        <EditDealerMappingCell row={row} currentUserRole={currentUserRole} onSaveDealerMapping={onSaveDealerMapping} />
-      ),
-    },
-    {
-      id: 'editMasonMapping',
-      header: 'Edit Mason Mapping',
-      cell: ({ row }) => (
-        <EditMasonMappingCell row={row} currentUserRole={currentUserRole} onSaveMasonMapping={onSaveMasonMapping} />
-      ),
-    },
-  ];
-};
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All {label}s</SelectItem>
+        {options.map(option => (
+          <SelectItem key={option} value={option}>
+            {option}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+);
 
 export function TeamTabContent() {
   const [teamData, setTeamData] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // --- Filter State ---
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
+  
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
+  const allRoles = ROLE_HIERARCHY;
+
+  // --- API Endpoints ---
   const dataFetchURI = `/api/dashboardPagesAPI/team-overview/dataFetch`;
   const editRoleURI = `/api/dashboardPagesAPI/team-overview/editRole`;
   const editMappingURI = `/api/dashboardPagesAPI/team-overview/editMapping`;
@@ -708,32 +71,27 @@ export function TeamTabContent() {
   const editMasonMappingURI = `/api/dashboardPagesAPI/team-overview/editMasonMapping`;
   const currentUserURI = `/api/me`;
 
-  const loadTeamData = useCallback(
-    async (roleOverride?: string) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const roleToUse = roleOverride ?? selectedRole;
-        const url = new URL(dataFetchURI, window.location.origin);
-        if (roleToUse && roleToUse !== 'all') url.searchParams.append('role', roleToUse);
+  // --- 1. Data Loading ---
+  const loadTeamData = useCallback(async (roleOverride?: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const roleToUse = roleOverride ?? selectedRole;
+      const url = new URL(dataFetchURI, window.location.origin);
+      if (roleToUse && roleToUse !== 'all') url.searchParams.append('role', roleToUse);
 
-        const response = await fetch(url.toString());
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch team data');
-        }
-        const data: TeamMember[] = await response.json();
-        setTeamData(data);
-      } catch (err: any) {
-        console.error('Error fetching team data:', err);
-        toast.error(err.message || 'Error fetching team data');
-        setError(err.message || 'Unknown error');
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [dataFetchURI, selectedRole]
-  );
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error('Failed to fetch team data');
+      
+      const data: TeamMember[] = await response.json();
+      setTeamData(data);
+    } catch (err: any) {
+      toast.error(err.message);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dataFetchURI, selectedRole]);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -741,119 +99,63 @@ export function TeamTabContent() {
       if (res.ok) {
         const user = await res.json();
         setCurrentUserRole(user.role ?? null);
-      } else {
-        setCurrentUserRole(null);
       }
     } catch (e) {
       console.error('Failed to fetch current user role', e);
-      setCurrentUserRole(null);
     }
   }, [currentUserURI]);
 
   useEffect(() => {
-    (async () => {
-      await fetchCurrentUser();
-      await loadTeamData();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchCurrentUser();
+    loadTeamData();
+  }, [fetchCurrentUser, loadTeamData]);
 
-  const handleRoleChange = useCallback(
-    async (value: string) => {
-      setSelectedRole(value);
-      await loadTeamData(value);
-    },
-    [loadTeamData]
-  );
 
-  const handleSaveRole = useCallback(
-    async (userId: number, newRole: string) => {
-      try {
-        const response = await fetch(editRoleURI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, newRole }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update role');
-        }
-        toast.success('User role updated successfully!');
-        await loadTeamData();
-      } catch (err: any) {
-        console.error('Failed to update role:', err);
-        toast.error(err.message || 'Failed to update role');
-      }
-    },
-    [editRoleURI, loadTeamData]
-  );
+  // --- 2. Action Handlers (Passed to Modal) ---
+  const handleSaveRole = useCallback(async (userId: number, newRole: string) => {
+    const res = await fetch(editRoleURI, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newRole }),
+    });
+    if (!res.ok) throw new Error('Failed to update role');
+    toast.success('User role updated!');
+    await loadTeamData();
+  }, [editRoleURI, loadTeamData]);
 
-  const handleSaveMapping = useCallback(
-    async (userId: number, reportsToId: number | null, managesIds: number[] = []) => {
-      try {
-        const response = await fetch(editMappingURI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, reportsToId, managesIds }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update reporting structure');
-        }
-        toast.success('Reporting structure updated successfully!');
-        await loadTeamData();
-      } catch (err: any) {
-        console.error('Failed to update reporting structure:', err);
-        toast.error(err.message || 'Failed to update reporting structure');
-      }
-    },
-    [editMappingURI, loadTeamData]
-  );
+  const handleSaveMapping = useCallback(async (userId: number, reportsToId: number | null, managesIds: number[]) => {
+    const res = await fetch(editMappingURI, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, reportsToId, managesIds }),
+    });
+    if (!res.ok) throw new Error('Failed to update hierarchy');
+    toast.success('Hierarchy updated!');
+    await loadTeamData();
+  }, [editMappingURI, loadTeamData]);
 
-  const handleSaveDealerMapping = useCallback(
-    async (userId: number, dealerIds: string[]) => {
-      try {
-        const response = await fetch(editDealerMappingURI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, dealerIds }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update dealer mapping');
-        }
-        toast.success('Dealer mapping updated successfully!');
-        await loadTeamData();
-      } catch (err: any) {
-        console.error('Failed to update dealer mapping:', err);
-        toast.error(err.message || 'Failed to update dealer mapping');
-      }
-    },
-    [editDealerMappingURI, loadTeamData]
-  );
+  const handleSaveDealerMapping = useCallback(async (userId: number, dealerIds: string[]) => {
+    const res = await fetch(editDealerMappingURI, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, dealerIds }),
+    });
+    if (!res.ok) throw new Error('Failed to update dealer mapping');
+    toast.success('Dealer mapping updated!');
+  }, [editDealerMappingURI]);
 
-  const handleSaveMasonMapping = useCallback(
-    async (userId: number, masonIds: string[]) => {
-      try {
-        const response = await fetch(editMasonMappingURI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, masonIds }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update mason mapping');
-        }
-        toast.success('Mason/PC mapping updated successfully!');
-        await loadTeamData();
-      } catch (err: any) {
-        console.error('Failed to update mason mapping:', err);
-        toast.error(err.message || 'Failed to update mason mapping');
-      }
-    },
-    [editMasonMappingURI, loadTeamData]
-  );
+  const handleSaveMasonMapping = useCallback(async (userId: number, masonIds: string[]) => {
+    const res = await fetch(editMasonMappingURI, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, masonIds }),
+    });
+    if (!res.ok) throw new Error('Failed to update mason mapping');
+    toast.success('Mason mapping updated!');
+  }, [editMasonMappingURI]);
 
+
+  // --- 3. Table Configuration ---
   const filteredData = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return teamData.filter((member) => {
@@ -862,36 +164,46 @@ export function TeamTabContent() {
     });
   }, [teamData, searchQuery]);
 
-  const teamColumns = useMemo(
-    () => getTeamColumns(teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, handleSaveMasonMapping, currentUserRole),
-    [teamData, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, handleSaveMasonMapping, currentUserRole]
-  );
+  const columns: ColumnDef<TeamMember>[] = useMemo(() => [
+    { accessorKey: 'name', header: 'Member Name' },
+    { accessorKey: 'role', header: 'Role' },
+    { 
+      accessorKey: 'managedBy', 
+      header: 'Manager',
+      cell: ({row}) => row.original.managedBy || <span className="text-muted-foreground italic">None</span>
+    },
+    {
+      header: 'Reports To',
+      cell: ({ row }) => {
+        const count = row.original.managesReports.length;
+        return <span className="font-medium">{count}</span>;
+      },
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <TeamEditModal
+          member={row.original}
+          allTeamMembers={teamData}
+          currentUserRole={currentUserRole}
+          onSaveRole={handleSaveRole}
+          onSaveMapping={handleSaveMapping}
+          onSaveDealerMapping={handleSaveDealerMapping}
+          onSaveMasonMapping={handleSaveMasonMapping}
+        />
+      ),
+    },
+  ], [teamData, currentUserRole, handleSaveRole, handleSaveMapping, handleSaveDealerMapping, handleSaveMasonMapping]);
 
-  if (isLoading) {
+
+  // --- 4. Render ---
+  if (isLoading && teamData.length === 0) {
     return (
       <Card className="border border-border/30 bg-card/50 backdrop-blur-lg">
-        <CardHeader>
-          <CardTitle>Team Hierarchy</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center py-8">
-            <span className="text-gray-500">Loading team data...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="border border-border/30 bg-card/50 backdrop-blur-lg">
-        <CardHeader>
-          <CardTitle>Team Hierarchy</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center py-8 text-red-500">
-            <p>Error: {error}</p>
-          </div>
+        <CardContent className="py-8 text-center text-gray-500">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+          <p>Loading team data...</p>
         </CardContent>
       </Card>
     );
@@ -903,34 +215,45 @@ export function TeamTabContent() {
         <CardTitle>Team Hierarchy & Overview</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-          <Input
-            placeholder="Search team members..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="md:max-w-sm grow"
-          />
-          <Select value={selectedRole} onValueChange={handleRoleChange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by role" />
-            </SelectTrigger>
-            <SelectContent className="border border-border/30 bg-popover/50 backdrop-blur-lg">
-              <SelectItem value="all">All Roles</SelectItem>
-              {allRoles.map((role) => (
-                <SelectItem key={role} value={role}>
-                  {role}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        
+        {/* --- Filter Components (Updated Style) --- */}
+        <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-card border mb-6">
+          
+          {/* 1. Search Input */}
+          <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
+             <label className="text-sm font-medium text-muted-foreground">Search Team</label>
+             <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                   placeholder="Search by name or role..." 
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   className="pl-8 h-9"
+                />
+             </div>
+          </div>
 
-        {filteredData.length === 0 ? (
-          <div className="text-center text-neutral-500 py-8">No team members found for this company with the selected filters.</div>
+          {/* 2. Role Filter */}
+          {renderSelectFilter(
+            'Role',
+            selectedRole,
+            (val) => { setSelectedRole(val); loadTeamData(val); },
+            allRoles,
+            isLoading && teamData.length > 0 // Only show spinner in dropdown if refreshing
+          )}
+        </div>
+        {/* --- End Filter Components --- */}
+
+        {/* Table */}
+        {error ? (
+          <div className="text-center text-red-500 py-8">Error: {error}</div>
+        ) : filteredData.length === 0 ? (
+          <div className="text-center text-neutral-500 py-8">No team members found.</div>
         ) : (
           <DataTableReusable
-            columns={teamColumns}
-            data={filteredData} />
+            columns={columns}
+            data={filteredData} 
+          />
         )}
       </CardContent>
     </Card>

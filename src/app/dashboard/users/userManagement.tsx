@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Plus, Edit, Trash2, UserCheck, UserX, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,6 +83,38 @@ interface Props {
   adminUser: AdminUser;
 }
 
+const renderSelectFilter = (
+  label: string,
+  value: string,
+  onValueChange: (v: string) => void,
+  options: string[],
+  isLoading: boolean = false
+) => (
+  <div className="flex flex-col space-y-1 w-full sm:w-[200px] min-w-[150px]">
+    <label className="text-sm font-medium text-muted-foreground">{label}</label>
+    <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
+      <SelectTrigger className="h-9">
+        {isLoading ? (
+          <div className="flex flex-row items-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-muted-foreground">Loading...</span>
+          </div>
+        ) : (
+          <SelectValue placeholder={`Select ${label}`} />
+        )}
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All {label}s</SelectItem>
+        {options.map(option => (
+          <SelectItem key={option} value={option}>
+            {option}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+);
+
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
     case 'president':
@@ -122,6 +154,11 @@ export default function UsersManagement({ adminUser }: Props) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const { locations, loading: locationsLoading, error: locationsError } = useUserLocations();
+
+  // --- Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -300,17 +337,38 @@ export default function UsersManagement({ adminUser }: Props) {
     setError('');
   };
 
-  const handleSuccess = (message: string) => {
-    setError('');
-    setSuccess(message);
-    setTimeout(() => setSuccess(''), 5000);
-  };
+  // --- Derived Options for Filters (Memoized) ---
+  const roleOptions = useMemo(() => {
+    const roles = new Set<string>();
+    users.forEach(u => { if (u.role) roles.add(u.role); });
+    return Array.from(roles).sort();
+  }, [users]);
 
-  const handleError = (message: string) => {
-    setSuccess('');
-    setError(message);
-    setTimeout(() => setError(''), 10000);
-  };
+  const regionOptions = useMemo(() => {
+    const regions = new Set<string>();
+    users.forEach(u => { if (u.region) regions.add(u.region); });
+    return Array.from(regions).sort();
+  }, [users]);
+
+  // --- Client Side Filtering Logic ---
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      // 1. Search (Name or Email)
+      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+      const search = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery ||
+        fullName.includes(search) ||
+        (user.email || '').toLowerCase().includes(search);
+
+      // 2. Role Filter
+      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+
+      // 3. Region Filter
+      const matchesRegion = regionFilter === 'all' || user.region === regionFilter;
+
+      return matchesSearch && matchesRole && matchesRegion;
+    });
+  }, [users, searchQuery, roleFilter, regionFilter]);
 
   // Defined columns
   const columns: ColumnDef<User>[] = useMemo(() => [
@@ -741,6 +799,41 @@ export default function UsersManagement({ adminUser }: Props) {
           </Alert>
         )}
 
+        {/* --- Filter Components --- */}
+        <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-card border">
+          {/* 1. Search Input */}
+          <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
+            <label className="text-sm font-medium text-muted-foreground">Search User</label>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
+          </div>
+
+          {/* 2. Role Filter */}
+          {renderSelectFilter(
+            'Role',
+            roleFilter,
+            setRoleFilter,
+            roleOptions,
+            loading
+          )}
+
+          {/* 3. Region Filter */}
+          {renderSelectFilter(
+            'Region(Zone)',
+            regionFilter,
+            setRegionFilter,
+            regionOptions,
+            loading
+          )}
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>Team Members</CardTitle>
@@ -750,7 +843,7 @@ export default function UsersManagement({ adminUser }: Props) {
           </CardHeader>
           <CardContent>
             <DataTableReusable
-              data={users}
+              data={filteredUsers}
               columns={columns}
             />
           </CardContent>
