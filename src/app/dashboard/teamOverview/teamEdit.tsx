@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/button';
 import { 
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from '@/components/ui/select';
-import { Loader2, PencilIcon, StoreIcon, UsersIcon, ShieldCheck, PencilLineIcon } from 'lucide-react';
+import { 
+  Loader2, PencilIcon, StoreIcon, UsersIcon, ShieldCheck, Trash2 
+} from 'lucide-react'; // Added Trash2
 import { toast } from 'sonner';
 
 // Shared Components
@@ -35,7 +37,7 @@ export interface TeamMember {
 
 interface TeamEditProps {
   member: TeamMember;
-  allTeamMembers: TeamMember[]; // Needed for Reporting hierarchy logic
+  allTeamMembers: TeamMember[];
   currentUserRole: string | null;
   onSaveRole: (userId: number, newRole: string) => Promise<void>;
   onSaveMapping: (userId: number, reportsToId: number | null, managesIds: number[]) => Promise<void>;
@@ -218,14 +220,17 @@ const DealerTab = ({ member, onSave }: { member: TeamMember, onSave: any }) => {
         if (res.ok) {
           const data = await res.json();
           setOptions(data.dealers.map((d: any) => ({ value: d.id, label: d.name })));
-          // Only set selected IDs on initial load, not on filter change to avoid wiping selections
-          // However, for this simplified logic, we might reload selections from server to ensure sync
           if(!area && !region) setSelectedDealerIds(data.assignedDealerIds ?? []);
         }
       } catch (e) { toast.error("Failed to load dealers"); } 
       finally { setLoading(false); }
     })();
   }, [member.id, area, region, locLoading]);
+
+  // Handler to clear selections locally
+  const handleUnassignAll = () => {
+    setSelectedDealerIds([]);
+  };
 
   return (
     <div className="space-y-4 py-4">
@@ -243,9 +248,33 @@ const DealerTab = ({ member, onSave }: { member: TeamMember, onSave: any }) => {
           placeholder="Select Dealers..."
         />
       )}
-      <Button onClick={async () => { setIsSaving(true); await onSave(member.id, selectedDealerIds); setIsSaving(false); }} disabled={isSaving} className="w-full">
-        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Dealers
-      </Button>
+      
+      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+        {/* Unassign Button */}
+        <Button 
+          variant="outline" 
+          onClick={handleUnassignAll}
+          disabled={isSaving || selectedDealerIds.length === 0}
+          className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Unassign All
+        </Button>
+
+        {/* Save Button */}
+        <Button 
+          onClick={async () => { 
+            setIsSaving(true); 
+            await onSave(member.id, selectedDealerIds); 
+            setIsSaving(false); 
+          }} 
+          disabled={isSaving} 
+          className="w-full flex-1"
+        >
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
+          Save Dealers
+        </Button>
+      </div>
     </div>
   );
 };
@@ -287,6 +316,11 @@ const MasonTab = ({ member, onSave }: { member: TeamMember, onSave: any }) => {
     })();
   }, [member.id, area, region, locLoading]);
 
+  // Handler to clear selections locally
+  const handleUnassignAll = () => {
+    setSelectedMasonIds([]);
+  };
+
   return (
     <div className="space-y-4 py-4">
       <LocationFilter 
@@ -303,9 +337,33 @@ const MasonTab = ({ member, onSave }: { member: TeamMember, onSave: any }) => {
           placeholder="Select Masons..."
         />
       )}
-      <Button onClick={async () => { setIsSaving(true); await onSave(member.id, selectedMasonIds); setIsSaving(false); }} disabled={isSaving} className="w-full">
-        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Masons
-      </Button>
+      
+      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+         {/* Unassign Button */}
+        <Button 
+          variant="outline" 
+          onClick={handleUnassignAll}
+          disabled={isSaving || selectedMasonIds.length === 0}
+          className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Unassign All
+        </Button>
+
+        {/* Save Button */}
+        <Button 
+          onClick={async () => { 
+            setIsSaving(true); 
+            await onSave(member.id, selectedMasonIds); 
+            setIsSaving(false); 
+          }} 
+          disabled={isSaving} 
+          className="w-full flex-1"
+        >
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
+          Save Masons
+        </Button>
+      </div>
     </div>
   );
 };
@@ -328,7 +386,7 @@ export default function TeamEditModal({
           size="sm" 
           className="text-blue-500 border-blue-500 hover:bg-blue-50"
         >
-          <PencilIcon/>
+          <PencilIcon className="w-4 h-4 mr-2" />
           View & Edit
         </Button>
       </DialogTrigger>

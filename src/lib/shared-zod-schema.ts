@@ -637,6 +637,7 @@ export const technicalSiteSchema = z.object({
   needFollowUp: z.boolean().nullable().optional(),
   relatedDealerID: z.string().nullable().optional(),
   relatedMasonpcID: z.string().nullable().optional(),
+  imageUrl: z.string().nullable(),
 
   createdAt: z.string(), // ISO String
   updatedAt: z.string(), // ISO String
@@ -747,6 +748,13 @@ export const bagLiftSchema = z.object({
   pointsCredited: z.number().int(),
   imageUrl: z.string().nullable(),
   status: z.string(), // "pending", "approved", etc.
+
+  siteId: z.string().nullable(), 
+  siteKeyPersonName: z.string().nullable(),
+  siteKeyPersonPhone: z.string().nullable(),
+  verificationSiteImageUrl: z.string().nullable(),
+  verificationProofImageUrl: z.string().nullable(),
+
   approvedBy: z.number().int().nullable(),
   approvedAt: z.string().nullable(), // ISO String
   createdAt: z.string(), // ISO String

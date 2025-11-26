@@ -720,6 +720,7 @@ model TechnicalSite {
   firstVistDate           DateTime?               @map("first_visit_date") @db.Date
   lastVisitDate           DateTime?               @map("last_visit_date") @db.Date
   needFollowUp            Boolean?                @map("need_follow_up") @default(false)
+  imageUrl                String?                 @map("image_url") @db.Text 
   
   // --- PRIMARY RELATIONS (FKs defined here) ---
   relatedDealerID         String?                 @map("related_dealer_id") @db.VarChar(255) 
@@ -734,6 +735,7 @@ model TechnicalSite {
   users                   User[]                  @relation("UserTechnicalSites")
   dealers                 Dealer[]                @relation("DealerTechnicalSites")
   masons                  Mason_PC_Side[]         @relation("MasonTechnicalSites")
+  bagLifts                BagLift[]               @relation("SiteBagLifts")
   masonOnSchemes          MasonOnScheme[]
   geoTrackingRecords      GeoTracking[]
   dailyTasks              DailyTask[]
@@ -983,27 +985,42 @@ model TSOAssignment {
 
 // BagLifts
 model BagLift {
-  id String @id @default(uuid()) @db.Uuid
-  masonId String @map("mason_id") @db.Uuid
-  dealerId String? @map("dealer_id") @db.VarChar(255)
-  purchaseDate DateTime @map("purchase_date") @db.Timestamptz(6)
-  bagCount Int @map("bag_count")
-  pointsCredited Int @map("points_credited")
-  // Status as String
-  status String @default("pending") @db.VarChar(20)
-  imageUrl String? @map("image_url") @db.Text
-  approvedBy Int? @map("approved_by")
-  approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id              String    @id @default(uuid()) @db.Uuid
+  masonId         String    @map("mason_id") @db.Uuid
+  dealerId        String?   @map("dealer_id") @db.VarChar(255)
+  purchaseDate    DateTime  @map("purchase_date") @db.Timestamptz(6)
+  bagCount        Int       @map("bag_count")
+  pointsCredited  Int       @map("points_credited")
+  status          String    @default("pending") @db.VarChar(20)
+  imageUrl        String?   @map("image_url") @db.Text 
 
-  mason Mason_PC_Side @relation(fields: [masonId], references: [id], onDelete: Cascade)
-  dealer Dealer? @relation("DealerBagLifts", fields: [dealerId], references: [id], onDelete: SetNull) // FIX: Added named relation
-  approver User? @relation("BagLiftApprovals", fields: [approvedBy], references: [id], onDelete: SetNull) // FIX: Added named relation
+  // Foreign Key to TechnicalSite
+  siteId                    String?   @map("site_id") @db.Uuid 
 
-  pointsLedgerRecord PointsLedger? @relation("BagLiftPointsLedger")
+  // Manual Entry Fields
+  siteKeyPersonName         String?   @map("site_key_person_name") @db.VarChar(255)
+  siteKeyPersonPhone        String?   @map("site_key_person_phone") @db.VarChar(20)
+
+  // TSO Proof Images
+  verificationSiteImageUrl  String?   @map("verification_site_image_url") @db.Text
+  verificationProofImageUrl String?   @map("verification_proof_image_url") @db.Text
+
+  // Approval Metadata
+  approvedBy      Int?      @map("approved_by")
+  approvedAt      DateTime? @map("approved_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  mason             Mason_PC_Side   @relation(fields: [masonId], references: [id], onDelete: Cascade)
+  dealer            Dealer?         @relation("DealerBagLifts", fields: [dealerId], references: [id], onDelete: SetNull)
+  approver          User?           @relation("BagLiftApprovals", fields: [approvedBy], references: [id], onDelete: SetNull)
+  pointsLedgerRecord PointsLedger?  @relation("BagLiftPointsLedger")
+
+  site              TechnicalSite?  @relation("SiteBagLifts", fields: [siteId], references: [id], onDelete: SetNull)
 
   @@index([masonId])
   @@index([dealerId])
+  @@index([siteId])
   @@index([status])
   @@map("bag_lifts")
 }
