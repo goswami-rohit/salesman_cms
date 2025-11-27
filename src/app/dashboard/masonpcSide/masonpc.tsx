@@ -490,16 +490,28 @@ export default function MasonPcPage() {
   const masonPcColumns: ColumnDef<MasonPcFullDetails, unknown>[] = [
     { accessorKey: "name", header: "Mason Name" },
     { accessorKey: "phoneNumber", header: "Phone No." },
-    {
+{
       accessorKey: "kycVerificationStatus",
       header: "KYC Status",
       cell: ({ row }) => {
         const status = row.original.kycVerificationStatus;
+        const upperStatus = status?.toUpperCase();
+        let displayLabel = status;
         let color = 'text-gray-500';
-        if (status === 'VERIFIED') color = 'text-green-500';
-        if (status === 'PENDING') color = 'text-yellow-500';
-        if (status === 'REJECTED') color = 'text-red-500';
-        return <span className={`font-medium ${color}`}>{status}</span>;
+
+        if (upperStatus === 'VERIFIED' || upperStatus === 'APPROVED') {
+          displayLabel = 'VERIFIED';
+          color = 'text-green-500';
+        } else if (upperStatus === 'PENDING') {
+          displayLabel = 'PENDING';
+          color = 'text-yellow-500';
+        } else if (upperStatus === 'REJECTED') {
+          displayLabel = 'REJECTED';
+          color = 'text-red-500';
+        } else {
+            displayLabel = status || 'NONE';
+        }
+        return <span className={`font-medium ${color}`}>{displayLabel}</span>;
       }
     },
     { accessorKey: "bagsLifted", header: "Bags Lifted" },

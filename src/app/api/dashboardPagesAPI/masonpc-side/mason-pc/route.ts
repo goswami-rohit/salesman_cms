@@ -24,7 +24,7 @@ const allowedRoles = [
 ];
 
 // Define acceptable status values for type safety in the FE
-export type KycStatus = 'none' | 'pending' | 'verified' | 'rejected';
+export type KycStatus = 'none' | 'pending' | 'verified' | 'approved' | 'rejected';
 export type KycVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'NONE';
 
 // --- ZOD: Full row including joined KYC info ---
@@ -82,17 +82,21 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const whereClause: any = {};
 
-    const kycStatusFilter = searchParams.get('kycStatus'); // "PENDING" | "VERIFIED" | ...
+    const kycStatusFilter = searchParams.get('kycStatus');
 
-    const filterToDbMap: Partial<Record<string, KycStatus>> = {
-      PENDING: 'pending',
-      VERIFIED: 'verified',
-      REJECTED: 'rejected',
-      NONE: 'none',
-    };
+    if (kycStatusFilter === 'VERIFIED') {
+      whereClause.kycStatus = { in: ['verified', 'approved'] };
+    }
+    else {
+      const filterToDbMap: Record<string, string> = {
+        PENDING: 'pending',
+        REJECTED: 'rejected',
+        NONE: 'none',
+      };
 
-    if (kycStatusFilter && filterToDbMap[kycStatusFilter]) {
-      whereClause.kycStatus = filterToDbMap[kycStatusFilter];
+      if (kycStatusFilter && filterToDbMap[kycStatusFilter]) {
+        whereClause.kycStatus = filterToDbMap[kycStatusFilter];
+      }
     }
 
     const masonPcRecords = await prisma.mason_PC_Side.findMany({
@@ -138,6 +142,7 @@ export async function GET(request: NextRequest) {
       let displayStatus: KycVerificationStatus;
       switch (record.kycStatus) {
         case 'verified':
+        case 'approved':  
           displayStatus = 'VERIFIED';
           break;
         case 'pending':
@@ -165,7 +170,7 @@ export async function GET(request: NextRequest) {
             if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
               const entries = Object.entries(parsed).filter(
                 ([, v]) => typeof v === 'string' && (v as string).length > 0,
-              ) as [string, string][];    
+              ) as [string, string][];
 
               normalizedDocs = Object.fromEntries(entries);
             }
@@ -175,7 +180,7 @@ export async function GET(request: NextRequest) {
         } else if (typeof rawDocs === 'object' && !Array.isArray(rawDocs)) {
           const entries = Object.entries(rawDocs as Record<string, unknown>).filter(
             ([, v]) => typeof v === 'string' && (v as string).length > 0,
-          ) as [string, string][];  
+          ) as [string, string][];
 
           normalizedDocs = Object.fromEntries(entries);
         }
@@ -198,10 +203,10 @@ export async function GET(request: NextRequest) {
         area: record.user?.area ?? 'N/A',
         region: record.user?.region ?? 'N/A',
 
-        userId: record.userId, 
+        userId: record.userId,
         dealerId: record.dealerId,
         siteId: record.siteId,
-        
+
         dealerName: record.dealer?.name ?? null,
         siteName: record.site?.siteName ?? null,
 
