@@ -300,7 +300,6 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
 }
 
 // TVR
-// TVR
 export type FlattenedTechnicalVisitReport = {
   // All scalar fields from TechnicalVisitReport
   id: string;
@@ -313,7 +312,7 @@ export type FlattenedTechnicalVisitReport = {
   salespersonRemarks: string;
   checkInTime: string; // Converted from DateTime (Timestamp)
   checkOutTime: string | null; // Converted from DateTime (Timestamp)
-  timeSpentinLoc: string | null; // <-- ADDED
+  timeSpentinLoc: string | null;
   inTimeImageUrl: string | null;
   outTimeImageUrl: string | null;
   siteVisitBrandInUse: string; // Converted from String[]
@@ -333,8 +332,6 @@ export type FlattenedTechnicalVisitReport = {
   meetingId: string | null;
   createdAt: string; // Converted from DateTime (Timestamp)
   updatedAt: string; // Converted from DateTime (Timestamp)
-
-  // --- NEW FIELDS ---
   purposeOfVisit: string | null;
   sitePhotoUrl: string | null;
   firstVisitTime: string | null;
@@ -350,9 +347,26 @@ export type FlattenedTechnicalVisitReport = {
   longitude: number | null;
   pjpId: string | null;
   masonId: string | null;
-  // --- END NEW FIELDS ---
-
-  // Flattened fields from the related User model (salesperson)
+  siteId: string | null;
+  marketName: string | null;
+  siteAddress: string | null;
+  whatsappNo: string | null;
+  visitCategory: string | null;
+  customerType: string | null;
+  constAreaSqFt: number | null;
+  currentBrandPrice: number | null; // Decimal -> number
+  siteStock: number | null; // Decimal -> number
+  estRequirement: number | null; // Decimal -> number
+  supplyingDealerName: string | null;
+  nearbyDealerName: string | null;
+  isConverted: boolean | null;
+  conversionType: string | null;
+  isTechService: boolean | null;
+  serviceDesc: string | null;
+  influencerName: string | null;
+  influencerPhone: string | null;
+  isSchemeEnrolled: boolean | null;
+  influencerProductivity: string | null;
   salesmanName: string;
   salesmanEmail: string;
 };
@@ -364,14 +378,12 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
       // All scalar fields included explicitly
       id: true, userId: true, reportDate: true, visitType: true, siteNameConcernedPerson: true, phoneNo: true,
       emailId: true, clientsRemarks: true, salespersonRemarks: true, checkInTime: true, checkOutTime: true,
-      timeSpentinLoc: true, // <-- ADDED
+      timeSpentinLoc: true,
       inTimeImageUrl: true, outTimeImageUrl: true, createdAt: true, updatedAt: true,
       siteVisitBrandInUse: true, siteVisitStage: true, conversionFromBrand: true, conversionQuantityValue: true,
       conversionQuantityUnit: true, associatedPartyName: true, influencerType: true, serviceType: true,
       qualityComplaint: true, promotionalActivity: true, channelPartnerVisit: true, siteVisitType: true,
       dhalaiVerificationCode: true, isVerificationStatus: true, meetingId: true,
-
-      // --- NEW FIELDS ---
       purposeOfVisit: true,
       sitePhotoUrl: true,
       firstVisitTime: true,
@@ -387,9 +399,26 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
       longitude: true,
       pjpId: true,
       masonId: true,
-      // --- END NEW FIELDS ---
-
-      // Nested query for the relation:
+      siteId: true,
+      marketName: true,
+      siteAddress: true,
+      whatsappNo: true,
+      visitCategory: true,
+      customerType: true,
+      constAreaSqFt: true,
+      currentBrandPrice: true,
+      siteStock: true,
+      estRequirement: true,
+      supplyingDealerName: true,
+      nearbyDealerName: true,
+      isConverted: true,
+      conversionType: true,
+      isTechService: true,
+      serviceDesc: true,
+      influencerName: true,
+      influencerPhone: true,
+      isSchemeEnrolled: true,
+      influencerProductivity: true,
       user: {
         select: { firstName: true, lastName: true, email: true }
       },
@@ -418,24 +447,17 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
     dhalaiVerificationCode: r.dhalaiVerificationCode ?? null,
     isVerificationStatus: r.isVerificationStatus ?? null,
     meetingId: r.meetingId ?? null,
-    timeSpentinLoc: r.timeSpentinLoc ?? null, // <-- ADDED
+    timeSpentinLoc: r.timeSpentinLoc ?? null,
     inTimeImageUrl: r.inTimeImageUrl ?? null,
     outTimeImageUrl: r.outTimeImageUrl ?? null,
-
-    // DateTime Fields (Date/Timestamp conversion to string)
     reportDate: r.reportDate.toISOString().slice(0, 10), // Date only
     checkInTime: r.checkInTime.toISOString(),
     checkOutTime: r.checkOutTime?.toISOString() ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
-
-    // Decimal Fields (Conversion to number)
     conversionQuantityValue: r.conversionQuantityValue?.toNumber() ?? null,
-
-    // Array Fields (Conversion to comma-separated string)
     siteVisitBrandInUse: r.siteVisitBrandInUse.join(', '),
     influencerType: r.influencerType.join(', '),
-
     purposeOfVisit: r.purposeOfVisit ?? null,
     sitePhotoUrl: r.sitePhotoUrl ?? null,
     firstVisitTime: r.firstVisitTime?.toISOString() ?? null,
@@ -451,8 +473,26 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
     longitude: r.longitude?.toNumber() ?? null,
     pjpId: r.pjpId ?? null,
     masonId: r.masonId ?? null,
-
-    // Custom, flattened fields:
+    siteId: r.siteId ?? null,
+    marketName: r.marketName ?? null,
+    siteAddress: r.siteAddress ?? null,
+    whatsappNo: r.whatsappNo ?? null,
+    visitCategory: r.visitCategory ?? null,
+    customerType: r.customerType ?? null,
+    constAreaSqFt: r.constAreaSqFt ?? null,
+    supplyingDealerName: r.supplyingDealerName ?? null,
+    nearbyDealerName: r.nearbyDealerName ?? null,
+    conversionType: r.conversionType ?? null,
+    serviceDesc: r.serviceDesc ?? null,
+    influencerName: r.influencerName ?? null,
+    influencerPhone: r.influencerPhone ?? null,
+    influencerProductivity: r.influencerProductivity ?? null,
+    isConverted: r.isConverted ?? null,
+    isTechService: r.isTechService ?? null,
+    isSchemeEnrolled: r.isSchemeEnrolled ?? null,
+    currentBrandPrice: r.currentBrandPrice?.toNumber() ?? null,
+    siteStock: r.siteStock?.toNumber() ?? null,
+    estRequirement: r.estRequirement?.toNumber() ?? null,
     salesmanName: `${r.user.firstName ?? ''} ${r.user.lastName ?? ''}`.trim() || r.user.email,
     salesmanEmail: r.user.email,
   }));

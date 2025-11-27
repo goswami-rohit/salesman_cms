@@ -242,44 +242,131 @@ export default function TechnicalVisitReportsPage() {
 
   // --- 3. Define Columns for Technical Visit Report DataTable (UNCHANGED) ---
   const technicalVisitReportColumns: ColumnDef<TechnicalVisitReport>[] = [
-    { accessorKey: "salesmanName", header: "Salesman" },
-    { accessorKey: "visitType", header: "Visit Type" },
-    { accessorKey: "siteNameConcernedPerson", header: "Site/Person" },
-    { accessorKey: "phoneNo", header: "Phone No." },
-    // Changed "date" to "reportDate" to align with schema (assuming API uses this key)
-    { accessorKey: "reportDate", header: "Visit Date" }, 
-    { accessorKey: "checkInTime", header: "Check-in" },
-    { accessorKey: "checkOutTime", header: "Check-out" },
-    {
-      accessorKey: "clientsRemarks", header: "Client Remarks",
-      cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.clientsRemarks}</span>,
+  // --- Identity & Salesman ---
+  { accessorKey: "salesmanName", header: "Salesman" },
+  { accessorKey: "role", header: "Role" },
+  
+  // --- Date & Time ---
+  { 
+    accessorKey: "date", // Matches API response key 'date'
+    header: "Visit Date" 
+  },
+  { 
+    accessorKey: "checkInTime", 
+    header: "Check-in",
+    cell: ({ row }) => {
+      const val = row.getValue("checkInTime") as string;
+      if (!val) return "-";
+      return new Date(val).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  },
+  { 
+    accessorKey: "checkOutTime", 
+    header: "Check-out",
+    cell: ({ row }) => {
+      const val = row.getValue("checkOutTime") as string;
+      if (!val) return "-";
+      return new Date(val).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  },
+  { accessorKey: "timeSpentinLoc", header: "Duration" },
+
+  // --- Location & Contact ---
+  { accessorKey: "region", header: "Zone/Region" },
+  { accessorKey: "area", header: "Area" },
+  { accessorKey: "marketName", header: "Market/Depo" },
+  { accessorKey: "siteNameConcernedPerson", header: "Site/Person" },
+  { accessorKey: "phoneNo", header: "Phone No" },
+  { accessorKey: "whatsappNo", header: "WhatsApp" },
+  { accessorKey: "siteAddress", header: "Site Address", cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("siteAddress")}>{row.getValue("siteAddress")}</span> },
+
+  // --- Visit Specifics ---
+  { accessorKey: "visitType", header: "Visit Type" },
+  { accessorKey: "visitCategory", header: "Visit Category" }, // New/Followup
+  { accessorKey: "customerType", header: "Customer Type" }, // IHB/Contractor
+  { 
+    accessorKey: "purposeOfVisit", 
+    header: "Purpose",
+    cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("purposeOfVisit")}>{row.getValue("purposeOfVisit")}</span>
+  },
+
+  // --- Construction Details ---
+  { accessorKey: "siteVisitStage", header: "Stage" },
+  { accessorKey: "constAreaSqFt", header: "Area (SqFt)" },
+  { 
+    accessorKey: "siteVisitBrandInUse", 
+    header: "Brand in Use",
+    cell: ({ row }) => {
+      const val = row.getValue("siteVisitBrandInUse");
+      return <span className="max-w-[150px] truncate block">{Array.isArray(val) ? val.join(', ') : String(val)}</span>;
     },
-    {
-      accessorKey: "salespersonRemarks", header: "Salesman Remarks",
-      cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.original.salespersonRemarks}</span>,
+  },
+  { accessorKey: "currentBrandPrice", header: "Brand Price" },
+  { accessorKey: "siteStock", header: "Site Stock" },
+  { accessorKey: "estRequirement", header: "Est. Req." },
+
+  // --- Dealers ---
+  { accessorKey: "supplyingDealerName", header: "Supplying Dealer" },
+  { accessorKey: "nearbyDealerName", header: "Nearby Dealer" },
+
+  // --- Conversion ---
+  { 
+    accessorKey: "isConverted", 
+    header: "Converted?",
+    cell: ({ row }) => row.getValue("isConverted") ? "Yes" : "No"
+  },
+  { accessorKey: "conversionType", header: "Conv. Type" },
+  { accessorKey: "conversionFromBrand", header: "Conv. From" },
+  { accessorKey: "conversionQuantityValue", header: "Conv. Qty" },
+  { accessorKey: "conversionQuantityUnit", header: "Unit" },
+
+  // --- Technical Services ---
+  { 
+    accessorKey: "isTechService", 
+    header: "Tech Service?",
+    cell: ({ row }) => row.getValue("isTechService") ? "Yes" : "No"
+  },
+  { accessorKey: "serviceType", header: "Service Type" },
+  { accessorKey: "serviceDesc", header: "Service Desc" },
+  { accessorKey: "dhalaiVerificationCode", header: "Dhalai Code" },
+  { accessorKey: "isVerificationStatus", header: "Verif. Status" },
+  { accessorKey: "qualityComplaint", header: "Complaint" },
+
+  // --- Influencer / Mason ---
+  { accessorKey: "influencerName", header: "Influencer Name" },
+  { accessorKey: "influencerPhone", header: "Influencer Phone" },
+  { 
+    accessorKey: "influencerType", 
+    header: "Influencer Type",
+    cell: ({ row }) => {
+      const val = row.getValue("influencerType");
+      return <span className="max-w-[150px] truncate block">{Array.isArray(val) ? val.join(', ') : String(val)}</span>;
     },
-    { 
-      accessorKey: "siteVisitBrandInUse", 
-      header: "Brand in Use",
-      // Add cell formatting for array type if needed
-      cell: ({ row }) => <span className="max-w-[150px] truncate block">{Array.isArray(row.original.siteVisitBrandInUse) ? row.original.siteVisitBrandInUse.join(', ') : String(row.original.siteVisitBrandInUse)}</span>,
-    },
-    { accessorKey: "siteVisitStage", header: "Site Stage" },
-    { accessorKey: "conversionFromBrand", header: "Conversion From" },
-    { accessorKey: "conversionQuantityValue", header: "Conv. Qty." },
-    { accessorKey: "conversionQuantityUnit", header: "Conv. Unit" },
-    { accessorKey: "associatedPartyName", header: "Associated Party" },
-    { 
-      accessorKey: "influencerType", 
-      header: "Influencer Type",
-      // Add cell formatting for array type if needed
-      cell: ({ row }) => <span className="max-w-[150px] truncate block">{Array.isArray(row.original.influencerType) ? row.original.influencerType.join(', ') : String(row.original.influencerType)}</span>,
-    },
-    { accessorKey: "serviceType", header: "Service Type" },
-    { accessorKey: "qualityComplaint", header: "Quality Complaint" },
-    { accessorKey: "promotionalActivity", header: "Promotional Activity" },
-    { accessorKey: "channelPartnerVisit", header: "Channel Partner Visit" },
-  ];
+  },
+  { 
+    accessorKey: "isSchemeEnrolled", 
+    header: "Scheme?",
+    cell: ({ row }) => row.getValue("isSchemeEnrolled") ? "Yes" : "No"
+  },
+  { accessorKey: "influencerProductivity", header: "Productivity" },
+
+  // --- Remarks ---
+  {
+    accessorKey: "clientsRemarks", 
+    header: "Client Remarks",
+    cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("clientsRemarks")}>{row.getValue("clientsRemarks")}</span>,
+  },
+  {
+    accessorKey: "salespersonRemarks", 
+    header: "Salesman Remarks",
+    cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("salespersonRemarks")}>{row.getValue("salespersonRemarks")}</span>,
+  },
+
+  // --- Legacy/Other ---
+  { accessorKey: "associatedPartyName", header: "Associated Party" },
+  { accessorKey: "promotionalActivity", header: "Promo Activity" },
+  { accessorKey: "channelPartnerVisit", header: "Partner Visit" },
+];
 
   const handleTechnicalVisitReportOrderChange = (newOrder: TechnicalVisitReport[]) => {
     console.log("New technical visit report order:", newOrder.map(r => r.id));

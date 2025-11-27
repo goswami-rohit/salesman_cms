@@ -60,21 +60,24 @@ export const tablesMetadata: TableMeta[] = [
             'createdAt', 'updatedAt'
         ],
     },
-    {
+{
         id: 'technicalVisitReports',
         title: 'Technical Visit Reports',
         icon: PencilRuler,
         columns: [
             'id', 'reportDate', 'visitType', 'siteNameConcernedPerson', 'phoneNo', 'emailId',
-            'clientsRemarks', 'salespersonRemarks', 'checkInTime', 'checkOutTime',
-            'inTimeImageUrl', 'outTimeImageUrl', 'siteVisitBrandInUse', 'siteVisitStage',
-            'conversionFromBrand', 'conversionQuantityValue', 'conversionQuantityUnit',
-            'associatedPartyName', 'influencerType', 'serviceType', 'qualityComplaint',
-            'promotionalActivity', 'channelPartnerVisit', 'siteVisitType',
-            'dhalaiVerificationCode', 'isVerificationStatus', 'meetingId', 'createdAt',
-            'updatedAt', 'salesmanName', 'salesmanEmail', 'timeSpentinLoc', 'purposeOfVisit', 'sitePhotoUrl',
-            'firstVisitTime', 'lastVisitTime', 'firstVisitDay', 'lastVisitDay', 'siteVisitsCount',
-            'otherVisitsCount', 'totalVisitsCount', 'region', 'area', 'latitude', 'longitude', 'pjpId', 'masonId'
+            'whatsappNo', 'marketName', 'siteAddress', 'region', 'area', 'latitude',
+            'longitude', 'visitCategory', 'customerType', 'purposeOfVisit', 'siteVisitStage',
+            'constAreaSqFt', 'siteVisitBrandInUse', 'currentBrandPrice', 'siteStock', 'estRequirement',
+            'supplyingDealerName', 'nearbyDealerName', 'associatedPartyName', 'channelPartnerVisit', 'isConverted',
+            'conversionType', 'conversionFromBrand', 'conversionQuantityValue', 'conversionQuantityUnit', 'isTechService',
+            'serviceDesc', 'serviceType', 'dhalaiVerificationCode', 'isVerificationStatus', 'qualityComplaint',
+            'influencerName', 'influencerPhone', 'isSchemeEnrolled', 'influencerProductivity', 'influencerType',
+            'masonId', 'clientsRemarks', 'salespersonRemarks', 'promotionalActivity', 'siteVisitType',
+            'sitePhotoUrl', 'inTimeImageUrl', 'outTimeImageUrl', 'checkInTime', 'checkOutTime',
+            'timeSpentinLoc', 'createdAt', 'updatedAt', 'firstVisitTime', 'lastVisitTime',
+            'firstVisitDay', 'lastVisitDay', 'siteVisitsCount', 'otherVisitsCount', 'totalVisitsCount',
+            'salesmanName', 'salesmanEmail', 'pjpId', 'meetingId', 'siteId'
         ],
     },
     {

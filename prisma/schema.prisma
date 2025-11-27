@@ -598,42 +598,71 @@ model tally_raw {
 // Technical Visit Reports
 model TechnicalVisitReport {
   id                      String    @id @default(uuid()) @db.VarChar(255)
-  userId                  Int       @map("user_id") // Foreign Key to User.id
+  userId                  Int       @map("user_id") 
   reportDate              DateTime  @map("report_date") @db.Date
-  visitType               String    @map("visit_type") @db.VarChar(50) // "Installation", "Repair", "Maintenance"
-  siteNameConcernedPerson String    @map("site_name_concerned_person") @db.VarChar(255)
+  
+  // --- Existing Location & Contact Fields ---
+  region                  String?   @map("region") @db.VarChar(100) 
+  area                    String?   @map("area") @db.VarChar(100)
+  siteNameConcernedPerson String    @map("site_name_concerned_person") @db.VarChar(255) 
   phoneNo                 String    @map("phone_no") @db.VarChar(20)
   emailId                 String?   @map("email_id") @db.VarChar(255)
+  latitude                Decimal?  @map("latitude") @db.Decimal(9, 6)
+  longitude               Decimal?  @map("longitude") @db.Decimal(9, 6)
+
+  // --- NEW FIELDS  ---
+  marketName              String?   @map("market_name") @db.VarChar(100) 
+  siteAddress             String?   @map("site_address") @db.VarChar(500) 
+  whatsappNo              String?   @map("whatsapp_no") @db.VarChar(20) 
+  visitCategory           String?   @map("visit_category") @db.VarChar(50) 
+  customerType            String?   @map("customer_type") @db.VarChar(50) 
+  constAreaSqFt           Int?      @map("const_area_sq_ft") 
+  currentBrandPrice       Decimal?  @map("current_brand_price") @db.Decimal(10, 2) 
+  siteStock               Decimal?  @map("site_stock") @db.Decimal(10, 2) 
+  estRequirement          Decimal?  @map("est_requirement") @db.Decimal(10, 2) 
+  supplyingDealerName     String?   @map("supplying_dealer_name") @db.VarChar(255)
+  nearbyDealerName        String?   @map("nearby_dealer_name") @db.VarChar(255) 
+
+  // --- Conversion Section ---
+  isConverted             Boolean?  @map("is_converted")
+  conversionType          String?   @map("conversion_type") @db.VarChar(50) 
+  conversionFromBrand     String?   @map("conversion_from_brand") 
+  conversionQuantityValue Decimal?  @map("conversion_quantity_value") @db.Decimal(10, 2)
+  conversionQuantityUnit  String?   @map("conversion_quantity_unit") @db.VarChar(20)
+
+  // --- Technical Services ---
+  isTechService           Boolean?  @map("is_tech_service") 
+  serviceDesc             String?   @map("service_desc") @db.VarChar(500)
+  // Existing technical fields
+  serviceType             String?   @map("service_type")
+  dhalaiVerificationCode  String?   @map("dhalai_verification_code") @db.VarChar(50)
+  isVerificationStatus    String?   @map("is_verification_status") @db.VarChar(50)
+  qualityComplaint        String?   @map("quality_complaint")
+
+  // --- Influencer / Mason / Engineer ---
+  influencerName          String?   @map("influencer_name") @db.VarChar(255) 
+  influencerPhone         String?   @map("influencer_phone") @db.VarChar(20)
+  isSchemeEnrolled        Boolean?  @map("is_scheme_enrolled") 
+  influencerProductivity  String?   @map("influencer_productivity") @db.VarChar(100)
+  influencerType          String[]  @map("influencer_type") 
+
+  // --- Visit Details & Remarks ---
+  visitType               String    @map("visit_type") @db.VarChar(50)
   clientsRemarks          String    @map("clients_remarks") @db.VarChar(500)
-  salespersonRemarks      String    @map("salesperson_remarks") @db.VarChar(500)
+  salespersonRemarks      String    @map("salesperson_remarks") @db.VarChar(500) 
+  purposeOfVisit          String?   @map("purpose_of_visit") @db.VarChar(500)
+  siteVisitBrandInUse     String[]  @map("site_visit_brand_in_use") 
+  siteVisitStage          String?   @map("site_visit_stage")
+
+  // --- Images & Time Log ---
+  sitePhotoUrl            String?   @map("site_photo_url") @db.VarChar(500)
+  inTimeImageUrl          String?   @map("in_time_image_url") @db.VarChar(500)
+  outTimeImageUrl         String?   @map("out_time_image_url") @db.VarChar(500)
   checkInTime             DateTime  @map("check_in_time") @db.Timestamptz(6)
   checkOutTime            DateTime? @map("check_out_time") @db.Timestamptz(6)
   timeSpentinLoc          String?   @map("time_spent_in_loc")
-  inTimeImageUrl          String?   @map("in_time_image_url") @db.VarChar(500)
-  outTimeImageUrl         String?   @map("out_time_image_url") @db.VarChar(500)
-  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  siteVisitBrandInUse     String[] @map("site_visit_brand_in_use") // e.g., "Star/Dalmia/Ultratech" [cite: 99]
-  siteVisitStage          String? @map("site_visit_stage")      // e.g., "Foundation/column/slab casting" [cite: 100]
-  conversionFromBrand     String?  @map("conversion_from_brand")      // e.g., "Dalmia/Star" [cite: 102]
-  conversionQuantityValue Decimal? @map("conversion_quantity_value") @db.Decimal(10, 2)
-  conversionQuantityUnit  String?  @map("conversion_quantity_unit")  @db.VarChar(20) // "Bag" or "MT" [cite: 103]
-  associatedPartyName     String?  @map("associated_party_name")     // Dealer, Sub dealer name [cite: 104]
-  influencerType          String[] @map("influencer_type") // e.g., "Contractor", "Engineer" etc. [cite: 106, 107, 108, 109, 110, 111]
-  serviceType             String? @map("service_type") // e.g., "Dhalai Attend" [cite: 113]
-  qualityComplaint        String? @map("quality_complaint") // e.g., "Slow Setting", "Cracks" etc. [cite: 116, 117, 118, 119]
-  promotionalActivity     String? @map("promotional_activity") // e.g., "Mason Meet" [cite: 122]
-  channelPartnerVisit     String? @map("channel_partner_visit") // e.g., "Dealer Visit" [cite: 129]
-
-  siteVisitType           String?   @map("site_visit_type") @db.VarChar(50) // e.g., "Dealer", "Project",...
-  dhalaiVerificationCode  String?   @map("dhalai_verification_code") @db.VarChar(50)   
-  isVerificationStatus    String?   @map("is_verification_status") @db.VarChar(50) // e.g., "Verified", "Pending", "Rejected"
-  meetingId               String?   @map("meeting_id") @db.VarChar(255)
-  meeting                 TSOMeeting?  @relation("TVRMeeting", fields: [meetingId], references: [id])
-
-  purposeOfVisit          String?   @map("purpose_of_visit") @db.VarChar(500)
-  sitePhotoUrl            String?   @map("site_photo_url") @db.VarChar(500)
+  // --- Historical Counters ---
   firstVisitTime          DateTime? @map("first_visit_time")
   lastVisitTime           DateTime? @map("last_visit_time")
   firstVisitDay           String?   @map("first_visit_day") 
@@ -641,21 +670,26 @@ model TechnicalVisitReport {
   siteVisitsCount         Int?      @map("site_visits_count")
   otherVisitsCount        Int?      @map("other_visits_count")
   totalVisitsCount        Int?      @map("total_visits_count")
-  
-  region                  String?   @map("region") @db.VarChar(100)
-  area                    String?   @map("area") @db.VarChar(100)
-  latitude     Decimal?  @map("latitude") @db.Decimal(9, 6)
-  longitude    Decimal?  @map("longitude") @db.Decimal(9, 6)
 
-  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
-  site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pjpId                 String?   @map("pjp_id") @db.VarChar(255)
+  associatedPartyName     String?   @map("associated_party_name")
+  promotionalActivity     String?   @map("promotional_activity")
+  channelPartnerVisit     String?   @map("channel_partner_visit")
+  siteVisitType           String?   @map("site_visit_type") @db.VarChar(50)
+
+  // --- Relations ---
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  siteId                String?               @map("site_id") @db.Uuid
+  site                  TechnicalSite?        @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  masonId               String?               @map("mason_id") @db.Uuid
+  mason                 Mason_PC_Side?        @relation(fields: [masonId], references: [id], onDelete: SetNull)
+  pjpId                 String?               @map("pjp_id") @db.VarChar(255)
   permanentJourneyPlan  PermanentJourneyPlan? @relation("PJPReports_TVR", fields: [pjpId], references: [id], onDelete: SetNull)
-  masonId                 String?       @map("mason_id") @db.Uuid // FK to Mason_PC_Side
-  mason                   Mason_PC_Side? @relation(fields: [masonId], references: [id], onDelete: SetNull)
-  giftAllocationLogs   GiftAllocationLog[]
+  meetingId             String?               @map("meeting_id") @db.VarChar(255)
+  meeting               TSOMeeting?           @relation("TVRMeeting", fields: [meetingId], references: [id])
+  giftAllocationLogs    GiftAllocationLog[]
 
   @@index([userId], map: "idx_technical_visit_reports_user_id")
   @@index([meetingId], map: "idx_technical_visit_reports_meeting_id")

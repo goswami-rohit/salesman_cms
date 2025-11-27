@@ -77,7 +77,7 @@ export const optionalIntSchema = z.number().int().nullable().optional();
 export const optionalStringSchema = z.string().nullable().optional();
 
 export const getDealersSchema = z.object({
-  id: z.string(), 
+  id: z.string(),
   name: z.string().min(1, "Dealer name is required."),
   type: z.string().min(1, "Dealer type is required."),
   parentDealerId: z.string().nullable().optional(),
@@ -411,61 +411,94 @@ export const salesOrderSchema = z.object({
 
 // technical visit report 
 export const technicalVisitReportSchema = z.object({
+  // --- Core Identity ---
   id: z.string(),
   salesmanName: z.string(),
   role: z.string(),
-  visitType: z.string(),
+
+  // --- Contact & Location ---
   siteNameConcernedPerson: z.string(),
   phoneNo: z.string(),
+  emailId: z.string(), 
+  whatsappNo: z.string().nullable(), 
+
+  region: z.string().nullable(),
+  area: z.string().nullable(),
+  marketName: z.string().nullable(), 
+  siteAddress: z.string().nullable(),
+
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+
+  // --- Visit Details ---
   date: z.string(), // Mapped to YYYY-MM-DD
-  emailId: z.string(), // Formatted to '' if null
-  clientsRemarks: z.string(),
-  salespersonRemarks: z.string(),
-  checkInTime: z.string(), // ISO String
-  checkOutTime: z.string(), // ISO String or ''
+  visitType: z.string(),
+  visitCategory: z.string().nullable(), 
+  customerType: z.string().nullable(), 
+  purposeOfVisit: z.string().nullable(),
 
-  // NEW/MISSING FIELDS from formatting logic - MUST BE NULLABLE if they are optional in Prisma
-  inTimeImageUrl: z.string().nullable(),
-  outTimeImageUrl: z.string().nullable(),
-  siteVisitType: z.string().nullable(), // FIX: Added .nullable()
-  dhalaiVerificationCode: z.string().nullable(), // FIX: Added .nullable()
-  isVerificationStatus: z.string().nullable(), // FIX: Added .nullable()
-  meetingId: z.string().nullable(), // FIX: Added .nullable()
-  createdAt: z.string(), // ISO String
-  updatedAt: z.string(), // ISO String
-
-  // Array fields
+  // --- Construction & Site Status ---
+  constAreaSqFt: z.number().int().nullable(), 
+  siteVisitStage: z.string(), 
   siteVisitBrandInUse: z.array(z.string()),
+  currentBrandPrice: z.number().nullable(),
+  siteStock: z.number().nullable(), 
+  estRequirement: z.number().nullable(), 
+  supplyingDealerName: z.string().nullable(), 
+  nearbyDealerName: z.string().nullable(), 
+
+  // --- Conversion Section ---
+  isConverted: z.boolean().nullable(), 
+  conversionType: z.string().nullable(), 
+  conversionFromBrand: z.string(), 
+  conversionQuantityValue: z.number().nullable(),
+  conversionQuantityUnit: z.string(), 
+
+  // --- Technical Services ---
+  isTechService: z.boolean().nullable(), 
+  serviceDesc: z.string().nullable(), 
+  serviceType: z.string(), 
+  dhalaiVerificationCode: z.string().nullable(),
+  isVerificationStatus: z.string().nullable(),
+  qualityComplaint: z.string(), 
+
+  // --- Influencer / Mason / Engineer ---
+  influencerName: z.string().nullable(), 
+  influencerPhone: z.string().nullable(), 
+  isSchemeEnrolled: z.boolean().nullable(),
+  influencerProductivity: z.string().nullable(), 
   influencerType: z.array(z.string()),
 
-  // Optional string fields formatted to ''
-  siteVisitStage: z.string(),
-  conversionFromBrand: z.string(),
-  conversionQuantityUnit: z.string(),
-  associatedPartyName: z.string(),
-  serviceType: z.string(),
-  qualityComplaint: z.string(),
-  promotionalActivity: z.string(),
-  channelPartnerVisit: z.string(),
-  // Numeric field, converted to number or null
-  conversionQuantityValue: z.number().nullable(),
-  // New fields
+  // --- Remarks & Legacy ---
+  clientsRemarks: z.string(),
+  salespersonRemarks: z.string(),
+  associatedPartyName: z.string(), 
+  promotionalActivity: z.string(), 
+  channelPartnerVisit: z.string(), 
+  siteVisitType: z.string().nullable(), 
+
+  // --- Time & Images ---
+  checkInTime: z.string(), // ISO String
+  checkOutTime: z.string(), // ISO String or ''
   timeSpentinLoc: z.string().optional().nullable(),
-  purposeOfVisit: z.string().nullable(),
+  inTimeImageUrl: z.string().nullable(),
+  outTimeImageUrl: z.string().nullable(),
   sitePhotoUrl: z.string().nullable(),
-  firstVisitTime: z.string().nullable(), // ISO String
-  lastVisitTime: z.string().nullable(), // ISO String
+
+  createdAt: z.string(), // ISO String
+  updatedAt: z.string(), // ISO String
+  firstVisitTime: z.string().nullable(),
+  lastVisitTime: z.string().nullable(),
   firstVisitDay: z.string().nullable(),
   lastVisitDay: z.string().nullable(),
   siteVisitsCount: z.number().int().nullable(),
   otherVisitsCount: z.number().int().nullable(),
   totalVisitsCount: z.number().int().nullable(),
-  region: z.string().nullable(),
-  area: z.string().nullable(),
-  latitude: z.number().nullable(), // Prisma Decimal is handled as number
-  longitude: z.number().nullable(), // Prisma Decimal is handled as number
+
+  // --- Foreign Keys ---
+  meetingId: z.string().nullable(),
   pjpId: z.string().nullable(),
-  masonId: z.string().nullable(), // Matches @db.Uuid
+  masonId: z.string().nullable(),
   siteId: z.string().optional().nullable(),
 });
 
@@ -597,7 +630,7 @@ export const salesmanLeaveApplicationSchema = z.object({
 
 // Zod schema for validating PATCH request body
 export const updateLeaveApplicationSchema = z.object({
-  id: z.string(), 
+  id: z.string(),
   status: z.enum(["Approved", "Rejected"]), // Status must be one of these two
   adminRemarks: z.string().nullable().optional(), // Can be string, null, or undefined (if not sent)
 });
@@ -675,9 +708,9 @@ export const masonPCSideSchema = z.object({
   firebaseUid: z.string().nullable(),
   kycDocumentName: z.string().nullable(),
   kycDocumentIdNum: z.string().nullable(),
-  kycStatus: z.string().nullable(), 
+  kycStatus: z.string().nullable(),
   bagsLifted: z.number().int().nullable(),
-  pointsBalance: z.number().int().nullable(), 
+  pointsBalance: z.number().int().nullable(),
   isReferred: z.boolean().nullable(),
   referredByUser: z.string().nullable(),
   referredToUser: z.string().nullable(),
@@ -719,7 +752,7 @@ export const rewardCategorySchema = z.object({
   id: z.number().int(),
   name: z.string().max(120),
 });
- 
+
 export const kycSubmissionSchema = z.object({
   id: z.string(),
   masonId: z.string(),
@@ -749,7 +782,7 @@ export const bagLiftSchema = z.object({
   imageUrl: z.string().nullable(),
   status: z.string(), // "pending", "approved", etc.
 
-  siteId: z.string().nullable(), 
+  siteId: z.string().nullable(),
   siteKeyPersonName: z.string().nullable(),
   siteKeyPersonPhone: z.string().nullable(),
   verificationSiteImageUrl: z.string().nullable(),
