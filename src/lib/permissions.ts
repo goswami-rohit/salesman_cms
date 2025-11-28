@@ -41,6 +41,7 @@ export interface DashboardPermissions {
     competitionReports: boolean;
     salesOrders: boolean;
     dvrVpjp: boolean;
+    tvrVpjp: boolean;
     salesVdvr: boolean;
   };
   permanentJourneyPlan: {
@@ -99,6 +100,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -152,6 +154,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -205,6 +208,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -260,6 +264,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -313,6 +318,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -366,6 +372,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -419,6 +426,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -472,6 +480,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -527,6 +536,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: true,
       dvrVpjp: true,
+      tvrVpjp: true,
       salesVdvr: true,
     },
     permanentJourneyPlan: {
@@ -580,6 +590,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: false,
       dvrVpjp: false,
+      tvrVpjp: false,
       salesVdvr: false,
     },
     permanentJourneyPlan: {
@@ -633,6 +644,7 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       competitionReports: true,
       salesOrders: false,
       dvrVpjp: false,
+      tvrVpjp: false,
       salesVdvr: false,
     },
     permanentJourneyPlan: {

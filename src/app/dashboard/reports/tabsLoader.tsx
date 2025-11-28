@@ -8,6 +8,7 @@ import SalesOrdersTable from './salesOrders';
 import DailyVisitReportsPage from './dailyVisitReports';
 import TechnicalVisitReportsPage from './technicalVisitReports';
 import DvrPjpReportPage from './dvrVpjp';
+import TvrPjpReportPage from './tvrVpjp';
 import SalesDVRReportPage from './salesVdvr';
 
 // This component receives the permissions as props
@@ -18,6 +19,7 @@ interface ReportsTabsProps {
   canSeeSalesOrders: boolean;
   canSeeCompetition: boolean;
   canSeeDvrVpjp: boolean;
+  canSeeTvrVpjp: boolean;
   canSeeSalesVdvr: boolean;
 }
 
@@ -27,6 +29,7 @@ export function ReportsTabs({
   canSeeSalesOrders,
   canSeeCompetition,
   canSeeDvrVpjp,
+  canSeeTvrVpjp,
   canSeeSalesVdvr,
 }: ReportsTabsProps) {
 
@@ -45,9 +48,10 @@ export function ReportsTabs({
     if (canSeeSalesOrders) return "salesOrderReport";
     if (canSeeCompetition) return "competitionReport";
     if (canSeeDvrVpjp) return "dvrVpjp";
+    if (canSeeTvrVpjp) return "tvrVpjp";
     if (canSeeSalesVdvr) return "salesVdvr";
     return ""; // Should not happen if canSeeAnyReport is checked in parent
-  }, [canSeeDVR, canSeeTVR, canSeeSalesOrders, canSeeCompetition, canSeeDvrVpjp, canSeeSalesVdvr]);
+  }, [canSeeDVR, canSeeTVR, canSeeSalesOrders, canSeeCompetition, canSeeDvrVpjp, canSeeTvrVpjp, canSeeSalesVdvr]);
 
 
   // 3. Prevent rendering the component that generates unstable IDs during SSR
@@ -79,6 +83,9 @@ export function ReportsTabs({
         {canSeeDvrVpjp && (
           <TabsTrigger value="dvrVpjp">DVR V PJP</TabsTrigger>
         )}
+        {canSeeTvrVpjp && (
+          <TabsTrigger value="tvrVpjp">TVR V PJP</TabsTrigger>
+        )}
         {canSeeSalesVdvr && (
           <TabsTrigger value="salesVdvr">Sales V DVR</TabsTrigger>
         )}
@@ -108,6 +115,11 @@ export function ReportsTabs({
       {canSeeDvrVpjp && (
         <TabsContent value="dvrVpjp" className="space-y-4">
           <DvrPjpReportPage />
+        </TabsContent>
+      )}
+      {canSeeTvrVpjp && (
+        <TabsContent value="TvrVpjp" className="space-y-4">
+          <TvrPjpReportPage />
         </TabsContent>
       )}
       {canSeeSalesVdvr && (

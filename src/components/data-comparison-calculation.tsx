@@ -7,20 +7,27 @@ import {
   permanentJourneyPlanSchema,
   dailyVisitReportSchema,
   salesOrderSchema,
+  technicalVisitReportSchema,
 } from '@/lib/shared-zod-schema';
 
 /* =========================
    Types (from shared schemas)
 ========================= */
-export type PJPRecord   = z.infer<typeof permanentJourneyPlanSchema>;
-export type DVRRecord   = z.infer<typeof dailyVisitReportSchema>;
+export type PJPRecord = z.infer<typeof permanentJourneyPlanSchema>;
+export type DVRRecord = z.infer<typeof dailyVisitReportSchema>;
 export type SalesRecord = z.infer<typeof salesOrderSchema>;
+export type TVRRecord = z.infer<typeof technicalVisitReportSchema>;
 
 export interface MoMComparisonMetrics {
   metric: string;
   thisMonthValue: number;
   lastMonthValue: number;
   changePercentage: number;
+}
+
+export interface ComparisonAnalytics {
+  targetAchievementPercentage: number;
+  momMetrics: MoMComparisonMetrics[];
 }
 
 export interface DVRvPJPAnalytics {
@@ -41,12 +48,12 @@ export function calculateChange(thisValue: number, lastValue: number): number {
 }
 
 export function filterByDateRange<
-  T extends { reportDate?: string; planDate?: string; orderDate?: string }
+  T extends { reportDate?: string; planDate?: string; orderDate?: string; date?: string }
 >(records: T[], days: number): T[] {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   return records.filter(rec => {
-    const s = rec.reportDate ?? rec.planDate ?? rec.orderDate;
+    const s = rec.reportDate ?? rec.planDate ?? rec.orderDate ?? rec.date;
     if (!s) return false;
     return new Date(s) >= cutoff;
   });
@@ -92,6 +99,53 @@ export function calculateDVRvPJPAnalytics(
         thisMonthValue: thisDVR,
         lastMonthValue: lastDVR,
         changePercentage: calculateChange(thisDVR, lastDVR),
+      },
+    ],
+  };
+}
+
+export function calculateTVRvPJPAnalytics(
+  allTvrs: TVRRecord[],
+  allPjps: PJPRecord[]
+): ComparisonAnalytics {
+  const today = new Date();
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+
+  const inThisMonth = (s?: string) => {
+    if (!s) return false;
+    const d = new Date(s);
+    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+  };
+  const inLastMonth = (s?: string) => {
+    if (!s) return false;
+    const d = new Date(s);
+    return d.getFullYear() === lastMonth.getFullYear() && d.getMonth() === lastMonth.getMonth();
+  };
+
+  // We might optionally filter PJPs for visitType="Technical Visit" if that data was available on the root.
+  // For now, we compare Total Verified PJPs against Total TVRs to measure adherence.
+  const thisPJP = allPjps.filter(p => inThisMonth(p.planDate)).length;
+  const lastPJP = allPjps.filter(p => inLastMonth(p.planDate)).length;
+
+  const thisTVR = allTvrs.filter(d => inThisMonth(d.date)).length;
+  const lastTVR = allTvrs.filter(d => inLastMonth(d.date)).length;
+
+  const target = thisPJP > 0 ? (thisTVR / thisPJP) * 100 : 0;
+
+  return {
+    targetAchievementPercentage: Math.round(target * 100) / 100,
+    momMetrics: [
+      {
+        metric: 'PJP Visits Planned',
+        thisMonthValue: thisPJP,
+        lastMonthValue: lastPJP,
+        changePercentage: calculateChange(thisPJP, lastPJP),
+      },
+      {
+        metric: 'Actual Tech Visits (TVRs)',
+        thisMonthValue: thisTVR,
+        lastMonthValue: lastTVR,
+        changePercentage: calculateChange(thisTVR, lastTVR),
       },
     ],
   };
@@ -184,7 +238,7 @@ export function useDvrPjpData(days = 30): UseDvrPjpResult {
     const ensureOk = async (name: string, r: Response) => {
       if (!r.ok) {
         let body: any = null;
-        try { body = await r.json(); } catch {}
+        try { body = await r.json(); } catch { }
         throw new Error(`${name} failed [${r.status}]: ${body?.error ?? r.statusText}`);
       }
       return r.json();
@@ -193,7 +247,7 @@ export function useDvrPjpData(days = 30): UseDvrPjpResult {
     const [pjpRes, dvrRes, salesRes] = await Promise.all([
       fetch(`${base}/permanent-journey-plan?verificationStatus=VERIFIED`, { credentials: 'include', cache: 'no-store', signal, headers: { accept: 'application/json' } }),
       fetch(`${base}/reports/daily-visit-reports`, { credentials: 'include', cache: 'no-store', signal, headers: { accept: 'application/json' } }),
-      fetch(`${base}/reports/sales-orders`,     { credentials: 'include', cache: 'no-store', signal, headers: { accept: 'application/json' } }),
+      fetch(`${base}/reports/sales-orders`, { credentials: 'include', cache: 'no-store', signal, headers: { accept: 'application/json' } }),
     ]);
 
     const [pjpRaw, dvrRaw, salesRaw] = await Promise.all([
@@ -203,12 +257,12 @@ export function useDvrPjpData(days = 30): UseDvrPjpResult {
     ]);
 
     // Client-side Zod validation using shared schemas
-    const pjpParsed   = z.array(permanentJourneyPlanSchema).safeParse(pjpRaw);
+    const pjpParsed = z.array(permanentJourneyPlanSchema).safeParse(pjpRaw);
     if (!pjpParsed.success) {
       const m = pjpParsed.error.issues?.[0]?.message ?? 'PJP validation failed';
       throw new Error(`PJP schema error: ${m}`);
     }
-    const dvrParsed   = z.array(dailyVisitReportSchema).safeParse(dvrRaw);
+    const dvrParsed = z.array(dailyVisitReportSchema).safeParse(dvrRaw);
     if (!dvrParsed.success) {
       const m = dvrParsed.error.issues?.[0]?.message ?? 'DVR validation failed';
       throw new Error(`DVR schema error: ${m}`);
@@ -286,4 +340,96 @@ export function useDvrPjpData(days = 30): UseDvrPjpResult {
   );
 
   return { loading, error, pjps, dvrs, sales, filteredPjps, filteredDvrs, analytics, refetch };
+}
+
+type UseTvrPjpResult = {
+  loading: boolean;
+  error: string | null;
+  pjps: PJPRecord[] | null;
+  tvrs: TVRRecord[] | null;
+  filteredPjps: PJPRecord[] | null;
+  filteredTvrs: TVRRecord[] | null;
+  analytics: ComparisonAnalytics | null;
+  refetch: () => void;
+};
+
+export function useTvrPjpData(days = 30): UseTvrPjpResult {
+  const [pjps, setPjps] = useState<PJPRecord[] | null>(null);
+  const [tvrs, setTvrs] = useState<TVRRecord[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const fetchAll = useCallback(async (signal: AbortSignal) => {
+    const base = `/api/dashboardPagesAPI`;
+    const ensureOk = async (name: string, r: Response) => {
+      if (!r.ok) {
+        let body: any = null;
+        try { body = await r.json(); } catch { }
+        throw new Error(`${name} failed [${r.status}]: ${body?.error ?? r.statusText}`);
+      }
+      return r.json();
+    };
+
+    const [pjpRes, tvrRes] = await Promise.all([
+      fetch(`${base}/permanent-journey-plan?verificationStatus=VERIFIED`, { credentials: 'include', cache: 'no-store', signal }),
+      fetch(`${base}/reports/technical-visit-reports`, { credentials: 'include', cache: 'no-store', signal }),
+    ]);
+
+    const [pjpRaw, tvrRaw] = await Promise.all([
+      ensureOk('PJP', pjpRes),
+      ensureOk('TVR', tvrRes),
+    ]);
+
+    const pjpParsed = z.array(permanentJourneyPlanSchema).safeParse(pjpRaw);
+    if (!pjpParsed.success) throw new Error(`PJP Schema: ${pjpParsed.error.message}`);
+
+    const tvrParsed = z.array(technicalVisitReportSchema).safeParse(tvrRaw);
+    if (!tvrParsed.success) throw new Error(`TVR Schema: ${tvrParsed.error.message}`);
+
+    const upper = (v?: string) => (v ?? '').toString().trim().toUpperCase();
+
+    const pjpsClean = pjpParsed.data.map(p => ({
+      ...p,
+      status: upper(p.status),
+      verificationStatus: upper(p.verificationStatus) as PJPRecord['verificationStatus'],
+    }));
+
+    // Normalize TVR roles or strings if necessary
+    const tvrsClean = tvrParsed.data.map(t => ({
+      ...t,
+      role: upper(t.role),
+    }));
+
+    return { pjpsClean, tvrsClean };
+  }, []);
+
+  const refetch = useCallback(() => {
+    const ac = new AbortController();
+    setLoading(true);
+    setError(null);
+    fetchAll(ac.signal)
+      .then(({ pjpsClean, tvrsClean }) => {
+        setPjps(pjpsClean);
+        setTvrs(tvrsClean);
+      })
+      .catch((e: any) => {
+        if (e?.name !== 'AbortError') setError(e?.message ?? 'Fetch failed');
+      })
+      .finally(() => setLoading(false));
+    return () => ac.abort();
+  }, [fetchAll]);
+
+  useEffect(() => { const c = refetch(); return c; }, []);
+
+  const verifiedPjps = useMemo(() => (pjps ? pjps.filter(p => p.verificationStatus === 'VERIFIED') : null), [pjps]);
+  const filteredPjps = useMemo(() => (verifiedPjps ? filterByDateRange(verifiedPjps, days) : null), [verifiedPjps, days]);
+  // TVR uses 'date' which is handled in filterByDateRange now
+  const filteredTvrs = useMemo(() => (tvrs ? filterByDateRange(tvrs, days) : null), [tvrs, days]);
+
+  const analytics = useMemo(
+    () => (verifiedPjps && tvrs ? calculateTVRvPJPAnalytics(tvrs, verifiedPjps) : null),
+    [verifiedPjps, tvrs]
+  );
+
+  return { loading, error, pjps, tvrs, filteredPjps, filteredTvrs, analytics, refetch };
 }

@@ -45,9 +45,10 @@ export default async function ReportsPage() {
   const canSeeSalesOrders = hasPermission(roleToCheck, 'reports.salesOrders');
   const canSeeCompetition = hasPermission(roleToCheck, 'reports.competitionReports');
   const canSeeDvrVpjp = hasPermission(roleToCheck, 'reports.dvrVpjp');
+  const canSeeTvrVpjp = hasPermission(roleToCheck, 'reports.tvrVpjp');
   const canSeeSalesVdvr = hasPermission(roleToCheck, 'reports.salesVdvr');
 
-  const canSeeAnyReport = canSeeDVR || canSeeTVR || canSeeSalesOrders || canSeeCompetition || canSeeDvrVpjp || canSeeSalesVdvr;
+  const canSeeAnyReport = canSeeDVR || canSeeTVR || canSeeSalesOrders || canSeeCompetition || canSeeDvrVpjp || canSeeTvrVpjp || canSeeSalesVdvr;
 
   // 3. Handle users who can't see anything
   if (!canSeeAnyReport) {
@@ -79,6 +80,7 @@ export default async function ReportsPage() {
         canSeeSalesOrders={canSeeSalesOrders}
         canSeeCompetition={canSeeCompetition}
         canSeeDvrVpjp={canSeeDvrVpjp}
+        canSeeTvrVpjp={canSeeTvrVpjp}
         canSeeSalesVdvr={canSeeSalesVdvr}
       />
     </div>
