@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
                 verificationStatus: verificationStatus,
                 additionalVisitRemarks: additionalVisitRemarks,
                 // Update the old 'status' field for compatibility/visibility
-                status: verificationStatus === 'VERIFIED' ? 'APPROVED' : 'REJECTED',
+                status: verificationStatus,
             },
         });
 
@@ -156,7 +156,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             planDate,
             areaToBeVisited,
             description,
-            dealerId,                 // ✅ new FK field
+            dealerId,                
             additionalVisitRemarks,
         } = v.data as {
             planDate?: string;
@@ -185,7 +185,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 // Verification and status set to approved on modification
                 verificationStatus: 'VERIFIED',
                 additionalVisitRemarks,
-                status: 'APPROVED',
+                status: 'VERIFIED',
             },
             include: { dealer: { select: { name: true } } },
         });
