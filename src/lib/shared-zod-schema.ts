@@ -255,7 +255,7 @@ export const permanentJourneyPlanSchema = z.object({
   taskIds: z.array(z.string()), // Array of DailyTask IDs
   dealerId: z.string().nullable().optional(),
   visitDealerName: z.string().nullable().optional(),
-  verificationStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
+  verificationStatus: z.string(),
   additionalVisitRemarks: z.string().nullable(),
   siteId: z.string().optional().nullable(),
   createdAt: z.string(),

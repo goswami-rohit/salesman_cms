@@ -32,6 +32,9 @@ export interface DashboardPermissions {
     verifyDealers: boolean;
     dealerBrandMapping: boolean;
   };
+  technicalSites: {
+    listSites: boolean;
+  };
   reports: {
     dailyVisitReports: boolean;
     technicalVisitReports: boolean;
@@ -57,7 +60,7 @@ export interface DashboardPermissions {
     pointsLedger: boolean;
     rewards: boolean;
     rewardsRedemption: boolean;
-  },
+  };
   scoresAndRatings: {
     dealerScores: boolean;
     salesmanRatings: boolean;
@@ -86,6 +89,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
+    },
+    technicalSites: {
+      listSites: true,
     },
     reports: {
       dailyVisitReports: true,
@@ -137,6 +143,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       verifyDealers: true,
       dealerBrandMapping: true,
     },
+    technicalSites: {
+      listSites: true,
+    },
     reports: {
       dailyVisitReports: true,
       technicalVisitReports: true,
@@ -186,6 +195,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
+    },
+    technicalSites: {
+      listSites: true,
     },
     reports: {
       dailyVisitReports: true,
@@ -239,6 +251,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       verifyDealers: true,
       dealerBrandMapping: true,
     },
+    technicalSites: {
+      listSites: true,
+    },
     reports: {
       dailyVisitReports: true,
       technicalVisitReports: true,
@@ -288,6 +303,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
+    },
+    technicalSites: {
+      listSites: true,
     },
     reports: {
       dailyVisitReports: true,
@@ -339,6 +357,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       verifyDealers: true,
       dealerBrandMapping: true,
     },
+    technicalSites: {
+      listSites: true,
+    },
     reports: {
       dailyVisitReports: true,
       technicalVisitReports: true,
@@ -389,6 +410,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       verifyDealers: true,
       dealerBrandMapping: true,
     },
+    technicalSites: {
+      listSites: true,
+    },
     reports: {
       dailyVisitReports: true,
       technicalVisitReports: true,
@@ -438,6 +462,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       listDealers: true,
       verifyDealers: true,
       dealerBrandMapping: true,
+    },
+    technicalSites: {
+      listSites: true,
     },
     reports: {
       dailyVisitReports: true,
@@ -491,6 +518,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       verifyDealers: false,
       dealerBrandMapping: true,
     },
+    technicalSites: {
+      listSites: true,
+    },
     reports: {
       dailyVisitReports: true,
       technicalVisitReports: true,
@@ -541,6 +571,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       dealerBrandMapping: false,
       verifyDealers: false,
     },
+    technicalSites: {
+      listSites: false,
+    },
     reports: {
       dailyVisitReports: true,
       technicalVisitReports: true,
@@ -590,6 +623,9 @@ export const WORKOS_ROLE_PERMISSIONS: Record<WorkOSRole, DashboardPermissions> =
       listDealers: false,
       verifyDealers: false,
       dealerBrandMapping: true,
+    },
+    technicalSites: {
+      listSites: false,
     },
     reports: {
       dailyVisitReports: true,

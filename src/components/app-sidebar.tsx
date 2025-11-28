@@ -47,6 +47,7 @@ const ITEM_PERMISSIONS = {
   "Users": 'users' as const,
   "Assign Tasks": 'assignTasks' as const,
   "Dealer Management": 'dealerManagement.listDealers' as const,
+  "Technical Sites": 'technicalSites.listSites' as const,
   "Reports": 'reports.dailyVisitReports' as const,
   "Salesman Attendance": 'salesmanAttendance' as const,
   "Salesman Leaves": 'salesmanLeaves' as const,
@@ -103,6 +104,11 @@ const menuItems: MenuItem[] = [
         title: "Dealer Management",
         url: "/dashboard/dealerManagement",
         permission: ITEM_PERMISSIONS["Dealer Management"]
+      },
+            {
+        title: "Technical Sites",
+        url: "/dashboard/technicalSites",
+        permission: ITEM_PERMISSIONS["Technical Sites"]
       },
       {
         title: "Reports",

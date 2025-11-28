@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
                     },
                 },
                 dealer: { select: { name: true } },
+                site: { select: { siteName: true } },
             },
             orderBy: {
                 planDate: 'asc',
@@ -90,6 +91,7 @@ export async function GET(request: NextRequest) {
         const formattedPlans = pendingPJPs.map((plan: any) => {
             const salesmanName = `${plan.user.firstName || ''} ${plan.user.lastName || ''}`.trim() || plan.user.email;
             const createdByName = `${plan.createdBy.firstName || ''} ${plan.createdBy.lastName || ''}`.trim() || plan.createdBy.email;
+            const visitTargetName = plan.dealer?.name ?? plan.site?.siteName ?? null;
 
             return {
                 id: plan.id,
@@ -101,7 +103,11 @@ export async function GET(request: NextRequest) {
                 planDate: plan.planDate.toISOString().split('T')[0],
                 description: plan.description,
                 status: plan.status,
-                visitDealerName: plan.dealer?.name ?? null,
+
+                dealerId: plan.dealerId,
+                siteId: plan.siteId,
+                visitDealerName: visitTargetName,
+
                 verificationStatus: plan.verificationStatus
                     ? plan.verificationStatus.toUpperCase()
                     : 'PENDING',

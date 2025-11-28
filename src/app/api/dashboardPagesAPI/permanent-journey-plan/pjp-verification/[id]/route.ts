@@ -50,7 +50,6 @@ async function verifyPJP(pjpId: string, currentUserCompanyId: number) {
  */
 export async function PUT(request: NextRequest, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
-        // FIX: AWAIT the params object before destructuring/accessing id, as requested by the error message.
         const resolvedParams = await Promise.resolve(params);
         const pjpId = resolvedParams.id;
 
@@ -156,21 +155,35 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             planDate,
             areaToBeVisited,
             description,
-            dealerId,                
+            dealerId,
+            siteId,
             additionalVisitRemarks,
         } = v.data as {
             planDate?: string;
             areaToBeVisited?: string;
             description?: string | null;
             dealerId?: string | null;
+            siteId?: string | null;
             additionalVisitRemarks?: string | null;
         };
 
         // Optional guard: if dealerId provided, ensure it exists
         if (dealerId) {
-            const dealerExists = await prisma.dealer.findUnique({ where: { id: dealerId }, select: { id: true } });
+            const dealerExists = await prisma.dealer.findUnique(
+                { where: { id: dealerId }, select: { id: true } }
+            );
             if (!dealerExists) {
                 return NextResponse.json({ error: 'Invalid dealerId: dealer not found.' }, { status: 400 });
+            }
+        }
+
+        // Optional guard: if siteId provided, ensure it exists
+        if (siteId) {
+            const siteExists = await prisma.technicalSite.findUnique(
+                { where: { id: siteId }, select: { id: true } }
+            );
+            if (!siteExists) {
+                return NextResponse.json({ error: 'Invalid siteId: site not found.' }, { status: 400 });
             }
         }
 
@@ -181,19 +194,25 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 areaToBeVisited,
                 description,
                 dealerId: dealerId ?? null,
+                siteId: siteId ?? null,
 
                 // Verification and status set to approved on modification
                 verificationStatus: 'VERIFIED',
                 additionalVisitRemarks,
                 status: 'VERIFIED',
             },
-            include: { dealer: { select: { name: true } } },
+            include: {
+                dealer: { select: { name: true } },
+                site: { select: { siteName: true } }
+            },
         });
 
         return NextResponse.json({
             message: `PJP modified and VERIFIED successfully`,
-            pjp: {...updatedPJP, 
+            pjp: {
+                ...updatedPJP,
                 dealerName: updatedPJP.dealer?.name ?? null,
+                siteName: updatedPJP.site?.siteName ?? null,
             }
         }, { status: 200 });
 

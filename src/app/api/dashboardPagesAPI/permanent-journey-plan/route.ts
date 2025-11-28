@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
           },
         },
         dealer: { select: { name: true } },
+        site: { select: { siteName: true } },
       },
       orderBy: {
         planDate: 'desc', // Order by latest plans first
@@ -92,9 +93,8 @@ export async function GET(request: NextRequest) {
       // Construct salesman and creator names, handling potential nulls
       const salesmanName = `${plan.user.firstName || ''} ${plan.user.lastName || ''}`.trim() || plan.user.email;
       const createdByName = `${plan.createdBy.firstName || ''} ${plan.createdBy.lastName || ''}`.trim() || plan.createdBy.email;
-
-      // Extract only the IDs of the tasks
       const taskIds = plan.dailyTasks.map((task:any) => task.id);
+      const visitTargetName = plan.dealer?.name ?? plan.site?.siteName ?? null;
 
       return {
         id: plan.id,
@@ -107,7 +107,11 @@ export async function GET(request: NextRequest) {
         description: plan.description,
         status: plan.status,
         taskIds: taskIds,
-        visitDealerName: plan.dealer?.name ?? null,
+
+        dealerId: plan.dealerId,
+        siteId: plan.siteId,
+        visitDealerName: visitTargetName,
+        
         verificationStatus: plan.verificationStatus,
         additionalVisitRemarks: plan.additionalVisitRemarks,
         createdAt: plan.createdAt.toISOString(),

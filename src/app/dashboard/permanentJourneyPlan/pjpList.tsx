@@ -125,7 +125,8 @@ export default function PJPListPage() {
         (pjp.areaToBeVisited || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (pjp.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (pjp.planDate || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (pjp.createdByName || '').toLowerCase().includes(searchQuery.toLowerCase());
+        (pjp.createdByName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pjp.visitDealerName || '').toLowerCase().includes(searchQuery.toLowerCase()); // Added search by dealer/site name
 
       const matchesRole = selectedRoleFilter === 'all' ? true : (pjp.createdByRole === selectedRoleFilter);
       const matchesStatus = selectedStatusFilter === 'all' ? true : (pjp.status === selectedStatusFilter);
@@ -145,7 +146,29 @@ export default function PJPListPage() {
       accessorKey: "areaToBeVisited", header: "Area to Visit",
       cell: ({ row }) => <span className="max-w-[300px] truncate block">{row.original.areaToBeVisited}</span>,
     },
-    { accessorKey: "visitDealerName", header: "Dealer Name" },
+    // Updated Column: Handles both Dealer and Site
+    {
+      accessorKey: "visitDealerName",
+      header: "Visiting",
+      minSize: 180,
+      cell: ({ row }) => {
+        const name = row.original.visitDealerName;
+        // Check IDs to determine type
+        const isSite = !!row.original.siteId;
+        const isDealer = !!row.original.dealerId;
+
+        if (!name) return <span className="text-gray-400">N/A</span>;
+
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">{name}</span>
+            <span className="text-[10px] uppercase tracking-wider text-gray-500">
+              {isSite ? 'Site' : isDealer ? 'Dealer' : ''}
+            </span>
+          </div>
+        );
+      },
+    },
     { accessorKey: "planDate", header: "Planned Date" },
     { accessorKey: "status", header: "Status" },
     {

@@ -82,14 +82,14 @@ Every single API route in this folder follows a critical, multi-tenant security 
 
 #### `src/app/api/dashboardPagesAPI/`
 
-This folder is a key architectural pattern. It doesn't contain generic CRUD logic. Instead, it holds **specialized `GET`, `POST`, `PATCH`, and `DELETE` handlers** tailored for specific dashboard pages. This keeps the frontend components "dumb" and fast, as the server handles complex, multi-step logic.
+This folder is a key architectural pattern. It doesn't contain generic CRUD logic. Instead, it holds **specialized `GET`, `POST`, `PATCH`, `PUT` and `DELETE` handlers** tailored for specific dashboard pages. This keeps the frontend components "dumb" and fast, as the server handles complex, multi-step logic.
 
 * **`.../reports/` (Folder):**
     * Contains a `route.ts` for each report: `competition-reports`, `daily-visit-reports`, `sales-orders`, `technical-visit-reports`.
     * **Logic:** Each file defines a `GET` handler that fetches all records for the `currentUser.companyId`. It performs an `include` on the `user` relation to add salesman details (name, role, area, region) to the response, which is then validated against a Zod schema.
 
 * **`.../team-overview/` (Folder):**
-    * **`dataFetch/route.ts`:** `GET` handler that fetches all users for the team table within the `currentUser.companyId`, supporting an optional `role` filter from the query params. It formats the data to include `managedBy` and `manages` strings/arrays.
+    * **`dataFetch/route.ts`:** `GET` handler that fetches all users for the team table within the `currentUser.companyId`, supporting an optional `role` filter. It formats the data to include `managedBy` and `manages` strings/arrays.
     * **`editRole/route.ts`:** A critical `POST` mutation route.
         1.  Gets `userId` and `newRole` from the body.
         2.  Gets the *admin's* role (`currentUserRole`) from `getTokenClaims()`.
@@ -97,24 +97,79 @@ This folder is a key architectural pattern. It doesn't contain generic CRUD logi
         4.  **Transaction:** Runs a `prisma.$transaction` to ensure both WorkOS and the local DB are updated.
         5.  Calls `workos.userManagement.updateOrganizationMembership(...)` and `prisma.user.update(...)` to synchronize the role.
     * **`slmLiveLocation/route.ts`:** `GET` handler for the "Live Location" map.
-        1.  Fetches all active `PermanentJourneyPlan` records for the `currentUser.companyId` to identify active salesmen.
+        1.  Fetches all active `PermanentJourneyPlan` records to identify active salesmen.
         2.  Makes parallel `axios.get` calls to an *external server* (`process.env.NEXT_PUBLIC_SALESMAN_APP_SERVER_URL`) for each salesman's latest location.
-        3.  Aggregates the results and returns a validated list of live locations.
+        3.  Aggregates the results and returns a validated list.
     * **`editMapping/route.ts`:** `POST` handler that allows an admin to update a user's `reportsToId` (manager) and `managesIds` (direct reports). It runs a transaction to atomically update all affected user records.
     * **`editDealerMapping/route.ts`:**
         * **`GET`:** Fetches *all* dealers for the admin's company (with optional `area`/`region` filters) *and* a list of `assignedDealerIds` already mapped to a specific `userId`.
-        * **`POST`:** Takes a `userId` and a list of `dealerIds`. It first un-assigns all dealers from that user (`userId: null`) and then re-assigns only the dealers in the provided list (`userId: userId`).
+        * **`POST`:** Takes a `userId` and a list of `dealerIds`. It un-assigns all dealers from that user and then re-assigns only the dealers in the provided list.
+    * **`editMasonMapping/route.ts`:**
+        * **`GET`:** Fetches *all* masons for the company (optionally filtered by area/region via their dealer) and a list of `assignedMasonIds` for a specific user.
+        * **`POST`:** Similar to dealer mapping, it un-assigns all masons from the user and re-assigns the new list.
 
 * **`.../dealerManagement/` (Folder):**
     * **`route.ts`:**
         * **`GET`:** Lists all dealers for the `currentUser.companyId` that have `verificationStatus: 'VERIFIED'`.
-        * **`POST`:** Creates a new dealer, associating it with the `currentUser.id`. It also attempts to geocode the address using `OPENCAGE_GEO_API`.
-        * **`DELETE`:** Removes a dealer based on the `id` query parameter, after verifying company ownership.
+        * **`POST`:** Creates a new dealer, associating it with the `currentUser.id`. It attempts to geocode the address using `OPENCAGE_GEO_API`.
+        * **`DELETE`:** Removes a dealer based on the `id` query parameter.
     * **`dealer-verify/route.ts`:**
         * **`GET`:** Lists all dealers for the `currentUser.companyId` that have `verificationStatus: 'PENDING'`.
         * **`PUT`:** Takes a `dealerId` from the query param and a `verificationStatus` ("VERIFIED" or "REJECTED") from the body to approve or reject a new dealer.
     * **`dealer-brand-mapping/route.ts`:** `GET` handler that fetches all `DealerBrandMapping` records and aggregates them by dealer, creating dynamic keys for each brand name (e.g., `"BrandA": 100`).
     * **`dealer-locations/route.ts` & `dealer-types/route.ts`:** `GET` helpers that query the `Dealer` table for `distinct` region, area, and type values to populate UI filter dropdowns.
+
+* **`.../technical-sites/` (Folder):**
+    * **`route.ts`:** `GET` handler that lists all `TechnicalSite` records linked to the `currentUser.companyId` via the users relationship.
+
+* **`.../masonpc-side/` (Folder):**
+    * **`mason-pc/`:**
+        * **`route.ts` (GET):** Lists `Mason_PC_Side` records with joined KYC submissions and User details. Supports filtering by `kycStatus`. Flattens KYC document JSON.
+        * **`[id]/route.ts` (PATCH):** Updates a Mason's KYC status or assignments (user/dealer/site)/route.ts].
+            * If `verificationStatus` becomes 'VERIFIED', it triggers a **Joining Bonus** calculation and adds points to the Ledger and Mason balance inside a transaction.
+        * **`form-options/route.ts` (GET):** Helper that fetches Salesmen, Verified Dealers, and Technical Sites to populate dropdowns for Mason editing.
+    * **`bags-lift/`:**
+        * **`route.ts` (GET):** Lists `BagLift` records. Filters to include both assigned masons (company check) and unassigned masons.
+        * **`[id]/route.ts` (PATCH):** Handles approval/rejection of bag lifts/route.ts].
+            * **Approval:** Calculates extra bonus points (slab-based) and referral bonuses. Updates `BagLift` status, `PointsLedger`, and `Mason` balance atomically.
+            * **Rejection:** Reverses points if previously approved or simply marks as rejected.
+    * **`rewards-redemption/`:**
+        * **`route.ts` (GET):** Lists `RewardRedemption` records filtered by company.
+        * **`[id]/route.ts` (PATCH):** Manages order status (Approved, Shipped, Delivered, Rejected)/route.ts].
+            * **Approval:** Checks stock and deducts it from `Rewards` inventory.
+            * **Rejection:** Refunds points to the Mason's `PointsLedger` and returns stock if it was previously deducted.
+    * **`rewards/route.ts`:** `GET` handler for the master `Rewards` list (no company filter).
+    * **`reward-categories/route.ts`:** `GET` handler for `RewardCategory` list.
+    * **`points-ledger/route.ts`:** `GET` handler for `PointsLedger` history.
+    * **`tso-meetings/route.ts`:** `GET` handler for `TSOMeeting` records.
+    * **`schemes-offers/route.ts`:** `GET` handler for `SchemesOffers` records.
+    * **`masonOnMeetings/route.ts` & `masonOnSchemes/route.ts`:** `GET` handlers for the join tables tracking Mason participation.
+
+* **`.../permanent-journey-plan/` (Folder):**
+    * **`route.ts`:**
+        * **`GET`:** Lists PJPs with an optional `verificationStatus` filter.
+        * **`DELETE`:** Deletes a PJP.
+    * **`pjp-verification/route.ts`:** `GET` handler that lists *only* PJPs with `status: 'PENDING'` or `verificationStatus: 'PENDING'`.
+    * **`pjp-verification/[id]/route.ts`:**
+        * **`PUT`:** Updates only the status/verificationStatus (e.g., to 'VERIFIED')/route.ts].
+        * **`PATCH`:** Allows modification of PJP fields (planDate, area, dealerId/siteId, remarks) and *simultaneously* sets status to 'VERIFIED'/route.ts].
+
+* **`.../slm-geotracking/route.ts`:**
+    * **`GET`:** Fetches `GeoTracking` records for the company, including user details.
+
+* **`.../slm-leaves/route.ts`:**
+    * **`GET`:** Fetches leave applications.
+    * **`PATCH`:** Updates leave status (Approved/Rejected) and admin remarks.
+
+* **`.../assign-tasks/route.ts`:**
+    * **`GET`:** Fetches assignable salesmen, dealers, and existing `dailyTasks`.
+    * **`POST`:** Creates new `DailyTask` records.
+
+* **`.../slm-attendance/route.ts`:**
+    * **`GET`:** Fetches `SalesmanAttendance` records.
+
+* **`.../scores-ratings/route.ts`:**
+    * **`GET`:** Fetches `Rating` (for salesmen) or `DealerReportsAndScores` (for dealers) based on the `type` query param.
 
 #### `.../masonpc-side/`
 
@@ -216,9 +271,9 @@ This folder contains all the frontend UI pages and components that are only acce
         * **For Executives (Non-Admins):** It detects roles like 'senior-executive' or 'junior-executive' and renders the `<SimpleWelcomePage />`. This prevents them from seeing unauthorized or irrelevant analytics graphs.
         * **For Admins:** It renders the full `<DashboardGraphs />` component, wrapped in a `Suspense` boundary to handle loading states while data is fetched.
 
-* **`dashboardGraphs.tsx`**:
-    * **Purpose**: The interactive client component that displays the graphs and stats on the main dashboard page.
-    * **Logic**: This is a Client Component (`'use client'`).
+* **`dashboardGraphs.tsx`:**
+    * **Purpose:** The interactive client component that displays the graphs and stats on the main dashboard page.
+    * **Logic:** This is a Client Component (`'use client'`).
     * **Data Fetching**: It contains its own `fetchData` function, which is called in a `useEffect` hook. This function makes parallel, client-side `fetch` calls to multiple API endpoints (`/api/dashboardPagesAPI/slm-geotracking`, `/api/dashboardPagesAPI/reports/daily-visit-reports`, `/api/dashboardPagesAPI/reports/sales-orders`, `/api/users`) to get all the raw data for the dashboard.
     * **State**: It uses `useState` to manage all raw data, loading/error states, and filters (e.g., `selectedRole`, `selectedSalesman`).
     * **Calculation**: It uses `useMemo` to filter and aggregate the raw data based on the selected filters, preparing it for the graphs (e.g., `geoGraphData`, `collectionGraphData`).
@@ -407,7 +462,7 @@ This folder contains all the frontend UI pages and components that are only acce
         * **Rendering**: It renders the `<Tabs>` component and conditionally renders the "Team View" and "Salesman Live Location" triggers and content based on the received props.
     * **`teamTabContent.tsx`**:
         * **Purpose**: The client component for the main "Team" tab, showing hierarchy and allowing edits.
-        * **Logic**: A Client Component (`'use client'`).
+        * **Logic**: A Client Component.
         * **Data Fetching**: Fetches data from `/api/dashboardPagesAPI/team-overview/dataFetch` (with role filter) and the current user's role from `/api/me`.
         * **Mutation (Edit Role)**: The "Edit Role" button opens a popover, checking `canAssignRole` from `roleHierarchy.ts` to determine which roles are assignable. `handleSaveRole` makes a `POST` request to `/api/dashboardPagesAPI/team-overview/editRole`.
         * **Mutation (Edit Mapping)**: The "Edit Mapping" button opens a popover to set `managedBy` and `manages` fields, based on role hierarchy. `handleSaveMapping` makes a `POST` request to `/api/dashboardPagesAPI/team-overview/editMapping`.
@@ -419,18 +474,38 @@ This folder contains all the frontend UI pages and components that are only acce
         * **Dynamic Import**: It uses `dynamic(() => import('react-leaflet'), { ssr: false })` to load the Leaflet map.
         * **Rendering**: It renders the `<MapContainer>` and then maps over the filtered locations to render a `<Marker>` for each user's last known location.
 
-#### `src/app/dashboard/users/`
+* **`src/app/dashboard/technicalSites/`**
+    * **`page.tsx`**:
+        * **Purpose**: The server-side entry point for the "Technical Sites" section.
+        * **Logic**: This is a Server Component.
+        * **RBAC**: It fetches the user's role on the server by calling `getCurrentUserRole()`.
+        * It checks for permission (e.g., `technicalSites.listSites`) or if the role is allowed (e.g., `Admin`, `manager`).
+        * **Data Passing**: It passes `canViewSites` as a prop to the `<TechnicalSitesTabs />` client component.
+        * If the user has no permissions, it renders an "Access Denied" message.
+    * **`tabsLoader.tsx`**:
+        * **Purpose**: The client-side container for the "Technical Sites" tabs.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **Props**: Receives `canViewSites` boolean prop from `page.tsx`.
+        * **Rendering**: It renders the `<Tabs>` component with a "List Sites" tab if authorized.
+    * **`listSites.tsx`**:
+        * **Purpose**: The client component to display the list of technical sites.
+        * **Logic**: This is a Client Component (`'use client'`).
+        * **State**: Manages `sites`, `loading`, `error` and filters (search query, region, stage).
+        * **Data Fetching**: `useEffect` calls `fetchSites`, which retrieves data from `/api/dashboardPagesAPI/technical-sites`. It also derives available regions and stages for filter dropdowns from the fetched data.
+        * **Filtering**: Filters are applied client-side using `useMemo` based on search text and selected dropdown values.
+        * **Rendering**: It renders a `DataTableReusable` component with columns for site details (Name, Contact, Phone, Region, Area, Type, Stage, Created On).
 
-* **`page.tsx`:**
-    * **Purpose:** The Server Component wrapper that acts as the secure entry point for the User Management page.
-    * **Logic:**
+* **`src/app/dashboard/users/`**
+    * **`page.tsx`**:
+        * **Purpose**: The Server Component wrapper that acts as the secure entry point for the User Management page.
+        * **Logic**:
         * **Authentication:** Uses `withAuth` to ensure the user is signed in and `getTokenClaims` to retrieve roles.
         * **Data Fetching:** Fetches the full `adminUser` profile (including `company` details) from Prisma using the WorkOS User ID.
         * **RBAC (Security):** strict check against `allowedAdminRoles`. If the user's role is not authorized, they are immediately redirected to `/dashboard`.
         * **Rendering:** Passes the fetched `adminUser` object as a prop to the `<UsersManagement />` client component.
-* **`userManagement.tsx`:**
-    * **Purpose:** The main interactive Client Component for viewing and managing users.
-    * **State & Hooks:**
+    * **`userManagement.tsx`**:
+        * **Purpose**: The main interactive Client Component for viewing and managing users.
+        * **State & Hooks:**
         * Manages local state for `users` list, loading status, and form visibility.
         * **`useUserLocations` Hook:** Dynamically fetches available "Regions" and "Areas" to populate the dropdowns in the Create/Edit forms, ensuring data consistency.
     * **CRUD Operations:**
@@ -441,9 +516,9 @@ This folder contains all the frontend UI pages and components that are only acce
             1.  Calls `DELETE /api/users/[id]` to remove the record from the local database.
             2.  If successful, calls `POST /api/delete-user` to remove the user from WorkOS, ensuring the two systems remain in sync.
     * **UI:** Renders the `DataTableReusable` with custom columns (including a status badge for `isTechnicalRole`) and manages the Dialog modals for adding or editing users.
-* **`bulkInvite.tsx`:**
-    * **Purpose:** A Client Component (Dialog) that facilitates bulk user creation via file upload (CSV/TXT) or direct text paste.
-    * **Validation Logic:**
+    * **`bulkInvite.tsx`:**
+        * **Purpose**: A Client Component (Dialog) that facilitates bulk user creation via file upload (CSV/TXT) or direct text paste.
+        * **Validation Logic:**
         * **Header Check:** The parser mandates the presence of specific headers: `email`, `firstName`, `lastName`, `phoneNumber`, `role`, `region`, `area`, and `isTechnical`.
         * **Role Validation:** Validates every row's role against a hardcoded list of allowed `ROLES`.
     * **Execution:** Parses the input on the client side to catch errors early, then sends the array of user objects to the `POST /api/users/bulk-invite` endpoint. It provides detailed feedback on how many invitations succeeded or failed.
@@ -455,8 +530,6 @@ This folder contains all the frontend UI pages and components that are only acce
         * **State**: It uses the `useSearchParams` hook to read the `name` and `error` query parameters from the URL.
         * **Effects**: It uses `useEffect` to check if `error === 'unauthorized'`. If true, it displays an error toast message: "🚫 You do not have access to this page yet. Contact the admin/manager.".
         * **Rendering**: It displays a welcome message to the user (using the `name` param) and includes a "Logout" button.
-
----
 
 ### `src/app/home/`
 

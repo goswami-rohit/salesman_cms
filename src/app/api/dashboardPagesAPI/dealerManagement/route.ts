@@ -258,6 +258,6 @@ export async function DELETE(request: NextRequest) {
         console.error('Error deleting dealer (DELETE):', error);
         return NextResponse.json({ error: 'Failed to delete dealer', details: (error as Error).message }, { status: 500 });
     } finally {
-        await prisma.$disconnect();
+        //await prisma.$disconnect();
     }
 }
