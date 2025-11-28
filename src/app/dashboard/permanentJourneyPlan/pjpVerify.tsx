@@ -194,7 +194,7 @@ export default function PJPVerifyPage() {
       const response = await fetch(`${pjpVerificationAPI}/${pjpId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verificationStatus: action }),
+        body: JSON.stringify({ verificationStatus: action, status: action }),
       });
 
       if (!response.ok) {

@@ -53,7 +53,10 @@ export async function GET(request: NextRequest) {
                 user: {
                     companyId: currentUser.companyId, // Filter by fetched companyId
                 },
-                status: 'PENDING'
+                OR: [
+                    { status: 'PENDING' },
+                    { verificationStatus: 'PENDING' }
+                ]
             },
             include: {
                 // Include salesman details
