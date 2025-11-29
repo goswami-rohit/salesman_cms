@@ -71,9 +71,7 @@ model User {
   createdTasks              DailyTask[]  @relation("CreatedTasks") // Tasks created by this user (admin)
   ratings                   Rating[]
   salesOrders               SalesOrder[]
-  // PJPs assigned to this user
   permanentJourneyPlansAssigned PermanentJourneyPlan[] @relation("PJP_AssignedUser")
-  // PJPs created by this user
   permanentJourneyPlansCreated  PermanentJourneyPlan[] @relation("PJP_CreatedBy")
   noOfPJP Int?            @map("no_of_pjp")
   dealerBrandMappings     DealerBrandMapping[]
@@ -87,6 +85,7 @@ model User {
   bagLiftApprovals                    BagLift[] @relation("BagLiftApprovals")
   siteId        String? @map("site_id") @db.Uuid // FK to TechnicalSite
   site          TechnicalSite? @relation("UserTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
+  additionalSites       TechnicalSite[] @relation("SiteAssociatedUsers")
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
@@ -201,6 +200,9 @@ model Dealer {
 
   siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
   site TechnicalSite? @relation("DealerTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
+  
+  associatedMasons      Mason_PC_Side[] @relation("DealerAssociatedMasons")
+  associatedSites       TechnicalSite[] @relation("SiteAssociatedDealers")
 
   primaryTechnicalSites TechnicalSite[] @relation("SitePrimaryDealer")
 
@@ -774,6 +776,11 @@ model TechnicalSite {
   geoTrackingRecords      GeoTracking[]
   dailyTasks              DailyTask[]
   permanentJourneyPlans   PermanentJourneyPlan[]
+
+  // These allow a Site to be associated with MULTIPLE Dealers/Masons without being their "Primary"
+  associatedDealers     Dealer[]        @relation("SiteAssociatedDealers")
+  associatedMasons      Mason_PC_Side[] @relation("SiteAssociatedMasons")
+  associatedUsers       User[]          @relation("SiteAssociatedUsers")
   
   createdAt               DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt               DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -821,6 +828,9 @@ model Mason_PC_Side {
 
   siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
   site TechnicalSite? @relation("MasonTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
+
+  associatedDealers     Dealer[]        @relation("DealerAssociatedMasons")
+  associatedSites       TechnicalSite[] @relation("SiteAssociatedMasons")
 
   primaryTechnicalSites TechnicalSite[] @relation("SitePrimaryMason")
 
