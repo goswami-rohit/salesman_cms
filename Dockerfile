@@ -1,6 +1,9 @@
 # Stage 1: Dependencies - Install all dependencies
 FROM node:25 AS deps
-#RUN apk add --no-cache libc6-compat openssl #Not needed for debian base image (node:25) needed for others
+
+# Install OpenSSL (Critical for Prisma on Debian during multi-arch builds)
+RUN apt-get update -y && apt-get install -y openssl
+
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
@@ -9,7 +12,11 @@ RUN npm ci
 
 # Stage 2: Builder - Build the Next.js application
 FROM node:25 AS builder
+
 WORKDIR /app
+
+# Install OpenSSL in builder stage too (just to be safe for generation)
+RUN apt-get update -y && apt-get install -y openssl
 
 # Copy the dependencies from the previous stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -32,10 +39,6 @@ ENV NODE_ENV=production
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy only the essential files from the builder stage
-# We copy the standalone build output, static assets, and the public directory.
-# The Prisma schema is also copied, which is a good practice for runtime database connections.
-#COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
