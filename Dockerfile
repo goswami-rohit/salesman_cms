@@ -1,9 +1,6 @@
 # Stage 1: Dependencies - Install all dependencies
 FROM node:25 AS deps
 
-# Install OpenSSL (Critical for Prisma on Debian during multi-arch builds)
-RUN apt-get update -y && apt-get install -y openssl
-
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
@@ -14,9 +11,6 @@ RUN npm ci
 FROM node:25 AS builder
 
 WORKDIR /app
-
-# Install OpenSSL in builder stage too (just to be safe for generation)
-RUN apt-get update -y && apt-get install -y openssl
 
 # Copy the dependencies from the previous stage
 COPY --from=deps /app/node_modules ./node_modules
