@@ -5,7 +5,17 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { IndianRupee, Search, Loader2, Check, X, Eye, ExternalLink } from 'lucide-react';
+import { 
+  IndianRupee, 
+  Search, 
+  Loader2, 
+  Check, 
+  X, 
+  Eye, 
+  ExternalLink,
+  CalendarIcon
+} from 'lucide-react';
+import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
@@ -26,6 +36,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Shadcn DatePicker imports
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // --- CONSTANTS AND TYPES ---
 const BAG_LIFT_API_ENDPOINT = `/api/dashboardPagesAPI/masonpc-side/bags-lift`;
@@ -54,6 +73,10 @@ type BagLiftRecord = z.infer<typeof bagLiftSchema> & {
 
 // --- HELPER FUNCTIONS ---
 
+const formatIndianNumber = (num: number) => {
+  return new Intl.NumberFormat('en-IN').format(num);
+};
+
 const renderSelectFilter = (
   label: string,
   value: string,
@@ -64,7 +87,7 @@ const renderSelectFilter = (
   <div className="flex flex-col space-y-1 w-full sm:w-[150px] min-w-[120px]">
     <label className="text-sm font-medium text-muted-foreground">{label}</label>
     <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
-      <SelectTrigger className="h-9">
+      <SelectTrigger className="h-9 w-full bg-background border-input">
         {isLoading ? (
           <div className="flex flex-row items-center space-x-2">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -103,13 +126,13 @@ const getStatusBadgeVariant = (status: string) => {
   switch (status.toLowerCase()) {
     case 'approved':
     case 'verified':
-      return 'bg-green-100 text-green-700 hover:bg-green-200';
+      return 'bg-green-100 text-green-700 hover:bg-green-200 border-green-200';
     case 'rejected':
-      return 'bg-red-100 text-red-700 hover:bg-red-200';
+      return 'bg-red-100 text-red-700 hover:bg-red-200 border-red-200';
     case 'pending':
-      return 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200';
+      return 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200';
     default:
-      return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+      return 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200';
   }
 };
 
@@ -127,8 +150,10 @@ export default function BagsLiftPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [areaFilter, setAreaFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
-
-  // REMOVED: currentPage state (let the table handle it)
+  
+  // --- Date Filter States ---
+  const [dateFilterStart, setDateFilterStart] = useState<string>('');
+  const [dateFilterEnd, setDateFilterEnd] = useState<string>('');
 
   const statusOptions = ['pending', 'approved', 'rejected'];
 
@@ -256,7 +281,6 @@ export default function BagsLiftPage() {
 
   // --- Filtering Logic ---
   const filteredRecords = useMemo(() => {
-    // Removed setCurrentPage(1) because we aren't managing page state anymore
     return bagLiftRecords.filter((record) => {
       const nameMatch = !searchQuery || record.masonName.toLowerCase().includes(searchQuery.toLowerCase());
       const statusMatch = statusFilter === 'all' || record.status.toLowerCase() === statusFilter.toLowerCase();
@@ -264,13 +288,43 @@ export default function BagsLiftPage() {
       const areaMatch = areaFilter === 'all' || record.area?.toLowerCase() === areaFilter.toLowerCase();
       const regionMatch = regionFilter === 'all' || record.region?.toLowerCase() === regionFilter.toLowerCase();
 
-      return nameMatch && statusMatch && roleMatch && areaMatch && regionMatch;
+      // Date Filter
+      let dateMatch = true;
+      if (record.purchaseDate) {
+        const recordDate = new Date(record.purchaseDate);
+        if (dateFilterStart) {
+          const startDate = startOfDay(new Date(dateFilterStart));
+          if (isBefore(recordDate, startDate)) dateMatch = false;
+        }
+        if (dateMatch && dateFilterEnd) {
+          const endDate = endOfDay(new Date(dateFilterEnd));
+          if (isAfter(recordDate, endDate)) dateMatch = false;
+        }
+      } else if (dateFilterStart || dateFilterEnd) {
+         // If filters are active but record has no date
+         dateMatch = false;
+      }
+
+      return nameMatch && statusMatch && roleMatch && areaMatch && regionMatch && dateMatch;
     });
-  }, [bagLiftRecords, searchQuery, statusFilter, roleFilter]);
+  }, [bagLiftRecords, searchQuery, statusFilter, roleFilter, areaFilter, regionFilter, dateFilterStart, dateFilterEnd]);
+
+  // --- Counter Calculations ---
+  const stats = useMemo(() => {
+    const totalBags = filteredRecords.reduce((acc, curr) => acc + (Number(curr.bagCount) || 0), 0);
+    const pointsPending = filteredRecords
+      .filter(r => r.status.toLowerCase() === 'pending')
+      .reduce((acc, curr) => acc + (Number(curr.pointsCredited) || 0), 0);
+    const pointsApproved = filteredRecords
+      .filter(r => r.status.toLowerCase() === 'approved')
+      .reduce((acc, curr) => acc + (Number(curr.pointsCredited) || 0), 0);
+      
+    return { totalBags, pointsPending, pointsApproved };
+  }, [filteredRecords]);
 
   // --- 3. Define Columns for Bag Lift DataTable ---
   const bagLiftColumns: ColumnDef<BagLiftRecord>[] = [
-    { accessorKey: "id", header: "Record ID", cell: ({ row }) => <span className="text-xs font-mono">{row.original.id.substring(0, 8)}...</span> },
+    { accessorKey: "id", header: "Record ID", cell: ({ row }) => <span className="text-xs font-mono text-muted-foreground">{row.original.id.substring(0, 8)}...</span> },
     { accessorKey: "masonName", header: "Mason Name" },
     { accessorKey: "dealerName", header: "Associated Dealer" },
     {
@@ -288,7 +342,7 @@ export default function BagsLiftPage() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge className={cn("capitalize", getStatusBadgeVariant(row.original.status))}>
+        <Badge className={cn("capitalize shadow-none", getStatusBadgeVariant(row.original.status))}>
           {row.original.status}
         </Badge>
       ),
@@ -315,9 +369,9 @@ export default function BagsLiftPage() {
               variant="outline"
               size="sm"
               onClick={() => openViewModal(record)}
-              className="text-blue-500 border-blue-500 hover:bg-blue-50"
+              className="text-blue-500 border-blue-500 hover:bg-blue-50 h-8 px-2"
             >
-              <Eye className="h-4 w-4 mr-1" /> View
+              <Eye className="h-3.5 w-3.5 mr-1" /> View
             </Button>
 
             {isPending && (
@@ -325,25 +379,26 @@ export default function BagsLiftPage() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 h-8 px-2"
                   onClick={() => handleStatusUpdate(record.id, 'approved')}
                   disabled={isUpdating}
                 >
                   {isUpdating && isUpdatingId === record.id
-                    ? <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                    : <Check className="h-4 w-4 mr-1" />}
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                    : <Check className="h-3.5 w-3.5 mr-1" />}
                   Approve
                 </Button>
 
                 <Button
                   variant="destructive"
                   size="sm"
+                  className="h-8 px-2"
                   onClick={() => handleStatusUpdate(record.id, 'rejected')}
                   disabled={isUpdating}
                 >
                   {isUpdating && isUpdatingId === record.id
-                    ? <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                    : <X className="h-4 w-4 mr-1" />}
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                    : <X className="h-3.5 w-3.5 mr-1" />}
                   Reject
                 </Button>
               </>
@@ -376,8 +431,69 @@ export default function BagsLiftPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <div className="flex-1 space-y-8 p-8 pt-6">
         {/* Header Section */}
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Bag Lift Records</h2>
+        <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-bold tracking-tight">Bag Lift Records</h2>
+            </div>
+
+            {/* --- Stats Counters (Updated with Indian Number System) --- */}
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                    Total Bags Lifted
+                    </CardTitle>
+                    <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    className="h-4 w-4 text-muted-foreground"
+                    >
+                    <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
+                    <path d="M4 6v12a2 2 0 0 0 2 2h14v-4" />
+                    <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" />
+                    </svg>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{formatIndianNumber(stats.totalBags)}</div>
+                    <p className="text-xs text-muted-foreground">
+                    Filtered view
+                    </p>
+                </CardContent>
+                </Card>
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                    Points Pending
+                    </CardTitle>
+                    <Loader2 className="h-4 w-4 text-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-yellow-600">{formatIndianNumber(stats.pointsPending)}</div>
+                    <p className="text-xs text-muted-foreground">
+                    Awaiting approval
+                    </p>
+                </CardContent>
+                </Card>
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                    Points Approved
+                    </CardTitle>
+                    <Check className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-green-600">{formatIndianNumber(stats.pointsApproved)}</div>
+                    <p className="text-xs text-muted-foreground">
+                    Successfully credited
+                    </p>
+                </CardContent>
+                </Card>
+            </div>
         </div>
 
         {/* --- Filter Components --- */}
@@ -391,7 +507,7 @@ export default function BagsLiftPage() {
                 placeholder="Search by mason name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9"
+                className="pl-8 h-9 bg-background border-input"
               />
             </div>
           </div>
@@ -404,16 +520,7 @@ export default function BagsLiftPage() {
             statusOptions
           )}
 
-          {/* 3. Role Filter */}
-          {/* {renderSelectFilter(
-            'Role',
-            roleFilter,
-            (v) => { setRoleFilter(v); },
-            availableRoles,
-            isLoadingRoles
-          )} */} 
-
-          {/* 4. Area Filter (Following the sample style) */}
+          {/* 4. Area Filter */}
           {renderSelectFilter(
             'Area', 
             areaFilter, 
@@ -422,13 +529,82 @@ export default function BagsLiftPage() {
             isLoadingLocations
           )}
 
-          {/* 5. Region Filter (Following the sample style) */}
+          {/* 5. Region Filter */}
           {renderSelectFilter(
             'Region(Zone)', 
             regionFilter, 
             (v) => { setRegionFilter(v); }, 
             availableRegions, 
             isLoadingLocations
+          )}
+
+          {/* 6. Date Range Filters - SHADCN UI COMPONENT */}
+          <div className="flex flex-col space-y-1 w-full sm:w-[150px]">
+             <label className="text-sm font-medium text-muted-foreground">Purchased From</label>
+             <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full h-9 justify-start text-left font-normal bg-background border-input",
+                      !dateFilterStart && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                    {dateFilterStart ? format(new Date(dateFilterStart), "PPP") : <span>Pick date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFilterStart ? new Date(dateFilterStart) : undefined}
+                    onSelect={(date) => setDateFilterStart(date ? format(date, "yyyy-MM-dd") : '')}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+          </div>
+
+          <div className="flex flex-col space-y-1 w-full sm:w-[150px]">
+             <label className="text-sm font-medium text-muted-foreground">Purchased To</label>
+             <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full h-9 justify-start text-left font-normal bg-background border-input",
+                      !dateFilterEnd && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                    {dateFilterEnd ? format(new Date(dateFilterEnd), "PPP") : <span>Pick date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFilterEnd ? new Date(dateFilterEnd) : undefined}
+                    onSelect={(date) => setDateFilterEnd(date ? format(date, "yyyy-MM-dd") : '')}
+                    disabled={(date) => dateFilterStart ? isBefore(date, new Date(dateFilterStart)) : false}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+          </div>
+
+          {/* Clear Date Filter Button */}
+          {(dateFilterStart || dateFilterEnd) && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-9 mb-0.5 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setDateFilterStart('');
+                setDateFilterEnd('');
+              }}
+            >
+              Clear Dates
+            </Button>
           )}
 
           {/* Display filter option errors if any */}
