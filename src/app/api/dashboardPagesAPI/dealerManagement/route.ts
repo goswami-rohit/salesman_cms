@@ -137,7 +137,7 @@ export async function GET() {
                 },
                 verificationStatus: 'VERIFIED', // <-- ADDED FILTER: Only fetch verified dealers
             },
-            include: {
+            include: { 
                 parentDealer: { // include relation to parent dealer
                     select: { id: true, name: true },
                 },
