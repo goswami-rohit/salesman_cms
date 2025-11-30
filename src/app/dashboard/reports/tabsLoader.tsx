@@ -83,9 +83,9 @@ export function ReportsTabs({
         {canSeeDvrVpjp && (
           <TabsTrigger value="dvrVpjp">DVR V PJP</TabsTrigger>
         )}
-        {canSeeTvrVpjp && (
+        {/* {canSeeTvrVpjp && (
           <TabsTrigger value="tvrVpjp">TVR V PJP</TabsTrigger>
-        )}
+        )} */}
         {canSeeSalesVdvr && (
           <TabsTrigger value="salesVdvr">Sales V DVR</TabsTrigger>
         )}
@@ -117,11 +117,11 @@ export function ReportsTabs({
           <DvrPjpReportPage />
         </TabsContent>
       )}
-      {canSeeTvrVpjp && (
+      {/* {canSeeTvrVpjp && (
         <TabsContent value="TvrVpjp" className="space-y-4">
           <TvrPjpReportPage />
         </TabsContent>
-      )}
+      )} */}
       {canSeeSalesVdvr && (
         <TabsContent value="salesVdvr" className="space-y-4">
           <SalesDVRReportPage />

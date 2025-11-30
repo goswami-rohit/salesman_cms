@@ -105,11 +105,11 @@ const menuItems: MenuItem[] = [
         url: "/dashboard/dealerManagement",
         permission: ITEM_PERMISSIONS["Dealer Management"]
       },
-            {
-        title: "Technical Sites",
-        url: "/dashboard/technicalSites",
-        permission: ITEM_PERMISSIONS["Technical Sites"]
-      },
+      // {
+      //   title: "Technical Sites",
+      //   url: "/dashboard/technicalSites",
+      //   permission: ITEM_PERMISSIONS["Technical Sites"]
+      // },
       {
         title: "Reports",
         url: "/dashboard/reports",
