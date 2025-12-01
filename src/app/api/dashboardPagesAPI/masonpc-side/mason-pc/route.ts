@@ -115,9 +115,6 @@ export async function GET(request: NextRequest) {
         dealer: {
           select: { id: true, name: true }
         },
-        site: {
-          select: { id: true, siteName: true }
-        },
         kycSubmissions: {
           orderBy: { createdAt: 'desc' },
           take: 1,
@@ -205,10 +202,8 @@ export async function GET(request: NextRequest) {
 
         userId: record.userId,
         dealerId: record.dealerId,
-        siteId: record.siteId,
 
         dealerName: record.dealer?.name ?? null,
-        siteName: record.site?.siteName ?? null,
 
         kycVerificationStatus: displayStatus,
         kycAadhaarNumber: latestKycSubmission?.aadhaarNumber ?? null,

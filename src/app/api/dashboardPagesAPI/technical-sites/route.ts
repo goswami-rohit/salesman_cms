@@ -73,9 +73,6 @@ export async function GET(request: NextRequest) {
             needFollowUp: site.needFollowUp,
             imageUrl: site.imageUrl,
 
-            relatedDealerID: site.relatedDealerId ?? null,
-            relatedMasonpcID: site.relatedMasonpcId ?? null,
-
             // Date Handling
             constructionStartDate: site.constructionStartDate ? site.constructionStartDate.toISOString() : null,
             constructionEndDate: site.constructionEndDate ? site.constructionEndDate.toISOString() : null,

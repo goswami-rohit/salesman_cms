@@ -64,7 +64,6 @@ export const dealerVerificationSchema = z.object({
   blankChequePicUrl: z.string().nullable().optional(),
   partnershipDeedPicUrl: z.string().nullable().optional(),
   remarks: z.string().nullable().optional(),
-  siteId: z.string().optional().nullable(),
 });
 
 export const verificationUpdateSchema = z.object({
@@ -156,7 +155,6 @@ export const getDealersSchema = z.object({
   dealerPicUrl: optionalStringSchema,
   blankChequePicUrl: optionalStringSchema,
   partnershipDeedPicUrl: optionalStringSchema,
-  siteId: z.string().optional().nullable(),
 
   createdAt: z.string(), // Expecting ISO string
   updatedAt: z.string(), // Expecting ISO string
@@ -238,7 +236,6 @@ export const postDealersSchema = z.object({
   blankChequePicUrl: optionalStringSchema,
   partnershipDeedPicUrl: optionalStringSchema,
 
-  siteId: z.string().optional().nullable(),
 });
 
 // pjp 
@@ -668,8 +665,6 @@ export const technicalSiteSchema = z.object({
   firstVistDate: z.string().nullable().optional(), // ISO Date String
   lastVisitDate: z.string().nullable().optional(),  // ISO Date String
   needFollowUp: z.boolean().nullable().optional(),
-  relatedDealerID: z.string().nullable().optional(),
-  relatedMasonpcID: z.string().nullable().optional(),
   imageUrl: z.string().nullable(),
 
   createdAt: z.string(), // ISO String
@@ -716,7 +711,6 @@ export const masonPCSideSchema = z.object({
   referredToUser: z.string().nullable(),
   dealerId: z.string().nullable(),
   userId: z.number().int().nullable(),
-  siteId: z.string().optional().nullable(),
 });
 
 export const otpVerificationSchema = z.object({

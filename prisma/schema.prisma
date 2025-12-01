@@ -83,14 +83,11 @@ model User {
   assignedMasons                      Mason_PC_Side[] @relation("MasonAssignments")
   tsoAssignments                      TSOAssignment[] @relation("TSOAssignments")
   bagLiftApprovals                    BagLift[] @relation("BagLiftApprovals")
-  siteId        String? @map("site_id") @db.Uuid // FK to TechnicalSite
-  site          TechnicalSite? @relation("UserTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
-  additionalSites       TechnicalSite[] @relation("SiteAssociatedUsers")
+  additionalSites                     TechnicalSite[] @relation("SiteAssociatedUsers")
   
   @@unique([companyId, email])
   @@index([companyId], map: "idx_user_company_id")
   @@index([workosUserId], map: "idx_workos_user_id")
-  @@index([siteId], map: "idx_user_site_id")
   @@map("users")
 }
 
@@ -197,18 +194,12 @@ model Dealer {
   masons                        Mason_PC_Side[]
 
   bagLifts BagLift[] @relation("DealerBagLifts")
-
-  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
-  site TechnicalSite? @relation("DealerTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
   
   associatedMasons      Mason_PC_Side[] @relation("DealerAssociatedMasons")
   associatedSites       TechnicalSite[] @relation("SiteAssociatedDealers")
 
-  primaryTechnicalSites TechnicalSite[] @relation("SitePrimaryDealer")
-
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
-  @@index([siteId], map: "idx_dealers_site_id")
   @@map("dealers")
 }
 
@@ -758,19 +749,9 @@ model TechnicalSite {
   needFollowUp            Boolean?                @map("need_follow_up") @default(false)
   imageUrl                String?                 @map("image_url") @db.Text 
   
-  // --- PRIMARY RELATIONS (FKs defined here) ---
-  relatedDealerID         String?                 @map("related_dealer_id") @db.VarChar(255) 
-  dealer                  Dealer?                 @relation("SitePrimaryDealer", fields: [relatedDealerID], references: [id], onDelete: SetNull)
-  
-  relatedMasonpcID        String?                 @map("related_mason_pc_id") @db.Uuid
-  masonpc                 Mason_PC_Side?          @relation("SitePrimaryMason", fields: [relatedMasonpcID], references: [id], onDelete: SetNull)
-  
   // --- INVERSE RELATIONS (FKs defined in other tables) ---
   technicalVisitReports   TechnicalVisitReport[]  
   meetings                TSOMeeting[]            
-  users                   User[]                  @relation("UserTechnicalSites")
-  dealers                 Dealer[]                @relation("DealerTechnicalSites")
-  masons                  Mason_PC_Side[]         @relation("MasonTechnicalSites")
   bagLifts                BagLift[]               @relation("SiteBagLifts")
   masonOnSchemes          MasonOnScheme[]
   geoTrackingRecords      GeoTracking[]
@@ -785,8 +766,6 @@ model TechnicalSite {
   createdAt               DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt               DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
   
-  @@index([relatedDealerID], map: "idx_technical_sites_dealer_id")
-  @@index([relatedMasonpcID], map: "idx_technical_sites_mason_id") // ADDED INDEX
   @@map("technical_sites")
 }
 
@@ -826,17 +805,11 @@ model Mason_PC_Side {
   authSessions       AuthSession[]
   slabAchievements  MasonSlabAchievements[]
 
-  siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
-  site TechnicalSite? @relation("MasonTechnicalSites", fields: [siteId], references: [id], onDelete: SetNull)
-
   associatedDealers     Dealer[]        @relation("DealerAssociatedMasons")
   associatedSites       TechnicalSite[] @relation("SiteAssociatedMasons")
 
-  primaryTechnicalSites TechnicalSite[] @relation("SitePrimaryMason")
-
   @@index([dealerId], map: "idx_mason_pc_side_dealer_id")
   @@index([userId], map: "idx_mason_pc_side_user_id")
-  @@index([siteId], map: "idx_mason_pc_side_site_id")
   @@map("mason_pc_side")
 }
 
