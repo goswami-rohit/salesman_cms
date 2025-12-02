@@ -100,6 +100,13 @@ export default function CustomReportGeneratorPage() {
     return tablesMetadata.find(t => t.id === selectedTableId);
   }, [selectedTableId]);
 
+  // Check if ALL columns for the current table are selected
+  const isAllColumnsSelected = useMemo(() => {
+    if (!selectedTable) return false;
+    const currentChecked = checkedColumns[selectedTableId] || [];
+    return currentChecked.length === selectedTable.columns.length && selectedTable.columns.length > 0;
+  }, [selectedTable, checkedColumns, selectedTableId]);
+
   // PREVIEW COLUMNS: show only columns for the currently selected table
   const previewColumns = useMemo(() => {
     if (!selectedTableId) return [];
@@ -244,9 +251,28 @@ export default function CustomReportGeneratorPage() {
     });
   };
 
-  // Helper to count selected columns for the current table in the UI
+  const handleSelectAllToggle = () => {
+    if (!selectedTable) return;
+    const table = selectedTableId;
+    const allColumns = selectedTable.columns;
+
+    if (isAllColumnsSelected) {
+      // DESELECT ALL
+      setCheckedColumns(prev => ({ ...prev, [table]: [] }));
+      setReportColumns(prev => prev.filter(c => c.table !== table));
+    } else {
+      // SELECT ALL
+      setCheckedColumns(prev => ({ ...prev, [table]: allColumns }));
+      setReportColumns(prev => {
+        // Remove existing entries for this table to avoid dupes, then add all
+        const otherTableColumns = prev.filter(c => c.table !== table);
+        const newTableColumns = allColumns.map(c => ({ table, column: c }));
+        return [...otherTableColumns, ...newTableColumns];
+      });
+    }
+  };
+
   const currentTableCheckedCount = checkedColumns[selectedTableId]?.length || 0;
-  // Helper to count the total columns committed to the report
   const totalReportColumnsCount = reportColumns.length;
 
   // --- New Helper to clear all columns for the current table ---
@@ -425,16 +451,30 @@ export default function CustomReportGeneratorPage() {
 
           {/* 2. Column Selection + Add Button (Now just a selection area) */}
           <div className="md:col-span-1 border-r border-border pr-6">
-            <h4 className="text-md font-semibold mb-3">2. Choose/Remove Columns</h4>
+            <h4 className="text-md font-semibold mb-3">2. Choose Columns</h4>
             {!selectedTable ? (
               <p className="text-muted-foreground pt-2">Select a table to view its available columns.</p>
             ) : (
               <>
-                <ScrollArea className="h-[350px] w-full pr-4">
+                {/* --- SELECT ALL CHECKS --- */}
+                <div className="mb-2 pb-2 border-b border-border">
+                  <div className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50 transition-colors bg-muted/20">
+                    <Checkbox
+                      id="select-all-cols"
+                      checked={isAllColumnsSelected}
+                      onCheckedChange={handleSelectAllToggle}
+                      disabled={downloading}
+                    />
+                    <Label htmlFor="select-all-cols" className="font-semibold cursor-pointer text-foreground">
+                      Select All Columns
+                    </Label>
+                  </div>
+                </div>
+
+                <ScrollArea className="h-[300px] w-full pr-4">
                   <div className="space-y-2">
                     {selectedTable.columns.map(column => {
                       const isChecked = checkedColumns[selectedTableId]?.includes(column) || false;
-
                       return (
                         <div key={column} className="flex items-start space-x-3 p-1 rounded-md hover:bg-muted/50 transition-colors">
                           <Checkbox
@@ -453,7 +493,6 @@ export default function CustomReportGeneratorPage() {
                   </div>
                 </ScrollArea>
 
-                {/* CLEAR BUTTON */}
                 <div className='mt-4'>
                   <Button
                     onClick={handleClearTableColumns}
@@ -462,7 +501,7 @@ export default function CustomReportGeneratorPage() {
                     className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
                   >
                     <PlusCircle className="w-4 h-4 mr-2 rotate-45" />
-                    Clear All {currentTableCheckedCount} Columns
+                    Clear Selection
                   </Button>
                 </div>
               </>

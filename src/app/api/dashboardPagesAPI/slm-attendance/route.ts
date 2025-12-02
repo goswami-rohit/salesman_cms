@@ -100,6 +100,7 @@ export async function GET() {
         salesmanRole: record.user?.role ?? '',
         area: record.user?.area ?? '',
         region: record.user?.region ?? '',
+        role: record.role,
       };
     });
 

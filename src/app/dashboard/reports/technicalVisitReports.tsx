@@ -1,44 +1,74 @@
-// src/app/dashboard/technicalVisitReports.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { 
+  Loader2, 
+  Search, 
+  Eye, 
+  ExternalLink,
+  MapPin,
+  ImageIcon
+} from 'lucide-react';
 
 // Import the reusable DataTable
 import { DataTableReusable } from '@/components/data-table-reusable';
 import { technicalVisitReportSchema } from '@/lib/shared-zod-schema';
 
-// UI Components for Filtering/Pagination
+// UI Components
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2 } from 'lucide-react';
-//import { BASE_URL } from '@/lib/Reusable-constants';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 
 // --- CONSTANTS AND TYPES ---
-const LOCATION_API_ENDPOINT = `/api/users/user-locations`; 
-const ROLES_API_ENDPOINT = `/api/users/user-roles`; 
+const LOCATION_API_ENDPOINT = `/api/users/user-locations`;
+const ROLES_API_ENDPOINT = `/api/users/user-roles`;
 
 interface LocationsResponse {
   areas: string[];
   regions: string[];
 }
 interface RolesResponse {
-    roles: string[]; 
+  roles: string[];
 }
 
-// Extend the inferred type to explicitly include the salesman's info needed for filtering.
+// Extend the inferred type
 type TechnicalVisitReport = z.infer<typeof technicalVisitReportSchema> & {
-    salesmanName: string; 
-    role: string;         // Required for Role filter
-    area: string;         // Required for Area filter
-    region: string;       // Required for Region filter
+  salesmanName: string;
+  role: string;
+  area: string;
+  region: string;
 };
 
-// Helper function to render the Select filter component
+// --- HELPER FUNCTIONS ---
+
+const formatTimeIST = (dateString: string | null) => {
+  if (!dateString) return 'N/A';
+  try {
+    return new Date(dateString).toLocaleTimeString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }).toUpperCase();
+  } catch (e) {
+    return 'N/A';
+  }
+};
+
 const renderSelectFilter = (
   label: string,
   value: string,
@@ -49,7 +79,7 @@ const renderSelectFilter = (
   <div className="flex flex-col space-y-1 w-full sm:w-[150px] min-w-[120px]">
     <label className="text-sm font-medium text-muted-foreground">{label}</label>
     <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
-      <SelectTrigger className="h-9">
+      <SelectTrigger className="h-9 w-full bg-background border-input">
         {isLoading ? (
           <div className="flex flex-row items-center space-x-2">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -71,327 +101,188 @@ const renderSelectFilter = (
   </div>
 );
 
-
 export default function TechnicalVisitReportsPage() {
   const router = useRouter();
   const [technicalReports, setTechnicalReports] = React.useState<TechnicalVisitReport[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // --- Modal State ---
+  const [selectedReport, setSelectedReport] = useState<TechnicalVisitReport | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
   // --- Filter States ---
-  const [searchQuery, setSearchQuery] = useState(''); // Salesman/Username
+  const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [areaFilter, setAreaFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
-  // REMOVED: const [currentPage, setCurrentPage] = useState(1);
 
   // --- Filter Options States ---
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [availableAreas, setAvailableAreas] = useState<string[]>([]);
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
-  
+
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
-  
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [roleError, setRoleError] = useState<string | null>(null);
 
-
-  // --- Data Fetching Functions ---
-
-  /**
-   * Fetches the main technical visit report data.
-   */
+  // --- Data Fetching ---
   const fetchTechnicalReports = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch from the API path
       const response = await fetch(`/api/dashboardPagesAPI/reports/technical-visit-reports`);
       if (!response.ok) {
-         if (response.status === 401) {
-          toast.error('You are not authenticated. Redirecting to login.');
+        if (response.status === 401) {
           router.push('/login');
           return;
         }
         if (response.status === 403) {
-          toast.error('You do not have permission to access this page. Redirecting.');
           router.push('/dashboard');
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const rawData: TechnicalVisitReport[] = await response.json();
-      
-      // Validate and ensure the required 'id' property exists for DataTableReusable
+
       const validatedData = rawData.map((item) => {
         try {
           const validated = technicalVisitReportSchema.parse(item);
-          // Assuming a composite ID if 'id' isn't guaranteed by schema
-          return { 
-            ...validated, 
-            id: (validated as any).id?.toString() || `${validated.salesmanName}-${validated.date}-${Math.random()}` 
+          return {
+            ...validated,
+            id: (validated as any).id?.toString() || `${validated.salesmanName}-${validated.date}-${Math.random()}`
           } as TechnicalVisitReport;
         } catch (e) {
           console.error("Validation error for item:", item, e);
-          toast.error("Invalid report data received from server.");
           return null;
         }
       }).filter(Boolean) as TechnicalVisitReport[];
 
       setTechnicalReports(validatedData);
-      toast.success("Technical visit reports loaded successfully!");
+      toast.success("Reports loaded successfully!");
     } catch (error: any) {
-      console.error("Failed to fetch technical visit reports:", error);
-      toast.error(`Failed to fetch technical visit reports: ${error.message}`);
+      console.error("Failed to fetch reports:", error);
+      toast.error(`Failed to load reports: ${error.message}`);
       setError(error.message);
     } finally {
       setIsLoading(false);
     }
   }, [router]);
 
-
-  /**
-   * Fetches unique areas and regions for the filter dropdowns.
-   */
   const fetchLocations = useCallback(async () => {
     setIsLoadingLocations(true);
-    setLocationError(null);
     try {
       const response = await fetch(LOCATION_API_ENDPOINT);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      if (response.ok) {
+        const data: LocationsResponse = await response.json();
+        setAvailableAreas(Array.isArray(data.areas) ? data.areas.filter(Boolean) : []);
+        setAvailableRegions(Array.isArray(data.regions) ? data.regions.filter(Boolean) : []);
       }
-      const data: LocationsResponse = await response.json();
-      
-      const safeAreas = Array.isArray(data.areas) ? data.areas.filter(Boolean) : [];
-      const safeRegions = Array.isArray(data.regions) ? data.regions.filter(Boolean) : [];
-      
-      setAvailableAreas(safeAreas);
-      setAvailableRegions(safeRegions);
-      
     } catch (err: any) {
-      console.error('Failed to fetch filter locations:', err);
-      setLocationError('Failed to load Area/Region filters.');
-      toast.error('Failed to load location filters.');
+      console.error('Failed to load locations', err);
     } finally {
       setIsLoadingLocations(false);
     }
   }, []);
 
-  /**
-   * Fetches unique roles for the filter dropdowns.
-   */
   const fetchRoles = useCallback(async () => {
     setIsLoadingRoles(true);
-    setRoleError(null);
     try {
       const response = await fetch(ROLES_API_ENDPOINT);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      if (response.ok) {
+        const data: RolesResponse = await response.json();
+        setAvailableRoles(Array.isArray(data.roles) ? data.roles.filter(Boolean) : []);
       }
-      const data: RolesResponse = await response.json(); 
-      const roles = data.roles && Array.isArray(data.roles) ? data.roles : [];
-      
-      const safeRoles = roles.filter(Boolean);
-      
-      setAvailableRoles(safeRoles);
     } catch (err: any) {
-      console.error('Failed to fetch filter roles:', err);
-      setRoleError('Failed to load Role filters.');
-      toast.error('Failed to load role filters.');
+      console.error('Failed to load roles', err);
     } finally {
       setIsLoadingRoles(false);
     }
   }, []);
 
-  // Initial data loads for reports and filter options
   React.useEffect(() => {
     fetchTechnicalReports();
     fetchLocations();
     fetchRoles();
   }, [fetchTechnicalReports, fetchLocations, fetchRoles]);
 
-
-  // --- Filtering Logic 
+  // --- Filtering Logic ---
   const filteredReports = useMemo(() => {
     const q = searchQuery.toLowerCase();
-    
     return technicalReports.filter((report) => {
-      // 1. Salesman Name Search (fuzzy match)
-      const usernameMatch = !searchQuery ||
-        report.salesmanName.toLowerCase().includes(q);
-
-      // 2. Role Filter 
-      const roleMatch = roleFilter === 'all' || 
-        report.role?.toLowerCase() === roleFilter.toLowerCase(); 
-
-      // 3. Area Filter 
-      const areaMatch = areaFilter === 'all' || 
-        report.area?.toLowerCase() === areaFilter.toLowerCase(); 
-
-      // 4. Region Filter 
-      const regionMatch = regionFilter === 'all' || 
-        report.region?.toLowerCase() === regionFilter.toLowerCase();
-      
-      // Combine all conditions
+      const usernameMatch = !searchQuery || report.salesmanName.toLowerCase().includes(q);
+      const roleMatch = roleFilter === 'all' || report.role?.toLowerCase() === roleFilter.toLowerCase();
+      const areaMatch = areaFilter === 'all' || report.area?.toLowerCase() === areaFilter.toLowerCase();
+      const regionMatch = regionFilter === 'all' || report.region?.toLowerCase() === regionFilter.toLowerCase();
       return usernameMatch && roleMatch && areaMatch && regionMatch;
     });
   }, [technicalReports, searchQuery, roleFilter, areaFilter, regionFilter]);
-  
 
-  // --- 3. Define Columns for Technical Visit Report DataTable (UNCHANGED) ---
-  const technicalVisitReportColumns: ColumnDef<TechnicalVisitReport>[] = [
-  // --- Identity & Salesman ---
-  { accessorKey: "salesmanName", header: "Salesman" },
-  { accessorKey: "role", header: "Role" },
-  
-  // --- Date & Time ---
-  { 
-    accessorKey: "date", // Matches API response key 'date'
-    header: "Visit Date" 
-  },
-  { 
-    accessorKey: "checkInTime", 
-    header: "Check-in",
-    cell: ({ row }) => {
-      const val = row.getValue("checkInTime") as string;
-      if (!val) return "-";
-      return new Date(val).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-  },
-  { 
-    accessorKey: "checkOutTime", 
-    header: "Check-out",
-    cell: ({ row }) => {
-      const val = row.getValue("checkOutTime") as string;
-      if (!val) return "-";
-      return new Date(val).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-  },
-  { accessorKey: "timeSpentinLoc", header: "Duration" },
-
-  // --- Location & Contact ---
-  { accessorKey: "region", header: "Zone/Region" },
-  { accessorKey: "area", header: "Area" },
-  { accessorKey: "marketName", header: "Market/Depo" },
-  { accessorKey: "siteNameConcernedPerson", header: "Site/Person" },
-  { accessorKey: "phoneNo", header: "Phone No" },
-  { accessorKey: "whatsappNo", header: "WhatsApp" },
-  { accessorKey: "siteAddress", header: "Site Address", cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("siteAddress")}>{row.getValue("siteAddress")}</span> },
-
-  // --- Visit Specifics ---
-  { accessorKey: "visitType", header: "Visit Type" },
-  { accessorKey: "visitCategory", header: "Visit Category" }, // New/Followup
-  { accessorKey: "customerType", header: "Customer Type" }, // IHB/Contractor
-  { 
-    accessorKey: "purposeOfVisit", 
-    header: "Purpose",
-    cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("purposeOfVisit")}>{row.getValue("purposeOfVisit")}</span>
-  },
-
-  // --- Construction Details ---
-  { accessorKey: "siteVisitStage", header: "Stage" },
-  { accessorKey: "constAreaSqFt", header: "Area (SqFt)" },
-  { 
-    accessorKey: "siteVisitBrandInUse", 
-    header: "Brand in Use",
-    cell: ({ row }) => {
-      const val = row.getValue("siteVisitBrandInUse");
-      return <span className="max-w-[150px] truncate block">{Array.isArray(val) ? val.join(', ') : String(val)}</span>;
+  // --- Columns Definition ---
+  const columns = useMemo<ColumnDef<TechnicalVisitReport>[]>(() => [
+    { accessorKey: "salesmanName", header: "Salesman" },
+    { accessorKey: "role", header: "Role" },
+    {
+      accessorKey: "date",
+      header: "Visit Date",
+      cell: ({ row }) => <div className="whitespace-nowrap font-medium">{row.getValue("date")}</div>
     },
-  },
-  { accessorKey: "currentBrandPrice", header: "Brand Price" },
-  { accessorKey: "siteStock", header: "Site Stock" },
-  { accessorKey: "estRequirement", header: "Est. Req." },
-
-  // --- Dealers ---
-  { accessorKey: "supplyingDealerName", header: "Supplying Dealer" },
-  { accessorKey: "nearbyDealerName", header: "Nearby Dealer" },
-
-  // --- Conversion ---
-  { 
-    accessorKey: "isConverted", 
-    header: "Converted?",
-    cell: ({ row }) => row.getValue("isConverted") ? "Yes" : "No"
-  },
-  { accessorKey: "conversionType", header: "Conv. Type" },
-  { accessorKey: "conversionFromBrand", header: "Conv. From" },
-  { accessorKey: "conversionQuantityValue", header: "Conv. Qty" },
-  { accessorKey: "conversionQuantityUnit", header: "Unit" },
-
-  // --- Technical Services ---
-  { 
-    accessorKey: "isTechService", 
-    header: "Tech Service?",
-    cell: ({ row }) => row.getValue("isTechService") ? "Yes" : "No"
-  },
-  { accessorKey: "serviceType", header: "Service Type" },
-  { accessorKey: "serviceDesc", header: "Service Desc" },
-  { accessorKey: "dhalaiVerificationCode", header: "Dhalai Code" },
-  { accessorKey: "isVerificationStatus", header: "Verif. Status" },
-  { accessorKey: "qualityComplaint", header: "Complaint" },
-
-  // --- Influencer / Mason ---
-  { accessorKey: "influencerName", header: "Influencer Name" },
-  { accessorKey: "influencerPhone", header: "Influencer Phone" },
-  { 
-    accessorKey: "influencerType", 
-    header: "Influencer Type",
-    cell: ({ row }) => {
-      const val = row.getValue("influencerType");
-      return <span className="max-w-[150px] truncate block">{Array.isArray(val) ? val.join(', ') : String(val)}</span>;
+    {
+      accessorKey: "siteNameConcernedPerson",
+      header: "Site Name",
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-sm">{row.original.siteNameConcernedPerson}</span>
+          <span className="text-xs text-muted-foreground">{row.original.phoneNo}</span>
+        </div>
+      )
     },
-  },
-  { 
-    accessorKey: "isSchemeEnrolled", 
-    header: "Scheme?",
-    cell: ({ row }) => row.getValue("isSchemeEnrolled") ? "Yes" : "No"
-  },
-  { accessorKey: "influencerProductivity", header: "Productivity" },
+    { accessorKey: "region", header: "Region" },
+    { accessorKey: "area", header: "Area" },
+    {
+      accessorKey: "visitType",
+      header: "Type",
+      cell: ({ row }) => <Badge variant="outline">{row.getValue("visitType")}</Badge>
+    },
+    {
+      accessorKey: "checkInTime",
+      header: "Check-In",
+      cell: ({ row }) => formatTimeIST(row.getValue("checkInTime"))
+    },
+    {
+      accessorKey: "checkOutTime",
+      header: "Check-Out",
+      cell: ({ row }) => formatTimeIST(row.getValue("checkOutTime"))
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-blue-500 border-blue-500 hover:bg-blue-50 h-8 px-2"
+          onClick={() => {
+            setSelectedReport(row.original);
+            setIsViewModalOpen(true);
+          }}
+        >
+          <Eye className="h-3.5 w-3.5 mr-1" /> View
+        </Button>
+      ),
+    },
+  ], []);
 
-  // --- Remarks ---
-  {
-    accessorKey: "clientsRemarks", 
-    header: "Client Remarks",
-    cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("clientsRemarks")}>{row.getValue("clientsRemarks")}</span>,
-  },
-  {
-    accessorKey: "salespersonRemarks", 
-    header: "Salesman Remarks",
-    cell: ({ row }) => <span className="max-w-[200px] truncate block" title={row.getValue("salespersonRemarks")}>{row.getValue("salespersonRemarks")}</span>,
-  },
-
-  // --- Legacy/Other ---
-  { accessorKey: "associatedPartyName", header: "Associated Party" },
-  { accessorKey: "promotionalActivity", header: "Promo Activity" },
-  { accessorKey: "channelPartnerVisit", header: "Partner Visit" },
-];
-
-  const handleTechnicalVisitReportOrderChange = (newOrder: TechnicalVisitReport[]) => {
-    console.log("New technical visit report order:", newOrder.map(r => r.id));
-  };
-
-  if (isLoading) return <div className="flex justify-center items-center min-h-screen">Loading technical visit reports...</div>;
-
-  if (error) return (
-    <div className="text-center text-red-500 min-h-screen pt-10">
-      Error: {error}
-      <Button onClick={fetchTechnicalReports} className="ml-4">Retry</Button>
-    </div>
-  );
+  // --- Render ---
+  if (isLoading) return <div className="flex justify-center items-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin text-primary" /> <span className="ml-2">Loading reports...</span></div>;
+  if (error) return <div className="text-center text-red-500 pt-10">Error: {error}<Button onClick={fetchTechnicalReports} className="ml-4">Retry</Button></div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <div className="flex-1 space-y-8 p-8 pt-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Technical Visit Reports</h2>
-        </div>
+        <h2 className="text-3xl font-bold tracking-tight">Technical Visit Reports</h2>
 
-        {/* --- Filter Components --- */}
+        {/* Filter Bar */}
         <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-card border">
-          {/* 1. Username/Salesman Search Input */}
           <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
             <label className="text-sm font-medium text-muted-foreground">Salesman / Username</label>
             <div className="relative">
@@ -400,63 +291,238 @@ export default function TechnicalVisitReportsPage() {
                 placeholder="Search by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9"
+                className="pl-8 h-9 bg-background border-input"
               />
             </div>
           </div>
-
-          {/* 2. Role Filter */}
-          {renderSelectFilter(
-            'Role', 
-            roleFilter, 
-            (v) => { setRoleFilter(v); }, 
-            availableRoles, 
-            isLoadingRoles
-          )}
-
-          {/* 3. Area Filter (Commented out in original but kept for display) */}
-          {renderSelectFilter(
-            'Area', 
-            areaFilter, 
-            (v) => { setAreaFilter(v); }, 
-            availableAreas, 
-            isLoadingLocations
-          )}
-
-          {/* 4. Region Filter (Commented out in original but kept for display) */}
-          {renderSelectFilter(
-            'Region(Zone)', 
-            regionFilter, 
-            (v) => { setRegionFilter(v); }, 
-            availableRegions, 
-            isLoadingLocations
-          )}
-          
-          {/* Display filter option errors if any */}
-          {locationError && <p className="text-xs text-red-500 w-full">Location Filter Error: {locationError}</p>}
-          {roleError && <p className="text-xs text-red-500 w-full">Role Filter Error: {roleError}</p>}
+          {renderSelectFilter('Role', roleFilter, setRoleFilter, availableRoles, isLoadingRoles)}
+          {renderSelectFilter('Area', areaFilter, setAreaFilter, availableAreas, isLoadingLocations)}
+          {renderSelectFilter('Region', regionFilter, setRegionFilter, availableRegions, isLoadingLocations)}
         </div>
-        {/* --- End Filter Components --- */}
 
-        {/* Data Table Section */}
+        {/* Data Table */}
         <div className="bg-card p-6 rounded-lg border border-border">
-          {filteredReports.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">No technical visit reports found matching the selected filters.</div>
-          ) : (
-            <>
-              <DataTableReusable
-                columns={technicalVisitReportColumns}
-                data={filteredReports} // PASS THE FULL FILTERED DATA
-                //filterColumnAccessorKey="siteNameConcernedPerson" 
-                enableRowDragging={false} 
-                onRowOrderChange={handleTechnicalVisitReportOrderChange}
-              />
-              
-              {/* REMOVED: Custom Pagination Component */}
-            </>
-          )}
+          <DataTableReusable
+            columns={columns}
+            data={filteredReports}
+            enableRowDragging={false}
+          />
         </div>
       </div>
+
+      {/* --- DETAILS MODAL (Applied BagsLift Style) --- */}
+      {selectedReport && (
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Technical Visit Details</DialogTitle>
+            <DialogDescription>
+              Review the full technical report submitted by {selectedReport.salesmanName}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            
+            {/* 1. SALESMAN & LOCATION INFO */}
+            <div className="md:col-span-2 text-lg font-semibold border-b pb-2">
+              Salesman & Location Info
+            </div>
+
+            <div>
+              <Label>Salesman Name</Label>
+              <Input value={selectedReport.salesmanName} readOnly />
+            </div>
+            <div>
+              <Label>Role</Label>
+              <Input value={selectedReport.role} readOnly />
+            </div>
+            <div>
+              <Label>Area / Market</Label>
+              <Input value={`${selectedReport.area || ''} / ${selectedReport.marketName || ''}`} readOnly />
+            </div>
+            <div>
+              <Label>Region</Label>
+              <Input value={selectedReport.region} readOnly />
+            </div>
+
+            {/* 2. VISIT & SITE INFO */}
+            <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+              Visit & Site Details
+            </div>
+
+            <div>
+              <Label>Visit Date</Label>
+              <Input value={selectedReport.date} readOnly />
+            </div>
+            <div>
+              <Label>Visit Type</Label>
+              <Input value={selectedReport.visitType} readOnly />
+            </div>
+            <div>
+              <Label>Site / Concerned Person</Label>
+              <Input value={selectedReport.siteNameConcernedPerson} readOnly />
+            </div>
+            <div>
+              <Label>Phone No</Label>
+              <Input value={selectedReport.phoneNo} readOnly />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Site Address</Label>
+              <div className="relative mt-1">
+                 <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                 <Input className="pl-8" value={selectedReport.siteAddress || 'N/A'} readOnly />
+              </div>
+            </div>
+            <div>
+              <Label>Purpose of Visit</Label>
+              <Input value={selectedReport.purposeOfVisit as any} readOnly />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input value={selectedReport.emailId || 'N/A'} readOnly />
+            </div>
+
+            {/* 3. CONSTRUCTION DETAILS */}
+            <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+              Construction & Market Data
+            </div>
+
+            <div>
+               <Label>Construction Stage</Label>
+               <Input value={selectedReport.siteVisitStage as any} readOnly />
+            </div>
+            <div>
+               <Label>Construction Area (SqFt)</Label>
+               <Input value={selectedReport.constAreaSqFt as any} readOnly />
+            </div>
+            <div>
+               <Label>Site Stock (Bags)</Label>
+               <Input value={selectedReport.siteStock as any} readOnly />
+            </div>
+            <div>
+               <Label>Est. Requirement</Label>
+               <Input value={selectedReport.estRequirement as any} readOnly />
+            </div>
+            <div className="md:col-span-2">
+               <Label>Brands In Use</Label>
+               <Input value={selectedReport.siteVisitBrandInUse?.join(', ') || 'None'} readOnly />
+            </div>
+            <div>
+               <Label>Current Brand Price</Label>
+               <Input value={selectedReport.currentBrandPrice as any} readOnly />
+            </div>
+
+            {/* 4. DEALER INFO */}
+            <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+               Dealer & Conversion
+            </div>
+
+            <div>
+               <Label>Supplying Dealer</Label>
+               <Input value={selectedReport.supplyingDealerName || 'N/A'} readOnly />
+            </div>
+            <div>
+               <Label>Nearby Dealer</Label>
+               <Input value={selectedReport.nearbyDealerName || 'N/A'} readOnly />
+            </div>
+            <div>
+               <Label>Is Converted?</Label>
+               <Input value={selectedReport.isConverted ? 'YES' : 'NO'} readOnly />
+            </div>
+            {selectedReport.isConverted && (
+              <>
+                 <div>
+                    <Label>Conversion From</Label>
+                    <Input value={selectedReport.conversionFromBrand || 'N/A'} readOnly />
+                 </div>
+                 <div className="md:col-span-2">
+                    <Label>Conversion Quantity</Label>
+                    <Input value={`${selectedReport.conversionQuantityValue} ${selectedReport.conversionQuantityUnit}`} readOnly />
+                 </div>
+              </>
+            )}
+
+            {/* 5. REMARKS */}
+            <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+               Remarks
+            </div>
+            <div className="md:col-span-2">
+               <Label>Client's Remarks</Label>
+               <Input value={selectedReport.clientsRemarks || 'N/A'} readOnly />
+            </div>
+            <div className="md:col-span-2">
+               <Label>Salesperson's Remarks</Label>
+               <Input value={selectedReport.salespersonRemarks || 'N/A'} readOnly />
+            </div>
+
+            {/* 6. TIMINGS & IMAGES */}
+            <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+               Timings & Evidence
+            </div>
+
+            <div>
+               <Label>Check In Time</Label>
+               <Input value={formatTimeIST(selectedReport.checkInTime)} readOnly />
+            </div>
+            <div>
+               <Label>Check Out Time</Label>
+               <Input value={formatTimeIST(selectedReport.checkOutTime)} readOnly />
+            </div>
+
+            {/* Site Photo */}
+            {selectedReport.sitePhotoUrl && (
+              <div className="md:col-span-2 mt-2">
+                <Label>Site Progress Photo</Label>
+                <div className="mt-2 border p-2 rounded-md bg-muted/50">
+                  <a
+                    href={selectedReport.sitePhotoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline flex items-center text-sm font-medium mb-2"
+                  >
+                    View Original <ExternalLink className="h-4 w-4 ml-1" />
+                  </a>
+                  <img
+                    src={selectedReport.sitePhotoUrl}
+                    alt="Site"
+                    className="w-full h-auto max-h-[400px] object-contain rounded-md border"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Check In/Out Proofs */}
+            <div className="md:col-span-2 grid grid-cols-2 gap-4 mt-2">
+                {selectedReport.inTimeImageUrl && (
+                   <div>
+                      <Label>Check-In Proof</Label>
+                      <div className="mt-1 border p-1 rounded-md bg-muted/50">
+                         <a href={selectedReport.inTimeImageUrl} target="_blank" rel="noreferrer">
+                             <img src={selectedReport.inTimeImageUrl} alt="In" className="w-full h-40 object-cover rounded-md" />
+                         </a>
+                      </div>
+                   </div>
+                )}
+                {selectedReport.outTimeImageUrl && (
+                   <div>
+                      <Label>Check-Out Proof</Label>
+                      <div className="mt-1 border p-1 rounded-md bg-muted/50">
+                         <a href={selectedReport.outTimeImageUrl} target="_blank" rel="noreferrer">
+                             <img src={selectedReport.outTimeImageUrl} alt="Out" className="w-full h-40 object-cover rounded-md" />
+                         </a>
+                      </div>
+                   </div>
+                )}
+            </div>
+
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setIsViewModalOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      )}
     </div>
   );
 }

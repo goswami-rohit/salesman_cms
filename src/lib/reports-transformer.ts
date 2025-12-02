@@ -670,6 +670,7 @@ export type FlattenedSalesmanAttendance = {
   id: string;
   attendanceDate: string; // Converted from Date
   locationName: string;
+  role: string;
   inTimeTimestamp: string; // Converted from Timestamp
   outTimeTimestamp: string | null; // Converted from Timestamp
   inTimeImageCaptured: boolean;
@@ -701,7 +702,7 @@ export async function getFlattenedSalesmanAttendance(companyId: number): Promise
     where: { user: { companyId } },
     select: {
       // All scalar fields
-      id: true, attendanceDate: true, locationName: true, inTimeTimestamp: true, outTimeTimestamp: true,
+      id: true, attendanceDate: true, locationName: true, role: true, inTimeTimestamp: true, outTimeTimestamp: true,
       inTimeImageCaptured: true, outTimeImageCaptured: true, inTimeImageUrl: true, outTimeImageUrl: true,
       inTimeLatitude: true, inTimeLongitude: true, inTimeAccuracy: true, inTimeSpeed: true,
       inTimeHeading: true, inTimeAltitude: true, outTimeLatitude: true, outTimeLongitude: true,
@@ -718,6 +719,7 @@ export async function getFlattenedSalesmanAttendance(companyId: number): Promise
     // Map scalar fields (String, Boolean)
     id: r.id,
     locationName: r.locationName,
+    role: r.role,
     inTimeImageCaptured: r.inTimeImageCaptured,
     outTimeImageCaptured: r.outTimeImageCaptured,
     inTimeImageUrl: r.inTimeImageUrl ?? null,
@@ -1651,6 +1653,14 @@ export type FlattenedBagLift = {
     masonName: string;
     dealerId: string | null;
     dealerName: string | null;
+    siteId: string | null;
+    siteName: string | null;
+    siteAddress: string | null;
+    siteKeyPersonName: string | null;
+    siteKeyPersonPhone: string | null;
+    imageUrl: string | null;
+    verificationSiteImageUrl: string | null;
+    verificationProofImageUrl: string | null;
     purchaseDate: string;
     bagCount: number;
     pointsCredited: number;
@@ -1666,8 +1676,8 @@ export async function getFlattenedBagLifts(companyId: number): Promise<Flattened
         // Filter by Masons whose associated user belongs to the company
         where: {
             OR: [
-                { mason: { user: { companyId } } }, // Case 1: Assigned to a user in this company
-                { mason: { userId: null } }         // Case 2: Mason is Unassigned
+                { mason: { user: { companyId } } }, 
+                { mason: { userId: null } }         
             ]
         },
         select: {
@@ -1681,8 +1691,17 @@ export async function getFlattenedBagLifts(companyId: number): Promise<Flattened
             approvedBy: true,
             approvedAt: true,
             createdAt: true,
+            
+            imageUrl: true,
+            siteId: true,
+            siteKeyPersonName: true,
+            siteKeyPersonPhone: true,
+            verificationSiteImageUrl: true,
+            verificationProofImageUrl: true,
+
             mason: { select: { name: true } },
             dealer: { select: { name: true } },
+            site: { select: { siteName: true, address: true } },
             approver: { select: { firstName: true, lastName: true, email: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -1694,6 +1713,16 @@ export async function getFlattenedBagLifts(companyId: number): Promise<Flattened
         masonName: r.mason.name,
         dealerId: r.dealerId ?? null,
         dealerName: r.dealer?.name ?? null,
+        
+        siteId: r.siteId ?? null,
+        siteName: r.site?.siteName ?? null,
+        siteAddress: r.site?.address ?? null,
+        siteKeyPersonName: r.siteKeyPersonName ?? null,
+        siteKeyPersonPhone: r.siteKeyPersonPhone ?? null,
+        imageUrl: r.imageUrl ?? null,
+        verificationSiteImageUrl: r.verificationSiteImageUrl ?? null,
+        verificationProofImageUrl: r.verificationProofImageUrl ?? null,
+
         purchaseDate: r.purchaseDate.toISOString().slice(0, 10),
         bagCount: r.bagCount,
         pointsCredited: r.pointsCredited,

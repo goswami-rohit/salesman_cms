@@ -262,6 +262,7 @@ export default function SlmAttendancePage() {
   // --- Columns Definition (FIXED CELL RETURNS) ---
   const salesmanAttendanceColumns: ColumnDef<SalesmanAttendanceReport>[] = [
     { accessorKey: "salesmanName", header: "Salesman" },
+    { accessorKey: "role", header: "Salesman Role" },
     {
       accessorKey: 'date',
       header: 'Report Date',

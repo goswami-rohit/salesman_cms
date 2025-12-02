@@ -37,10 +37,9 @@ export async function GET() {
 
     const bagLiftRecords = await prisma.bagLift.findMany({
       where: {
-        // FIX 1: Use OR to include Unassigned Masons
         OR: [
-          { mason: { user: { companyId: currentUser.companyId } } }, // Assigned to us
-          { mason: { userId: null } } // Unassigned (shows the missing records)
+          { mason: { user: { companyId: currentUser.companyId } } },
+          { mason: { userId: null } }
         ]
       },
       select: {
@@ -53,20 +52,31 @@ export async function GET() {
         approvedBy: true,
         approvedAt: true,
         createdAt: true,
-        // FIX 2: Explicitly select imageUrl
-        imageUrl: true, 
+        imageUrl: true,
+        siteKeyPersonName: true,
+        siteKeyPersonPhone: true,
+        verificationSiteImageUrl: true,
+        verificationProofImageUrl: true,
         mason: { 
             select: { 
                 name: true,
-                // FIX 3: Select User details so filters work
                 user: {
                     select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
                         role: true,
                         area: true,
                         region: true
                     }
                 }
             } 
+        },
+        site: {
+          select: {
+            siteName: true,
+            address: true,
+          }
         },
         dealer: { select: { name: true } },
         approver: { select: { firstName: true, lastName: true, email: true } },
@@ -87,18 +97,27 @@ export async function GET() {
       pointsCredited: record.pointsCredited,
       status: record.status,
       approvedBy: record.approvedBy,
+      
+      // Actual Approver
       approverName: formatUserName(record.approver),
+      // Fallback: Associated Salesman
+      associatedSalesmanName: formatUserName(record.mason.user),
+
       approvedAt: record.approvedAt?.toISOString() ?? null,
       createdAt: record.createdAt.toISOString(),
-      imageUrl: record.imageUrl, // Pass the image URL
+      imageUrl: record.imageUrl,
+      siteKeyPersonName: record.siteKeyPersonName,
+      siteKeyPersonPhone: record.siteKeyPersonPhone,
+      siteName: record.site?.siteName ?? null,
+      siteAddress: record.site?.address ?? null,
+      verificationSiteImageUrl: record.verificationSiteImageUrl,
+      verificationProofImageUrl: record.verificationProofImageUrl,
       
-      // FIX 4: Map the user details for the filters
       role: record.mason.user?.role ?? 'N/A',
       area: record.mason.user?.area ?? 'N/A',
       region: record.mason.user?.region ?? 'N/A',
     }));
     
-    // Zod validation to ensure type safety
     const bagLiftResponseSchema = z.object({
         id: z.string(),
         masonId: z.string(),
@@ -110,9 +129,16 @@ export async function GET() {
         status: z.string(),
         approvedBy: z.number().int().nullable(),
         approverName: z.string().nullable(),
+        associatedSalesmanName: z.string().nullable(),
         approvedAt: z.string().nullable(),
         createdAt: z.string(),
         imageUrl: z.string().nullable().optional(),
+        siteKeyPersonName: z.string().nullable().optional(),
+        siteKeyPersonPhone: z.string().nullable().optional(),
+        siteName: z.string().nullable().optional(),
+        siteAddress: z.string().nullable().optional(),
+        verificationSiteImageUrl: z.string().nullable().optional(),
+        verificationProofImageUrl: z.string().nullable().optional(),
         role: z.string().optional(),
         area: z.string().optional(),
         region: z.string().optional(),

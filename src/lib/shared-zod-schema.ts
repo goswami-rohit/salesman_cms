@@ -528,6 +528,7 @@ export const dealerScoreSchema = z.object({
 export const salesmanAttendanceSchema = z.object({
   id: z.string(),
   salesmanName: z.string(),
+  role: z.string().default("SALES"),
   date: z.string(), // YYYY-MM-DD
   location: z.string(),
   inTime: z.string().nullable(), // Formatted time string or null

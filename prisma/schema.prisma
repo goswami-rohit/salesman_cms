@@ -301,6 +301,7 @@ model PermanentJourneyPlan {
 model SalesmanAttendance {
   id                   String    @id @default(uuid()) @db.VarChar(255)
   userId               Int       @map("user_id") // Foreign Key to User.id
+  role                 String    @default("SALES") @map("role") @db.VarChar(50)
   attendanceDate       DateTime  @map("attendance_date") @db.Date
   locationName         String    @map("location_name") @db.VarChar(500)
   inTimeTimestamp      DateTime  @map("in_time_timestamp") @db.Timestamptz(6)
@@ -327,6 +328,7 @@ model SalesmanAttendance {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "idx_salesman_attendance_user_id")
+  @@unique([userId, attendanceDate, role], map: "unique_attendance_per_role_per_day")
   @@map("salesman_attendance")
 }
 

@@ -6,7 +6,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { 
-  IndianRupee, 
+  IndianRupee,
+  MapPin, 
   Search, 
   Loader2, 
   Check, 
@@ -65,6 +66,13 @@ type BagLiftRecord = z.infer<typeof bagLiftSchema> & {
   masonName: string;
   dealerName: string | null;
   approverName: string | null;
+  associatedSalesmanName?: string | null;
+  siteKeyPersonName?: string | null;
+  siteKeyPersonPhone?: string | null;
+  siteName?: string | null;
+  siteAddress?: string | null;
+  verificationSiteImageUrl?: string | null;
+  verificationProofImageUrl?: string | null;
   role: string;
   area: string;
   region: string;
@@ -324,7 +332,6 @@ export default function BagsLiftPage() {
 
   // --- 3. Define Columns for Bag Lift DataTable ---
   const bagLiftColumns: ColumnDef<BagLiftRecord>[] = [
-    { accessorKey: "id", header: "Record ID", cell: ({ row }) => <span className="text-xs font-mono text-muted-foreground">{row.original.id.substring(0, 8)}...</span> },
     { accessorKey: "masonName", header: "Mason Name" },
     { accessorKey: "dealerName", header: "Associated Dealer" },
     {
@@ -347,7 +354,30 @@ export default function BagsLiftPage() {
         </Badge>
       ),
     },
-    { accessorKey: "approverName", header: "Approved By" },
+    // Approver Name with Fallback to Associated Salesman
+    { 
+      id: "approverName", 
+      header: "Approved By",
+      cell: ({ row }) => {
+        const actualApprover = row.original.approverName;
+        const associatedSalesman = row.original.associatedSalesmanName;
+        
+        // Logic: Show Actual Approver if exists, OR show Associated Salesman
+        const displayName = actualApprover || associatedSalesman;
+        const isAssociated = !actualApprover && associatedSalesman;
+
+        if (!displayName) return <span className="text-muted-foreground">-</span>;
+
+        return (
+          <div className="flex flex-col">
+            <span className={cn("font-medium", isAssociated && "text-foreground")}>
+              {displayName}
+            </span>
+            {isAssociated && <span className="text-[10px] text-foreground italic">(Associated)</span>}
+          </div>
+        );
+      }
+    },
     {
       accessorKey: "approvedAt",
       header: "Approved On",
@@ -654,6 +684,30 @@ export default function BagsLiftPage() {
                 <Input value={selectedRecord.dealerName || 'N/A'} readOnly />
               </div>
 
+              <div>
+                <Label>Site Key Person Name</Label>
+                <Input value={selectedRecord.siteKeyPersonName || 'N/A'} readOnly />
+              </div>
+              <div>
+                <Label>Site Key Person Phone</Label>
+                <Input value={selectedRecord.siteKeyPersonPhone || 'N/A'} readOnly />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Site Name & Address</Label>
+                <div className="relative mt-1">
+                  <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    className="pl-8" 
+                    value={
+                      selectedRecord.siteName 
+                        ? `${selectedRecord.siteName} — ${selectedRecord.siteAddress || 'No Address'}` 
+                        : 'N/A'
+                    } 
+                    readOnly 
+                  />
+                </div>
+              </div>
+
               <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
                 Bag Lift Details
               </div>
@@ -681,17 +735,17 @@ export default function BagsLiftPage() {
 
               <div>
                 <Label>Approved By</Label>
-                <Input value={selectedRecord.approverName || 'N/A'} readOnly />
+                <Input value={selectedRecord.approverName || selectedRecord.associatedSalesmanName || 'N/A'} readOnly />
               </div>
               <div>
                 <Label>Approved At</Label>
                 <Input value={formatDate(selectedRecord.approvedAt)} readOnly />
               </div>
 
-              {/* --- UPDATED IMAGE PREVIEW SECTION --- */}
+              {/* --- IMAGE PREVIEW SECTION --- */}
               {selectedRecord.imageUrl && (
                 <div className="md:col-span-2">
-                  <Label htmlFor="bagLiftImage">Bag Lift Image</Label>
+                  <Label htmlFor="bagLiftImage">Mason Bag Lift Image</Label>
                   <div id="bagLiftImage" className="mt-2 border p-2 rounded-md bg-muted/50">
                     {/* Link to open original image */}
                     <a
@@ -702,7 +756,6 @@ export default function BagsLiftPage() {
                     >
                       View Original Image <ExternalLink className="h-4 w-4 ml-1" />
                     </a>
-                    {/* Bigger Image (w-full) */}
                     <img
                       src={selectedRecord.imageUrl}
                       alt="Bag Lift"
@@ -711,6 +764,35 @@ export default function BagsLiftPage() {
                   </div>
                 </div>
               )}
+
+              {/* TSO VERIFICATION EVIDENCE */}
+              {(selectedRecord.verificationSiteImageUrl || selectedRecord.verificationProofImageUrl) && (
+                <div className="md:col-span-2 text-lg font-semibold border-b pt-4 pb-2">
+                  TSO Verification Image
+                </div>
+              )}
+
+              {selectedRecord.verificationSiteImageUrl && (
+                <div className="md:col-span-2">
+                  <Label>Site Verification Image</Label>
+                  <div className="mt-2 border p-2 rounded-md bg-muted/50">
+                    <a
+                      href={selectedRecord.verificationSiteImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline flex items-center text-xs font-medium mb-2"
+                    >
+                      View Original <ExternalLink className="h-3 w-3 ml-1" />
+                    </a>
+                    <img
+                      src={selectedRecord.verificationSiteImageUrl}
+                      alt="Site Proof"
+                      className="w-full h-auto rounded-md border"
+                    />
+                  </div>
+                </div>
+              )}
+
             </div>
 
             <DialogFooter>

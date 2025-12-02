@@ -60,13 +60,13 @@ export const tablesMetadata: TableMeta[] = [
             'createdAt', 'updatedAt'
         ],
     },
-{
+    {
         id: 'technicalVisitReports',
         title: 'Technical Visit Reports',
         icon: PencilRuler,
         columns: [
             'id', 'reportDate', 'visitType', 'siteNameConcernedPerson', 'phoneNo', 'emailId',
-            'whatsappNo', 'marketName', 'siteAddress', 'region', 'area', 'latitude',
+            'phone/whatsappNo', 'marketName', 'siteAddress', 'region', 'area', 'latitude',
             'longitude', 'visitCategory', 'customerType', 'purposeOfVisit', 'siteVisitStage',
             'constAreaSqFt', 'siteVisitBrandInUse', 'currentBrandPrice', 'siteStock', 'estRequirement',
             'supplyingDealerName', 'nearbyDealerName', 'associatedPartyName', 'channelPartnerVisit', 'isConverted',
@@ -133,7 +133,7 @@ export const tablesMetadata: TableMeta[] = [
         id: 'salesmanAttendance',
         title: 'Salesman Attendance',
         icon: ClipboardCheck,
-        columns: ['id', 'attendanceDate', 'locationName', 'inTimeTimestamp', 'outTimeTimestamp', 'inTimeLatitude', 'inTimeLongitude', 'salesmanName', 'salesmanEmail', 'createdAt'],
+        columns: ['id', 'attendanceDate', 'locationName', 'role', 'inTimeTimestamp', 'outTimeTimestamp', 'inTimeLatitude', 'inTimeLongitude', 'salesmanName', 'salesmanEmail', 'createdAt'],
     },
     {
         id: 'salesmanLeaveApplications',
@@ -154,86 +154,80 @@ export const tablesMetadata: TableMeta[] = [
         columns: ['id', 'area', 'region', 'rating', 'salesmanName', 'salesmanEmail'],
     },
     {
-    id: 'tsoMeetings',
-    title: 'TSO Meetings',
-    icon: UsersRound,
-    columns: [
-      'id', 'type', 'date', 'location', 'budgetAllocated', 'participantsCount',
-      'createdByUserName', 'createdByUserEmail', 'createdAt', 'updatedAt'
-    ],
-  },
-  {
-    id: 'rewards', // Updated from 'giftInventory'
-    title: 'Rewards Inventory', // Updated title
-    icon: Gift,
-    columns: [
-      'id', 
-      'itemName', 
-      'pointCost', // Updated from 'unitPrice'
-      'totalAvailableQuantity', 
-      'stock', // New field
-      'isActive', // New field
-      'createdAt', 
-      'updatedAt'
-    ],
-  },
-  {
-    id: 'giftAllocationLogs',
-    title: 'Gift Allocation Logs',
-    icon: HandCoins,
-    columns: [
-      'id', 'itemName', 'salesmanName', 'salesmanEmail', 'transactionType',
-      'quantity', 'sourceUserName', 'destinationUserName', 'technicalVisitReportId',
-      'dealerVisitReportId', 'createdAt'
-    ],
-  },
-  {
-    id: 'masonPCSide',
-    title: 'Masons & Contractors',
-    icon: Construction,
-    columns: [
-      'id', 'name', 'phoneNumber', 'kycDocumentName', 'kycDocumentIdNum',
-      'kycStatus', 
-      'bagsLifted', 
-      'pointsBalance', 
-      'isReferred',
-      'referredByUser', 'referredToUser', 'dealerName', 'associatedSalesman'
-    ],
-  },
-  {
-    id: 'bagLifts',
-    title: 'Bag Lifts',
-    icon: ShoppingBag,
-    columns: [
-      'id', 'masonId', 'masonName',
-      'dealerId', 'dealerName', 'purchaseDate', 'bagCount', 'pointsCredited',
-      'status', 'approvedByUserId', 'approverName', 'approvedAt', 'createdAt',
-    ],
-  },
-  // {
-  //   id: 'schemesOffers',
-  //   title: 'Schemes & Offers',
-  //   icon: ScrollText,
-  //   columns: [
-  //     'id', 'name', 'description', 'startDate', 'endDate'
-  //   ],
-  // },
-  // {
-  //   id: 'masonsOnSchemes',
-  //   title: 'Masons on Schemes',
-  //   icon: UserCheck,
-  //   columns: [
-  //     'masonId', 'masonName', 'schemeId', 'schemeName', 'enrolledAt', 'status'
-  //   ],
-  // },
-  // {
-  //   id: 'masonsOnMeetings',
-  //   title: 'Masons on Meetings',
-  //   icon: Users,
-  //   columns: [
-  //     'masonId', 'masonName', 'meetingId', 'meetingType', 'meetingDate', 'attendedAt'
-  //   ],
-  // },
+        id: 'tsoMeetings',
+        title: 'TSO Meetings',
+        icon: UsersRound,
+        columns: [
+            'id', 'type', 'date', 'location', 'budgetAllocated', 'participantsCount',
+            'createdByUserName', 'createdByUserEmail', 'createdAt', 'updatedAt'
+        ],
+    },
+    {
+        id: 'rewards', 
+        title: 'Rewards Inventory', 
+        icon: Gift,
+        columns: [
+            'id', 'itemName', 'pointCost',  'totalAvailableQuantity', 'stock',  'isActive',  'createdAt', 'updatedAt'
+        ],
+    },
+    {
+        id: 'giftAllocationLogs',
+        title: 'Gift Allocation Logs',
+        icon: HandCoins,
+        columns: [
+            'id', 'itemName', 'salesmanName', 'salesmanEmail', 'transactionType',
+            'quantity', 'sourceUserName', 'destinationUserName', 'technicalVisitReportId',
+            'dealerVisitReportId', 'createdAt'
+        ],
+    },
+    {
+        id: 'masonPCSide',
+        title: 'Masons & Contractors',
+        icon: Construction,
+        columns: [
+            'id', 'name', 'phoneNumber', 'kycDocumentName', 'kycDocumentIdNum',
+            'kycStatus',
+            'bagsLifted',
+            'pointsBalance',
+            'isReferred',
+            'referredByUser', 'referredToUser', 'dealerName', 'associatedSalesman'
+        ],
+    },
+    {
+        id: 'bagLifts',
+        title: 'Bag Lifts',
+        icon: ShoppingBag,
+        columns: [
+            'id', 'masonId', 'masonName', 'dealerId', 'dealerName',
+            'siteId', 'siteName', 'siteAddress', 'siteKeyPersonName', 'siteKeyPersonPhone',
+            'purchaseDate', 'bagCount', 'pointsCredited', 'status',
+            'imageUrl', 'verificationSiteImageUrl', 'verificationProofImageUrl', 'approvedByUserId', 'approverName', 'approvedAt', 'createdAt',
+        ],
+    },
+    // {
+    //   id: 'schemesOffers',
+    //   title: 'Schemes & Offers',
+    //   icon: ScrollText,
+    //   columns: [
+    //     'id', 'name', 'description', 'startDate', 'endDate'
+    //   ],
+    // },
+    // {
+    //   id: 'masonsOnSchemes',
+    //   title: 'Masons on Schemes',
+    //   icon: UserCheck,
+    //   columns: [
+    //     'masonId', 'masonName', 'schemeId', 'schemeName', 'enrolledAt', 'status'
+    //   ],
+    // },
+    // {
+    //   id: 'masonsOnMeetings',
+    //   title: 'Masons on Meetings',
+    //   icon: Users,
+    //   columns: [
+    //     'masonId', 'masonName', 'meetingId', 'meetingType', 'meetingDate', 'attendedAt'
+    //   ],
+    // },
 
 ];
 export type ReportFormat = 'csv' | 'xlsx';
