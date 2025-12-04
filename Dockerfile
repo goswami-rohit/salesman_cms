@@ -22,7 +22,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PRIVATE_STANDALONE=true
 
-RUN npx prisma generate
+#RUN npx prisma generate
 RUN --mount=type=secret,id=WORKOS_API_KEY,env=WORKOS_API_KEY \
     --mount=type=secret,id=WORKOS_CLIENT_ID,env=WORKOS_CLIENT_ID \
     --mount=type=secret,id=RESEND_MAIL_API,env=RESEND_MAIL_API \
