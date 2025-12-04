@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '../../../../../../prisma/generated/client';
 import { ROLE_HIERARCHY } from '@/lib/roleHierarchy';
 
 // Define the roles that are allowed to view the Team Overview page.

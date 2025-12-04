@@ -1,6 +1,6 @@
 // src/lib/reports-transformer.ts
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../prisma/generated/client';
 
 // Users
 export type FlattenedUser = {
@@ -266,7 +266,7 @@ export async function getFlattenedDailyVisitReports(companyId: number): Promise<
     orderBy: { reportDate: 'desc' },
   });
 
-  return raw.map(r => ({
+  return raw.map((r:any) => ({
     id: r.id,
     reportDate: r.reportDate.toISOString().slice(0, 10),
     dealerType: r.dealerType,
@@ -1237,7 +1237,7 @@ export async function getFlattenedTSOMeeetings(companyId: number): Promise<Flatt
     orderBy: { date: 'desc' },
   });
 
-  return raw.map(r => ({
+  return raw.map((r:any) => ({
     id: r.id,
     type: r.type,
     date: r.date.toISOString().slice(0, 10),
@@ -1279,7 +1279,7 @@ export async function getFlattenedRewards(): Promise<FlattenedReward[]> {
     orderBy: { name: 'asc' }, // CORRECTED: Order by 'name'
   });
 
-  return raw.map(r => ({
+  return raw.map((r:any) => ({
     id: r.id,
     itemName: r.name, // Mapping 'name' to the desired output key 'itemName'
     pointCost: r.pointCost, // Type is Int, no need for .toNumber()
@@ -1306,9 +1306,8 @@ export type FlattenedGiftAllocationLog = {
   createdAt: string;
 };
 
-// Select object for clarity and reusability
-// NOTE: Assuming Prisma is imported as 'Prisma'
-const giftLogSelect = Prisma.validator<Prisma.GiftAllocationLogSelect>()({
+
+const giftLogSelect = ({
   id: true,
   transactionType: true,
   quantity: true,
@@ -1337,7 +1336,7 @@ export async function getFlattenedGiftAllocationLogs(companyId: number): Promise
     orderBy: { createdAt: 'desc' },
   });
 
-  return raw.map(r => {
+  return raw.map((r:any) => {
     // Helper function to format user name or default to email
     const formatUserName = (user: { firstName: string | null, lastName: string | null, email: string } | null) => {
       if (!user) return null;
@@ -1411,7 +1410,7 @@ export async function getFlattenedMasonPCSide(companyId: number): Promise<Flatte
     orderBy: { name: 'asc' },
   });
 
-  return raw.map(r => ({
+  return raw.map((r:any) => ({
     id: r.id,
     name: r.name,
     phoneNumber: r.phoneNumber,
@@ -1450,7 +1449,7 @@ export async function getFlattenedSchemesOffers(): Promise<FlattenedSchemesOffer
     orderBy: { name: 'asc' },
   });
 
-  return raw.map(r => ({
+  return raw.map((r:any) => ({
     id: r.id,
     name: r.name,
     description: r.description ?? null,
@@ -1488,7 +1487,7 @@ export async function getFlattenedMasonsOnSchemes(companyId: number): Promise<Fl
     orderBy: { enrolledAt: 'desc' },
   });
 
-  return raw.map(r => ({
+  return raw.map((r:any) => ({
     masonId: r.masonId,
     masonName: r.mason.name,
     schemeId: r.schemeId,
@@ -1526,7 +1525,7 @@ export async function getFlattenedMasonsOnMeetings(companyId: number): Promise<F
     orderBy: { attendedAt: 'desc' },
   });
 
-  return raw.map(r => ({
+  return raw.map((r:any) => ({
     masonId: r.masonId,
     masonName: r.mason.name,
     meetingId: r.meetingId,
@@ -1559,7 +1558,7 @@ export async function getFlattenedRewardCategories(): Promise<FlattenedRewardCat
         orderBy: { name: 'asc' },
     });
 
-    return raw.map(r => ({
+    return raw.map((r:any) => ({
         id: r.id,
         name: r.name,
     }));
@@ -1598,7 +1597,7 @@ export async function getFlattenedKYCSubmissions(companyId: number): Promise<Fla
         orderBy: { createdAt: 'desc' },
     });
 
-    return raw.map(r => ({
+    return raw.map((r:any) => ({
         id: r.id,
         masonId: r.masonId,
         masonName: r.mason.name,
@@ -1636,7 +1635,7 @@ export async function getFlattenedTSOAssignments(companyId: number): Promise<Fla
         orderBy: { createdAt: 'desc' },
     });
 
-    return raw.map(r => ({
+    return raw.map((r:any) => ({
         masonId: r.masonId,
         masonName: r.mason.name,
         tsoId: r.tsoId,
@@ -1707,7 +1706,7 @@ export async function getFlattenedBagLifts(companyId: number): Promise<Flattened
         orderBy: { createdAt: 'desc' },
     });
 
-    return raw.map(r => ({
+    return raw.map((r:any) => ({
         id: r.id,
         masonId: r.masonId,
         masonName: r.mason.name,
@@ -1773,7 +1772,7 @@ export async function getFlattenedRewardRedemptions(companyId: number): Promise<
         orderBy: { createdAt: 'desc' },
     });
 
-    return raw.map(r => ({
+    return raw.map((r:any) => ({
         id: r.id,
         masonId: r.masonId,
         masonName: r.mason.name,
@@ -1819,7 +1818,7 @@ export async function getFlattenedPointsLedger(companyId: number): Promise<Flatt
         orderBy: { createdAt: 'desc' },
     });
 
-    return raw.map(r => ({
+    return raw.map((r:any) => ({
         id: r.id,
         masonId: r.masonId,
         masonName: r.mason.name,

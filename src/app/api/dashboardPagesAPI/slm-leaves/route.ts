@@ -2,11 +2,10 @@
 import 'server-only';
 export const runtime = 'nodejs';
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import { salesmanLeaveApplicationSchema, updateLeaveApplicationSchema } from '@/lib/shared-zod-schema';
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 const allowedRoles = ['president', 'senior-general-manager', 'general-manager',
   'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
@@ -184,6 +183,6 @@ export async function PATCH(req: NextRequest) {
     // Return a 500 status with a generic error message
     return NextResponse.json({ message: 'Failed to update leave application', error: error.message }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }

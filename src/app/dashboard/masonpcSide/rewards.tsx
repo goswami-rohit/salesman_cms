@@ -260,54 +260,6 @@ export default function RewardsPage() {
       enableSorting: true,
     },
     { 
-      accessorKey: "stock", 
-      header: "Stock Level",
-      cell: ({ row }) => {
-        const { stock, totalAvailableQuantity } = row.original;
-        // Calculate progress and color based on stock levels
-        const progressValue = totalAvailableQuantity > 0 ? (stock / totalAvailableQuantity) * 100 : 0;
-        
-        let barColor = 'bg-gray-400';
-        if (stock > 0) {
-            if (progressValue >= 50) {
-                barColor = 'bg-green-500';
-            } else if (progressValue >= 20) {
-                barColor = 'bg-yellow-500';
-            } else {
-                barColor = 'bg-orange-500';
-            }
-        } else {
-            barColor = 'bg-red-500';
-        }
-        
-        return (
-          <div className="flex flex-col space-y-1 w-[120px]">
-            <p className="text-sm font-mono text-right">{stock} / {totalAvailableQuantity}</p>
-            <Progress 
-                value={progressValue} 
-                className={`h-2 ${barColor}`} // Apply barColor here
-            />
-          </div>
-        );
-      },
-      enableSorting: true,
-    },
-    { 
-      accessorKey: "isActive", 
-      header: "Status",
-      cell: ({ row }) => {
-        const { isActive, stock } = row.original;
-        const { icon: Icon, className, text } = getStatusBadgeProps(isActive, stock);
-        return (
-            <Badge className={`font-medium ${className}`}>
-                <Icon className="w-3 h-3 mr-1" />
-                {text}
-            </Badge>
-        );
-      },
-      enableSorting: true,
-    },
-    { 
         accessorKey: "createdAt", 
         header: "Created On",
         cell: ({ row }) => formatDate(row.original.createdAt)

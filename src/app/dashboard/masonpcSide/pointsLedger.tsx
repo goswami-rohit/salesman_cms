@@ -172,7 +172,7 @@ export default function PointsLedgerPage() {
     { 
         accessorKey: "createdAt", 
         header: "Date/Time", 
-        cell: ({ row }) => <span className="text-sm font-medium text-gray-700">{formatDate(row.original.createdAt)}</span>,
+        cell: ({ row }) => <span className="text-sm font-medium text-gray-100">{formatDate(row.original.createdAt)}</span>,
         enableSorting: true,
         sortingFn: 'datetime',
     },
@@ -209,7 +209,7 @@ export default function PointsLedgerPage() {
         accessorKey: "memo", 
         header: "Memo",
         cell: ({ row }) => (
-            <p className="max-w-[200px] truncate text-xs text-muted-foreground" title={row.original.memo ?? 'N/A'}>
+            <p className="max-w-[200px] truncate text-xs text-foreground" title={row.original.memo ?? 'N/A'}>
                 {row.original.memo ?? 'N/A'}
             </p>
         )
