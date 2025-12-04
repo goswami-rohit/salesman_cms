@@ -7,7 +7,7 @@ COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-RUN npm ci
+RUN --mount=type=secret,id=DATABASE_URL,env=DATABASE_URL npm ci
 
 # Stage 2: Builder - Build the Next.js application
 FROM node:25 AS builder

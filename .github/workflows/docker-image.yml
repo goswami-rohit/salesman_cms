@@ -34,3 +34,4 @@ jobs:
             "WORKOS_API_KEY=${{ secrets.WORKOS_API_KEY }}"
             "WORKOS_CLIENT_ID=${{ secrets.WORKOS_CLIENT_ID }}"
             "RESEND_MAIL_API=${{ secrets.RESEND_MAIL_API }}"
+            "DATABASE_URL=${{ secrets.DATABASE_URL }}"
