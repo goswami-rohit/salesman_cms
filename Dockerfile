@@ -22,11 +22,11 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PRIVATE_STANDALONE=true
 
-#RUN npx prisma generate
+RUN --mount=type=secret,id=DATABASE_URL,env=DATABASE_URL npx prisma generate
+
 RUN --mount=type=secret,id=WORKOS_API_KEY,env=WORKOS_API_KEY \
     --mount=type=secret,id=WORKOS_CLIENT_ID,env=WORKOS_CLIENT_ID \
     --mount=type=secret,id=RESEND_MAIL_API,env=RESEND_MAIL_API \
-    --mount=type=secret,id=DATABASE_URL,env=DATABASE_URL \ 
     npm run build
 
 # Stage 3: Runner - The final production image
