@@ -530,14 +530,14 @@ export type FlattenedTechnicalSite = {
 
 export async function getFlattenedTechnicalSites(companyId: number): Promise<FlattenedTechnicalSite[]> {
   const raw = await prisma.technicalSite.findMany({
-    where: {
-      // Find sites linked to any user within the requested company
-      associatedUsers: {
-        some: {
-          companyId: companyId
-        }
-      }
-    },
+    // where: {
+    //   // Find sites linked to any user within the requested company
+    //   associatedUsers: {
+    //     some: {
+    //       companyId: companyId
+    //     }
+    //   }
+    // },
     select: {
       id: true, siteName: true, concernedPerson: true, phoneNo: true, address: true,
       latitude: true, longitude: true, siteType: true, area: true, region: true,
@@ -1967,7 +1967,7 @@ export const transformerMap = {
   dealers: getFlattenedDealers,
   dailyVisitReports: getFlattenedDailyVisitReports,
   technicalVisitReports: getFlattenedTechnicalVisitReports,
-  tecnicalSites: getFlattenedTechnicalSites,
+  technicalSites: getFlattenedTechnicalSites,
   salesOrders: getFlattenedSalesOrders,
   competitionReports: getFlattenedCompetitionReports,
 
