@@ -498,6 +498,114 @@ export async function getFlattenedTechnicalVisitReports(companyId: number): Prom
   }));
 }
 
+// Technical Sites
+export type FlattenedTechnicalSite = {
+  id: string;
+  siteName: string;
+  concernedPerson: string;
+  phoneNo: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  siteType: string | null;
+  area: string | null;
+  region: string | null;
+  keyPersonName: string | null;
+  keyPersonPhoneNum: string | null;
+  stageOfConstruction: string | null;
+  constructionStartDate: string | null;
+  constructionEndDate: string | null;
+  convertedSite: boolean | null;
+  firstVistDate: string | null;
+  lastVisitDate: string | null;
+  needFollowUp: boolean | null;
+  
+  createdAt: string;
+  updatedAt: string;
+
+  associatedSalesmen: string;
+  associatedDealers: string;
+  associatedMasons: string;
+};
+
+export async function getFlattenedTechnicalSites(companyId: number): Promise<FlattenedTechnicalSite[]> {
+  const raw = await prisma.technicalSite.findMany({
+    where: {
+      // Find sites linked to any user within the requested company
+      associatedUsers: {
+        some: {
+          companyId: companyId
+        }
+      }
+    },
+    select: {
+      id: true, siteName: true, concernedPerson: true, phoneNo: true, address: true,
+      latitude: true, longitude: true, siteType: true, area: true, region: true,
+      keyPersonName: true, keyPersonPhoneNum: true, stageOfConstruction: true,
+      constructionStartDate: true, constructionEndDate: true, convertedSite: true,
+      firstVistDate: true, lastVisitDate: true, needFollowUp: true,
+      createdAt: true, updatedAt: true,
+
+      // Relations for flattening
+      associatedUsers: {
+        select: { firstName: true, lastName: true, email: true }
+      },
+      associatedDealers: {
+        select: { name: true, region: true }
+      },
+      associatedMasons: {
+        select: { name: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return raw.map((s: any) => ({
+    id: s.id,
+    siteName: s.siteName,
+    concernedPerson: s.concernedPerson,
+    phoneNo: s.phoneNo,
+    address: s.address ?? null,
+    
+    latitude: s.latitude?.toNumber() ?? null,
+    longitude: s.longitude?.toNumber() ?? null,
+    
+    siteType: s.siteType ?? null,
+    area: s.area ?? null,
+    region: s.region ?? null,
+    
+    keyPersonName: s.keyPersonName ?? null,
+    keyPersonPhoneNum: s.keyPersonPhoneNum ?? null,
+    
+    stageOfConstruction: s.stageOfConstruction ?? null,
+    
+    // Dates -> String (YYYY-MM-DD)
+    constructionStartDate: s.constructionStartDate?.toISOString().slice(0, 10) ?? null,
+    constructionEndDate: s.constructionEndDate?.toISOString().slice(0, 10) ?? null,
+    firstVistDate: s.firstVistDate?.toISOString().slice(0, 10) ?? null,
+    lastVisitDate: s.lastVisitDate?.toISOString().slice(0, 10) ?? null,
+    
+    convertedSite: s.convertedSite ?? false,
+    needFollowUp: s.needFollowUp ?? false,
+
+    createdAt: s.createdAt.toISOString(),
+    updatedAt: s.updatedAt.toISOString(),
+
+    // Flatten Arrays to Strings
+    associatedSalesmen: s.associatedUsers
+      .map((u: any) => `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email)
+      .join(', '),
+      
+    associatedDealers: s.associatedDealers
+      .map((d: any) => d.name)
+      .join(', '),
+      
+    associatedMasons: s.associatedMasons
+      .map((m: any) => m.name)
+      .join(', '),
+  }));
+}
+
 // PJP
 export type FlattenedPermanentJourneyPlan = {
   id: string;
@@ -1791,43 +1899,66 @@ export async function getFlattenedRewardRedemptions(companyId: number): Promise<
 
 // PointsLedger
 export type FlattenedPointsLedger = {
-    id: string;
-    masonId: string;
-    masonName: string;
-    sourceType: string;
-    sourceId: string | null;
-    points: number;
-    memo: string | null;
-    createdAt: string;
+  id: string;
+  masonId: string;
+  masonName: string;
+  sourceType: string;
+  points: number;
+  memo: string | null;
+  createdAt: string; // ISO String
+  sourceDescription: string | null; 
 };
 
 export async function getFlattenedPointsLedger(companyId: number): Promise<FlattenedPointsLedger[]> {
-    const raw = await prisma.pointsLedger.findMany({
-        // Filter by Masons whose associated user belongs to the company
-        where: { mason: { user: { companyId } } },
+  const raw = await prisma.pointsLedger.findMany({
+    // Filter by Masons whose associated user belongs to the company
+    where: { mason: { user: { companyId } } },
+    select: {
+      id: true,
+      masonId: true,
+      sourceType: true,
+      points: true,
+      memo: true,
+      createdAt: true,
+      
+      mason: { select: { name: true } },
+      bagLift: {
         select: {
-            id: true,
-            masonId: true,
-            sourceType: true,
-            sourceId: true,
-            points: true,
-            memo: true,
-            createdAt: true,
-            mason: { select: { name: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-    });
+          bagCount: true,
+          dealer: { select: { name: true } }
+        }
+      },
+      rewardRedemption: {
+        select: {
+          reward: { select: { name: true } }
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+  });
 
-    return raw.map((r:any) => ({
-        id: r.id,
-        masonId: r.masonId,
-        masonName: r.mason.name,
-        sourceType: r.sourceType,
-        sourceId: r.sourceId ?? null,
-        points: r.points,
-        memo: r.memo ?? null,
-        createdAt: r.createdAt.toISOString(),
-    }));
+  return raw.map((r: any) => {
+    let description = r.memo; 
+
+    if (r.bagLift) {
+      const dealerInfo = r.bagLift.dealer?.name ? ` @ ${r.bagLift.dealer.name}` : '';
+      description = `Lifted ${r.bagLift.bagCount} bags${dealerInfo}`;
+    } else if (r.rewardRedemption) {
+      const rewardName = r.rewardRedemption.reward?.name ?? 'Unknown Item';
+      description = `Redeemed: ${rewardName}`;
+    }
+
+    return {
+      id: r.id,
+      masonId: r.masonId,
+      masonName: r.mason.name,
+      sourceType: r.sourceType,
+      points: r.points,
+      memo: r.memo ?? null,
+      createdAt: r.createdAt.toISOString(),
+      sourceDescription: description ?? null,
+    };
+  });
 }
 
 export const transformerMap = {
@@ -1836,6 +1967,7 @@ export const transformerMap = {
   dealers: getFlattenedDealers,
   dailyVisitReports: getFlattenedDailyVisitReports,
   technicalVisitReports: getFlattenedTechnicalVisitReports,
+  tecnicalSites: getFlattenedTechnicalSites,
   salesOrders: getFlattenedSalesOrders,
   competitionReports: getFlattenedCompetitionReports,
 

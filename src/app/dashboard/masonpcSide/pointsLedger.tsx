@@ -217,12 +217,12 @@ export default function PointsLedgerPage() {
     { 
         accessorKey: "sourceId", 
         header: "Source ID",
-        cell: ({ row }) => <span className="text-xs font-mono">{row.original.sourceId ? `${row.original.sourceId.substring(0, 8)}...` : 'N/A'}</span> 
+        cell: ({ row }) => <span className="text-xs font-mono">{row.original.sourceId ? `${row.original.sourceId}` : 'N/A'}</span> 
     },
     { 
       accessorKey: "id", 
       header: "Transaction ID", 
-      cell: ({ row }) => <span className="text-xs font-mono">{row.original.id.substring(0, 8)}...</span> 
+      cell: ({ row }) => <span className="text-xs font-mono">{row.original.id}</span> 
     },
   ];
 

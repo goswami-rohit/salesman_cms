@@ -81,6 +81,20 @@ export const tablesMetadata: TableMeta[] = [
         ],
     },
     {
+        id: 'technicalSites',
+        title: 'Technical Sites',
+        icon: MapPin, 
+        columns: [
+            'id', 'siteName', 'concernedPerson', 'phoneNo', 'address',
+            'latitude', 'longitude', 'siteType', 'area', 'region',
+            'keyPersonName', 'keyPersonPhoneNum',
+            'stageOfConstruction', 'constructionStartDate', 'constructionEndDate',
+            'convertedSite', 'firstVistDate', 'lastVisitDate', 'needFollowUp',
+            'associatedSalesmen', 'associatedDealers', 'associatedMasons',
+            'createdAt', 'updatedAt'
+        ],
+    },
+    {
         id: 'permanentJourneyPlans',
         title: 'Permanent Journey Plans (PJP)',
         icon: Car,
@@ -117,12 +131,12 @@ export const tablesMetadata: TableMeta[] = [
         icon: ChartNoAxesCombined,
         columns: ['id', 'reportDate', 'area', 'region', 'competitorName', 'productName', 'price', 'salesmanName', 'dealerName', 'createdAt'],
     },
-    {
-        id: 'dealerReportsAndScores',
-        title: 'Dealer Scores',
-        icon: Award,
-        columns: ['id', 'dealerScore', 'trustWorthinessScore', 'creditWorthinessScore', 'orderHistoryScore', 'visitFrequencyScore', 'lastUpdatedDate', 'dealerName', 'dealerRegion', 'dealerArea', 'createdAt'],
-    },
+    // {
+    //     id: 'dealerReportsAndScores',
+    //     title: 'Dealer Scores',
+    //     icon: Award,
+    //     columns: ['id', 'dealerScore', 'trustWorthinessScore', 'creditWorthinessScore', 'orderHistoryScore', 'visitFrequencyScore', 'lastUpdatedDate', 'dealerName', 'dealerRegion', 'dealerArea', 'createdAt'],
+    // },
     {
         id: 'dealerBrandCapacities',
         title: 'Dealer Brand Capacities',
@@ -147,21 +161,21 @@ export const tablesMetadata: TableMeta[] = [
         icon: MapPin,
         columns: ['id', 'latitude', 'longitude', 'recordedAt', 'accuracy', 'speed', 'activityType', 'appState', 'batteryLevel', 'salesmanName', 'salesmanEmail', 'journeyId', 'createdAt'],
     },
-    {
-        id: 'salesmanRating',
-        title: 'Salesman Rating',
-        icon: Star,
-        columns: ['id', 'area', 'region', 'rating', 'salesmanName', 'salesmanEmail'],
-    },
-    {
-        id: 'tsoMeetings',
-        title: 'TSO Meetings',
-        icon: UsersRound,
-        columns: [
-            'id', 'type', 'date', 'location', 'budgetAllocated', 'participantsCount',
-            'createdByUserName', 'createdByUserEmail', 'createdAt', 'updatedAt'
-        ],
-    },
+    // {
+    //     id: 'salesmanRating',
+    //     title: 'Salesman Rating',
+    //     icon: Star,
+    //     columns: ['id', 'area', 'region', 'rating', 'salesmanName', 'salesmanEmail'],
+    // },
+    // {
+    //     id: 'tsoMeetings',
+    //     title: 'TSO Meetings',
+    //     icon: UsersRound,
+    //     columns: [
+    //         'id', 'type', 'date', 'location', 'budgetAllocated', 'participantsCount',
+    //         'createdByUserName', 'createdByUserEmail', 'createdAt', 'updatedAt'
+    //     ],
+    // },
     {
         id: 'rewards', 
         title: 'Rewards Inventory', 
@@ -202,6 +216,15 @@ export const tablesMetadata: TableMeta[] = [
             'siteId', 'siteName', 'siteAddress', 'siteKeyPersonName', 'siteKeyPersonPhone',
             'purchaseDate', 'bagCount', 'pointsCredited', 'status',
             'imageUrl', 'verificationSiteImageUrl', 'verificationProofImageUrl', 'approvedByUserId', 'approverName', 'approvedAt', 'createdAt',
+        ],
+    },
+    {
+        id: 'pointsLedger',
+        title: 'Points Ledger',
+        icon: ScrollText,
+        columns: [
+            'id', 'masonId', 'masonName', 'sourceType', 'points',
+            'memo', 'sourceDescription', 'createdAt'
         ],
     },
     // {
