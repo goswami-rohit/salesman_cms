@@ -92,7 +92,7 @@ export async function sendInvitationEmailResend({
             }),
         });
 
-        console.log("✅ Email sent successfully via Resend:", data);
+        //console.log("✅ Email sent successfully via Resend:", data);
         return data;
     } catch (error) {
         console.error("❌ Resend Error:", error);

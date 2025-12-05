@@ -47,6 +47,7 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 import { ColumnDef } from '@tanstack/react-table';
 import { BulkInviteDialog } from './bulkInvite';
 import { Zone } from '@/lib/Reusable-constants';
+import { email } from 'zod';
 
 interface User {
   id: number;
@@ -269,7 +270,7 @@ export default function UsersManagement({ adminUser }: Props) {
     }
   };
 
-  const handleDeleteUser = async (userId: number, workosUserId: string | null) => {
+  const handleDeleteUser = async (userId: number, workosUserId: string | null, email: string) => {
     setLoading(true);
     setError('');
     setSuccess('');
@@ -280,21 +281,23 @@ export default function UsersManagement({ adminUser }: Props) {
       });
 
       if (response.ok) {
-        if (workosUserId) {
+        if (workosUserId || email) {
           const workosDeleteResponse = await fetch('/api/delete-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ workosUserId: workosUserId })
+            body: JSON.stringify({ workosUserId: workosUserId, email: email })
           });
 
           if (workosDeleteResponse.ok) {
-            setSuccess('User deleted successfully.');
+            setSuccess('User deleted successfully from System and WorkOS.');
           } else {
             const errorData = await workosDeleteResponse.json();
-            setError(`User deletion done locally. Issue in deleting from Auth Side. Contact Authenticator: ${errorData.error}`);
+            // This is a "Partial Success" - deleted locally, but failed in WorkOS
+            setError(`User deleted locally, but failed to delete from Auth Provider: ${errorData.error}`);
           }
         } else {
-          setSuccess('User deleted successfully.');
+            // No ID and no Email? Just local delete is fine.
+            setSuccess('User deleted successfully (Local only).');
         }
         await fetchUsers();
       } else {
@@ -485,7 +488,7 @@ export default function UsersManagement({ adminUser }: Props) {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => handleDeleteUser(user.id, user.workosUserId)}
+                      onClick={() => handleDeleteUser(user.id, user.workosUserId, user.email)}
                       className="bg-red-600 hover:bg-red-700"
                     >
                       Delete
