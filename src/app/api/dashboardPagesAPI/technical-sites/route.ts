@@ -6,11 +6,14 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { technicalSiteSchema } from '@/lib/shared-zod-schema';
+import { Prisma } from '@prisma/client';
 
-const allowedRoles =['president', 'senior-general-manager', 'general-manager',
-  'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
-  'senior-manager', 'manager', 'assistant-manager',
-  'senior-executive','executive',];
+const allowedRoles = [
+    'president', 'senior-general-manager', 'general-manager',
+    'assistant-sales-manager', 'area-sales-manager', 'regional-sales-manager',
+    'senior-manager', 'manager', 'assistant-manager',
+    'senior-executive', 'executive',
+];
 
 export async function GET(request: NextRequest) {
     try {
@@ -18,44 +21,83 @@ export async function GET(request: NextRequest) {
 
         // 1. Authentication Check
         if (!claims || !claims.sub) {
-            return NextResponse.json({ error: 'Unauthorized: No claims found' }, { status: 401 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 2. Fetch Current User to check role and companyId
+        // 2. Fetch Current User
         const currentUser = await prisma.user.findUnique({
             where: { workosUserId: claims.sub },
-            select: { id: true, role: true, companyId: true }
+            select: { id: true, role: true }
         });
 
         // 3. Authorization Check
         if (!currentUser || !allowedRoles.includes(currentUser.role)) {
-            return NextResponse.json({
-                error: `Forbidden: Your role (${currentUser?.role || 'None'}) is not authorized to view sites.`
-            }, { status: 403 });
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // 4. Fetch Sites
-        // UPDATED: Removing strict ownership checks as requested. 
-        // This allows fetching "independent" sites not yet linked to users/dealers.
+        // 4. Fetch Sites with Relations
         const sites = await prisma.technicalSite.findMany({
-            // No 'where' clause here so we can see orphaned sites
-            orderBy: {
-                updatedAt: 'desc',
-            },
+            orderBy: { updatedAt: 'desc' },
+            include: {
+                // Fetch Users linked to the site
+                associatedUsers: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        role: true,
+                        phoneNumber: true,
+                    }
+                },
+                // Fetch Dealers linked to the site
+                associatedDealers: {
+                    select: {
+                        id: true,
+                        name: true,
+                        phoneNo: true,
+                        type: true,
+                        area: true,
+                    }
+                },
+                // Fetch Masons linked to the site
+                associatedMasons: {
+                    select: {
+                        id: true,
+                        name: true,
+                        phoneNumber: true,
+                        kycStatus: true,
+                    }
+                },
+                // Fetch Bag Lifts recorded for this site
+                bagLifts: {
+                    select: {
+                        id: true,
+                        bagCount: true,
+                        pointsCredited: true,
+                        status: true,
+                        purchaseDate: true,
+                        // Fetch mason name to display who lifted the bags
+                        mason: {
+                            select: { name: true }
+                        }
+                    },
+                    orderBy: { purchaseDate: 'desc' }
+                }
+            }
         });
 
-        // Helper to handle Prisma Decimal or nulls
-        function toNumberOrNull(val: any): number | null {
-            if (val === null || val === undefined || val === '') return null;
-            if (typeof val === 'object' && typeof val.toNumber === 'function') {
+        // Helper to handle Prisma Decimals/Nulls
+        function toNumberOrNull(val: Prisma.Decimal | null | number): number | null {
+            if (val === null || val === undefined) return null;
+            if (typeof val === 'object' && 'toNumber' in val) {
                 return val.toNumber();
             }
-            const n = Number(val);
-            return Number.isFinite(n) ? n : null;
+            return Number(val);
         }
 
         // 5. Map and Format Data
-        const formattedSites = sites.map((site: any) => ({
+        const formattedSites = sites.map((site) => ({
+            // --- Scalar Fields ---
             id: site.id,
             siteName: site.siteName,
             concernedPerson: site.concernedPerson,
@@ -73,13 +115,50 @@ export async function GET(request: NextRequest) {
             needFollowUp: site.needFollowUp,
             imageUrl: site.imageUrl,
 
-            // Date Handling
-            constructionStartDate: site.constructionStartDate ? site.constructionStartDate.toISOString() : null,
-            constructionEndDate: site.constructionEndDate ? site.constructionEndDate.toISOString() : null,
-            firstVistDate: site.firstVistDate ? site.firstVistDate.toISOString() : null,
-            lastVisitDate: site.lastVisitDate ? site.lastVisitDate.toISOString() : null,
+            // Dates
+            constructionStartDate: site.constructionStartDate?.toISOString() ?? null,
+            constructionEndDate: site.constructionEndDate?.toISOString() ?? null,
+            firstVistDate: site.firstVistDate?.toISOString() ?? null,
+            lastVisitDate: site.lastVisitDate?.toISOString() ?? null,
             createdAt: site.createdAt.toISOString(),
             updatedAt: site.updatedAt.toISOString(),
+
+            // --- Nested Relations Mapped for API ---
+
+            // 1. Users: Combine names, ensure ID is passed
+            associatedUsers: site.associatedUsers.map(u => ({
+                id: u.id,
+                name: [u.firstName, u.lastName].filter(Boolean).join(' ') || 'Unknown',
+                role: u.role,
+                phoneNumber: u.phoneNumber
+            })),
+
+            // 2. Dealers: Pass basics
+            associatedDealers: site.associatedDealers.map(d => ({
+                id: d.id,
+                name: d.name,
+                phoneNo: d.phoneNo,
+                type: d.type,
+                area: d.area
+            })),
+
+            // 3. Masons: Pass basics
+            associatedMasons: site.associatedMasons.map(m => ({
+                id: m.id,
+                name: m.name,
+                phoneNumber: m.phoneNumber,
+                kycStatus: m.kycStatus
+            })),
+
+            // 4. Bag Lifts: Flatten mason name
+            bagLifts: site.bagLifts.map(bl => ({
+                id: bl.id,
+                bagCount: bl.bagCount,
+                pointsCredited: bl.pointsCredited,
+                status: bl.status,
+                purchaseDate: bl.purchaseDate.toISOString(),
+                masonName: bl.mason?.name ?? null
+            })),
         }));
 
         // 6. Validate with Zod

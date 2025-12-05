@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, MapPin, ExternalLink } from 'lucide-react'; // Added Icons
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,7 +16,6 @@ import { DataTableReusable } from '@/components/data-table-reusable';
 
 import { useDealerLocations } from '@/components/reusable-dealer-locations';
 import { getDealersSchema } from '@/lib/shared-zod-schema';
-import { BASE_URL } from '@/lib/Reusable-constants';
 
 type DealerRecord = z.infer<typeof getDealersSchema>;
 
@@ -44,7 +43,6 @@ const renderSelectFilter = (
         )}
       </SelectTrigger>
       <SelectContent>
-        {/* 'all' item for showing all records */}
         <SelectItem value="all">All {label}s</SelectItem>
         {options.map(option => (
           <SelectItem key={option} value={option}>
@@ -66,8 +64,8 @@ export default function ListDealersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [dealerToDeleteId, setDealerToDeleteId] = useState<string | null>(null);
 
-  // --- Filters: Search, Region, Area, Type ---
-  const [searchQuery, setSearchQuery] = useState(''); // Added Search State
+  // --- Filters ---
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterRegion, setFilterRegion] = useState<string>('all');
   const [filterArea, setFilterArea] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -75,7 +73,7 @@ export default function ListDealersPage() {
   // Locations from shared hook
   const { locations, loading: locationsLoading, error: locationsError } = useDealerLocations();
 
-  // Types from dealer-types endpoint
+  // Types
   const [availableTypes, setAvailableTypes] = useState<string[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [typesError, setTypesError] = useState<string | null>(null);
@@ -98,7 +96,7 @@ export default function ListDealersPage() {
     }
   }, []);
 
-  // --- Fetch Dealers (VERIFIED only) ---
+  // --- Fetch Dealers ---
   const fetchDealers = useCallback(async () => {
     setLoadingDealers(true);
     setErrorDealers(null);
@@ -150,50 +148,85 @@ export default function ListDealersPage() {
 
   // --- Client-side filtering ---
   const filteredDealers = dealers.filter(d => {
-    // 1. Search Query Match
     const nameMatch = !searchQuery || (d.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-
-    // 2. Dropdown Matches
     const regionMatch = filterRegion === 'all' || d.region === filterRegion;
     const areaMatch = filterArea === 'all' || d.area === filterArea;
     const typeMatch = filterType === 'all' || d.type === filterType;
-
     return nameMatch && regionMatch && areaMatch && typeMatch;
   });
 
-  // --- Loading / Error gates ---
-  if (loadingDealers || locationsLoading || loadingTypes) {
-    return <div className="flex justify-center items-center min-h-screen">Loading dealer data...</div>;
-  }
-  if (errorDealers || locationsError || typesError) {
-    return <div className="text-center text-red-500 min-h-screen pt-10">Error: {errorDealers || locationsError || typesError}</div>;
-  }
+  // --- Helper for Maps ---
+  const getGoogleMapsLink = (lat?: number | null, lng?: number | null) => {
+    if (!lat || !lng) return null;
+    return `https://www.google.com/maps?q=${lat},${lng}`;
+  };
 
   // --- Table columns ---
   const dealerColumns: ColumnDef<DealerRecord>[] = [
-    { accessorKey: 'name', header: 'Name' },
+    { accessorKey: 'name', header: 'Name', cell: info => <span className="font-semibold">{info.getValue() as string}</span> },
     { accessorKey: 'type', header: 'Type' },
-    { accessorKey: 'parentDealerName', header: 'Parent Dealer', cell: info => info.getValue() || '-' },
-    { accessorKey: 'region', header: 'Region(Zone)' },
-    { accessorKey: 'area', header: 'Area' },
+    
+    // Combined Location Column (Region + Area + Address + Map)
+    {
+      header: 'Location',
+      accessorKey: 'address', // Used for sorting fallback
+      cell: ({ row }) => {
+        const { region, area, address, pinCode, latitude, longitude } = row.original;
+        const mapLink = getGoogleMapsLink(latitude, longitude);
+
+        return (
+          <div className="flex flex-col min-w-[180px] text-xs space-y-1">
+            <div className="flex items-center gap-1 font-semibold text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span>{region || '-'} / {area || '-'}</span>
+            </div>
+            <div className="text-foreground truncate max-w-[250px]" title={address || ''}>
+              {address || 'No Address'} {pinCode ? `- ${pinCode}` : ''}
+            </div>
+            {mapLink ? (
+              <a 
+                href={mapLink} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="flex items-center gap-1 text-blue-600 hover:underline w-fit"
+              >
+                <ExternalLink className="h-3 w-3" /> View on Map
+              </a>
+            ) : (
+               <span className="text-gray-400 italic text-[10px]">No Coords</span>
+            )}
+          </div>
+        );
+      }
+    },
+
+    { accessorKey: 'parentDealerName', header: 'Parent', cell: info => info.getValue() || '-' },
     { accessorKey: 'nameOfFirm', header: 'Firm Name' },
     { accessorKey: 'underSalesPromoterName', header: 'SP Name' },
-    { accessorKey: 'address', header: 'Address' },
-    { accessorKey: 'pinCode', header: 'Pin Code' },
-    { accessorKey: 'dateOfBirth', header: 'DOB', cell: info => info.getValue() || '-' },
-    { accessorKey: 'anniversaryDate', header: 'Anniversary', cell: info => info.getValue() || '-' },
     { accessorKey: 'phoneNo', header: 'Phone No.' },
-    { accessorKey: 'totalPotential', header: 'Total Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
-    { accessorKey: 'bestPotential', header: 'Best Potential', cell: info => (info.getValue() as number)?.toFixed(2) },
-    { accessorKey: 'brandSelling', header: 'Brands', cell: info => (info.getValue() as string[]).join(', ') },
+    
+    // Combined Business Info
+    {
+      header: 'Business Info',
+      cell: ({ row }) => (
+        <div className="flex flex-col text-xs space-y-1 min-w-[120px]">
+           <div>Total: <span className="font-medium">{(row.original.totalPotential)?.toFixed(2)}</span></div>
+           <div>Best: <span className="font-medium">{(row.original.bestPotential)?.toFixed(2)}</span></div>
+           <div className="text-muted-foreground truncate max-w-[150px]" title={row.original.brandSelling.join(', ')}>
+             {row.original.brandSelling.join(', ')}
+           </div>
+        </div>
+      )
+    },
+
     { accessorKey: 'createdAt', header: 'Added On', cell: info => new Date(info.getValue() as string).toLocaleDateString() },
-    { accessorKey: 'verificationStatus', header: 'Status' },
+    
     {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
         <Button
-          className="bg-red-800 hover:bg-red-900 text-white"
+          className="bg-red-800 hover:bg-red-900 text-white h-7 px-3 text-xs"
           size="sm"
           onClick={() => {
             setDealerToDeleteId(row.original.id);
@@ -206,11 +239,26 @@ export default function ListDealersPage() {
     },
   ];
 
+  // --- Loading / Error gates ---
+  if (loadingDealers || locationsLoading || loadingTypes) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen gap-2">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading dealer data...</p>
+      </div>
+    );
+  }
+  
+  if (errorDealers || locationsError || typesError) {
+    return <div className="text-center text-red-500 min-h-screen pt-10">Error: {errorDealers || locationsError || typesError}</div>;
+  }
+
   // --- UI ---
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 max-w-[100vw] overflow-hidden">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Manage Dealers</h1>
+        <span className="text-muted-foreground text-sm">{dealers.length} verified dealers</span>
       </div>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -227,8 +275,8 @@ export default function ListDealersPage() {
       </Dialog>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-card border">
-
+      <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg bg-card border mb-6 shadow-sm">
+        
         {/* 1. Name Search Input */}
         <div className="flex flex-col space-y-1 w-full sm:w-[250px] min-w-[150px]">
           <label className="text-sm font-medium text-muted-foreground">Dealer Name</label>
@@ -254,7 +302,7 @@ export default function ListDealersPage() {
 
         {/* 3. Region Filter */}
         {renderSelectFilter(
-          'Region(Zone)',
+          'Region',
           filterRegion,
           setFilterRegion,
           (locations.regions || []).filter(Boolean).sort(),
@@ -272,11 +320,10 @@ export default function ListDealersPage() {
       </div>
 
       {/* Table */}
-      <h2 className="text-2xl font-bold mt-10 mb-4">Existing Dealers</h2>
       {dealers.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">No dealers found for your company.</div>
+        <div className="text-center text-gray-500 py-12 bg-gray-50 rounded-lg">No dealers found for your company.</div>
       ) : (
-        <div className="bg-card p-6 rounded-lg border border-border">
+        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
           <DataTableReusable
             columns={dealerColumns}
             data={filteredDealers}

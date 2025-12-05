@@ -191,11 +191,10 @@ model Dealer {
   dailyVisitReportsAsSubDealer  DailyVisitReport[]      @relation("DVR_SubDealer")
   permanentJourneyPlansAsDealer PermanentJourneyPlan[]  @relation("PJP_Dealer")
   masons                        Mason_PC_Side[]
-
   bagLifts BagLift[] @relation("DealerBagLifts")
-  
   associatedMasons      Mason_PC_Side[] @relation("DealerAssociatedMasons")
   associatedSites       TechnicalSite[] @relation("SiteAssociatedDealers")
+  geoTrackings          GeoTracking[]
 
   @@index([userId], map: "idx_dealers_user_id")
   @@index([parentDealerId], map: "idx_dealers_parent_dealer_id")
@@ -399,10 +398,12 @@ model GeoTracking {
   destLat                 Decimal?  @map("dest_lat") @db.Decimal(10, 7)
   destLng                 Decimal?  @map("dest_lng") @db.Decimal(10, 7)
 
-  // Relationship to the User (junior-exec, exec, etc...)
+  // Relationship to other tables
   user User @relation("UserGeoTracking", fields: [userId], references: [id], onDelete: Cascade)
   siteId String? @map("site_id") @db.Uuid // FK to TechnicalSite
   site TechnicalSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  dealerId String? @map("dealer_id") @db.VarChar(255) // Matches Dealer.id type
+  dealer   Dealer? @relation(fields: [dealerId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -411,6 +412,7 @@ model GeoTracking {
   @@index([journeyId, recordedAt], map: "idx_geo_journey_time")
   @@index([isActive], map: "idx_geo_active")
   @@index([siteId], map: "idx_geo_site_id")
+  @@index([dealerId], map: "idx_geo_dealer_id")
   @@index([userId], map: "idx_geo_tracking_user_id")
   @@index([recordedAt], map: "idx_geo_tracking_recorded_at") // Useful for time-based queries
   @@map("geo_tracking") // Table name in DB

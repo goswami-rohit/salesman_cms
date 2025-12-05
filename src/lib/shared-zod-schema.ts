@@ -606,6 +606,7 @@ export const geoTrackingSchema = z.object({
   area: z.string().optional(),
   region: z.string().optional(),
   siteId: z.string().optional().nullable(),
+  dealerId: z.string().optional().nullable(),
 });
 
 // leave application
@@ -646,6 +647,38 @@ export const tsoMeetingSchema = z.object({
   siteId: z.string().optional().nullable(),
 });
 
+// technical sites - flattened and linked back 
+const associatedUserSchema = z.object({
+  id: z.number().int(), // User IDs are Integers
+  name: z.string(),     // Combined First + Last
+  role: z.string(),
+  phoneNumber: z.string().nullable(),
+});
+
+const associatedDealerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  phoneNo: z.string(),
+  type: z.string(),
+  area: z.string(),
+});
+
+const associatedMasonSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  phoneNumber: z.string(),
+  kycStatus: z.string().nullable(),
+});
+
+const siteBagLiftSchema = z.object({
+  id: z.string(),
+  bagCount: z.number().int(),
+  pointsCredited: z.number().int(),
+  status: z.string(),
+  purchaseDate: z.string(), // ISO String
+  masonName: z.string().nullable(),
+});
+
 export const technicalSiteSchema = z.object({
   id: z.string(),
   siteName: z.string(),
@@ -670,6 +703,11 @@ export const technicalSiteSchema = z.object({
 
   createdAt: z.string(), // ISO String
   updatedAt: z.string(), // ISO String
+
+  associatedUsers: z.array(associatedUserSchema),
+  associatedDealers: z.array(associatedDealerSchema),
+  associatedMasons: z.array(associatedMasonSchema),
+  bagLifts: z.array(siteBagLiftSchema),
 });
 
 export const rewardSchema = z.object({

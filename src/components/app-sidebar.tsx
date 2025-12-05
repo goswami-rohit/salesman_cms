@@ -46,7 +46,7 @@ const ITEM_PERMISSIONS = {
   "Team Overview": 'teamOverview.teamTabContent' as const,
   "Users": 'users' as const,
   "Assign Tasks": 'assignTasks' as const,
-  "Dealer Management": 'dealerManagement.listDealers' as const,
+  "Dealers": 'dealerManagement.listDealers' as const,
   "Technical Sites": 'technicalSites.listSites' as const,
   "Reports": 'reports.dailyVisitReports' as const,
   "Salesman Attendance": 'salesmanAttendance' as const,
@@ -101,15 +101,15 @@ const menuItems: MenuItem[] = [
       //   permission: ITEM_PERMISSIONS["Assign Tasks"]
       // },
       {
-        title: "Dealer Management",
+        title: "Dealers",
         url: "/dashboard/dealerManagement",
-        permission: ITEM_PERMISSIONS["Dealer Management"]
+        permission: ITEM_PERMISSIONS["Dealers"]
       },
-      // {
-      //   title: "Technical Sites",
-      //   url: "/dashboard/technicalSites",
-      //   permission: ITEM_PERMISSIONS["Technical Sites"]
-      // },
+      {
+        title: "Technical Sites",
+        url: "/dashboard/technicalSites",
+        permission: ITEM_PERMISSIONS["Technical Sites"]
+      },
       {
         title: "Reports",
         url: "/dashboard/reports",

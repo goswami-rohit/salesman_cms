@@ -3332,6 +3332,7 @@ export const GeoTrackingScalarFieldEnum = {
   destLat: 'destLat',
   destLng: 'destLng',
   siteId: 'siteId',
+  dealerId: 'dealerId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
