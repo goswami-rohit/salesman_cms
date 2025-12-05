@@ -6,7 +6,7 @@ import { getTokenClaims } from '@workos-inc/authkit-nextjs';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { technicalSiteSchema } from '@/lib/shared-zod-schema';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../../../../prisma/generated/client';
 
 const allowedRoles = [
     'president', 'senior-general-manager', 'general-manager',
