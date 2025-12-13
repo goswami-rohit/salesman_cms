@@ -418,7 +418,15 @@ export const ModelName = {
   RewardRedemption: 'RewardRedemption',
   PointsLedger: 'PointsLedger',
   SchemeSlabs: 'SchemeSlabs',
-  MasonSlabAchievements: 'MasonSlabAchievements'
+  MasonSlabAchievements: 'MasonSlabAchievements',
+  Aoi: 'Aoi',
+  AoiGridCell: 'AoiGridCell',
+  SatelliteScene: 'SatelliteScene',
+  GridChangeScore: 'GridChangeScore',
+  HighresScene: 'HighresScene',
+  DetectedBuilding: 'DetectedBuilding',
+  ConstructionSite: 'ConstructionSite',
+  TsoVisit: 'TsoVisit'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -434,7 +442,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "company" | "user" | "dealer" | "dailyVisitReport" | "permanentJourneyPlan" | "salesmanAttendance" | "salesmanLeaveApplication" | "competitionReport" | "geoTracking" | "dailyTask" | "salesOrder" | "dealerReportsAndScores" | "rating" | "brand" | "dealerBrandMapping" | "tally_raw" | "technicalVisitReport" | "tSOMeeting" | "technicalSite" | "mason_PC_Side" | "rewards" | "giftAllocationLog" | "otpVerification" | "authSession" | "schemesOffers" | "masonOnScheme" | "masonsOnMeetings" | "rewardCategory" | "kYCSubmission" | "tSOAssignment" | "bagLift" | "rewardRedemption" | "pointsLedger" | "schemeSlabs" | "masonSlabAchievements"
+    modelProps: "company" | "user" | "dealer" | "dailyVisitReport" | "permanentJourneyPlan" | "salesmanAttendance" | "salesmanLeaveApplication" | "competitionReport" | "geoTracking" | "dailyTask" | "salesOrder" | "dealerReportsAndScores" | "rating" | "brand" | "dealerBrandMapping" | "tally_raw" | "technicalVisitReport" | "tSOMeeting" | "technicalSite" | "mason_PC_Side" | "rewards" | "giftAllocationLog" | "otpVerification" | "authSession" | "schemesOffers" | "masonOnScheme" | "masonsOnMeetings" | "rewardCategory" | "kYCSubmission" | "tSOAssignment" | "bagLift" | "rewardRedemption" | "pointsLedger" | "schemeSlabs" | "masonSlabAchievements" | "aoi" | "aoiGridCell" | "satelliteScene" | "gridChangeScore" | "highresScene" | "detectedBuilding" | "constructionSite" | "tsoVisit"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3028,6 +3036,598 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Aoi: {
+      payload: Prisma.$AoiPayload<ExtArgs>
+      fields: Prisma.AoiFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AoiFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AoiFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>
+        }
+        findFirst: {
+          args: Prisma.AoiFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AoiFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>
+        }
+        findMany: {
+          args: Prisma.AoiFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>[]
+        }
+        create: {
+          args: Prisma.AoiCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>
+        }
+        createMany: {
+          args: Prisma.AoiCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AoiCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>[]
+        }
+        delete: {
+          args: Prisma.AoiDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>
+        }
+        update: {
+          args: Prisma.AoiUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>
+        }
+        deleteMany: {
+          args: Prisma.AoiDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AoiUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AoiUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>[]
+        }
+        upsert: {
+          args: Prisma.AoiUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiPayload>
+        }
+        aggregate: {
+          args: Prisma.AoiAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAoi>
+        }
+        groupBy: {
+          args: Prisma.AoiGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AoiGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AoiCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AoiCountAggregateOutputType> | number
+        }
+      }
+    }
+    AoiGridCell: {
+      payload: Prisma.$AoiGridCellPayload<ExtArgs>
+      fields: Prisma.AoiGridCellFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AoiGridCellFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AoiGridCellFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>
+        }
+        findFirst: {
+          args: Prisma.AoiGridCellFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AoiGridCellFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>
+        }
+        findMany: {
+          args: Prisma.AoiGridCellFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>[]
+        }
+        create: {
+          args: Prisma.AoiGridCellCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>
+        }
+        createMany: {
+          args: Prisma.AoiGridCellCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AoiGridCellCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>[]
+        }
+        delete: {
+          args: Prisma.AoiGridCellDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>
+        }
+        update: {
+          args: Prisma.AoiGridCellUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>
+        }
+        deleteMany: {
+          args: Prisma.AoiGridCellDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AoiGridCellUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AoiGridCellUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>[]
+        }
+        upsert: {
+          args: Prisma.AoiGridCellUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AoiGridCellPayload>
+        }
+        aggregate: {
+          args: Prisma.AoiGridCellAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAoiGridCell>
+        }
+        groupBy: {
+          args: Prisma.AoiGridCellGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AoiGridCellGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AoiGridCellCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AoiGridCellCountAggregateOutputType> | number
+        }
+      }
+    }
+    SatelliteScene: {
+      payload: Prisma.$SatelliteScenePayload<ExtArgs>
+      fields: Prisma.SatelliteSceneFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SatelliteSceneFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SatelliteSceneFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>
+        }
+        findFirst: {
+          args: Prisma.SatelliteSceneFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SatelliteSceneFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>
+        }
+        findMany: {
+          args: Prisma.SatelliteSceneFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>[]
+        }
+        create: {
+          args: Prisma.SatelliteSceneCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>
+        }
+        createMany: {
+          args: Prisma.SatelliteSceneCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SatelliteSceneCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>[]
+        }
+        delete: {
+          args: Prisma.SatelliteSceneDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>
+        }
+        update: {
+          args: Prisma.SatelliteSceneUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>
+        }
+        deleteMany: {
+          args: Prisma.SatelliteSceneDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SatelliteSceneUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SatelliteSceneUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>[]
+        }
+        upsert: {
+          args: Prisma.SatelliteSceneUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SatelliteScenePayload>
+        }
+        aggregate: {
+          args: Prisma.SatelliteSceneAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSatelliteScene>
+        }
+        groupBy: {
+          args: Prisma.SatelliteSceneGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SatelliteSceneGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SatelliteSceneCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SatelliteSceneCountAggregateOutputType> | number
+        }
+      }
+    }
+    GridChangeScore: {
+      payload: Prisma.$GridChangeScorePayload<ExtArgs>
+      fields: Prisma.GridChangeScoreFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.GridChangeScoreFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.GridChangeScoreFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>
+        }
+        findFirst: {
+          args: Prisma.GridChangeScoreFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.GridChangeScoreFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>
+        }
+        findMany: {
+          args: Prisma.GridChangeScoreFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>[]
+        }
+        create: {
+          args: Prisma.GridChangeScoreCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>
+        }
+        createMany: {
+          args: Prisma.GridChangeScoreCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.GridChangeScoreCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>[]
+        }
+        delete: {
+          args: Prisma.GridChangeScoreDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>
+        }
+        update: {
+          args: Prisma.GridChangeScoreUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>
+        }
+        deleteMany: {
+          args: Prisma.GridChangeScoreDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.GridChangeScoreUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.GridChangeScoreUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>[]
+        }
+        upsert: {
+          args: Prisma.GridChangeScoreUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GridChangeScorePayload>
+        }
+        aggregate: {
+          args: Prisma.GridChangeScoreAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateGridChangeScore>
+        }
+        groupBy: {
+          args: Prisma.GridChangeScoreGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.GridChangeScoreGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.GridChangeScoreCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.GridChangeScoreCountAggregateOutputType> | number
+        }
+      }
+    }
+    HighresScene: {
+      payload: Prisma.$HighresScenePayload<ExtArgs>
+      fields: Prisma.HighresSceneFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.HighresSceneFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.HighresSceneFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>
+        }
+        findFirst: {
+          args: Prisma.HighresSceneFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.HighresSceneFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>
+        }
+        findMany: {
+          args: Prisma.HighresSceneFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>[]
+        }
+        create: {
+          args: Prisma.HighresSceneCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>
+        }
+        createMany: {
+          args: Prisma.HighresSceneCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.HighresSceneCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>[]
+        }
+        delete: {
+          args: Prisma.HighresSceneDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>
+        }
+        update: {
+          args: Prisma.HighresSceneUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>
+        }
+        deleteMany: {
+          args: Prisma.HighresSceneDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.HighresSceneUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.HighresSceneUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>[]
+        }
+        upsert: {
+          args: Prisma.HighresSceneUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$HighresScenePayload>
+        }
+        aggregate: {
+          args: Prisma.HighresSceneAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateHighresScene>
+        }
+        groupBy: {
+          args: Prisma.HighresSceneGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.HighresSceneGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.HighresSceneCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.HighresSceneCountAggregateOutputType> | number
+        }
+      }
+    }
+    DetectedBuilding: {
+      payload: Prisma.$DetectedBuildingPayload<ExtArgs>
+      fields: Prisma.DetectedBuildingFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DetectedBuildingFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DetectedBuildingFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>
+        }
+        findFirst: {
+          args: Prisma.DetectedBuildingFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DetectedBuildingFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>
+        }
+        findMany: {
+          args: Prisma.DetectedBuildingFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>[]
+        }
+        create: {
+          args: Prisma.DetectedBuildingCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>
+        }
+        createMany: {
+          args: Prisma.DetectedBuildingCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DetectedBuildingCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>[]
+        }
+        delete: {
+          args: Prisma.DetectedBuildingDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>
+        }
+        update: {
+          args: Prisma.DetectedBuildingUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>
+        }
+        deleteMany: {
+          args: Prisma.DetectedBuildingDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DetectedBuildingUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DetectedBuildingUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>[]
+        }
+        upsert: {
+          args: Prisma.DetectedBuildingUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DetectedBuildingPayload>
+        }
+        aggregate: {
+          args: Prisma.DetectedBuildingAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDetectedBuilding>
+        }
+        groupBy: {
+          args: Prisma.DetectedBuildingGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DetectedBuildingGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DetectedBuildingCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DetectedBuildingCountAggregateOutputType> | number
+        }
+      }
+    }
+    ConstructionSite: {
+      payload: Prisma.$ConstructionSitePayload<ExtArgs>
+      fields: Prisma.ConstructionSiteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ConstructionSiteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ConstructionSiteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>
+        }
+        findFirst: {
+          args: Prisma.ConstructionSiteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ConstructionSiteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>
+        }
+        findMany: {
+          args: Prisma.ConstructionSiteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>[]
+        }
+        create: {
+          args: Prisma.ConstructionSiteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>
+        }
+        createMany: {
+          args: Prisma.ConstructionSiteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ConstructionSiteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>[]
+        }
+        delete: {
+          args: Prisma.ConstructionSiteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>
+        }
+        update: {
+          args: Prisma.ConstructionSiteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>
+        }
+        deleteMany: {
+          args: Prisma.ConstructionSiteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ConstructionSiteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ConstructionSiteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>[]
+        }
+        upsert: {
+          args: Prisma.ConstructionSiteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConstructionSitePayload>
+        }
+        aggregate: {
+          args: Prisma.ConstructionSiteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateConstructionSite>
+        }
+        groupBy: {
+          args: Prisma.ConstructionSiteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ConstructionSiteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ConstructionSiteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ConstructionSiteCountAggregateOutputType> | number
+        }
+      }
+    }
+    TsoVisit: {
+      payload: Prisma.$TsoVisitPayload<ExtArgs>
+      fields: Prisma.TsoVisitFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TsoVisitFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TsoVisitFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>
+        }
+        findFirst: {
+          args: Prisma.TsoVisitFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TsoVisitFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>
+        }
+        findMany: {
+          args: Prisma.TsoVisitFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>[]
+        }
+        create: {
+          args: Prisma.TsoVisitCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>
+        }
+        createMany: {
+          args: Prisma.TsoVisitCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TsoVisitCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>[]
+        }
+        delete: {
+          args: Prisma.TsoVisitDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>
+        }
+        update: {
+          args: Prisma.TsoVisitUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>
+        }
+        deleteMany: {
+          args: Prisma.TsoVisitDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TsoVisitUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TsoVisitUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>[]
+        }
+        upsert: {
+          args: Prisma.TsoVisitUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TsoVisitPayload>
+        }
+        aggregate: {
+          args: Prisma.TsoVisitAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTsoVisit>
+        }
+        groupBy: {
+          args: Prisma.TsoVisitGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TsoVisitGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TsoVisitCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TsoVisitCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3786,6 +4386,168 @@ export const MasonSlabAchievementsScalarFieldEnum = {
 export type MasonSlabAchievementsScalarFieldEnum = (typeof MasonSlabAchievementsScalarFieldEnum)[keyof typeof MasonSlabAchievementsScalarFieldEnum]
 
 
+export const AoiScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type',
+  centerLat: 'centerLat',
+  centerLon: 'centerLon',
+  radiusKm: 'radiusKm',
+  boundaryGeojson: 'boundaryGeojson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AoiScalarFieldEnum = (typeof AoiScalarFieldEnum)[keyof typeof AoiScalarFieldEnum]
+
+
+export const AoiGridCellScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  cellRow: 'cellRow',
+  cellCol: 'cellCol',
+  centroidLat: 'centroidLat',
+  centroidLon: 'centroidLon',
+  geometryGeojson: 'geometryGeojson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AoiGridCellScalarFieldEnum = (typeof AoiGridCellScalarFieldEnum)[keyof typeof AoiGridCellScalarFieldEnum]
+
+
+export const SatelliteSceneScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  provider: 'provider',
+  stacId: 'stacId',
+  stacCollection: 'stacCollection',
+  acquisitionDatetime: 'acquisitionDatetime',
+  cloudCoverPercent: 'cloudCoverPercent',
+  bboxMinLon: 'bboxMinLon',
+  bboxMinLat: 'bboxMinLat',
+  bboxMaxLon: 'bboxMaxLon',
+  bboxMaxLat: 'bboxMaxLat',
+  crsEpsg: 'crsEpsg',
+  nativeResolutionM: 'nativeResolutionM',
+  r2Bucket: 'r2Bucket',
+  r2Prefix: 'r2Prefix',
+  redBandKey: 'redBandKey',
+  nirBandKey: 'nirBandKey',
+  greenBandKey: 'greenBandKey',
+  blueBandKey: 'blueBandKey',
+  rgbPreviewKey: 'rgbPreviewKey',
+  stacProperties: 'stacProperties',
+  stacAssets: 'stacAssets',
+  isDownloaded: 'isDownloaded',
+  isProcessed: 'isProcessed',
+  isDeletedFromR2: 'isDeletedFromR2',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SatelliteSceneScalarFieldEnum = (typeof SatelliteSceneScalarFieldEnum)[keyof typeof SatelliteSceneScalarFieldEnum]
+
+
+export const GridChangeScoreScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  earlierSceneId: 'earlierSceneId',
+  laterSceneId: 'laterSceneId',
+  t0AcquisitionDatetime: 't0AcquisitionDatetime',
+  t1AcquisitionDatetime: 't1AcquisitionDatetime',
+  ndviDropMean: 'ndviDropMean',
+  ndviDropFraction: 'ndviDropFraction',
+  changeScore: 'changeScore',
+  isHot: 'isHot',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type GridChangeScoreScalarFieldEnum = (typeof GridChangeScoreScalarFieldEnum)[keyof typeof GridChangeScoreScalarFieldEnum]
+
+
+export const HighresSceneScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  provider: 'provider',
+  acquisitionDatetime: 'acquisitionDatetime',
+  resolutionM: 'resolutionM',
+  bboxMinLon: 'bboxMinLon',
+  bboxMinLat: 'bboxMinLat',
+  bboxMaxLon: 'bboxMaxLon',
+  bboxMaxLat: 'bboxMaxLat',
+  r2Bucket: 'r2Bucket',
+  r2Key: 'r2Key',
+  rawMetadataJson: 'rawMetadataJson',
+  isDownloaded: 'isDownloaded',
+  isProcessed: 'isProcessed',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type HighresSceneScalarFieldEnum = (typeof HighresSceneScalarFieldEnum)[keyof typeof HighresSceneScalarFieldEnum]
+
+
+export const DetectedBuildingScalarFieldEnum = {
+  id: 'id',
+  highresSceneId: 'highresSceneId',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  centroidLat: 'centroidLat',
+  centroidLon: 'centroidLon',
+  footprintGeojson: 'footprintGeojson',
+  areaSqM: 'areaSqM',
+  detectionConfidence: 'detectionConfidence',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DetectedBuildingScalarFieldEnum = (typeof DetectedBuildingScalarFieldEnum)[keyof typeof DetectedBuildingScalarFieldEnum]
+
+
+export const ConstructionSiteScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  sourceType: 'sourceType',
+  sourceBuildingId: 'sourceBuildingId',
+  lat: 'lat',
+  lon: 'lon',
+  geomGeojson: 'geomGeojson',
+  estimatedAreaSqM: 'estimatedAreaSqM',
+  firstSeenDate: 'firstSeenDate',
+  lastSeenDate: 'lastSeenDate',
+  status: 'status',
+  verifiedByTsoId: 'verifiedByTsoId',
+  verifiedAt: 'verifiedAt',
+  linkedDealerId: 'linkedDealerId',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ConstructionSiteScalarFieldEnum = (typeof ConstructionSiteScalarFieldEnum)[keyof typeof ConstructionSiteScalarFieldEnum]
+
+
+export const TsoVisitScalarFieldEnum = {
+  id: 'id',
+  siteId: 'siteId',
+  tsoId: 'tsoId',
+  visitedAt: 'visitedAt',
+  visitOutcome: 'visitOutcome',
+  comments: 'comments',
+  photoUrls: 'photoUrls',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TsoVisitScalarFieldEnum = (typeof TsoVisitScalarFieldEnum)[keyof typeof TsoVisitScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -4060,6 +4822,14 @@ export type GlobalOmitConfig = {
   pointsLedger?: Prisma.PointsLedgerOmit
   schemeSlabs?: Prisma.SchemeSlabsOmit
   masonSlabAchievements?: Prisma.MasonSlabAchievementsOmit
+  aoi?: Prisma.AoiOmit
+  aoiGridCell?: Prisma.AoiGridCellOmit
+  satelliteScene?: Prisma.SatelliteSceneOmit
+  gridChangeScore?: Prisma.GridChangeScoreOmit
+  highresScene?: Prisma.HighresSceneOmit
+  detectedBuilding?: Prisma.DetectedBuildingOmit
+  constructionSite?: Prisma.ConstructionSiteOmit
+  tsoVisit?: Prisma.TsoVisitOmit
 }
 
 /* Types for Logging */

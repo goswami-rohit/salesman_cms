@@ -85,7 +85,15 @@ export const ModelName = {
   RewardRedemption: 'RewardRedemption',
   PointsLedger: 'PointsLedger',
   SchemeSlabs: 'SchemeSlabs',
-  MasonSlabAchievements: 'MasonSlabAchievements'
+  MasonSlabAchievements: 'MasonSlabAchievements',
+  Aoi: 'Aoi',
+  AoiGridCell: 'AoiGridCell',
+  SatelliteScene: 'SatelliteScene',
+  GridChangeScore: 'GridChangeScore',
+  HighresScene: 'HighresScene',
+  DetectedBuilding: 'DetectedBuilding',
+  ConstructionSite: 'ConstructionSite',
+  TsoVisit: 'TsoVisit'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -821,6 +829,168 @@ export const MasonSlabAchievementsScalarFieldEnum = {
 } as const
 
 export type MasonSlabAchievementsScalarFieldEnum = (typeof MasonSlabAchievementsScalarFieldEnum)[keyof typeof MasonSlabAchievementsScalarFieldEnum]
+
+
+export const AoiScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type',
+  centerLat: 'centerLat',
+  centerLon: 'centerLon',
+  radiusKm: 'radiusKm',
+  boundaryGeojson: 'boundaryGeojson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AoiScalarFieldEnum = (typeof AoiScalarFieldEnum)[keyof typeof AoiScalarFieldEnum]
+
+
+export const AoiGridCellScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  cellRow: 'cellRow',
+  cellCol: 'cellCol',
+  centroidLat: 'centroidLat',
+  centroidLon: 'centroidLon',
+  geometryGeojson: 'geometryGeojson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AoiGridCellScalarFieldEnum = (typeof AoiGridCellScalarFieldEnum)[keyof typeof AoiGridCellScalarFieldEnum]
+
+
+export const SatelliteSceneScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  provider: 'provider',
+  stacId: 'stacId',
+  stacCollection: 'stacCollection',
+  acquisitionDatetime: 'acquisitionDatetime',
+  cloudCoverPercent: 'cloudCoverPercent',
+  bboxMinLon: 'bboxMinLon',
+  bboxMinLat: 'bboxMinLat',
+  bboxMaxLon: 'bboxMaxLon',
+  bboxMaxLat: 'bboxMaxLat',
+  crsEpsg: 'crsEpsg',
+  nativeResolutionM: 'nativeResolutionM',
+  r2Bucket: 'r2Bucket',
+  r2Prefix: 'r2Prefix',
+  redBandKey: 'redBandKey',
+  nirBandKey: 'nirBandKey',
+  greenBandKey: 'greenBandKey',
+  blueBandKey: 'blueBandKey',
+  rgbPreviewKey: 'rgbPreviewKey',
+  stacProperties: 'stacProperties',
+  stacAssets: 'stacAssets',
+  isDownloaded: 'isDownloaded',
+  isProcessed: 'isProcessed',
+  isDeletedFromR2: 'isDeletedFromR2',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SatelliteSceneScalarFieldEnum = (typeof SatelliteSceneScalarFieldEnum)[keyof typeof SatelliteSceneScalarFieldEnum]
+
+
+export const GridChangeScoreScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  earlierSceneId: 'earlierSceneId',
+  laterSceneId: 'laterSceneId',
+  t0AcquisitionDatetime: 't0AcquisitionDatetime',
+  t1AcquisitionDatetime: 't1AcquisitionDatetime',
+  ndviDropMean: 'ndviDropMean',
+  ndviDropFraction: 'ndviDropFraction',
+  changeScore: 'changeScore',
+  isHot: 'isHot',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type GridChangeScoreScalarFieldEnum = (typeof GridChangeScoreScalarFieldEnum)[keyof typeof GridChangeScoreScalarFieldEnum]
+
+
+export const HighresSceneScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  provider: 'provider',
+  acquisitionDatetime: 'acquisitionDatetime',
+  resolutionM: 'resolutionM',
+  bboxMinLon: 'bboxMinLon',
+  bboxMinLat: 'bboxMinLat',
+  bboxMaxLon: 'bboxMaxLon',
+  bboxMaxLat: 'bboxMaxLat',
+  r2Bucket: 'r2Bucket',
+  r2Key: 'r2Key',
+  rawMetadataJson: 'rawMetadataJson',
+  isDownloaded: 'isDownloaded',
+  isProcessed: 'isProcessed',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type HighresSceneScalarFieldEnum = (typeof HighresSceneScalarFieldEnum)[keyof typeof HighresSceneScalarFieldEnum]
+
+
+export const DetectedBuildingScalarFieldEnum = {
+  id: 'id',
+  highresSceneId: 'highresSceneId',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  centroidLat: 'centroidLat',
+  centroidLon: 'centroidLon',
+  footprintGeojson: 'footprintGeojson',
+  areaSqM: 'areaSqM',
+  detectionConfidence: 'detectionConfidence',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DetectedBuildingScalarFieldEnum = (typeof DetectedBuildingScalarFieldEnum)[keyof typeof DetectedBuildingScalarFieldEnum]
+
+
+export const ConstructionSiteScalarFieldEnum = {
+  id: 'id',
+  aoiId: 'aoiId',
+  gridCellId: 'gridCellId',
+  sourceType: 'sourceType',
+  sourceBuildingId: 'sourceBuildingId',
+  lat: 'lat',
+  lon: 'lon',
+  geomGeojson: 'geomGeojson',
+  estimatedAreaSqM: 'estimatedAreaSqM',
+  firstSeenDate: 'firstSeenDate',
+  lastSeenDate: 'lastSeenDate',
+  status: 'status',
+  verifiedByTsoId: 'verifiedByTsoId',
+  verifiedAt: 'verifiedAt',
+  linkedDealerId: 'linkedDealerId',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ConstructionSiteScalarFieldEnum = (typeof ConstructionSiteScalarFieldEnum)[keyof typeof ConstructionSiteScalarFieldEnum]
+
+
+export const TsoVisitScalarFieldEnum = {
+  id: 'id',
+  siteId: 'siteId',
+  tsoId: 'tsoId',
+  visitedAt: 'visitedAt',
+  visitOutcome: 'visitOutcome',
+  comments: 'comments',
+  photoUrls: 'photoUrls',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TsoVisitScalarFieldEnum = (typeof TsoVisitScalarFieldEnum)[keyof typeof TsoVisitScalarFieldEnum]
 
 
 export const SortOrder = {

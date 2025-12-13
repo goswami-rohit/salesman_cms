@@ -192,3 +192,43 @@ export type SchemeSlabs = Prisma.SchemeSlabsModel
  * 
  */
 export type MasonSlabAchievements = Prisma.MasonSlabAchievementsModel
+/**
+ * Model Aoi
+ * 
+ */
+export type Aoi = Prisma.AoiModel
+/**
+ * Model AoiGridCell
+ * 
+ */
+export type AoiGridCell = Prisma.AoiGridCellModel
+/**
+ * Model SatelliteScene
+ * 
+ */
+export type SatelliteScene = Prisma.SatelliteSceneModel
+/**
+ * Model GridChangeScore
+ * 
+ */
+export type GridChangeScore = Prisma.GridChangeScoreModel
+/**
+ * Model HighresScene
+ * 
+ */
+export type HighresScene = Prisma.HighresSceneModel
+/**
+ * Model DetectedBuilding
+ * 
+ */
+export type DetectedBuilding = Prisma.DetectedBuildingModel
+/**
+ * Model ConstructionSite
+ * 
+ */
+export type ConstructionSite = Prisma.ConstructionSiteModel
+/**
+ * Model TsoVisit
+ * 
+ */
+export type TsoVisit = Prisma.TsoVisitModel

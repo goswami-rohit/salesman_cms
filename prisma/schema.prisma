@@ -1135,3 +1135,238 @@ model MasonSlabAchievements {
   @@index([schemeSlabId])
   @@map("mason_slab_achievements")
 }
+
+// Satellite Image Tables
+model Aoi {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String
+  type           String
+  centerLat      Float    @map("center_lat")
+  centerLon      Float    @map("center_lon")
+  radiusKm       Float    @map("radius_km")
+  boundaryGeojson Json?   @map("boundary_geojson") @db.JsonB
+
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  gridCells      AoiGridCell[]
+  satelliteScenes SatelliteScene[]
+  gridChangeScores GridChangeScore[]
+  highresScenes  HighresScene[]
+  detectedBuildings DetectedBuilding[]
+  constructionSites ConstructionSite[]
+
+  @@map("aoi")
+}
+
+model AoiGridCell {
+  id             String   @id @default(uuid()) @db.Uuid
+  aoiId          String   @map("aoi_id") @db.Uuid
+  cellRow        Int      @map("cell_row")
+  cellCol        Int      @map("cell_col")
+  centroidLat    Float    @map("centroid_lat")
+  centroidLon    Float    @map("centroid_lon")
+  geometryGeojson Json    @map("geometry_geojson") @db.JsonB
+
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  aoi            Aoi      @relation(fields: [aoiId], references: [id], onDelete: Cascade)
+  gridChangeScores GridChangeScore[]
+  highresScenes  HighresScene[]
+  detectedBuildings DetectedBuilding[]
+  constructionSites ConstructionSite[]
+
+  @@unique([aoiId, cellRow, cellCol])
+  @@map("aoi_grid_cell")
+}
+
+model SatelliteScene {
+  id                   String   @id @default(uuid()) @db.Uuid
+  aoiId                String   @map("aoi_id") @db.Uuid
+
+  provider             String
+  stacId               String   @map("stac_id")
+  stacCollection       String   @map("stac_collection")
+  acquisitionDatetime  DateTime @map("acquisition_datetime") @db.Timestamptz(6)
+  cloudCoverPercent    Float?   @map("cloud_cover_percent")
+
+  bboxMinLon           Float    @map("bbox_min_lon")
+  bboxMinLat           Float    @map("bbox_min_lat")
+  bboxMaxLon           Float    @map("bbox_max_lon")
+  bboxMaxLat           Float    @map("bbox_max_lat")
+
+  crsEpsg              Int?     @map("crs_epsg")
+  nativeResolutionM    Float?   @map("native_resolution_m")
+
+  r2Bucket             String   @map("r2_bucket")
+  r2Prefix             String   @map("r2_prefix")
+  redBandKey           String   @map("red_band_key")
+  nirBandKey           String   @map("nir_band_key")
+  greenBandKey         String?  @map("green_band_key")
+  blueBandKey          String?  @map("blue_band_key")
+  rgbPreviewKey        String?  @map("rgb_preview_key")
+
+  stacProperties       Json?    @map("stac_properties") @db.JsonB
+  stacAssets           Json?    @map("stac_assets") @db.JsonB
+
+  isDownloaded         Boolean  @default(false) @map("is_downloaded")
+  isProcessed          Boolean  @default(false) @map("is_processed")
+  isDeletedFromR2      Boolean  @default(false) @map("is_deleted_from_r2")
+
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  aoi                  Aoi      @relation(fields: [aoiId], references: [id], onDelete: Cascade)
+  gridChangeScoresEarlier GridChangeScore[] @relation("EarlierScene")
+  gridChangeScoresLater   GridChangeScore[] @relation("LaterScene")
+
+  @@index([aoiId, acquisitionDatetime])
+  @@map("satellite_scene")
+}
+
+model GridChangeScore {
+  id                      String   @id @default(uuid()) @db.Uuid
+
+  aoiId                   String   @map("aoi_id") @db.Uuid
+  gridCellId              String   @map("grid_cell_id") @db.Uuid
+  earlierSceneId          String   @map("earlier_scene_id") @db.Uuid
+  laterSceneId            String   @map("later_scene_id") @db.Uuid
+
+  t0AcquisitionDatetime   DateTime @map("t0_acquisition_datetime") @db.Timestamptz(6)
+  t1AcquisitionDatetime   DateTime @map("t1_acquisition_datetime") @db.Timestamptz(6)
+
+  ndviDropMean            Float?   @map("ndvi_drop_mean")
+  ndviDropFraction        Float?   @map("ndvi_drop_fraction")
+  changeScore             Float?   @map("change_score")
+  isHot                   Boolean  @default(false) @map("is_hot")
+
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  aoi                     Aoi             @relation(fields: [aoiId], references: [id], onDelete: Cascade)
+  gridCell                AoiGridCell     @relation(fields: [gridCellId], references: [id], onDelete: Cascade)
+  earlierScene            SatelliteScene  @relation("EarlierScene", fields: [earlierSceneId], references: [id])
+  laterScene              SatelliteScene  @relation("LaterScene", fields: [laterSceneId], references: [id])
+
+  @@index([aoiId, gridCellId, t1AcquisitionDatetime])
+  @@map("grid_change_score")
+}
+
+model HighresScene {
+  id                   String   @id @default(uuid()) @db.Uuid
+
+  aoiId                String   @map("aoi_id") @db.Uuid
+  gridCellId           String?  @map("grid_cell_id") @db.Uuid
+
+  provider             String
+  acquisitionDatetime  DateTime @map("acquisition_datetime") @db.Timestamptz(6)
+  resolutionM          Float    @map("resolution_m")
+
+  bboxMinLon           Float    @map("bbox_min_lon")
+  bboxMinLat           Float    @map("bbox_min_lat")
+  bboxMaxLon           Float    @map("bbox_max_lon")
+  bboxMaxLat           Float    @map("bbox_max_lat")
+
+  r2Bucket             String   @map("r2_bucket")
+  r2Key                String   @map("r2_key")
+  rawMetadataJson      Json?    @map("raw_metadata_json") @db.JsonB
+
+  isDownloaded         Boolean  @default(false) @map("is_downloaded")
+  isProcessed          Boolean  @default(false) @map("is_processed")
+
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  aoi                  Aoi         @relation(fields: [aoiId], references: [id], onDelete: Cascade)
+  gridCell             AoiGridCell? @relation(fields: [gridCellId], references: [id], onDelete: SetNull)
+  detectedBuildings    DetectedBuilding[]
+
+  @@index([aoiId, acquisitionDatetime])
+  @@map("highres_scene")
+}
+
+model DetectedBuilding {
+  id                   String   @id @default(uuid()) @db.Uuid
+
+  highresSceneId       String   @map("highres_scene_id") @db.Uuid
+  aoiId                String   @map("aoi_id") @db.Uuid
+  gridCellId           String?  @map("grid_cell_id") @db.Uuid
+
+  centroidLat          Float    @map("centroid_lat")
+  centroidLon          Float    @map("centroid_lon")
+  footprintGeojson     Json     @map("footprint_geojson") @db.JsonB
+  areaSqM              Float    @map("area_sq_m")
+
+  detectionConfidence  Float?   @map("detection_confidence")
+  status               String   @default("auto_detected")
+
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  highresScene         HighresScene @relation(fields: [highresSceneId], references: [id], onDelete: Cascade)
+  aoi                  Aoi          @relation(fields: [aoiId], references: [id], onDelete: Cascade)
+  gridCell             AoiGridCell? @relation(fields: [gridCellId], references: [id], onDelete: SetNull)
+
+  constructionSites    ConstructionSite[] @relation("BuildingToSite")
+
+  @@index([aoiId])
+  @@map("detected_building")
+}
+
+model ConstructionSite {
+  id                  String   @id @default(uuid()) @db.Uuid
+
+  aoiId               String   @map("aoi_id") @db.Uuid
+  gridCellId          String?  @map("grid_cell_id") @db.Uuid
+
+  sourceType          String   @map("source_type")
+  sourceBuildingId    String?  @map("source_building_id") @db.Uuid
+
+  lat                 Float    @map("lat")
+  lon                 Float    @map("lon")
+  geomGeojson         Json?    @map("geom_geojson") @db.JsonB
+  estimatedAreaSqM    Float?   @map("estimated_area_sq_m")
+
+  firstSeenDate       DateTime @map("first_seen_date") @db.Date
+  lastSeenDate        DateTime @map("last_seen_date") @db.Date
+
+  status              String   @default("new")
+  verifiedByTsoId     Int?     @map("verified_by_tso_id")
+  verifiedAt          DateTime? @map("verified_at") @db.Timestamptz(6)
+
+  linkedDealerId      String?  @map("linked_dealer_id") @db.Uuid
+  notes               String?
+
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  aoi                 Aoi          @relation(fields: [aoiId], references: [id], onDelete: Cascade)
+  gridCell            AoiGridCell? @relation(fields: [gridCellId], references: [id], onDelete: SetNull)
+  sourceBuilding      DetectedBuilding? @relation("BuildingToSite", fields: [sourceBuildingId], references: [id])
+
+  tsoVisits           TsoVisit[]
+
+  @@index([aoiId, status, firstSeenDate])
+  @@map("construction_site")
+}
+
+model TsoVisit {
+  id              String   @id @default(uuid()) @db.Uuid
+
+  siteId          String   @map("site_id") @db.Uuid
+  tsoId           Int      @map("tso_id") 
+  visitedAt       DateTime @map("visited_at") @db.Timestamptz(6)
+
+  visitOutcome    String   @map("visit_outcome")
+  comments        String?
+  photoUrls       String[] @map("photo_urls")
+
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  site            ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, visitedAt])
+  @@map("tso_visit")
+}
